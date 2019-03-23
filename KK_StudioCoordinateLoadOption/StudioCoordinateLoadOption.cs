@@ -44,63 +44,10 @@ namespace KK_StudioCoordinateLoadOption
         // Token: 0x06000006 RID: 6 RVA: 0x000020DE File Offset: 0x000002DE
         public IEnumerator AddBtnEvent()
 		{
-            Console.WriteLine("****My Button Loaded Start");
             if (this.tglWears != null)
 			{
                 yield break;
 			}
-
-            RectTransform rectTransform = base.transform.Find("Guide Input") as RectTransform;
-			Image image = UIUtility.CreatePanel("Additional Operations", base.transform);
-			image.rectTransform.SetRect(Vector2.zero, Vector2.zero, rectTransform.offsetMin + new Vector2(4f + rectTransform.rect.width, -1f), rectTransform.offsetMin + new Vector2(5f + rectTransform.rect.width + 105f, rectTransform.rect.height + 1f));
-			image.color = new Color32(59, 58, 56, 167);
-			image.sprite = UIUtility.resources.inputField;
-			((RectTransform)rectTransform.Find("Button Move")).anchoredPosition += new Vector2(100f, 0f);
-			((RectTransform)rectTransform.Find("Button Rotation")).anchoredPosition += new Vector2(100f, 0f);
-			((RectTransform)rectTransform.Find("Button Scale")).anchoredPosition += new Vector2(100f, 0f);
-			Sprite sprite = null;
-			foreach (Sprite sprite2 in Resources.FindObjectsOfTypeAll<Sprite>())
-			{
-				string name = sprite2.name;
-				if (name == "sp_sn_12_00_01")
-				{
-					sprite = sprite2;
-					break;
-				}
-			}
-			this._copyTransform = UIUtility.CreateButton("Copy Transform", image.transform, "Copy Transform");
-			this._copyTransform.transform.SetRect(new Vector2(0f, 0.666f), Vector2.one, new Vector2(5f, 1f), new Vector2(-5f, -5f));
-			((Image)this._copyTransform.targetGraphic).sprite = sprite;
-			Text componentInChildren = this._copyTransform.GetComponentInChildren<Text>();
-			componentInChildren.color = Color.white;
-			componentInChildren.alignByGeometry = true;
-			componentInChildren.rectTransform.SetRect(0f, 0f, 1f, 1f, 0f, 0f, 0f, 0f);
-			//this._copyTransform.onClick.AddListener(new UnityAction(this.CopyTransform));
-			this._pasteTransform = UIUtility.CreateButton("Paste Transform", image.transform, "Paste Transform");
-			this._pasteTransform.transform.SetRect(new Vector2(0f, 0.333f), new Vector2(1f, 0.666f), new Vector2(5f, 2f), new Vector2(-5f, -2f));
-			((Image)this._pasteTransform.targetGraphic).sprite = sprite;
-			Text componentInChildren2 = this._pasteTransform.GetComponentInChildren<Text>();
-			componentInChildren2.color = Color.white;
-			componentInChildren2.alignByGeometry = true;
-			componentInChildren2.rectTransform.SetRect(0f, 0f, 1f, 1f, 0f, 0f, 0f, 0f);
-			//this._pasteTransform.onClick.AddListener(new UnityAction(this.PasteTransform));
-			this._resetTransform = UIUtility.CreateButton("Reset Transform", image.transform, "Reset Transform");
-			this._resetTransform.transform.SetRect(Vector2.zero, new Vector2(1f, 0.333f), new Vector2(5f, 5f), new Vector2(-5f, -1f));
-			((Image)this._resetTransform.targetGraphic).sprite = sprite;
-			((Image)this._resetTransform.targetGraphic).color = Color.Lerp(Color.red, Color.white, 0.3f);
-			Text componentInChildren3 = this._resetTransform.GetComponentInChildren<Text>();
-			componentInChildren3.color = Color.white;
-			componentInChildren3.alignByGeometry = true;
-			componentInChildren3.rectTransform.SetRect(0f, 0f, 1f, 1f, 0f, 0f, 0f, 0f);
-			//this._resetTransform.onClick.AddListener(new UnityAction(this.ResetTransform));
-			//this._hashSelectObject = (HashSet<GuideObject>)Singleton<GuideObjectManager>.Instance.GetPrivate("hashSelectObject");
-
-            Console.WriteLine("****My Button Loaded End");
-
-
-
-            //OLD CharaBtnLoad
-            /*
 			Button btnCoordeLoadLoad = Singleton<CustomFileWindow>.Instance.btnCoordeLoadLoad;
 			btnCoordeLoadLoad.onClick.RemoveListener(new UnityAction(this.OnCoordeLoadLoadClick));
 			btnCoordeLoadLoad.onClick.AddListener(new UnityAction(this.OnCoordeLoadLoadClick));
@@ -205,7 +152,6 @@ namespace KK_StudioCoordinateLoadOption
 				}
 			});
 			yield break;
-            */
 		}
 
 		// Token: 0x06000007 RID: 7 RVA: 0x000020F0 File Offset: 0x000002F0
