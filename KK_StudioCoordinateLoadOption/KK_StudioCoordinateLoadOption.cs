@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System.Reflection;
 using BepInEx;
 using Harmony;
+using KK_CostumeInfo_Patches;
 using UnityEngine.SceneManagement;
 
 namespace KK_StudioCoordinateLoadOption
 {
-	[BepInPlugin("com.jim60105.kk.studiocoordinateloadoption", "StudioCoordinateLoadOption", "19.03.23.2")]
+	[BepInPlugin("com.jim60105.kk.studiocoordinateloadoption", "Studio Coordinate Load Option", "19.03.24.0")]
 	public class KK_StudioCoordinateLoadOption: BaseUnityPlugin
 	{
         public void OnSceneLoaded(Scene scene, LoadSceneMode sceneMode)
@@ -16,10 +17,9 @@ namespace KK_StudioCoordinateLoadOption
             bool flag2 = !this.isInit && name == "Studio";
             if (flag2)
             {
-                Console.WriteLine(flag2);
                 this.isInit = true;
                 UILib.UIUtility.Init();
-                HarmonyInstance harmonyInstance = HarmonyInstance.Create("com.jim60105.kk.studiocoordinateloadoption");
+                HarmonyInstance harmonyInstance = HarmonyInstance.Create("com.jim60105.kk.studiocoordinateloadinit");
                 foreach (Type type2 in Assembly.GetExecutingAssembly().GetTypes())
                 {
                     try
@@ -36,8 +36,8 @@ namespace KK_StudioCoordinateLoadOption
                         UnityEngine.Debug.Log("KK_SCLO: Exception occured when patching: " + ex.ToString());
                     }
                 }
-                CostumeInfo_Init_Patches.ManualPatch(harmonyInstance);
-                Console.WriteLine("KK_SCLO:Patch Insert Complete.");
+                HarmonyInstance.DEBUG = true;
+                CostumeInfo_Patches.InitPatch(harmonyInstance);
             }
         }
 
@@ -48,7 +48,7 @@ namespace KK_StudioCoordinateLoadOption
 
 		internal static readonly string PLUGIN_NAME = "StudioCoordinateLoadOption";
 
-		internal static readonly string PLUGIN_VERSION = "19.03.23.2";
+		internal static readonly string PLUGIN_VERSION = "19.03.24.0";
 
         private bool isInit = false;
 	}
