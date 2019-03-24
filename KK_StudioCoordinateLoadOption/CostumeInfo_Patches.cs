@@ -16,18 +16,18 @@ namespace KK_CostumeInfo_Patches
 	{
 		internal static void InitPatch(HarmonyInstance harmony)
 		{
-            harmony.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("Init", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), null, new HarmonyMethod(typeof(CostumeInfo_Patches), "InitPostfix", null), null);
-            UnityEngine.Debug.Log("KK_SCLO:Init Patch Insert Complete.");
-            harmony.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("OnClickLoad", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(CostumeInfo_Patches), "OnClickLoadPrefix", null), new HarmonyMethod(typeof(CostumeInfo_Patches), "OnClickLoadPostfix", null), null);
-            UnityEngine.Debug.Log("KK_SCLO:OnclickLoad Patch Insert Complete.");
             harmony.Patch(typeof(MPCharCtrl).GetMethod("OnClickRoot", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), null, new HarmonyMethod(typeof(CostumeInfo_Patches), "OnClickRootPostfix", null), null);
-            UnityEngine.Debug.Log("KK_SCLO:OnclickRoot Patch Insert Complete.");
+            //Console.WriteLine("KK_SCLO:OnclickRoot Patch Insert Complete.");
+            harmony.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("Init", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), null, new HarmonyMethod(typeof(CostumeInfo_Patches), "InitPostfix", null), null);
+            //Console.WriteLine("KK_SCLO:Init Patch Insert Complete.");
+            harmony.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("OnClickLoad", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(CostumeInfo_Patches), "OnClickLoadPrefix", null), null, null);
+            //Console.WriteLine("KK_SCLO:OnclickLoad Patch Insert Complete.");
 		}
 
         public static CharaFileSort charaFileSort;
 		private static void InitPostfix(object __instance)
 		{
-            UnityEngine.Debug.Log("KK_SCLO:Init Patch Start");
+            //Console.WriteLine("KK_SCLO:Init Patch Start");
 			charaFileSort = (CharaFileSort)__instance.GetPrivate("fileSort");
 			Transform parent = charaFileSort.root.parent;
 
@@ -88,18 +88,13 @@ namespace KK_CostumeInfo_Patches
             if (_idx > 0 && __instance != null)
             {
                 mpCharCtrl = __instance;
-                UnityEngine.Debug.Log("KK_SCLO:Get mpCharCtrl");
+                //Console.WriteLine("KK_SCLO:Get mpCharCtrl");
             }
         }
 
         public static bool OnClickLoadPrefix()
         {
-            return false;
-        }
-
-		public static void OnClickLoadPostfix()
-		{
-            UnityEngine.Debug.Log("KK_SCLO:Onclick Patch Start");
+            //Console.WriteLine("KK_SCLO:Onclick Patch Start");
             if (charaFileSort == null)
             {
                 UnityEngine.Debug.LogError("KK_SCLO:Get charaFileSort FAILED.");
@@ -112,7 +107,7 @@ namespace KK_CostumeInfo_Patches
             toggleList = parent.parent.parent.GetComponentsInChildren<Toggle>();
 
 			ChaControl chaCtrl = ociChar.charInfo;
-            UnityEngine.Debug.Log("KK_SCLO:Get CharaCtrl");
+            //Console.WriteLine("KK_SCLO:Get CharaCtrl");
 
 			ChaFileClothes clothes = chaCtrl.nowCoordinate.clothes;
 			ChaFileAccessory accessories = chaCtrl.nowCoordinate.accessory;
@@ -132,7 +127,7 @@ namespace KK_CostumeInfo_Patches
 				arraySubClothes[j] = clothes.subPartsId[j];
 			}
 
-            UnityEngine.Debug.Log("KK_SCLO:FileSort select:"+fileSort.select);
+            //Console.WriteLine("KK_SCLO:FileSort select:"+fileSort.select);
 			if (fileSort.select>=0)
 			{
 				Utils.Sound.Play(SystemSE.ok_s);
@@ -149,8 +144,8 @@ namespace KK_CostumeInfo_Patches
                 }
                 else
                 {
-                UnityEngine.Debug.Log("KK_SCLO:Loaded new clothes SUCCESS.");
-                UnityEngine.Debug.Log("KK_SCLO:Starting roll back origin clothes.");
+                //Console.WriteLine("KK_SCLO:Loaded new clothes SUCCESS.");
+                //Console.WriteLine("KK_SCLO:Starting roll back origin clothes.");
                     foreach (Toggle tgl in toggleList)
                     {
                         if (!tgl.isOn)
@@ -163,93 +158,61 @@ namespace KK_CostumeInfo_Patches
                                     {
                                         chaCtrl.nowCoordinate.clothes.subPartsId[k] = arraySubClothes[k];
                                     }
-                                    UnityEngine.Debug.Log("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
+                                    //Console.WriteLine("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
                                     break;
                                 case "bot":
                                     chaCtrl.nowCoordinate.clothes.parts[1] = MessagePackSerializer.Deserialize<ChaFileClothes.PartsInfo>(arrayClothes[1]);
-                                    UnityEngine.Debug.Log("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
+                                    //Console.WriteLine("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
                                     break;
                                 case "bra":
                                     chaCtrl.nowCoordinate.clothes.parts[2] = MessagePackSerializer.Deserialize<ChaFileClothes.PartsInfo>(arrayClothes[2]);
-                                    UnityEngine.Debug.Log("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
+                                    //Console.WriteLine("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
                                     break;
                                 case "shorts":
                                     chaCtrl.nowCoordinate.clothes.parts[3] = MessagePackSerializer.Deserialize<ChaFileClothes.PartsInfo>(arrayClothes[3]);
-                                    UnityEngine.Debug.Log("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
+                                    //Console.WriteLine("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
                                     break;
                                 case "gloves":
                                     chaCtrl.nowCoordinate.clothes.parts[4] = MessagePackSerializer.Deserialize<ChaFileClothes.PartsInfo>(arrayClothes[4]);
-                                    UnityEngine.Debug.Log("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
+                                    //Console.WriteLine("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
                                     break;
                                 case "panst":
                                     chaCtrl.nowCoordinate.clothes.parts[5] = MessagePackSerializer.Deserialize<ChaFileClothes.PartsInfo>(arrayClothes[5]);
-                                    UnityEngine.Debug.Log("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
+                                    //Console.WriteLine("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
                                     break;
                                 case "socks":
                                     chaCtrl.nowCoordinate.clothes.parts[6] = MessagePackSerializer.Deserialize<ChaFileClothes.PartsInfo>(arrayClothes[6]);
-                                    UnityEngine.Debug.Log("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
+                                    //Console.WriteLine("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
                                     break;
                                 case "shoes_inner":
                                     chaCtrl.nowCoordinate.clothes.parts[7] = MessagePackSerializer.Deserialize<ChaFileClothes.PartsInfo>(arrayClothes[7]);
-                                    UnityEngine.Debug.Log("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
+                                    //Console.WriteLine("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
                                     break;
                                 case "shoes_outer":
                                     chaCtrl.nowCoordinate.clothes.parts[8] = MessagePackSerializer.Deserialize<ChaFileClothes.PartsInfo>(arrayClothes[8]);
-                                    UnityEngine.Debug.Log("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
+                                    //Console.WriteLine("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
                                     break;
                                 case "accessories":
                                     for (int i = 0; i < arrayAcc.Length; i++)
                                     {
                                         chaCtrl.nowCoordinate.accessory.parts[i] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(arrayAcc[i]);
                                     }
-                                    UnityEngine.Debug.Log("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
+                                    //Console.WriteLine("KK_SCLO: Keep:" + tgl.GetComponentInChildren<Text>(true).text);
                                     break;
                                 default:
-                                    UnityEngine.Debug.Log("KK_SCLO: Discard Unknown Toggle:" + tgl.GetComponentInChildren<Text>(true).text);
+                                    //Console.WriteLine("KK_SCLO: Discard Unknown Toggle:" + tgl.GetComponentInChildren<Text>(true).text);
                                     break;
                             }
                         }
                     }
                 }
+
                 chaCtrl.Reload(false, true, true, true);
                 chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.chaFile.status.coordinateType);
 
                 toggleList = new Toggle[0];
             }
-		}
-        internal static class Utl
-        {
-            // Token: 0x0600000C RID: 12 RVA: 0x000024C8 File Offset: 0x000006C8
-            internal static FieldInfo GetFieldInfo<T>(string name)
-            {
-                BindingFlags bindingAttr = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
-                return typeof(T).GetField(name, bindingAttr);
-            }
-
-            // Token: 0x0600000D RID: 13 RVA: 0x000024EC File Offset: 0x000006EC
-            internal static TResult GetFieldValue<T, TResult>(T inst, string name)
-            {
-                if (inst == null)
-                {
-                    return default(TResult);
-                }
-                FieldInfo fieldInfo = CostumeInfo_Patches.Utl.GetFieldInfo<T>(name);
-                if (fieldInfo == null)
-                {
-                    return default(TResult);
-                }
-                return (TResult)((object)fieldInfo.GetValue(inst));
-            }
-
-            // Token: 0x0600000E RID: 14 RVA: 0x00002530 File Offset: 0x00000730
-            public static void SetFieldValue<T>(object inst, string name, object val)
-            {
-                FieldInfo fieldInfo = CostumeInfo_Patches.Utl.GetFieldInfo<T>(name);
-                if (fieldInfo != null)
-                {
-                    fieldInfo.SetValue(inst, val);
-                }
-            }
+            return false;
         }
     }
 }

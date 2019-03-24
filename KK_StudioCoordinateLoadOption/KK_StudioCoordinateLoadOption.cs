@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 
 namespace KK_StudioCoordinateLoadOption
 {
-	[BepInPlugin("com.jim60105.kk.studiocoordinateloadoption", "Studio Coordinate Load Option", "19.03.24.0")]
+	[BepInPlugin("com.jim60105.kk.studiocoordinateloadoption", "Studio Coordinate Load Option", "19.03.24.1")]
 	public class KK_StudioCoordinateLoadOption: BaseUnityPlugin
 	{
         public void OnSceneLoaded(Scene scene, LoadSceneMode sceneMode)
@@ -19,7 +19,7 @@ namespace KK_StudioCoordinateLoadOption
             {
                 this.isInit = true;
                 UILib.UIUtility.Init();
-                HarmonyInstance harmonyInstance = HarmonyInstance.Create("com.jim60105.kk.studiocoordinateloadinit");
+                HarmonyInstance harmonyInstance = HarmonyInstance.Create("com.jim60105.kk.studiocoordinateloadoption");
                 foreach (Type type2 in Assembly.GetExecutingAssembly().GetTypes())
                 {
                     try
@@ -33,7 +33,7 @@ namespace KK_StudioCoordinateLoadOption
                     }
                     catch (Exception ex)
                     {
-                        UnityEngine.Debug.Log("KK_SCLO: Exception occured when patching: " + ex.ToString());
+                        Console.WriteLine("KK_SCLO: Exception occured when patching: " + ex.ToString());
                     }
                 }
                 HarmonyInstance.DEBUG = true;
@@ -48,7 +48,7 @@ namespace KK_StudioCoordinateLoadOption
 
 		internal static readonly string PLUGIN_NAME = "StudioCoordinateLoadOption";
 
-		internal static readonly string PLUGIN_VERSION = "19.03.24.0";
+		internal static readonly string PLUGIN_VERSION = "19.03.24.1";
 
         private bool isInit = false;
 	}
