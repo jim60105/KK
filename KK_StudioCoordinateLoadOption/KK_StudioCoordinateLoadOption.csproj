@@ -94,10 +94,10 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Toolbox.cs" />
     <Compile Include="CostumeInfo_Patches.cs" />
     <Compile Include="KK_StudioCoordinateLoadOption.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ToolBox\Extensions.cs" />
     <Compile Include="UIUtility\Extensions.cs" />
     <Compile Include="UIUtility\MovableWindow.cs" />
     <Compile Include="UIUtility\OneTimeContentSizeFitter.cs" />
@@ -119,20 +119,14 @@
     <None Include="UIUtility\Resources\DefaultResourcesKOI.unity3d" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="ToolBox\ToolBox.csproj" />
     <Content Include="UIUtility\.gitignore" />
     <Content Include="UIUtility\UIUtility.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ToolBox\obj\KOI\ToolBox.csproj.CoreCompileInputs.cache" />
-    <None Include="ToolBox\obj\KOI\ToolBox.csprojAssemblyReference.cache" />
     <None Include="UIUtility\obj\Debug\UIUtility.csproj.CoreCompileInputs.cache" />
     <None Include="UIUtility\obj\Debug\UIUtility.csprojAssemblyReference.cache" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="ToolBox\bin\KOI\" />
-    <Folder Include="ToolBox\obj\KOI\TempPE\" />
-    <Folder Include="ToolBox\Properties\" />
     <Folder Include="UIUtility\bin\Debug\" />
     <Folder Include="UIUtility\LoopListView\" />
     <Folder Include="UIUtility\obj\Debug\TempPE\" />
