@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 
 namespace KK_StudioCoordinateLoadOption
 {
-	[BepInPlugin("com.jim60105.kk.studiocoordinateloadoption", "Studio Coordinate Load Option", "19.03.26.0")]
+	[BepInPlugin("com.jim60105.kk.studiocoordinateloadoption", "Studio Coordinate Load Option", "19.03.28.0")]
 	public class KK_StudioCoordinateLoadOption: BaseUnityPlugin
 	{
         public void OnSceneLoaded(Scene scene, LoadSceneMode sceneMode)
@@ -48,7 +48,7 @@ namespace KK_StudioCoordinateLoadOption
 
 		internal static readonly string PLUGIN_NAME = "StudioCoordinateLoadOption";
 
-		internal static readonly string PLUGIN_VERSION = "19.03.26.0";
+		internal static readonly string PLUGIN_VERSION = "19.03.28.0";
 
         private bool isInit = false;
 	}
