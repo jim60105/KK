@@ -15,12 +15,12 @@
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
-//[Rr]elease/
-//[Rr]eleases/
-x64/
+#[Rr]eleases/
+[Bb]in/[Rr]elease/
+#x64/
 x86/
 bld/
-//[Bb]in/
+#[Bb]in/
 [Oo]bj/
 [Ll]og/
 

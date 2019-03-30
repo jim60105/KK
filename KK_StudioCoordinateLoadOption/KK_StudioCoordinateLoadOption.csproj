@@ -78,10 +78,6 @@
       <HintPath>C:\illusion\Koikatu\BepInEx\KKAPI.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="KoiClothesOverlay">
-      <HintPath>C:\illusion\Koikatu\BepInEx\KoiClothesOverlay.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
     <Reference Include="TextMeshPro-1.0.55.56.0b12, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -104,10 +100,11 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Toolbox.cs" />
     <Compile Include="CostumeInfo_Patches.cs" />
+    <Compile Include="KCOX_Support.cs" />
     <Compile Include="KK_StudioCoordinateLoadOption.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Toolbox.cs" />
     <Compile Include="UIUtility\Extensions.cs" />
     <Compile Include="UIUtility\MovableWindow.cs" />
     <Compile Include="UIUtility\OneTimeContentSizeFitter.cs" />
