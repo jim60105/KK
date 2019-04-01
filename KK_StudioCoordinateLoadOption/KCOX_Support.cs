@@ -10,40 +10,33 @@ namespace KK_StudioCoordinateLoadOption
 {
     class KCOX_Support
     {
-        private static readonly BindingFlags flag = BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance;
+        private static readonly BindingFlags publicFlag = BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance;
         private static object KCOXController;
         private static Dictionary<string, object> KCOXTexDataBackup = null;
-
-        public class KoiClothesOverlayController {
-            private static Type myType;
-            public static void SetType(Type tt)
-            {
-                myType = tt;
-            }
-            public static new Type GetType()
-            {
-                return myType;
-            }
-        }
 
         public static bool LoadAssembly()
         {
             try
             {
-                KoiClothesOverlayController.SetType(Assembly.LoadFrom("BepInEx/KoiClothesOverlay.dll").GetType("KoiClothesOverlayX.KoiClothesOverlayController"));
+                var ass = Assembly.LoadFrom("BepInEx/KoiClothesOverlay.dll");
+                if (null == ass)
+                {
+                    throw new Exception("KCOX Assembly Loading FAILED");
+                }
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] KCOX found");
                 return true;
-            }catch(Exception ex){
+            }
+            catch (Exception ex)
+            {
                 Logger.Log(LogLevel.Error, "[KK_SCLO] Load assembly FAILED: KCOX");
                 Logger.Log(LogLevel.Error, ex.Message);
-                KK_StudioCoordinateLoadOption._isKCOXExist = false;
                 return false;
             }
         }
 
         public static void BackupKCOXData(ChaControl chaCtrl, ChaFileClothes clothes)
         {
-            KCOXController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x=> Equals(x.GetType().Namespace,"KoiClothesOverlayX"));
+            KCOXController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KoiClothesOverlayX"));
             if (null == KCOXController)
             {
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] No KCOX Controller found");
@@ -54,26 +47,26 @@ namespace KK_StudioCoordinateLoadOption
                 int cnt = 0;
                 for (int i = 0; i < clothes.parts.Length; i++)
                 {
-                    if(GetOverlay(CostumeInfo_Patches.MainClothesNames[i]))
+                    if (GetOverlay(CostumeInfo_Patches.MainClothesNames[i]))
                     {
                         cnt++;
                     }
                 }
                 for (int j = 0; j < clothes.subPartsId.Length; j++)
                 {
-                    if(GetOverlay(CostumeInfo_Patches.SubClothesNames[j]))
+                    if (GetOverlay(CostumeInfo_Patches.SubClothesNames[j]))
                     {
                         cnt++;
                     }
                 }
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] Get original Overlay: "+cnt);
+                Logger.Log(LogLevel.Debug, "[KK_SCLO] Get original Overlay: " + cnt);
             }
             return;
         }
 
         private static bool GetOverlay(string name)
         {
-            if (null == KoiClothesOverlayController.GetType().InvokeMember("GetOverlayTex", flag, null, KCOXController, new object[] { name }))
+            if (null == KCOXController.GetType().InvokeMember("GetOverlayTex", publicFlag, null, KCOXController, new object[] { name }))
             {
                 KCOXTexDataBackup[name] = null;
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] " + name + " not found");
@@ -81,7 +74,7 @@ namespace KK_StudioCoordinateLoadOption
             }
             else
             {
-                KCOXTexDataBackup[name] = KoiClothesOverlayController.GetType().InvokeMember("GetOverlayTex", flag, null, KCOXController, new object[] { name });
+                KCOXTexDataBackup[name] = KCOXController.GetType().InvokeMember("GetOverlayTex", publicFlag, null, KCOXController, new object[] { name });
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] Get original overlay: " + name);
                 return true;
             }
@@ -94,11 +87,11 @@ namespace KK_StudioCoordinateLoadOption
             if (null != KCOXController && null != KCOXTexDataBackup)
             {
                 KCOXTexDataBackup.TryGetValue(name, out var tex);
-                KoiClothesOverlayController.GetType().InvokeMember("SetOverlayTex", flag, null, KCOXController, new object[] { tex,name });
+                KCOXController.GetType().InvokeMember("SetOverlayTex", publicFlag, null, KCOXController, new object[] { tex, name });
 
                 if (null != tex)
                 {
-                    Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Overlay found: " + name);
+                    Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Overlay Rollback: " + name);
                     return;
                 }
             }

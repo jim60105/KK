@@ -100,6 +100,7 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ABMX_Support.cs" />
     <Compile Include="CostumeInfo_Patches.cs" />
     <Compile Include="KCOX_Support.cs" />
     <Compile Include="KK_StudioCoordinateLoadOption.cs" />

@@ -202,10 +202,16 @@ namespace KK_StudioCoordinateLoadOption
             }
             Logger.Log(LogLevel.Debug, "[KK_SCLO] Get original coordinate SUCCESS");
 
-            //BackKCOX
+            //BackupKCOX
             if (KK_StudioCoordinateLoadOption._isKCOXExist)
             {
-                KCOX_Support.BackupKCOXData(chaCtrl,clothes);
+                KCOX_Support.BackupKCOXData(chaCtrl, clothes);
+            }
+
+            //BackupABMX
+            if (KK_StudioCoordinateLoadOption._isABMXExist)
+            {
+                ABMX_Support.BackupABMXData(chaCtrl);
             }
 
             //Old Function:
@@ -255,8 +261,6 @@ namespace KK_StudioCoordinateLoadOption
                     doCount++;
                     if (doCount == toggleList.Length)
                     {
-                        chaCtrl.Reload(false, true, true, true);
-                        chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
                         CleanBackup();
                     }
                 }));
@@ -320,24 +324,29 @@ namespace KK_StudioCoordinateLoadOption
                         chaCtrl.Reload(false, true, true, true);
                         chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
                         KCOX_Support.RollbackOverlay(true, kind);
+                    }
+                        chaCtrl.Reload(false, true, true, true);
+                        chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
 
-                        switch (tmpToggleType)
-                        {
-                            case ChaFileDefine.ClothesKind.top:
-                                //if (KK_StudioCoordinateLoadOption._isKCOXExist)
-                                //{
-                                    for (int j = 0; j < 3; j++)
-                                    {
-                                        KCOX_Support.RollbackOverlay(false, j);
-                                    }
-                                //}
-                                break;
-                            case ChaFileDefine.ClothesKind.bot:
-                                //TODO: Manage ABMX Skirt
-                                break;
-                            default:
-                                break;
-                        }
+                    switch (tmpToggleType)
+                    {
+                        case ChaFileDefine.ClothesKind.top:
+                            if (KK_StudioCoordinateLoadOption._isKCOXExist)
+                            {
+                                for (int j = 0; j < 3; j++)
+                                {
+                                    KCOX_Support.RollbackOverlay(false, j);
+                                }
+                            }
+                            break;
+                        case ChaFileDefine.ClothesKind.bot:
+                            if (KK_StudioCoordinateLoadOption._isABMXExist)
+                            {
+                                ABMX_Support.RollbackABMXBone(chaCtrl);
+                            }
+                            break;
+                        default:
+                            break;
                     }
                 }
                 Callback?.Invoke();
@@ -351,6 +360,7 @@ namespace KK_StudioCoordinateLoadOption
             accessoriesPartsBackup = null;
             subClothesIdBackup = null;
             if (KK_StudioCoordinateLoadOption._isKCOXExist) KCOX_Support.CleanKCOXBackup();
+            if (KK_StudioCoordinateLoadOption._isABMXExist) ABMX_Support.CleanABMXBackup();
             Logger.Log(LogLevel.Debug, "[KK_SCLO] Finish");
             Utils.Sound.Play(SystemSE.ok_s);
         }
