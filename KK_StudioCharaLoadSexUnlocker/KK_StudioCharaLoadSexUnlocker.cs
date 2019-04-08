@@ -5,6 +5,7 @@ using BepInEx;
 using BepInEx.Logging;
 using Harmony;
 using UnityEngine.SceneManagement;
+using Extension;
 
 namespace KK_StudioCharaLoadSexUnlocker
 {
@@ -13,7 +14,7 @@ namespace KK_StudioCharaLoadSexUnlocker
     {
         internal const string PLUGIN_NAME = "Studio Chara Load Sex Unlocker";
         internal const string GUID = "com.jim60105.kk.studiocharaloadsexunlocker";
-        internal const string PLUGIN_VERSION = "19.04.08.0";
+        internal const string PLUGIN_VERSION = "19.04.08.1";
 
         private bool _isInit = false;
 
@@ -43,6 +44,11 @@ namespace KK_StudioCharaLoadSexUnlocker
                 }
                 //HarmonyInstance.DEBUG = true;
                 CharaList_Patches.InitPatch(harmonyInstance);
+                if (!Extension.Extension.CheckRequiredPlugin(this, "marco.kkapi"))
+                {
+                    Logger.Log(LogLevel.Message, "[KK_SCLSU] KKAPI Not Found. "+PLUGIN_NAME+" CANNOT work correctly.");
+                    Logger.Log(LogLevel.Message, "[KK_SCLSU] To be precise, there is no body change between male and female.");
+                }
             }
         }
 
