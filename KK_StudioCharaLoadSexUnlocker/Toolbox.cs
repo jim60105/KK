@@ -50,6 +50,12 @@ namespace Extension
             }
             field.SetValue(self, value);
         }
+        public static void SetPrivateProperty(this object self, string name, object value)
+        {
+            PropertyInfo propertyInfo;
+            propertyInfo = self.GetType().GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.GetProperty);
+            propertyInfo.SetValue(self, value, null);
+        }
         public static bool CheckRequiredPlugin(BaseUnityPlugin origin, string guid)
         {
             var target = BepInEx.Bootstrap.Chainloader.Plugins

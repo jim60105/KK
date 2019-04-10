@@ -1,11 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
+﻿/*
+MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+MMM               MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM    M7    MZ    MMO    MMMMM
+MMM               MMMMMMMMMMMMM   MMM     MMMMMMMMMM    M$    MZ    MMO    MMMMM
+MMM               MMMMMMMMMM       ?M     MMMMMMMMMM    M$    MZ    MMO    MMMMM
+MMMMMMMMMMMM8     MMMMMMMM       ~MMM.    MMMMMMMMMM    M$    MZ    MMO    MMMMM
+MMMMMMMMMMMMM     MMMMM        MMM                 M    M$    MZ    MMO    MMMMM
+MMMMMMMMMMMMM     MM.         ZMMMMMM     MMMM     MMMMMMMMMMMMZ    MMO    MMMMM
+MMMMMMMMMMMMM     MM      .   ZMMMMMM     MMMM     MMMMMMMMMMMM?    MMO    MMMMM
+MMMMMMMMMMMMM     MMMMMMMM    $MMMMMM     MMMM     MMMMMMMMMMMM?    MM8    MMMMM
+MMMMMMMMMMMMM     MMMMMMMM    7MMMMMM     MMMM     MMMMMMMMMMMMI    MM8    MMMMM
+MMM               MMMMMMMM    7MMMMMM     MMMM    .MMMMMMMMMMMM.    MMMM?ZMMMMMM
+MMM               MMMMMMMM.   ?MMMMMM     MMMM     MMMMMMMMMM ,:MMMMMM?    MMMMM
+MMM           ..MMMMMMMMMM    =MMMMMM     MMMM     M$ MM$M7M $MOM MMMM     ?MMMM
+MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM .+Z: M   :M M  MM   ?MMMMM
+MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+*/
+
 using BepInEx;
 using BepInEx.Logging;
 using Harmony;
+using System;
+using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine.SceneManagement;
-using Extension;
 
 namespace KK_StudioCharaLoadSexUnlocker
 {
@@ -14,7 +32,7 @@ namespace KK_StudioCharaLoadSexUnlocker
     {
         internal const string PLUGIN_NAME = "Studio Chara Load Sex Unlocker";
         internal const string GUID = "com.jim60105.kk.studiocharaloadsexunlocker";
-        internal const string PLUGIN_VERSION = "19.04.08.1";
+        internal const string PLUGIN_VERSION = "19.04.10.0";
 
         private bool _isInit = false;
 
@@ -44,11 +62,8 @@ namespace KK_StudioCharaLoadSexUnlocker
                 }
                 //HarmonyInstance.DEBUG = true;
                 CharaList_Patches.InitPatch(harmonyInstance);
-                if (!Extension.Extension.CheckRequiredPlugin(this, "marco.kkapi"))
-                {
-                    Logger.Log(LogLevel.Message, "[KK_SCLSU] KKAPI Not Found. "+PLUGIN_NAME+" CANNOT work correctly.");
-                    Logger.Log(LogLevel.Message, "[KK_SCLSU] To be precise, there is no body change between male and female.");
-                }
+                ChaControl_Patches.InitPatch(harmonyInstance);
+                Logger.Log(LogLevel.Debug, "[KK_SCLSU] Patch Insert Complete");
             }
         }
 

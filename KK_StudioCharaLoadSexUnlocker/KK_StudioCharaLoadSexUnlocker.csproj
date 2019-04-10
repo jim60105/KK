@@ -68,6 +68,7 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ChaControl_Patches.cs" />
     <Compile Include="CharaList_Patches.cs" />
     <Compile Include="KK_StudioCharaLoadSexUnlocker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
