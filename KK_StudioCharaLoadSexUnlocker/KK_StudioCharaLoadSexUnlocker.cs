@@ -32,7 +32,7 @@ namespace KK_StudioCharaLoadSexUnlocker
     {
         internal const string PLUGIN_NAME = "Studio Chara Load Sex Unlocker";
         internal const string GUID = "com.jim60105.kk.studiocharaloadsexunlocker";
-        internal const string PLUGIN_VERSION = "19.04.10.0";
+        internal const string PLUGIN_VERSION = "19.04.13.0";
 
         private bool _isInit = false;
 
@@ -61,8 +61,7 @@ namespace KK_StudioCharaLoadSexUnlocker
                     }
                 }
                 //HarmonyInstance.DEBUG = true;
-                CharaList_Patches.InitPatch(harmonyInstance);
-                ChaControl_Patches.InitPatch(harmonyInstance);
+                Patches.InitPatch(harmonyInstance);
                 Logger.Log(LogLevel.Debug, "[KK_SCLSU] Patch Insert Complete");
             }
         }

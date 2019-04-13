@@ -4,26 +4,35 @@ using Harmony;
 using Studio;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using UniRx;
 using UnityEngine.UI;
+using UnityEngine;
 using Logger = BepInEx.Logger;
+using Manager;
+using MessagePack;
 
 namespace KK_StudioCharaLoadSexUnlocker
 {
-    class CharaList_Patches
+    class Patches
     {
         internal static void InitPatch(HarmonyInstance harmony)
         {
-            harmony.Patch(typeof(CharaList).GetMethod("InitCharaList", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), null, new HarmonyMethod(typeof(CharaList_Patches), "InitCharaListPostfix", null), null);
-            harmony.Patch(typeof(CharaList).GetMethod("OnSelect", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(CharaList_Patches), "OnSelectPrefix", null), null, null);
-            harmony.Patch(typeof(CharaList).GetMethod("OnDelete", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(CharaList_Patches), "OnDeletePrefix", null), null, null);
-            harmony.Patch(typeof(CharaList).GetMethod("OnDeselect", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(CharaList_Patches), "OnDeselectPrefix", null), null, null);
-            harmony.Patch(typeof(CharaList).GetMethod("OnSelectChara", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(CharaList_Patches), "OnSelectCharaPrefix", null), null, null);
-            harmony.Patch(typeof(CharaList).GetMethod("ChangeCharaFemale", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(CharaList_Patches), "ChangeCharaPrefix", null), null, null);
-            harmony.Patch(typeof(CharaList).GetMethod("ChangeCharaMale", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(CharaList_Patches), "ChangeCharaPrefix", null), null, null);
+            harmony.Patch(typeof(CharaList).GetMethod("InitCharaList", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), null, new HarmonyMethod(typeof(Patches), nameof(InitCharaListPostfix), null), null);
+            harmony.Patch(typeof(CharaList).GetMethod("OnSelect", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches),nameof( OnSelectPrefix), null), null, null);
+            harmony.Patch(typeof(CharaList).GetMethod("OnDelete", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(OnDeletePrefix), null), null, null);
+            harmony.Patch(typeof(CharaList).GetMethod("OnDeselect", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches),nameof( OnDeselectPrefix), null), null, null);
+            harmony.Patch(typeof(CharaList).GetMethod("OnSelectChara", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches),nameof( OnSelectCharaPrefix), null), null, null);
+            harmony.Patch(typeof(CharaList).GetMethod("ChangeCharaFemale", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches),nameof( ChangeCharaPrefix), null), null, null);
+            harmony.Patch(typeof(CharaList).GetMethod("ChangeCharaMale", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(ChangeCharaPrefix), null), null, null);
+            harmony.Patch(typeof(PauseCtrl).GetMethod("CheckIdentifyingCode", AccessTools.all), new HarmonyMethod(typeof(Patches), nameof(CheckIdentifyingCodePrefix), null), null, null);
+            harmony.Patch(typeof(CharaList).GetMethod("LoadCharaMale", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(LoadCharaMalePrefix), null), null, null);
+            harmony.Patch(typeof(AddObjectAssist).GetMethod("LoadChild",new Type[] { typeof(ObjectInfo),typeof(ObjectCtrlInfo), typeof(TreeNodeObject) }), new HarmonyMethod(typeof(Patches), nameof(LoadChildPrefix), null), null, null);
+            harmony.Patch(typeof(ChaFile).GetMethod("SetParameterBytes", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(SetParameterBytesPostfix), null), null);
         }
+
 
         private class CharaListArrayObj
         {
@@ -31,7 +40,26 @@ namespace KK_StudioCharaLoadSexUnlocker
             public Button buttonLoad;
             public CharaFileSort charaFileSort;
         }
-        private static List<CharaListArrayObj> charaListArray = new List<CharaListArrayObj>() { new CharaListArrayObj() ,new CharaListArrayObj()};
+        private static List<CharaListArrayObj> charaListArray = new List<CharaListArrayObj>() { new CharaListArrayObj(), new CharaListArrayObj() };
+
+        //PauseCtrl(PoseCtrl), Cancel gender restrictions of pose reading
+        public static bool CheckIdentifyingCodePrefix(ref bool __result, string _path, int _sex)
+        {
+            using (FileStream fileStream = new FileStream(_path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                using (BinaryReader binaryReader = new BinaryReader(fileStream))
+                {
+                    if (string.Compare(binaryReader.ReadString(), "【pose】") != 0)
+                    {
+                        __result = false;
+                        return false;
+                    }
+                    binaryReader.ReadInt32();
+                }
+            }
+            __result = true;
+            return false;
+        }
 
         //Get CharaList filesort and button on the left
         public static void InitCharaListPostfix(object __instance)
@@ -46,7 +74,7 @@ namespace KK_StudioCharaLoadSexUnlocker
                 Logger.Log(LogLevel.Error, "[KK_SCLSU] Get button FAILED");
             }
         }
-        
+
         //Work when change button clicked
         public static bool ChangeCharaPrefix(object __instance)
         {
@@ -59,7 +87,6 @@ namespace KK_StudioCharaLoadSexUnlocker
             int num = array.Length;
             for (int i = 0; i < num; i++)
             {
-                (array[i].objectInfo as OICharInfo).SetPrivateProperty("sex", sex);
                 array[i].ChangeChara(charaListObject.charaFileSort.selectPath);
             }
 
@@ -122,6 +149,7 @@ namespace KK_StudioCharaLoadSexUnlocker
             if (charaListObject.charaFileSort.select != -1)
             {
                 charaListObject.buttonChange.interactable = true;
+
             }
             return false;
         }
@@ -166,5 +194,32 @@ namespace KK_StudioCharaLoadSexUnlocker
             }
             return false;
         }
-    }
+    
+        //Load all the male as female
+        public static bool LoadCharaMalePrefix(CharaList __instance)
+        {
+
+            Singleton<Studio.Studio>.Instance.AddFemale(charaListArray[0].charaFileSort.selectPath);
+            return false;
+        }
+
+        public static bool LoadChildPrefix(ObjectInfo _child, ObjectCtrlInfo _parent = null, TreeNodeObject _parentNode = null)
+        {
+            if (_child.kind == 0)
+            {
+                OICharInfo oicharInfo = _child as OICharInfo;
+                AddObjectFemale.Load(oicharInfo, _parent, _parentNode);
+                return false;
+            }
+            return true;
+        }
+
+        public static void SetParameterBytesPostfix(ChaFile __instance, byte[] data)
+        {
+            ChaFileParameter chaFileParameter = MessagePackSerializer.Deserialize<ChaFileParameter>(data);
+            chaFileParameter.sex = 1;
+            __instance.parameter.Copy(chaFileParameter);
+            //Logger.Log(LogLevel.Debug, "[KK_SCLSU] Set Sex: "+chaFileParameter.sex);
+            return;
+        }}
 }

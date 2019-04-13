@@ -56,6 +56,16 @@ namespace Extension
             propertyInfo = self.GetType().GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.GetProperty);
             propertyInfo.SetValue(self, value, null);
         }
+        public static object GetPrivateProperty(this object self, string name)
+        {
+            PropertyInfo propertyInfo;
+            propertyInfo = self.GetType().GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.GetProperty);
+            return propertyInfo.GetValue(self, null);
+        }
+        public static object CallPrivate(this object self, string name, params object[] p)
+        {
+            return self.GetType().GetMethod(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy).Invoke(self, p);
+        }
         public static bool CheckRequiredPlugin(BaseUnityPlugin origin, string guid)
         {
             var target = BepInEx.Bootstrap.Chainloader.Plugins
