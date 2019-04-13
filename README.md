@@ -12,7 +12,7 @@ KCOX/ABMX支援動態載入依賴，意即**無論有無KCOX/KKABMX插件者都�
 ![image](https://github.com/jim60105/KK/raw/master/demo/demo2.gif)<br>
 
 讓Studio角色替換支援跨性別替換<br>
-<font color="red">警語:<font>
+<font color="red">**警語**:<font><br>
 1.所有角色將以女性載入<br>
 2.此插件所產生之存檔，所有角色皆會以女性存檔<br>
 3.POSE解鎖性別限制，男女都可讀取，寫入以女性寫入<br>
