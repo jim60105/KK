@@ -39,6 +39,17 @@ namespace Extension
             }
             return info.GetValue(self);
         }
+        public static object[] GetPrivates(this object self)
+        {
+            FieldInfo[] infos;
+            List<object> resultList = new List<object>();
+            infos = self.GetType().GetFields();
+            foreach(FieldInfo info in infos)
+            {
+                resultList.Add(info.GetValue(self));
+            }
+            return resultList.ToArray();
+        }
         public static void SetPrivate(this object self, string name, object value)
         {
             FieldKey fieldKey = new FieldKey(self.GetType(), name);
