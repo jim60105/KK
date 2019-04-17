@@ -1,6 +1,8 @@
 ﻿using BepInEx.Logging;
 using Extension;
 using Harmony;
+using Manager;
+using MessagePack;
 using Studio;
 using System;
 using System.Collections.Generic;
@@ -8,13 +10,9 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using UniRx;
-using UnityEngine.UI;
 using UnityEngine;
+using UnityEngine.UI;
 using Logger = BepInEx.Logger;
-using Manager;
-using MessagePack;
-
-using System.Reflection;
 
 namespace KK_StudioCharaLoadSexUnlocker
 {
@@ -36,8 +34,163 @@ namespace KK_StudioCharaLoadSexUnlocker
             harmony.Patch(typeof(MPCharCtrl).GetNestedType("StateInfo", BindingFlags.NonPublic).GetMethod("OnValueChangedSimple", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(OnValueChangedSimplePostfix), null), null);
             harmony.Patch(typeof(MPCharCtrl).GetNestedType("StateInfo", BindingFlags.NonPublic).GetMethod("OnValueChangeSimpleColor", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(OnValueChangeSimpleColorPostfix), null), null);
             harmony.Patch(typeof(MPCharCtrl).GetNestedType("OtherInfo", BindingFlags.Public).GetMethod("UpdateInfo", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(UpdateInfoPostfix), null), null);
+            harmony.Patch(typeof(AddObjectFemale).GetMethod("Add", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy|BindingFlags.Static),null, new HarmonyMethod(typeof(Patches), nameof(AddPostFix), new Type[] { typeof(ChaFileStatus)}), null);
+            //harmony.Patch(typeof(ChaControl).GetMethod("LoadAsync", AccessTools.all),null, new HarmonyMethod(typeof(Patches), nameof(LoadAsyncPostfix),null), null);
+            harmony.Patch(typeof(ChaReference).GetMethod("CreateReferenceInfo", AccessTools.all),null, new HarmonyMethod(typeof(Patches), nameof(CreateReferenceInfoPostfix),null), null);
         }
 
+        public static void CreateReferenceInfoPostfix(ChaReference __instance, ulong flags, GameObject objRef)
+        {
+            if (flags >= 1UL && flags <= 15UL && (int)(flags - 1UL)==2)
+            {
+                GameObject simpleBodyGameObject = CommonLib.LoadAsset<GameObject>("chara/oo_base.unity3d", "p_cm_body_00", true, Singleton<Character>.Instance.mainManifestName);
+                FindAssist findAssist2 = new FindAssist();
+                findAssist2.Initialize(simpleBodyGameObject.transform);
+                if (
+                    typeof(ChaReference).GetFields(AccessTools.all).Where(x => x.Name == "dictRefObj")
+                    .FirstOrDefault().GetValue(__instance)
+                    is Dictionary<ChaReference.RefObjKey, GameObject> dic
+                    )
+                {
+                    simpleBodyGameObject.isStatic = true;
+                    dic.Remove(ChaReference.RefObjKey.S_SimpleTop);
+                    dic.Remove(ChaReference.RefObjKey.S_SimpleBody);
+                    dic.Remove(ChaReference.RefObjKey.S_SimpleTongue);
+                    dic[ChaReference.RefObjKey.S_SimpleTop] = findAssist2.GetObjectFromName("n_silhouetteTop");
+                    dic[ChaReference.RefObjKey.S_SimpleBody] = findAssist2.GetObjectFromName("n_body_silhouette");
+                    dic[ChaReference.RefObjKey.S_SimpleTongue] = findAssist2.GetObjectFromName("n_tang_silhouette");
+                    simpleBodyGameObject.transform.SetParent(objRef.transform);
+
+                    HideGameObjMesh(simpleBodyGameObject, new string[] {
+                        "o_body_a",
+                        "o_nip",
+                        "o_tang",
+                        "n_dankon",
+                        "o_mnpa",
+                        "o_mnpb",
+                        "n_mnpb",
+                        "o_gomu",
+                    });
+
+                    return;
+                }
+            }
+        }
+
+        private static Dictionary<string, GameObject> goList = new Dictionary<string, GameObject>();
+        private static void HideGameObjMesh(GameObject go, string[] mrNameList)
+        {
+            FindAll(go.transform);
+            foreach (string st in mrNameList)
+            {
+                if (goList.ContainsKey(st))
+                {
+                    //Logger.Log(LogLevel.Debug, "[KK_SCLSU] Hide GameObj Name: " + st);
+                    GameObject g = null;
+                    if (goList.TryGetValue(st, out g))
+                    {
+                            g.SetActive(false);
+                    }
+                    else
+                    {
+                        //Logger.Log(LogLevel.Error, "[KK_SCLSU] g NotGet: " + st);
+                    }
+                }else
+                {
+                    //Logger.Log(LogLevel.Error, "[KK_SCLSU] Hide Mesh Name FAILED: " + st);
+                }
+            }
+        }
+        private static void FindAll(Transform trf)
+        {
+            if (!goList.ContainsKey(trf.name))
+            {
+                goList[trf.name] = trf.gameObject;
+            }
+            for (int i = 0; i < trf.childCount; i++)
+            {
+                FindAll(trf.GetChild(i));
+            }
+        }
+
+        //public static void LoadAsyncPostfix(ChaControl __instance)
+        //{
+        //    ((ChaInfo)__instance).SetPrivateProperty("loadEnd", false);
+
+        //    string mainManifestName = Singleton<Character>.Instance.mainManifestName;
+        //    string assetBundleName3 = "chara/oo_base.unity3d";
+        //    string assetName3Simple = (!__instance.hiPoly) ? "p_cm_body_00_low" : "p_cm_body_00";
+        //    GameObject simpleBodyGameObject = CommonLib.LoadAsset<GameObject>(assetBundleName3, assetName3Simple, true, mainManifestName);
+        //    //Singleton<Character>.Instance.AddLoadAssetBundle(assetBundleName3, mainManifestName);
+        //    if (simpleBodyGameObject)
+        //    {
+        //        bool flag = false;
+        //        if (
+        //            typeof(ChaReference).GetFields(AccessTools.all).Where(x => x.Name == "dictRefObj")
+        //            .FirstOrDefault().GetValue(__instance)
+        //            is Dictionary<ChaReference.RefObjKey, GameObject> dic
+        //            )
+        //        {
+        //            dic.Remove(ChaReference.RefObjKey.S_SimpleTop);
+        //            dic.Remove(ChaReference.RefObjKey.S_SimpleBody);
+        //            dic.Remove(ChaReference.RefObjKey.S_SimpleTongue);
+
+        //            FindAssist findAssist = new FindAssist();
+        //            findAssist.Initialize(simpleBodyGameObject.transform);
+
+        //            dic[ChaReference.RefObjKey.S_SimpleTop] = findAssist.GetObjectFromName("n_silhouetteTop");
+        //            dic[ChaReference.RefObjKey.S_SimpleBody] = findAssist.GetObjectFromName("n_body_silhouette");
+        //            dic[ChaReference.RefObjKey.S_SimpleTongue] = findAssist.GetObjectFromName("n_tang_silhouette");
+        //            Logger.Log(LogLevel.Debug, "[KK_SCLSU] FINISH!!!!!!");
+        //            flag = true;
+        //        }
+
+        //        if (!flag)
+        //        {
+        //            Logger.Log(LogLevel.Error, "[KK_SCLSU] Set Simple Renderer FAILED");
+        //            GameObject.Destroy(simpleBodyGameObject);
+        //            return;
+        //        }
+        //        GameObject referenceInfo5 = ((ChaReference)__instance).GetReferenceInfo(ChaReference.RefObjKey.S_SimpleBody);
+        //        if (referenceInfo5)
+        //        {
+        //            ((ChaInfo)__instance).SetPrivateProperty("rendSimpleBody", referenceInfo5.GetComponent<Renderer>());
+        //        }
+        //        GameObject referenceInfo6 = ((ChaReference)__instance).GetReferenceInfo(ChaReference.RefObjKey.S_SimpleTongue);
+        //        if (referenceInfo6)
+        //        {
+        //            ((ChaInfo)__instance).SetPrivateProperty("rendSimpleTongue", referenceInfo6.GetComponent<Renderer>());
+        //        }
+        //        var root = __instance.objRoot;
+        //        Logger.Log(LogLevel.Debug, "[KK_SCLSU] Flag2");
+        //        simpleBodyGameObject.transform.SetParent(root.transform, false);
+        //        Logger.Log(LogLevel.Debug, "[KK_SCLSU] Flag1");
+        //    }
+
+        //    if (Singleton<Character>.Instance.enableCharaLoadGCClear)
+        //    {
+        //        Resources.UnloadUnusedAssets();
+        //        GC.Collect();
+        //    }
+        //    ((ChaInfo)__instance).SetPrivateProperty("loadEnd", true);
+        //    return;
+        //}
+
+        //public static bool ReplaceReferenceInfoSimple(object instance, GameObject objRef)
+        //{
+        //    //Release
+
+        //    return false;
+        //}
+
+        private static void AddPostFix(ChaControl _female, OICharInfo _info, ObjectCtrlInfo _parent, TreeNodeObject _parentNode, bool _addInfo, int _initialPosition, ref OCICharFemale __result, ChaFileStatus ___chaFileStatus)
+        {
+            Logger.Log(LogLevel.Debug, "[KK_SCLSU] Add Patch Start");
+            __result.SetVisibleSimple(_info.visibleSimple);
+            __result.SetSimpleColor(_info.simpleColor);
+            AddObjectAssist.UpdateState(__result, ___chaFileStatus);
+            return;
+        }
 
         private class CharaListArrayObj
         {
@@ -234,9 +387,8 @@ namespace KK_StudioCharaLoadSexUnlocker
         public static void UpdateInfoPostfix(MPCharCtrl.OtherInfo __instance, OCIChar _char)
         {
             Logger.Log(LogLevel.Debug, "[KK_SCLSU] Info Update start");
-            //StateInfoType.SetType(typeof(MPCharCtrl).GetNestedType("StateInfo", BindingFlags.NonPublic));
             FieldInfo[] fieldInfo = __instance.GetType().GetFields();
-            foreach(var fi in fieldInfo)
+            foreach (var fi in fieldInfo)
             {
                 //Logger.Log(LogLevel.Debug, "[KK_SCLSU] Name: " + fi.Name);
                 //Logger.Log(LogLevel.Debug, "[KK_SCLSU] FieldType: " + fi.FieldType);
@@ -262,7 +414,7 @@ namespace KK_StudioCharaLoadSexUnlocker
                 }
             }
             MethodInfo methodInfo = __instance.GetType().GetMethod("SetSimpleColor");
-            methodInfo.Invoke(__instance,new object[] { _char.oiCharInfo.simpleColor });
+            methodInfo.Invoke(__instance, new object[] { _char.oiCharInfo.simpleColor });
             ociChar = _char;
         }
 
@@ -277,21 +429,50 @@ namespace KK_StudioCharaLoadSexUnlocker
             ociChar.oiCharInfo.visibleSimple = _value;
             //Logger.Log(LogLevel.Debug, "[KK_SCLSU] Flag3");
             ociChar.charInfo.fileStatus.visibleSimple = _value;
-            Logger.Log(LogLevel.Debug, "[KK_SCLSU] Set Visible Simple:"+ ociChar.oiCharInfo.visibleSimple );
+            Logger.Log(LogLevel.Debug, "[KK_SCLSU] Set Visible Simple:" + ociChar.oiCharInfo.visibleSimple);
         }
 
         public static void OnValueChangeSimpleColorPostfix(MPCharCtrl __instance, Color _color)
         {
             //base.ociChar.SetSimpleColor(_color);
-            ociChar.oiCharInfo.simpleColor = _color;
+            //ociChar.oiCharInfo.simpleColor = _color;
             ociChar.charInfo.ChangeSimpleBodyColor(_color);
-            Logger.Log(LogLevel.Debug, "[KK_SCLSU] Set Simple Color:"+ ociChar.oiCharInfo.simpleColor.ToString() );
+            ChangeSimpleBodyColorPrefix(_color);
+            Logger.Log(LogLevel.Debug, "[KK_SCLSU] Set Simple Color:" + ociChar.oiCharInfo.simpleColor.ToString());
 
             //this.otherInfo.SetSimpleColor(_color);
             if (null != colorBtn)
             {
                 colorBtn.buttons[0].image.color = _color;
             }
+        }
+
+        public static bool ChangeSimpleBodyColorPrefix(Color color)
+        {
+            ociChar.charInfo.fileStatus.simpleColor = color;
+            if (ociChar.charInfo.rendSimpleBody)
+            {
+                Material material = ociChar.charInfo.rendSimpleBody.material;
+                if (material)
+                {
+                    material.SetColor(ChaShader._Color, color);
+                    Logger.Log(LogLevel.Debug, "[KK_SCLSU] Set Body Simple Color:" + color);
+                }
+            }
+            else
+            {
+                Logger.Log(LogLevel.Debug, "[KK_SCLSU] No Simple Body Rendered");
+            }
+            if (ociChar.charInfo.rendSimpleTongue)
+            {
+                Material material2 = ociChar.charInfo.rendSimpleTongue.material;
+                if (material2)
+                {
+                    material2.SetColor(ChaShader._Color, color);
+                    Logger.Log(LogLevel.Debug, "[KK_SCLSU] Set Tongue Simple Color:" + color);
+                }
+            }
+            return false;
         }
     }
 }
