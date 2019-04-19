@@ -29,7 +29,7 @@ BepInEx v4.1.1<br>
 # 安裝方式
 將KK_StudioCoordinateLoadOption.dll放進BepInEx資料夾<br>
 將KK_StudioAllGirlsPlugin.dll放進BepInEx資料夾<br>
-將KK_KK_StudioSimpleColorOnGirls.dll放進BepInEx資料夾<br>
+將KK_StudioSimpleColorOnGirls.dll放進BepInEx資料夾<br>
 
 # 下載位置
 [Latest Release](https://github.com/jim60105/KK/releases "Latest Release")
