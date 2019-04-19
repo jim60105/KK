@@ -32,6 +32,7 @@ namespace KK_StudioAllGirlsPlugin
             harmony.Patch(typeof(AddObjectAssist).GetMethod("LoadChild", new Type[] { typeof(ObjectInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject) }), new HarmonyMethod(typeof(Patches), nameof(LoadChildPrefix), null), null, null);
             harmony.Patch(typeof(ChaFile).GetMethod("SetParameterBytes", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(SetParameterBytesPostfix), null), null);
             harmony.Patch(typeof(AddObjectFemale).GetMethod("Add", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy|BindingFlags.Static),null, new HarmonyMethod(typeof(Patches), nameof(AddPostFix), new Type[] { typeof(ChaFileStatus)}), null);
+            harmony.Patch(typeof(MPCharCtrl).GetNestedType("OtherInfo", BindingFlags.Public).GetMethod("UpdateInfo", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(UpdateInfoPostfix), null), null);
         }
 
         private class CharaListArrayObj
@@ -71,7 +72,7 @@ namespace KK_StudioAllGirlsPlugin
             charaListObject.charaFileSort = (CharaFileSort)charaList.GetPrivate("charaFileSort");
             if (null == charaListObject.buttonChange || null == charaListObject.buttonLoad || null == charaListObject.charaFileSort)
             {
-                Logger.Log(LogLevel.Error, "[KK_SCLSU] Get button FAILED");
+                Logger.Log(LogLevel.Error, "[KK_SAGP] Get button FAILED");
             }
         }
 
@@ -123,7 +124,7 @@ namespace KK_StudioAllGirlsPlugin
 
             if (null == charaListObject.buttonChange || null == charaListObject.charaFileSort)
             {
-                Logger.Log(LogLevel.Error, "[KK_SCLSU] Get instance FAILED");
+                Logger.Log(LogLevel.Error, "[KK_SAGP] Get instance FAILED");
                 return true;
             }
             if (_node == null)
@@ -219,17 +220,43 @@ namespace KK_StudioAllGirlsPlugin
             ChaFileParameter chaFileParameter = MessagePackSerializer.Deserialize<ChaFileParameter>(data);
             chaFileParameter.sex = 1;
             __instance.parameter.Copy(chaFileParameter);
-            //Logger.Log(LogLevel.Debug, "[KK_SCLSU] Set Sex: "+chaFileParameter.sex);
+            //Logger.Log(LogLevel.Debug, "[KK_SAGP] Set Sex: "+chaFileParameter.sex);
             return;
         }
        
         private static void AddPostFix(ChaControl _female, OICharInfo _info, ObjectCtrlInfo _parent, TreeNodeObject _parentNode, bool _addInfo, int _initialPosition, ref OCICharFemale __result, ChaFileStatus ___chaFileStatus)
         {
-            Logger.Log(LogLevel.Debug, "[KK_SCLSU] Add Patch Start");
+            Logger.Log(LogLevel.Debug, "[KK_SAGP] Add Patch Start");
             __result.SetVisibleSimple(_info.visibleSimple);
             __result.SetSimpleColor(_info.simpleColor);
+            //__result.charInfo.hideMoz = false;
             AddObjectAssist.UpdateState(__result, ___chaFileStatus);
             return;
+        }
+
+        public static void UpdateInfoPostfix(MPCharCtrl.OtherInfo __instance, OCIChar _char)
+        {
+            Logger.Log(LogLevel.Debug, "[KK_SAGP] Info Update start");
+            FieldInfo[] fieldInfo = __instance.GetType().GetFields();
+            foreach (var fi in fieldInfo)
+            {
+                //Logger.Log(LogLevel.Debug, "[KK_SSCOG] Name: " + fi.Name);
+                //Logger.Log(LogLevel.Debug, "[KK_SSCOG] FieldType: " + fi.FieldType);
+                try
+                {
+                    if (fi.Name == "nipple")
+                    {
+                        var o = (MPCharCtrl.StateSliderInfo)fi.GetValue(__instance);
+                        o.active = true;
+                        o.slider.value = _char.oiCharInfo.nipple;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logger.Log(LogLevel.Error, "[KK_SAGP] Exception: " + e);
+                    Logger.Log(LogLevel.Error, "[KK_SAGP] Exception: " + e.Message);
+                }
+            }
         }
     }
 }

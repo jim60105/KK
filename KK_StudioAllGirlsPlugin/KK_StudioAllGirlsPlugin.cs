@@ -32,7 +32,7 @@ namespace KK_StudioAllGirlsPlugin
     {
         internal const string PLUGIN_NAME = "Studio All Girls Plugin";
         internal const string GUID = "com.jim60105.kk.studioallgirlsplugin";
-        internal const string PLUGIN_VERSION = "19.04.18.0";
+        internal const string PLUGIN_VERSION = "19.04.19.0";
 
         private bool _isInit = false;
 
@@ -57,12 +57,12 @@ namespace KK_StudioAllGirlsPlugin
                     }
                     catch (Exception ex)
                     {
-                        Logger.Log(LogLevel.Debug, "[KK_SCLSU] Exception occured when patching: " + ex.ToString());
+                        Logger.Log(LogLevel.Debug, "[KK_SAGP] Exception occured when patching: " + ex.ToString());
                     }
                 }
                 //HarmonyInstance.DEBUG = true;
                 Patches.InitPatch(harmonyInstance);
-                Logger.Log(LogLevel.Debug, "[KK_SCLSU] Patch Insert Complete");
+                Logger.Log(LogLevel.Debug, "[KK_SAGP] Patch Insert Complete");
             }
         }
 
