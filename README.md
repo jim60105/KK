@@ -8,7 +8,7 @@ KCOX/ABMX支援動態載入依賴，意即**無論有無KCOX/ABMX插件者都可
 # Studio All Girls Plugin
 ![image](https://github.com/jim60105/KK/raw/master/demo/demo2.gif)<br>
 
-這會將Sutio SceneData內所有男性以女性讀入<br>
+這會將Studio SceneData內所有男性以女性讀入<br>
 臉部不變，身體依照其數據女體化<br>
 目的是實現跨性別替換角色功能<br>
 
