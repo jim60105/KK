@@ -31,10 +31,8 @@ namespace KK_StudioAllGirlsPlugin
             harmony.Patch(typeof(CharaList).GetMethod("LoadCharaMale", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(LoadCharaMalePrefix), null), null, null);
             harmony.Patch(typeof(AddObjectAssist).GetMethod("LoadChild", new Type[] { typeof(ObjectInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject) }), new HarmonyMethod(typeof(Patches), nameof(LoadChildPrefix), null), null, null);
             harmony.Patch(typeof(ChaFile).GetMethod("SetParameterBytes", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(SetParameterBytesPostfix), null), null);
-            harmony.Patch(typeof(AddObjectFemale).GetMethod("Add", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy|BindingFlags.Static),null, new HarmonyMethod(typeof(Patches), nameof(AddPostFix), new Type[] { typeof(ChaFileStatus)}), null);
             harmony.Patch(typeof(MPCharCtrl).GetNestedType("OtherInfo", BindingFlags.Public).GetMethod("UpdateInfo", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(UpdateInfoPostfix), null), null);
         }
-
         private class CharaListArrayObj
         {
             public Button buttonChange;
@@ -220,23 +218,13 @@ namespace KK_StudioAllGirlsPlugin
             ChaFileParameter chaFileParameter = MessagePackSerializer.Deserialize<ChaFileParameter>(data);
             chaFileParameter.sex = 1;
             __instance.parameter.Copy(chaFileParameter);
-            //Logger.Log(LogLevel.Debug, "[KK_SAGP] Set Sex: "+chaFileParameter.sex);
-            return;
-        }
-       
-        private static void AddPostFix(ChaControl _female, OICharInfo _info, ObjectCtrlInfo _parent, TreeNodeObject _parentNode, bool _addInfo, int _initialPosition, ref OCICharFemale __result, ChaFileStatus ___chaFileStatus)
-        {
-            Logger.Log(LogLevel.Debug, "[KK_SAGP] Add Patch Start");
-            __result.SetVisibleSimple(_info.visibleSimple);
-            __result.SetSimpleColor(_info.simpleColor);
-            //__result.charInfo.hideMoz = false;
-            AddObjectAssist.UpdateState(__result, ___chaFileStatus);
+            //Logger.Log(LogLevel.Debug, "[KK_SAGP] Set Sex: " + chaFileParameter.sex);
             return;
         }
 
+        //Active man->female's nipple slider
         public static void UpdateInfoPostfix(MPCharCtrl.OtherInfo __instance, OCIChar _char)
         {
-            Logger.Log(LogLevel.Debug, "[KK_SAGP] Info Update start");
             FieldInfo[] fieldInfo = __instance.GetType().GetFields();
             foreach (var fi in fieldInfo)
             {
@@ -257,6 +245,7 @@ namespace KK_StudioAllGirlsPlugin
                     Logger.Log(LogLevel.Error, "[KK_SAGP] Exception: " + e.Message);
                 }
             }
+            Logger.Log(LogLevel.Debug, "[KK_SAGP] Chara Status Info Updated");
         }
     }
 }

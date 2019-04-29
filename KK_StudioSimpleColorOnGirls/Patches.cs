@@ -21,6 +21,12 @@ namespace KK_StudioSimpleColorOnGirls
             harmony.Patch(typeof(MPCharCtrl).GetNestedType("StateInfo", BindingFlags.NonPublic).GetMethod("OnValueChangeSimpleColor", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(OnValueChangeSimpleColorPostfix), null), null);
             harmony.Patch(typeof(MPCharCtrl).GetNestedType("OtherInfo", BindingFlags.Public).GetMethod("UpdateInfo", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(UpdateInfoPostfix), null), null);
             harmony.Patch(typeof(ChaReference).GetMethod("CreateReferenceInfo", AccessTools.all),null, new HarmonyMethod(typeof(Patches), nameof(CreateReferenceInfoPostfix),null), null);
+            harmony.Patch(typeof(AddObjectFemale).GetMethod("Add",BindingFlags.NonPublic|BindingFlags.Static|BindingFlags.Instance|BindingFlags.FlattenHierarchy,null, new Type[] { typeof(ChaControl), typeof(OICharInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject), typeof(bool), typeof(int) },null),null, new HarmonyMethod(typeof(Patches), nameof(AddPostFix), null), null);
+            harmony.Patch(typeof(AddObjectAssist).GetMethod("UpdateState",BindingFlags.Public|BindingFlags.Static|BindingFlags.Instance|BindingFlags.FlattenHierarchy),null, new HarmonyMethod(typeof(Patches), nameof(UpdateStatePostfix), null), null);
+
+            ////For Debug Only
+            //harmony.Patch(typeof(ChaControl).GetMethod("ChangeSimpleBodyColor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), null,new HarmonyMethod(typeof(Patches), nameof(ChangeSimpleBodyColorPostfix), null), null);
+            //harmony.Patch(typeof(ChaControl).GetMethod("ChangeSimpleBodyDraw", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), null,new HarmonyMethod(typeof(Patches), nameof(ChangeSimpleBodyDrawPostfix), null), null);
         }
 
         //Copy Simple Color Functions to Female
@@ -47,6 +53,7 @@ namespace KK_StudioSimpleColorOnGirls
                     {
                         var o2 = (MPCharCtrl.StateButtonInfo)fi.GetValue(__instance);
                         o2.active = true;
+                        o2.buttons[0].image.color = _char.oiCharInfo.simpleColor;
                         colorBtn = o2;
                     }
                 }
@@ -86,7 +93,7 @@ namespace KK_StudioSimpleColorOnGirls
             }
         }
 
-        ////This function only uses on debug logging.
+        ////For Debug Only
         //public static bool ChangeSimpleBodyColorPrefix(Color color)
         //{
         //    ociChar.charInfo.fileStatus.simpleColor = color;
@@ -114,6 +121,15 @@ namespace KK_StudioSimpleColorOnGirls
         //    }
         //    return false;
         //}
+        //public static void ChangeSimpleBodyDrawPostfix(bool drawSimple)
+        //{
+        //    Logger.Log(LogLevel.Debug, "[KK_SSCOG] Change Simple visible:" + drawSimple);
+        //}
+        //public static void ChangeSimpleBodyColorPostfix(Color color)
+        //{
+        //    Logger.Log(LogLevel.Debug, "[KK_SSCOG] Change Simple Color:" + color);
+        //}
+
 
         //When loading body, also load unity gameobjects of simply body from male asset 
         public static void CreateReferenceInfoPostfix(ChaReference __instance, ulong flags, GameObject objRef)
@@ -192,6 +208,28 @@ namespace KK_StudioSimpleColorOnGirls
             {
                 FindAll(trf.GetChild(i));
             }
+        }
+
+        //Update simple color for female's add function
+        private static ChaFileStatus tempStatus = null;
+        private static void UpdateStatePostfix(ChaFileStatus _status)
+        {
+            tempStatus = _status;
+        }
+        private static void AddPostFix(ref OCICharFemale __result, OICharInfo _info)
+        {
+            __result.charInfo.fileStatus.visibleSimple = _info.visibleSimple;
+            __result.charInfo.ChangeSimpleBodyColor(_info.simpleColor);
+            if (null != tempStatus)
+            {
+                AddObjectAssist.UpdateState(__result, tempStatus);
+                Logger.Log(LogLevel.Debug, "[KK_SSCOG] Add Patch Finish");
+            }
+            else
+            {
+                Logger.Log(LogLevel.Error, "[KK_SSCOG] Update State FAILD: Can't get charFileStatus!");
+            }
+            return;
         }
     }
 }
