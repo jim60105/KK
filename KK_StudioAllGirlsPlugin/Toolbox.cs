@@ -1,4 +1,5 @@
 ﻿using BepInEx;
+using BepInEx.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,22 +40,38 @@ namespace Extension
             }
             return info.GetValue(self);
         }
-        public static void SetPrivate(this object self, string name, object value)
+        public static bool SetPrivate(this object self, string name, object value)
         {
             FieldKey fieldKey = new FieldKey(self.GetType(), name);
             FieldInfo field;
             if (!_fieldCache.TryGetValue(fieldKey, out field))
             {
                 field = fieldKey.type.GetField(fieldKey.name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
-                _fieldCache.Add(fieldKey, field);
+                if (null != field)
+                {
+                    _fieldCache.Add(fieldKey, field);
+                    field.SetValue(self, value);
+                    return true;
+                }
+                else
+                {
+                    Logger.Log(LogLevel.Error, "[KK_SAGP] Set Field Not Found: " + name);
+                }
             }
-            field.SetValue(self, value);
+            return false;
         }
         public static void SetPrivateProperty(this object self, string name, object value)
         {
             PropertyInfo propertyInfo;
             propertyInfo = self.GetType().GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.GetProperty);
-            propertyInfo.SetValue(self, value, null);
+            if (null != propertyInfo)
+            {
+                propertyInfo.SetValue(self, value, null);
+            }
+            else
+            {
+                Logger.Log(LogLevel.Error, "[KK_SAGP] Set Property Not Found: " + name);
+            }
         }
         public static object GetPrivateProperty(this object self, string name)
         {

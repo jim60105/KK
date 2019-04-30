@@ -32,7 +32,9 @@ namespace KK_StudioAllGirlsPlugin
             harmony.Patch(typeof(AddObjectAssist).GetMethod("LoadChild", new Type[] { typeof(ObjectInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject) }), new HarmonyMethod(typeof(Patches), nameof(LoadChildPrefix), null), null, null);
             harmony.Patch(typeof(ChaFile).GetMethod("SetParameterBytes", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(SetParameterBytesPostfix), null), null);
             harmony.Patch(typeof(MPCharCtrl).GetNestedType("OtherInfo", BindingFlags.Public).GetMethod("UpdateInfo", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(UpdateInfoPostfix), null), null);
+            harmony.Patch(typeof(PauseCtrl).GetNestedType("FileInfo", BindingFlags.Public).GetMethod("Apply", AccessTools.all), new HarmonyMethod(typeof(Patches), nameof(ApplyPrefix), null), null, null);
         }
+
         private class CharaListArrayObj
         {
             public Button buttonChange;
@@ -57,6 +59,36 @@ namespace KK_StudioAllGirlsPlugin
                 }
             }
             __result = true;
+            return false;
+        }
+
+        //Fix Pose Loading FK bone not found Error
+        private static bool ApplyPrefix(OCIChar _char,PauseCtrl.FileInfo __instance)
+        {
+            _char.LoadAnime(__instance.group, __instance.category, __instance.no, __instance.normalizedTime);
+            for (int i = 0; i < __instance.activeIK.Length; i++)
+            {
+                _char.ActiveIK((OIBoneInfo.BoneGroup)(1 << i), __instance.activeIK[i], false);
+            }
+            _char.ActiveKinematicMode(OICharInfo.KinematicMode.IK, __instance.enableIK, true);
+            foreach (KeyValuePair<int, ChangeAmount> keyValuePair in __instance.dicIK)
+            {
+                _char.oiCharInfo.ikTarget[keyValuePair.Key].changeAmount.Copy(keyValuePair.Value, true, true, true);
+            }
+            for (int j = 0; j < __instance.activeFK.Length; j++)
+            {
+                _char.ActiveFK(FKCtrl.parts[j], __instance.activeFK[j], false);
+            }
+            _char.ActiveKinematicMode(OICharInfo.KinematicMode.FK, __instance.enableFK, true);
+            foreach (KeyValuePair<int, ChangeAmount> keyValuePair2 in __instance.dicFK)
+            {
+                _char.oiCharInfo.bones.TryGetValue(keyValuePair2.Key, out var value);
+                value?.changeAmount.Copy(keyValuePair2.Value, true, true, true);
+            }
+            for (int k = 0; k < __instance.expression.Length; k++)
+            {
+                _char.EnableExpressionCategory(k, __instance.expression[k]);
+            }
             return false;
         }
 
@@ -217,6 +249,10 @@ namespace KK_StudioAllGirlsPlugin
         {
             ChaFileParameter chaFileParameter = MessagePackSerializer.Deserialize<ChaFileParameter>(data);
             chaFileParameter.sex = 1;
+
+            if (null != typeof(ChaFileParameter).GetProperty("exType")){
+                chaFileParameter.SetPrivateProperty("exType", 0);
+            }
             __instance.parameter.Copy(chaFileParameter);
             //Logger.Log(LogLevel.Debug, "[KK_SAGP] Set Sex: " + chaFileParameter.sex);
             return;
