@@ -20,9 +20,9 @@ namespace KK_StudioSimpleColorOnGirls
             harmony.Patch(typeof(MPCharCtrl).GetNestedType("StateInfo", BindingFlags.NonPublic).GetMethod("OnValueChangedSimple", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(OnValueChangedSimplePostfix), null), null);
             harmony.Patch(typeof(MPCharCtrl).GetNestedType("StateInfo", BindingFlags.NonPublic).GetMethod("OnValueChangeSimpleColor", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(OnValueChangeSimpleColorPostfix), null), null);
             harmony.Patch(typeof(MPCharCtrl).GetNestedType("OtherInfo", BindingFlags.Public).GetMethod("UpdateInfo", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(UpdateInfoPostfix), null), null);
-            harmony.Patch(typeof(ChaReference).GetMethod("CreateReferenceInfo", AccessTools.all),null, new HarmonyMethod(typeof(Patches), nameof(CreateReferenceInfoPostfix),null), null);
-            harmony.Patch(typeof(AddObjectFemale).GetMethod("Add",BindingFlags.NonPublic|BindingFlags.Static|BindingFlags.Instance|BindingFlags.FlattenHierarchy,null, new Type[] { typeof(ChaControl), typeof(OICharInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject), typeof(bool), typeof(int) },null),null, new HarmonyMethod(typeof(Patches), nameof(AddPostFix), null), null);
-            harmony.Patch(typeof(AddObjectAssist).GetMethod("UpdateState",BindingFlags.Public|BindingFlags.Static|BindingFlags.Instance|BindingFlags.FlattenHierarchy),null, new HarmonyMethod(typeof(Patches), nameof(UpdateStatePostfix), null), null);
+            harmony.Patch(typeof(ChaReference).GetMethod("CreateReferenceInfo", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(CreateReferenceInfoPostfix), null), null);
+            harmony.Patch(typeof(AddObjectFemale).GetMethod("Add", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.FlattenHierarchy, null, new Type[] { typeof(ChaControl), typeof(OICharInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject), typeof(bool), typeof(int) }, null), null, new HarmonyMethod(typeof(Patches), nameof(AddPostFix), null), null);
+            harmony.Patch(typeof(AddObjectAssist).GetMethod("UpdateState", BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.FlattenHierarchy), null, new HarmonyMethod(typeof(Patches), nameof(UpdateStatePostfix), null), null);
 
             ////For Debug Only
             //harmony.Patch(typeof(ChaControl).GetMethod("ChangeSimpleBodyColor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), null,new HarmonyMethod(typeof(Patches), nameof(ChangeSimpleBodyColorPostfix), null), null);
@@ -35,7 +35,6 @@ namespace KK_StudioSimpleColorOnGirls
 
         public static void UpdateInfoPostfix(MPCharCtrl.OtherInfo __instance, OCIChar _char)
         {
-            Logger.Log(LogLevel.Debug, "[KK_SSCOG] Info Update start");
             FieldInfo[] fieldInfo = __instance.GetType().GetFields();
             foreach (var fi in fieldInfo)
             {
@@ -66,6 +65,7 @@ namespace KK_StudioSimpleColorOnGirls
             MethodInfo methodInfo = __instance.GetType().GetMethod("SetSimpleColor");
             methodInfo.Invoke(__instance, new object[] { _char.oiCharInfo.simpleColor });
             ociChar = _char;
+            Logger.Log(LogLevel.Debug, "[KK_SSCOG] Chara Status Info Updated");
         }
 
         public static void OnValueChangedSimplePostfix(object __instance, bool _value)
@@ -146,6 +146,12 @@ namespace KK_StudioSimpleColorOnGirls
                     )
                 {
                     simpleBodyGameObject.isStatic = true;
+                    dic.TryGetValue(ChaReference.RefObjKey.S_SimpleTop, out GameObject go);
+                    go?.SetActive(false);
+                    dic.TryGetValue(ChaReference.RefObjKey.S_SimpleBody, out go);
+                    go?.SetActive(false);
+                    dic.TryGetValue(ChaReference.RefObjKey.S_SimpleTongue, out go);
+                    go?.SetActive(false);
                     dic.Remove(ChaReference.RefObjKey.S_SimpleTop);
                     dic.Remove(ChaReference.RefObjKey.S_SimpleBody);
                     dic.Remove(ChaReference.RefObjKey.S_SimpleTongue);
@@ -163,7 +169,7 @@ namespace KK_StudioSimpleColorOnGirls
                         "o_mnpa",
                         "o_mnpb",
                         "n_mnpb",
-                        "o_gomu",
+                        "o_gomu"
                     });
 
                     return;
@@ -193,7 +199,7 @@ namespace KK_StudioSimpleColorOnGirls
                 }
                 //else
                 //{
-                //    Logger.Log(LogLevel.Error, "[KK_SSCOG] Hide Mesh Name FAILED: " + st);
+                //    Logger.Log(LogLevel.Debug, "[KK_SSCOG] Hide Mesh But Not found: " + st);
                 //}
             }
         }

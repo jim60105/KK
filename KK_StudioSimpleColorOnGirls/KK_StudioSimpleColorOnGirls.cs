@@ -32,7 +32,7 @@ namespace KK_StudioSimpleColorOnGirls
     {
         internal const string PLUGIN_NAME = "Studio Simple Color On Girls";
         internal const string GUID = "com.jim60105.kk.studiosimplecolorongirls";
-        internal const string PLUGIN_VERSION = "19.04.30.0";
+        internal const string PLUGIN_VERSION = "19.05.01.2";
 
         private bool _isInit = false;
 
@@ -61,6 +61,15 @@ namespace KK_StudioSimpleColorOnGirls
                     }
                 }
                 //HarmonyInstance.DEBUG = true;
+
+                //Workaround for EC Yoyaku Build
+                if (null == typeof(ChaFileParameter).GetProperty("exType"))
+                {
+                    Logger.Log(LogLevel.Message, "[KK_StudioSimpleColorOnGirls] This Plugin is not working without EC yoyaku tokuten, which released at 2019/04/26.");
+                    Logger.Log(LogLevel.Message, "[KK_StudioSimpleColorOnGirls] Please use the other older versions of this plugin.");
+                    return;
+                }
+
                 Patches.InitPatch(harmonyInstance);
                 Logger.Log(LogLevel.Debug, "[KK_SSCOG] Patch Insert Complete");
             }
