@@ -6,7 +6,7 @@
 目前確定支援Plugin:<br>
 - Koikatu Overlay Mods v4.2.1
 - Koikatu ABMX V3.1
-- Koikatu More_Accessories_v1.0.4
+- Koikatu More Accessories v1.0.4
 
 以上支援動態載入依賴，意即**無論有無這些插件者都可適用**<br>
 
