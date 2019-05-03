@@ -3,20 +3,25 @@
 
 在Studio的服裝卡讀取那裡，多一個選項盤讓你可以選擇性載入服裝<br>
 遇到任何問題，**請將選項盤全勾即會調用遊戲原始程式碼**<br>
-KCOX/ABMX支援動態載入依賴，意即**無論有無KCOX/ABMX插件者都可適用**<br>
+目前確定支援Plugin:<br>
+- Koikatu Overlay Mods v4.2.1
+- Koikatu ABMX V3.1
+- Koikatu More_Accessories_v1.0.4
+
+以上支援動態載入依賴，意即**無論有無這些插件者都可適用**<br>
 
 # Studio All Girls Plugin
 ![image](https://github.com/jim60105/KK/raw/master/demo/demo2.gif)<br>
 
 這會將Studio SceneData內所有男性以女性讀入<br>
 臉部不變，身體依照其數據女體化<br>
-以此方法可以實現跨性別替換角色功能<br>
+以此插件可以實現跨性別替換角色功能<br>
 應用: 讀取一般的男女Scene，將男角替換成女角，變成百合Scene<br>
 
-### <font color="red">**警語**:<font><br>
-1.所有角色將以女性載入<br>
-2.此插件所產生之存檔，所有角色皆會以女性存檔<br>
-3.POSE解鎖性別限制，男女都可讀取，寫入以女性寫入<br>
+### **警語**:<br>
+1. 所有角色將以女性載入<br>
+1. 此插件所產生之存檔，所有角色皆會以女性存檔<br>
+1. POSE解鎖性別限制，男女都可讀取，寫入以女性寫入<br>
 
 # Studio Simple Color On Girls
 ![image](https://github.com/jim60105/KK/raw/master/demo/demo3.gif)<br>
@@ -28,9 +33,10 @@ KCOX/ABMX支援動態載入依賴，意即**無論有無KCOX/ABMX插件者都可
 BepInEx v4.1.1<br>
 
 # 安裝方式
-將KK_StudioCoordinateLoadOption.dll放進BepInEx資料夾<br>
-將KK_StudioAllGirlsPlugin.dll放進BepInEx資料夾<br>
-將KK_StudioSimpleColorOnGirls.dll放進BepInEx資料夾<br>
+- 將KK_StudioCoordinateLoadOption.dll放進BepInEx資料夾<br>
+- 將KK_StudioAllGirlsPlugin.dll放進BepInEx資料夾<br>
+- 將KK_StudioSimpleColorOnGirls.dll放進BepInEx資料夾<br>
+(OLD、NEW分別對應EC_Yoyaku前、後的版本)
 
 # 下載位置
-[Latest Release](https://github.com/jim60105/KK/releases "Latest Release")
+[Latest Release](https://github.com/jim60105/KK/releases/latest "Latest Release")
