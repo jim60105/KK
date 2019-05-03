@@ -14,7 +14,7 @@ using Logger = BepInEx.Logger;
 
 namespace KK_StudioCoordinateLoadOption
 {
-    internal class CostumeInfo_Patches
+    internal class Patches
     {
         delegate void callback();
         private static CharaFileSort charaFileSort;
@@ -47,15 +47,20 @@ namespace KK_StudioCoordinateLoadOption
 
         internal static void InitPatch(HarmonyInstance harmony)
         {
-            harmony.Patch(typeof(MPCharCtrl).GetMethod("OnClickRoot", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), null, new HarmonyMethod(typeof(CostumeInfo_Patches), "OnClickRootPostfix", null), null);
-            harmony.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("Init", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), null, new HarmonyMethod(typeof(CostumeInfo_Patches), "InitPostfix", null), null);
-            harmony.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("OnClickLoad", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(CostumeInfo_Patches), "OnClickLoadPrefix", null), new HarmonyMethod(typeof(CostumeInfo_Patches), "OnClickLoadPostfix", null), null);
+            harmony.Patch(typeof(MPCharCtrl).GetMethod("OnClickRoot", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), null, new HarmonyMethod(typeof(Patches), "OnClickRootPostfix", null), null);
+            harmony.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("Init", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), null, new HarmonyMethod(typeof(Patches), "InitPostfix", null), null);
+            harmony.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("OnClickLoad", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), "OnClickLoadPrefix", null), new HarmonyMethod(typeof(Patches), "OnClickLoadPostfix", null), null);
+
+            if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist)
+            {
+                MoreAccessories_Support.InitPatch(harmony);
+            }
             Logger.Log(LogLevel.Debug, "[KK_SCLO] Patch Insert Complete");
         }
 
         private static void InitPostfix(object __instance)
         {
-            Logger.Log(LogLevel.Debug, "[KK_SCLO] Init Patch");
+            //Logger.Log(LogLevel.Debug, "[KK_SCLO] Init Patch");
             Array ClothesKindArray = Enum.GetValues(typeof(ChaFileDefine.ClothesKind));
 
             //Draw Panel and ButtonAll
@@ -107,6 +112,7 @@ namespace KK_StudioCoordinateLoadOption
                     }
                 }
             });
+            Logger.Log(LogLevel.Debug, "[KK_SCLO] Draw Panel Finish");
         }
 
         public static void OnClickRootPostfix(MPCharCtrl __instance, int _idx)
@@ -198,6 +204,7 @@ namespace KK_StudioCoordinateLoadOption
             for (int i = 0; i < accessories.parts.Length; i++)
             {
                 accessoriesPartsBackup[i] = accessories.parts[i];
+
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] Get original Accessory: " + accessories.parts[i].id);
             }
             Logger.Log(LogLevel.Debug, "[KK_SCLO] Get original coordinate SUCCESS");
@@ -214,7 +221,11 @@ namespace KK_StudioCoordinateLoadOption
                 ABMX_Support.BackupABMXData(chaCtrl);
             }
 
-            //Old Function:
+            //BackupMoreAccessories
+            if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist)
+            {
+                MoreAccessories_Support.CopyMoreAccessoriesData(chaCtrl.chaFile);
+            }
 
             //Get whole clothes and whole accessories
             //byte[] bytes = MessagePackSerializer.Serialize<ChaFileClothes>(chaCtrl.nowCoordinate.clothes);
@@ -229,6 +240,7 @@ namespace KK_StudioCoordinateLoadOption
             //Logger.Log(LogLevel.Debug,"[KK_SCLO] Loaded new clothes SUCCESS");
         }
 
+        //Rollback
         public static void OnClickLoadPostfix()
         {
             if (_skipFlag)
@@ -259,6 +271,7 @@ namespace KK_StudioCoordinateLoadOption
                 chaCtrl.StartCoroutine(doChange(tgl, () =>
                 {
                     doCount++;
+                    //Finish Rollback all of the clothes
                     if (doCount == toggleList.Length)
                     {
                         CleanBackup();
@@ -287,16 +300,26 @@ namespace KK_StudioCoordinateLoadOption
                     }
                     */
 
-                    //Change accessories
+                    //Rollback accessories
                     if (String.Equals(tgl.GetComponentInChildren<Text>(true).text, "accessories"))
                     {
                         Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Roll back:" + tgl.GetComponentInChildren<Text>(true).text);
+                        //Rollback MoreAccessories first
+                        if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist)
+                        {
+                            MoreAccessories_Support.RollbackMoreAccessoriesData(chaCtrl.chaFile);
+                        }
+                        //Rollback normal accessories
                         chaCtrl.nowCoordinate.accessory = new ChaFileAccessory();
                         for (int i = 0; i < accessoriesPartsBackup.Length; i++)
                         {
-                            chaCtrl.nowCoordinate.accessory.parts[i] = accessoriesPartsBackup[i];
+                            //chaCtrl.nowCoordinate.accessory.parts[i] = accessoriesPartsBackup[i];
+                            var tmp = MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(accessoriesPartsBackup[i]);
+                            chaCtrl.nowCoordinate.accessory.parts[i] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tmp);
                             chaCtrl.ChangeAccessory(i, accessoriesPartsBackup[i].type, accessoriesPartsBackup[i].id, accessoriesPartsBackup[i].parentKey, true);
                         }
+                        chaCtrl.Reload(false, true, true, true);
+                        chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
                         Callback?.Invoke();
                         yield break;
                     }
@@ -319,18 +342,20 @@ namespace KK_StudioCoordinateLoadOption
                     chaCtrl.ChangeClothes(kind, clothesIdBackup[kind], subClothesIdBackup[0], subClothesIdBackup[1], subClothesIdBackup[2], true);
                     chaCtrl.nowCoordinate.clothes.parts[kind].colorInfo = clothesColorBackup[kind];
                     Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Roll back:" + tgl.GetComponentInChildren<Text>(true).text + " / ID: " + clothesIdBackup[kind]);
+                    //Rollback KCOX
                     if (KK_StudioCoordinateLoadOption._isKCOXExist && clothesIdBackup[kind] != 0)
                     {
                         chaCtrl.Reload(false, true, true, true);
                         chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
                         KCOX_Support.RollbackOverlay(true, kind);
                     }
-                        chaCtrl.Reload(false, true, true, true);
-                        chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
+                    chaCtrl.Reload(false, true, true, true);
+                    chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
 
                     switch (tmpToggleType)
                     {
-                        case ChaFileDefine.ClothesKind.top:
+                        case ChaFileDefine.ClothesKind.top: 
+                            //Rollback SubCloth KCOX
                             if (KK_StudioCoordinateLoadOption._isKCOXExist)
                             {
                                 for (int j = 0; j < 3; j++)
@@ -340,6 +365,7 @@ namespace KK_StudioCoordinateLoadOption
                             }
                             break;
                         case ChaFileDefine.ClothesKind.bot:
+                            //Rollback ABMX if bot select
                             if (KK_StudioCoordinateLoadOption._isABMXExist)
                             {
                                 ABMX_Support.RollbackABMXBone(chaCtrl);
@@ -361,6 +387,7 @@ namespace KK_StudioCoordinateLoadOption
             subClothesIdBackup = null;
             if (KK_StudioCoordinateLoadOption._isKCOXExist) KCOX_Support.CleanKCOXBackup();
             if (KK_StudioCoordinateLoadOption._isABMXExist) ABMX_Support.CleanABMXBackup();
+            if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) MoreAccessories_Support.CleanMoreAccBackup();
             Logger.Log(LogLevel.Debug, "[KK_SCLO] Finish");
             Utils.Sound.Play(SystemSE.ok_s);
         }

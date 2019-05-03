@@ -21,14 +21,13 @@ namespace KK_StudioCoordinateLoadOption
                 var ass = Assembly.LoadFrom("BepInEx/KoiClothesOverlay.dll");
                 if (null == ass)
                 {
-                    throw new Exception("KCOX Assembly Loading FAILED");
+                    throw new Exception("[KK_SCLO] Load assembly FAILED: KCOX");
                 }
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] KCOX found");
                 return true;
             }
             catch (Exception ex)
             {
-                Logger.Log(LogLevel.Error, "[KK_SCLO] Load assembly FAILED: KCOX");
                 Logger.Log(LogLevel.Error, ex.Message);
                 return false;
             }
@@ -47,14 +46,14 @@ namespace KK_StudioCoordinateLoadOption
                 int cnt = 0;
                 for (int i = 0; i < clothes.parts.Length; i++)
                 {
-                    if (GetOverlay(CostumeInfo_Patches.MainClothesNames[i]))
+                    if (GetOverlay(Patches.MainClothesNames[i]))
                     {
                         cnt++;
                     }
                 }
                 for (int j = 0; j < clothes.subPartsId.Length; j++)
                 {
-                    if (GetOverlay(CostumeInfo_Patches.SubClothesNames[j]))
+                    if (GetOverlay(Patches.SubClothesNames[j]))
                     {
                         cnt++;
                     }
@@ -82,7 +81,7 @@ namespace KK_StudioCoordinateLoadOption
 
         public static void RollbackOverlay(bool main, int kind)
         {
-            string name = main ? CostumeInfo_Patches.MainClothesNames[kind] : CostumeInfo_Patches.SubClothesNames[kind];
+            string name = main ? Patches.MainClothesNames[kind] : Patches.SubClothesNames[kind];
 
             if (null != KCOXController && null != KCOXTexDataBackup)
             {

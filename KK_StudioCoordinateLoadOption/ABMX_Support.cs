@@ -25,14 +25,13 @@ namespace KK_StudioCoordinateLoadOption
                 BoneModifierDataType = Assembly.LoadFrom("BepInEx/KKABMPlugin.dll").GetType("KKABMX.Core.BoneModifierData");
                 if (BoneModifierDataType == null && BoneModifierType == null)
                 {
-                    throw new Exception("ABMX Assembly Loading FAILED");
+                    throw new Exception("[KK_SCLO] Load assembly FAILED: KKABMX");
                 }
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] KKABMX found");
                 return true;
             }
             catch (Exception ex)
             {
-                Logger.Log(LogLevel.Error, "[KK_SCLO] Load assembly FAILED: KKABMX");
                 Logger.Log(LogLevel.Error, ex.Message);
                 return false;
             }

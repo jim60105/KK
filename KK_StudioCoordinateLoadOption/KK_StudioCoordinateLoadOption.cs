@@ -32,11 +32,12 @@ namespace KK_StudioCoordinateLoadOption
     {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "19.04.01.0";
+        internal const string PLUGIN_VERSION = "19.05.03.0";
 
         private bool _isInit = false;
         public static bool _isKCOXExist = false;
         public static bool _isABMXExist = false;
+        public static bool _isMoreAccessoriesExist = false;
 
         public void OnSceneLoaded(Scene scene, LoadSceneMode sceneMode)
         {
@@ -64,7 +65,7 @@ namespace KK_StudioCoordinateLoadOption
                     }
                 }
                 //HarmonyInstance.DEBUG = true;
-                CostumeInfo_Patches.InitPatch(harmonyInstance);
+                Patches.InitPatch(harmonyInstance);
             }
         }
 
@@ -77,6 +78,7 @@ namespace KK_StudioCoordinateLoadOption
         {
             _isKCOXExist = IsPluginExist("KCOX") && KCOX_Support.LoadAssembly();
             _isABMXExist = IsPluginExist("KKABMX.Core") && ABMX_Support.LoadAssembly();
+            _isMoreAccessoriesExist = IsPluginExist("com.joan6694.illusionplugins.moreaccessories") && MoreAccessories_Support.LoadAssembly();
         }
 
         private bool IsPluginExist(string pluginName)
