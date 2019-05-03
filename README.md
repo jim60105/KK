@@ -8,15 +8,15 @@
 - Koikatu ABMX V3.1
 - Koikatu More Accessories v1.0.4
 
-以上支援動態載入依賴，意即**無論有無這些插件者都可適用**<br>
+以上支援動態載入依賴，意即**無論有無這些插件者都可相容**<br>
 
 # Studio All Girls Plugin
 ![image](https://github.com/jim60105/KK/raw/master/demo/demo2.gif)<br>
 
 這會將Studio SceneData內所有男性以女性讀入<br>
 臉部不變，身體依照其數據女體化<br>
-以此插件可以實現跨性別替換角色功能<br>
-應用: 讀取一般的男女Scene，將男角替換成女角，變成百合Scene<br>
+以此插件可以實現跨性別替換角色卡功能<br>
+例: 讀取一般的男女Scene，將男角色替換成女角色，就變成了百合Scene!<br>
 
 ### **警語**:<br>
 1. 所有角色將以女性載入<br>
