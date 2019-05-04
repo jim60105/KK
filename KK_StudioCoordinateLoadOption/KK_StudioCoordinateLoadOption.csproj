@@ -92,39 +92,9 @@
     <Compile Include="KCOX_Support.cs" />
     <Compile Include="KK_StudioCoordinateLoadOption.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Toolbox.cs" />
-    <Compile Include="UIUtility\Extensions.cs" />
-    <Compile Include="UIUtility\MovableWindow.cs" />
-    <Compile Include="UIUtility\OneTimeContentSizeFitter.cs" />
-    <Compile Include="UIUtility\OneTimeHorizontalLayoutGroup.cs" />
-    <Compile Include="UIUtility\OneTimeVerticalLayoutGroup.cs" />
-    <Compile Include="UIUtility\Properties\Resources1.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-    <Compile Include="UIUtility\UIUtility.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="UIUtility\Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources1.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <None Include="UIUtility\Resources\DefaultResources.unity3d" />
-    <None Include="UIUtility\Resources\DefaultResourcesKOI.unity3d" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="UIUtility\.gitignore" />
-    <Content Include="UIUtility\UIUtility.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="UIUtility\obj\Debug\UIUtility.csproj.CoreCompileInputs.cache" />
-    <None Include="UIUtility\obj\Debug\UIUtility.csprojAssemblyReference.cache" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="UIUtility\bin\Debug\" />
-    <Folder Include="UIUtility\LoopListView\" />
-    <Folder Include="UIUtility\obj\Debug\TempPE\" />
-  </ItemGroup>
+  <ItemGroup />
+  <Import Project="..\Extension\Extension.projitems" Label="Shared" />
+  <Import Project="..\UIUtility\UIUtility.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

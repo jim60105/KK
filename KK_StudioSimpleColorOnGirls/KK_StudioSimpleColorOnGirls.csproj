@@ -109,7 +109,7 @@
     <Compile Include="KK_StudioSimpleColorOnGirls.cs" />
     <Compile Include="Patches.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Toolbox.cs" />
   </ItemGroup>
+  <Import Project="..\Extension\Extension.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

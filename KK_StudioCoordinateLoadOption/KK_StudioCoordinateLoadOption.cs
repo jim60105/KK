@@ -83,7 +83,7 @@ namespace KK_StudioCoordinateLoadOption
 
         private bool IsPluginExist(string pluginName)
         {
-            return Extension.Extensions.CheckRequiredPlugin(this, pluginName);
+            return Extension.Extension.CheckRequiredPlugin(this, pluginName);
         }
     }
 }
