@@ -25,7 +25,7 @@ namespace KK_StudioAllGirlsPlugin
             harmony.Patch(typeof(CharaList).GetMethod("ChangeCharaFemale", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(ChangeCharaPrefix), null), null, null);
             harmony.Patch(typeof(CharaList).GetMethod("ChangeCharaMale", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(ChangeCharaPrefix), null), null, null);
             harmony.Patch(typeof(PauseCtrl).GetMethod("CheckIdentifyingCode", AccessTools.all), new HarmonyMethod(typeof(Patches), nameof(CheckIdentifyingCodePrefix), null), null, null);
-            harmony.Patch(typeof(CharaList).GetMethod("LoadCharaMale", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(LoadCharaMalePrefix), null), null, null);
+            harmony.Patch(typeof(Studio.Studio).GetMethod("AddMale", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(AddMalePrefix), null), null, null);
             harmony.Patch(typeof(AddObjectAssist).GetMethod("LoadChild", new Type[] { typeof(ObjectInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject) }), new HarmonyMethod(typeof(Patches), nameof(LoadChildPrefix), null), null, null);
             harmony.Patch(typeof(ChaFile).GetMethod("SetParameterBytes", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(SetParameterBytesPostfix), null), null);
             harmony.Patch(typeof(MPCharCtrl).GetNestedType("OtherInfo", BindingFlags.Public).GetMethod("UpdateInfo", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(UpdateInfoPostfix), null), null);
@@ -92,6 +92,10 @@ namespace KK_StudioAllGirlsPlugin
             for (int i = 0; i < num; i++)
             {
                 array[i].ChangeChara((__instance.GetPrivate("charaFileSort") as CharaFileSort).selectPath);
+            }
+            if ((int)((CharaList)__instance).GetPrivate("sex") == 0)
+            {
+                Logger.Log(LogLevel.Info, "[KK_SAGP] He's a girl now!");
             }
 
             return false;
@@ -184,11 +188,11 @@ namespace KK_StudioAllGirlsPlugin
         }
 
         //Load all the male as female
-        public static bool LoadCharaMalePrefix(CharaList __instance)
-        {
-
-            Singleton<Studio.Studio>.Instance.AddFemale((__instance.GetPrivate("charaFileSort") as CharaFileSort).selectPath);
-            //TODO: Block AddMale to support drag and drop
+        //Redirect AddMale to AddFemale
+        public static bool AddMalePrefix(string _path)
+        { 
+            Singleton<Studio.Studio>.Instance.AddFemale(_path);
+            Logger.Log(LogLevel.Info, "[KK_SAGP] He's a girl now!");
             return false;
         }
 
@@ -197,6 +201,10 @@ namespace KK_StudioAllGirlsPlugin
             if (_child.kind == 0)
             {
                 OICharInfo oicharInfo = _child as OICharInfo;
+                if (oicharInfo.sex == 0)
+                {
+                    Logger.Log(LogLevel.Info, "[KK_SAGP] He's a girl now!");
+                }
                 AddObjectFemale.Load(oicharInfo, _parent, _parentNode);
                 return false;
             }
@@ -206,14 +214,16 @@ namespace KK_StudioAllGirlsPlugin
         public static void SetParameterBytesPostfix(ChaFile __instance, byte[] data)
         {
             ChaFileParameter chaFileParameter = MessagePackSerializer.Deserialize<ChaFileParameter>(data);
-            chaFileParameter.sex = 1;
 
+            //There's no exType before EC_Yoyaku
             if (null != typeof(ChaFileParameter).GetProperty("exType"))
             {
                 chaFileParameter.SetPrivateProperty("exType", 0);
             }
-            __instance.parameter.Copy(chaFileParameter);
+            chaFileParameter.sex = 1;
             //Logger.Log(LogLevel.Debug, "[KK_SAGP] Set Sex: " + chaFileParameter.sex);
+
+            __instance.parameter.Copy(chaFileParameter);
             return;
         }
 

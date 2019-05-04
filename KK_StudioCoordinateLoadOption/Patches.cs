@@ -60,7 +60,6 @@ namespace KK_StudioCoordinateLoadOption
 
         private static void InitPostfix(object __instance)
         {
-            //Logger.Log(LogLevel.Debug, "[KK_SCLO] Init Patch");
             Array ClothesKindArray = Enum.GetValues(typeof(ChaFileDefine.ClothesKind));
 
             //Draw Panel and ButtonAll
@@ -388,7 +387,7 @@ namespace KK_StudioCoordinateLoadOption
             if (KK_StudioCoordinateLoadOption._isKCOXExist) KCOX_Support.CleanKCOXBackup();
             if (KK_StudioCoordinateLoadOption._isABMXExist) ABMX_Support.CleanABMXBackup();
             if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) MoreAccessories_Support.CleanMoreAccBackup();
-            Logger.Log(LogLevel.Debug, "[KK_SCLO] Finish");
+            Logger.Log(LogLevel.Info, "[KK_SCLO] Change Coordinate Finish");
             Utils.Sound.Play(SystemSE.ok_s);
         }
     }
