@@ -229,7 +229,7 @@ namespace KK_StudioSimpleColorOnGirls
             if (null != tempStatus)
             {
                 AddObjectAssist.UpdateState(__result, tempStatus);
-                Logger.Log(LogLevel.Debug, "[KK_SSCOG] Add Patch Finish");
+                Logger.Log(LogLevel.Debug, "[KK_SSCOG] Simple Color Patch Finish");
             }
             else
             {

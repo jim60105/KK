@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using BepInEx.Logging;
+using Harmony;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -42,6 +43,11 @@ namespace Extension
         }
         public static bool SetPrivate(this object self, string name, object value)
         {
+            if(!self.SearchForPrivateFields(name))
+            {
+                Logger.Log(LogLevel.Error, "[KK_SAGP] Field Not Found: " + name);
+                return false;
+            }
             FieldKey fieldKey = new FieldKey(self.GetType(), name);
             FieldInfo field;
             if (!_fieldCache.TryGetValue(fieldKey, out field))
@@ -93,6 +99,28 @@ namespace Extension
                 //Logger.Log(BepInEx.Logging.LogLevel.Debug,"Plugin "+" guid "+" was not found.");
                 //Logger.Log(BepInEx.Logging.LogLevel.Debug, "[KK_SCLO] "+guid+" Found.");
                 return true;
+            }
+            return false;
+        }
+        
+        //List all the fields inside the object if name not found.
+        public static bool SearchForPrivateFields(this object self, string name)
+        {
+            FieldInfo[] fieldInfos = self.GetType().GetFields(AccessTools.all);
+            List<string> printArray = new List<string>();
+            foreach (var fi in fieldInfos)
+            {
+                if (fi.Name == name)
+                {
+                    return true;
+                }
+                printArray.Add("[KK_SAGP] FieldName/Type: " + fi.Name + " / " + fi.FieldType);
+            }
+            Logger.Log(LogLevel.Debug, "[KK_SAGP] Get " + fieldInfos.Length+" Fields.");
+            
+            foreach (string st in printArray)
+            {
+                Logger.Log(LogLevel.Debug, st);
             }
             return false;
         }

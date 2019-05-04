@@ -1,16 +1,14 @@
-﻿using BepInEx.Logging;
-using Extension;
-using Harmony;
-using Manager;
-using MessagePack;
-using Studio;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using BepInEx.Logging;
+using Extension;
+using Harmony;
+using MessagePack;
+using Studio;
 using UniRx;
-using UnityEngine;
 using UnityEngine.UI;
 using Logger = BepInEx.Logger;
 
@@ -20,11 +18,10 @@ namespace KK_StudioAllGirlsPlugin
     {
         internal static void InitPatch(HarmonyInstance harmony)
         {
-            harmony.Patch(typeof(CharaList).GetMethod("InitCharaList", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), null, new HarmonyMethod(typeof(Patches), nameof(InitCharaListPostfix), null), null);
             harmony.Patch(typeof(CharaList).GetMethod("OnSelect", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(OnSelectPrefix), null), null, null);
             harmony.Patch(typeof(CharaList).GetMethod("OnDelete", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(OnDeletePrefix), null), null, null);
             harmony.Patch(typeof(CharaList).GetMethod("OnDeselect", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(OnDeselectPrefix), null), null, null);
-            harmony.Patch(typeof(CharaList).GetMethod("OnSelectChara", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(OnSelectCharaPrefix), null), null, null);
+            harmony.Patch(typeof(CharaList).GetMethod("OnSelectChara", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), null, new HarmonyMethod(typeof(Patches), nameof(OnSelectCharaPostfix), null), null);
             harmony.Patch(typeof(CharaList).GetMethod("ChangeCharaFemale", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(ChangeCharaPrefix), null), null, null);
             harmony.Patch(typeof(CharaList).GetMethod("ChangeCharaMale", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(ChangeCharaPrefix), null), null, null);
             harmony.Patch(typeof(PauseCtrl).GetMethod("CheckIdentifyingCode", AccessTools.all), new HarmonyMethod(typeof(Patches), nameof(CheckIdentifyingCodePrefix), null), null, null);
@@ -34,14 +31,6 @@ namespace KK_StudioAllGirlsPlugin
             harmony.Patch(typeof(MPCharCtrl).GetNestedType("OtherInfo", BindingFlags.Public).GetMethod("UpdateInfo", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(UpdateInfoPostfix), null), null);
             harmony.Patch(typeof(PauseCtrl).GetNestedType("FileInfo", BindingFlags.Public).GetMethod("Apply", AccessTools.all), new HarmonyMethod(typeof(Patches), nameof(ApplyPrefix), null), null, null);
         }
-
-        private class CharaListArrayObj
-        {
-            public Button buttonChange;
-            public Button buttonLoad;
-            public CharaFileSort charaFileSort;
-        }
-        private static List<CharaListArrayObj> charaListArray = new List<CharaListArrayObj>() { new CharaListArrayObj(), new CharaListArrayObj() };
 
         //PauseCtrl(PoseCtrl), Cancel gender restrictions of pose reading
         public static bool CheckIdentifyingCodePrefix(ref bool __result, string _path, int _sex)
@@ -63,7 +52,7 @@ namespace KK_StudioAllGirlsPlugin
         }
 
         //Fix Pose Loading FK bone not found Error
-        private static bool ApplyPrefix(OCIChar _char,PauseCtrl.FileInfo __instance)
+        private static bool ApplyPrefix(OCIChar _char, PauseCtrl.FileInfo __instance)
         {
             _char.LoadAnime(__instance.group, __instance.category, __instance.no, __instance.normalizedTime);
             for (int i = 0; i < __instance.activeIK.Length; i++)
@@ -92,25 +81,9 @@ namespace KK_StudioAllGirlsPlugin
             return false;
         }
 
-        //Get CharaList filesort and button on the left
-        public static void InitCharaListPostfix(object __instance)
-        {
-            var charaList = (CharaList)__instance;
-            CharaListArrayObj charaListObject = charaListArray[(int)charaList.GetPrivate("sex")];
-            charaListObject.buttonChange = (Button)charaList.GetPrivate("buttonChange");
-            charaListObject.buttonLoad = (Button)charaList.GetPrivate("buttonLoad");
-            charaListObject.charaFileSort = (CharaFileSort)charaList.GetPrivate("charaFileSort");
-            if (null == charaListObject.buttonChange || null == charaListObject.buttonLoad || null == charaListObject.charaFileSort)
-            {
-                Logger.Log(LogLevel.Error, "[KK_SAGP] Get button FAILED");
-            }
-        }
-
         //Work when change button clicked
         public static bool ChangeCharaPrefix(object __instance)
         {
-            int sex = (int)__instance.GetPrivate("sex");
-            CharaListArrayObj charaListObject = charaListArray[sex];
             OCIChar[] array = (from v in Singleton<GuideObjectManager>.Instance.selectObjectKey
                                select Studio.Studio.GetCtrlInfo(v) as OCIChar into v
                                where v != null
@@ -118,76 +91,61 @@ namespace KK_StudioAllGirlsPlugin
             int num = array.Length;
             for (int i = 0; i < num; i++)
             {
-                array[i].ChangeChara(charaListObject.charaFileSort.selectPath);
+                array[i].ChangeChara((__instance.GetPrivate("charaFileSort") as CharaFileSort).selectPath);
             }
 
             return false;
         }
 
         //OnSelect at the left filesort
-        private static bool OnSelectCharaPrefix(object __instance, int _idx)
+        private static void OnSelectCharaPostfix(object __instance, int _idx)
         {
-            CharaListArrayObj charaListObject = charaListArray[(int)__instance.GetPrivate("sex")];
-
-            if (charaListObject.charaFileSort.select == _idx || _idx < 0)
+            if ((__instance.GetPrivate("buttonChange") as Button).interactable != true)
             {
-                return false;
+                if (_idx < 0)
+                {
+                    return;
+                }
+                ObjectCtrlInfo ctrlInfo = Studio.Studio.GetCtrlInfo(Singleton<Studio.Studio>.Instance.treeNodeCtrl.selectNode);
+                ((Button)__instance.GetPrivate("buttonChange")).interactable = ctrlInfo is OCIChar ocichar
+                                                                               && ocichar.sex > -1
+                                                                               && ctrlInfo.kind == 0;
+                __instance.SetPrivate("isDelay", true);
+                Observable.Timer(TimeSpan.FromMilliseconds(250.0)).Subscribe(delegate (long _)
+                {
+                    __instance.SetPrivate("isDelay", false);
+                }).AddTo((CharaList)__instance);
+                return;
             }
-            charaListObject.charaFileSort.select = _idx;
-            charaListObject.buttonLoad.interactable = true;
-            ObjectCtrlInfo ctrlInfo = Studio.Studio.GetCtrlInfo(Singleton<Studio.Studio>.Instance.treeNodeCtrl.selectNode);
-            OCIChar ocichar = ctrlInfo as OCIChar;
-            charaListObject.buttonChange.interactable = (null != ocichar && ocichar.sex > -1 && ctrlInfo.kind == 0);
-            __instance.SetPrivate("isDelay", true);
-            Observable.Timer(TimeSpan.FromMilliseconds(250.0)).Subscribe(delegate (long _)
-            {
-                __instance.SetPrivate("isDelay", false);
-            }).AddTo((CharaList)__instance);
-            __instance.SetPrivate("charaFileSort", charaListObject.charaFileSort);
-            return false;
         }
 
         //OnSelect at the right panel
         private static bool OnSelectPrefix(object __instance, TreeNodeObject _node)
         {
-            CharaListArrayObj charaListObject = charaListArray[(int)__instance.GetPrivate("sex")];
-
-            if (null == charaListObject.buttonChange || null == charaListObject.charaFileSort)
+            var buttonChange = (Button)__instance.GetPrivate("buttonChange");
+            if (null == buttonChange || null == __instance.GetPrivate("charaFileSort"))
             {
                 Logger.Log(LogLevel.Error, "[KK_SAGP] Get instance FAILED");
                 return true;
             }
-            if (_node == null)
+            if (_node == null ||
+                !Singleton<Studio.Studio>.IsInstance() ||
+                !Singleton<Studio.Studio>.Instance.dicInfo.TryGetValue(_node, out ObjectCtrlInfo objectCtrlInfo) ||
+                null == objectCtrlInfo ||
+                objectCtrlInfo.kind != 0)
             {
-                charaListObject.buttonChange.interactable = false;
+                buttonChange.interactable = false;
                 return false;
             }
-            if (!Singleton<Studio.Studio>.IsInstance())
+            if ((__instance.GetPrivate("charaFileSort") as CharaFileSort).select != -1)
             {
-                charaListObject.buttonChange.interactable = false;
-                return false;
-            }
-            if (!Singleton<Studio.Studio>.Instance.dicInfo.TryGetValue(_node, out ObjectCtrlInfo objectCtrlInfo))
-            {
-                charaListObject.buttonChange.interactable = false;
-                return false;
-            }
-            if (null == objectCtrlInfo || objectCtrlInfo.kind != 0)
-            {
-                charaListObject.buttonChange.interactable = false;
-                return false;
-            }
-            if (charaListObject.charaFileSort.select != -1)
-            {
-                charaListObject.buttonChange.interactable = true;
-
+                buttonChange.interactable = true;
             }
             return false;
         }
 
         private static bool OnDeselectPrefix(object __instance, TreeNodeObject _node)
         {
-            CharaListArrayObj charaListObject = charaListArray[(int)__instance.GetPrivate("sex")];
             if (_node == null)
             {
                 return false;
@@ -200,13 +158,12 @@ namespace KK_StudioAllGirlsPlugin
                               select Studio.Studio.GetCtrlInfo(v) as OCIChar into v
                               where v != null
                               select v).ToArray<OCIChar>();
-            charaListObject.buttonChange.interactable = !self.IsNullOrEmpty<OCIChar>();
+            ((Button)__instance.GetPrivate("buttonChange")).interactable = !self.IsNullOrEmpty<OCIChar>();
             return false;
         }
 
         private static bool OnDeletePrefix(object __instance, ObjectCtrlInfo _info)
         {
-            CharaListArrayObj charaListObject = charaListArray[(int)__instance.GetPrivate("sex")];
             if (_info == null)
             {
                 return false;
@@ -219,9 +176,9 @@ namespace KK_StudioAllGirlsPlugin
             {
                 return false;
             }
-            if (charaListObject.charaFileSort.select != -1)
+            if ((__instance.GetPrivate("charaFileSort") as CharaFileSort).select != -1)
             {
-                charaListObject.buttonChange.interactable = false;
+                ((Button)__instance.GetPrivate("buttonChange")).interactable = false;
             }
             return false;
         }
@@ -230,7 +187,8 @@ namespace KK_StudioAllGirlsPlugin
         public static bool LoadCharaMalePrefix(CharaList __instance)
         {
 
-            Singleton<Studio.Studio>.Instance.AddFemale(charaListArray[0].charaFileSort.selectPath);
+            Singleton<Studio.Studio>.Instance.AddFemale((__instance.GetPrivate("charaFileSort") as CharaFileSort).selectPath);
+            //TODO: Block AddMale to support drag and drop
             return false;
         }
 
@@ -250,7 +208,8 @@ namespace KK_StudioAllGirlsPlugin
             ChaFileParameter chaFileParameter = MessagePackSerializer.Deserialize<ChaFileParameter>(data);
             chaFileParameter.sex = 1;
 
-            if (null != typeof(ChaFileParameter).GetProperty("exType")){
+            if (null != typeof(ChaFileParameter).GetProperty("exType"))
+            {
                 chaFileParameter.SetPrivateProperty("exType", 0);
             }
             __instance.parameter.Copy(chaFileParameter);

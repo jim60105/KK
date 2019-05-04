@@ -32,7 +32,7 @@ namespace KK_StudioSimpleColorOnGirls
     {
         internal const string PLUGIN_NAME = "Studio Simple Color On Girls";
         internal const string GUID = "com.jim60105.kk.studiosimplecolorongirls";
-        internal const string PLUGIN_VERSION = "19.05.01.2";
+        internal const string PLUGIN_VERSION = "19.05.04.0";
 
         private bool _isInit = false;
 

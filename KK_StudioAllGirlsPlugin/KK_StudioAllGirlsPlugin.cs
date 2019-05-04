@@ -32,7 +32,7 @@ namespace KK_StudioAllGirlsPlugin
     {
         internal const string PLUGIN_NAME = "Studio All Girls Plugin";
         internal const string GUID = "com.jim60105.kk.studioallgirlsplugin";
-        internal const string PLUGIN_VERSION = "19.05.01.3";
+        internal const string PLUGIN_VERSION = "19.05.04.0";
 
         private bool _isInit = false;
 
