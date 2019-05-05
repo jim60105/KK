@@ -105,6 +105,7 @@
   <ItemGroup>
     <None Include="ILMerge.props" />
     <None Include="packages.config" />
+    <None Include="Resources\buttonChange.psd" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="ILMergeOrder.txt" />

@@ -39,8 +39,8 @@ namespace KK_StudioCharaOnlyLoadBody
             btn[i] = UnityEngine.Object.Instantiate(original,original.transform.parent);
             btn[i].name = "Button Keep Coordinate Change";
             btn[i].transform.position += new Vector3(0, -25, 0);
-            btn[i].transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(179, -401), new Vector2(390, -379.5f));
-            btn[i].GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaOnlyLoadBody.Resources.buttonChange.png", 183, 18);
+            btn[i].transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(180, -401), new Vector2(390, -380));
+            btn[i].GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaOnlyLoadBody.Resources.buttonChange.png", 183, 20);
 
             btn[i].GetComponent<Button>().onClick.RemoveAllListeners();
             btn[i].GetComponent<Button>().onClick.SetPersistentListenerState(0, UnityEngine.Events.UnityEventCallState.Off);
