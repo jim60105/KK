@@ -28,7 +28,7 @@ using UnityEngine.SceneManagement;
 namespace KK_StudioSimpleColorOnGirls
 {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
-    public class KK_StudioAllGirlsPlugin: BaseUnityPlugin
+    public class KK_StudioSimpleColorOnGirls: BaseUnityPlugin
     {
         internal const string PLUGIN_NAME = "Studio Simple Color On Girls";
         internal const string GUID = "com.jim60105.kk.studiosimplecolorongirls";

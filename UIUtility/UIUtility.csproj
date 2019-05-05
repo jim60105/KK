@@ -50,15 +50,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Extensions.cs" />
-    <Compile Include="LoopListView\ClickEventListener.cs" />
-    <Compile Include="LoopListView\ItemPosMgr.cs" />
-    <Compile Include="LoopListView\LoopListView2.cs" />
-    <Compile Include="LoopListView\LoopListViewItem2.cs" />
     <Compile Include="MovableWindow.cs" />
     <Compile Include="OneTimeContentSizeFitter.cs" />
     <Compile Include="OneTimeHorizontalLayoutGroup.cs" />
     <Compile Include="OneTimeVerticalLayoutGroup.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -67,52 +62,45 @@
     <Compile Include="UIUtility.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\DefaultResources.unity3d" />
     <None Include="Resources\DefaultResourcesKOI.unity3d" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Condition=" '$(Configuration)' == 'HS' " Include="Assembly-CSharp">
-      <HintPath>D:\Program Files (x86)\HoneySelect\StudioNEO_64_Data\Managed\Assembly-CSharp.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Condition=" '$(Configuration)' == 'HS' " Include="System">
-      <HintPath>D:\Program Files (x86)\HoneySelect\StudioNEO_64_Data\Managed\System.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Condition=" '$(Configuration)' == 'HS' " Include="UnityEngine">
-      <HintPath>D:\Program Files (x86)\HoneySelect\StudioNEO_64_Data\Managed\UnityEngine.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Condition=" '$(Configuration)' == 'HS' " Include="UnityEngine.UI">
-      <HintPath>D:\Program Files (x86)\HoneySelect\StudioNEO_64_Data\Managed\UnityEngine.UI.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Condition=" '$(Configuration)' == 'HS' " Include="UnityEngine.UI.Translation">
-      <HintPath>D:\Program Files (x86)\HoneySelect\StudioNEO_64_Data\Managed\UnityEngine.UI.Translation.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Condition=" '$(Configuration)' == 'KOI' " Include="Assembly-CSharp">
       <HintPath>D:\Program Files (x86)\Koikatu\CharaStudio_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>C:\illusion\Koikatu\Koikatu_Data\Managed\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Condition=" '$(Configuration)' == 'KOI' " Include="System">
       <HintPath>&gt;D:\Program Files (x86)\Koikatu\CharaStudio_Data\Managed\System.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="System" />
     <Reference Condition=" '$(Configuration)' == 'KOI' " Include="UnityEngine">
       <HintPath>D:\Program Files (x86)\Koikatu\CharaStudio_Data\Managed\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>C:\illusion\Koikatu\Koikatu_Data\Managed\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Condition=" '$(Configuration)' == 'KOI' " Include="UnityEngine.UI">
       <HintPath>D:\Program Files (x86)\Koikatu\CharaStudio_Data\Managed\UnityEngine.UI.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>C:\illusion\Koikatu\Koikatu_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

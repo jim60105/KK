@@ -51,7 +51,7 @@ namespace UILib
             if (_initCalled)
                 return;
             _initCalled = true;
-            AssetBundle bundle = AssetBundle.LoadFromMemory(KK_StudioCoordinateLoadOption.UIUtility.Properties.Resources.DefaultResources);
+            AssetBundle bundle = AssetBundle.LoadFromMemory(Properties.Resources.DefaultResources);
             foreach (Sprite sprite in bundle.LoadAllAssets<Sprite>())
             {
                 switch (sprite.name)
