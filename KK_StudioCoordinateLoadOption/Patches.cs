@@ -56,20 +56,6 @@ namespace KK_StudioCoordinateLoadOption
                 MoreAccessories_Support.InitPatch(harmony);
             }
             Logger.Log(LogLevel.Debug, "[KK_SCLO] Patch Insert Complete");
-
-                ////Embed dll
-                //AppDomain.CurrentDomain.AssemblyResolve += (sender, args) =>
-                //{
-                //    String resourceName = typeof(Patches).Namespace + "." +
-                //       new AssemblyName(args.Name).Name + ".dll";
-                //    Logger.Log(LogLevel.Debug, "[KK_SCLO] Try to load Assembly dll file: " + resourceName);
-                //    using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName))
-                //    {
-                //        Byte[] assemblyData = new Byte[stream.Length];
-                //        stream.Read(assemblyData, 0, assemblyData.Length);
-                //        return Assembly.Load(assemblyData);
-                //    }
-                //};
         }
 
         private static void InitPostfix(object __instance)
@@ -194,7 +180,7 @@ namespace KK_StudioCoordinateLoadOption
                 _skipFlag = true;
                 return;
             }
-            Logger.Log(LogLevel.Debug, "[KK_SCLO] Get ChaCtrl");
+            //Logger.Log(LogLevel.Debug, "[KK_SCLO] Get ChaCtrl");
             ChaFileClothes clothes = chaCtrl.nowCoordinate.clothes;
             ChaFileAccessory accessories = chaCtrl.nowCoordinate.accessory;
 

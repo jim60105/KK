@@ -1,10 +1,17 @@
-﻿using BepInEx;
-using BepInEx.Logging;
-using Harmony;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+
+using BepInEx;
+using BepInEx.Logging;
+
+using Harmony;
+
+using UnityEngine;
+
+using Logger = BepInEx.Logger;
 
 namespace Extension
 {
@@ -123,6 +130,95 @@ namespace Extension
                 Logger.Log(LogLevel.Debug, st);
             }
             return false;
+        }
+
+        public static Sprite LoadNewSprite(string FilePath, int width, int height, float PixelsPerUnit = 100.0f)
+        {
+            Sprite NewSprite;
+            Texture2D SpriteTexture = LoadTexture(FilePath);
+            if (null == SpriteTexture)
+            {
+                SpriteTexture = LoadDllResource(FilePath, width, height);
+            }
+            NewSprite = Sprite.Create(SpriteTexture, new Rect(0, 0, SpriteTexture.width, SpriteTexture.height), new Vector2(0, 0), PixelsPerUnit);
+
+            return NewSprite;
+        }
+
+        // Load a PNG or JPG file from disk to a Texture2D
+        // Returns null if load fails
+        public static Texture2D LoadTexture(string FilePath)
+        {
+            Texture2D Tex2D;
+            byte[] FileData;
+
+            if (File.Exists(FilePath))
+            {
+                FileData = File.ReadAllBytes(FilePath);
+                Tex2D = new Texture2D(2, 2);           // Create new "empty" texture
+                if (Tex2D.LoadImage(FileData))           // Load the imagedata into the texture (size is set automatically)
+                    return Tex2D;                 // If data = readable -> return texture
+            }
+            return null;                     // Return null if load failed
+        }
+
+        public static Texture2D LoadDllResource(string FilePath, int width, int height)
+        {
+            Assembly myAssembly = Assembly.GetExecutingAssembly();
+            Stream myStream = myAssembly.GetManifestResourceStream(FilePath);
+            Texture2D texture = new Texture2D(width, height, TextureFormat.ARGB32, false);
+            texture.LoadImage(ReadToEnd(myStream));
+
+            if (texture == null)
+            {
+                Logger.Log(LogLevel.Error, "Missing Dll resource: " + FilePath);
+            }
+
+            return texture;
+        }
+
+        static byte[] ReadToEnd(Stream stream)
+        {
+            long originalPosition = stream.Position;
+            stream.Position = 0;
+
+            try
+            {
+                byte[] readBuffer = new byte[4096];
+
+                int totalBytesRead = 0;
+                int bytesRead;
+
+                while ((bytesRead = stream.Read(readBuffer, totalBytesRead, readBuffer.Length - totalBytesRead)) > 0)
+                {
+                    totalBytesRead += bytesRead;
+
+                    if (totalBytesRead == readBuffer.Length)
+                    {
+                        int nextByte = stream.ReadByte();
+                        if (nextByte != -1)
+                        {
+                            byte[] temp = new byte[readBuffer.Length * 2];
+                            Buffer.BlockCopy(readBuffer, 0, temp, 0, readBuffer.Length);
+                            Buffer.SetByte(temp, totalBytesRead, (byte)nextByte);
+                            readBuffer = temp;
+                            totalBytesRead++;
+                        }
+                    }
+                }
+
+                byte[] buffer = readBuffer;
+                if (readBuffer.Length != totalBytesRead)
+                {
+                    buffer = new byte[totalBytesRead];
+                    Buffer.BlockCopy(readBuffer, 0, buffer, 0, totalBytesRead);
+                }
+                return buffer;
+            }
+            finally
+            {
+                stream.Position = originalPosition;
+            }
         }
     }
 
