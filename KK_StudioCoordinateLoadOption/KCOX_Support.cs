@@ -65,15 +65,14 @@ namespace KK_StudioCoordinateLoadOption
 
         private static bool GetOverlay(string name)
         {
-            if (null == KCOXController.GetType().InvokeMember("GetOverlayTex", publicFlag, null, KCOXController, new object[] { name }))
+            KCOXTexDataBackup[name] = KCOXController.GetType().InvokeMember("GetOverlayTex", publicFlag, null, KCOXController, new object[] { name });
+            if (null == KCOXTexDataBackup[name])
             {
-                KCOXTexDataBackup[name] = null;
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] " + name + " not found");
                 return false;
             }
             else
             {
-                KCOXTexDataBackup[name] = KCOXController.GetType().InvokeMember("GetOverlayTex", publicFlag, null, KCOXController, new object[] { name });
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] Get original overlay: " + name);
                 return true;
             }

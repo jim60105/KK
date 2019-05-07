@@ -39,6 +39,11 @@ namespace Extension
         private static readonly Dictionary<FieldKey, FieldInfo> _fieldCache = new Dictionary<FieldKey, FieldInfo>();
         public static object GetPrivate(this object self, string name)
         {
+            if(!self.SearchForPrivateFields(name))
+            {
+                Logger.Log(LogLevel.Error, "[KK] Field Not Found: " + name);
+                return false;
+            }
             FieldKey key = new FieldKey(self.GetType(), name);
             FieldInfo info;
             if (_fieldCache.TryGetValue(key, out info) == false)
@@ -52,7 +57,7 @@ namespace Extension
         {
             if(!self.SearchForPrivateFields(name))
             {
-                Logger.Log(LogLevel.Error, "[KK_SAGP] Field Not Found: " + name);
+                Logger.Log(LogLevel.Error, "[KK] Field Not Found: " + name);
                 return false;
             }
             FieldKey fieldKey = new FieldKey(self.GetType(), name);
@@ -68,7 +73,7 @@ namespace Extension
                 }
                 else
                 {
-                    Logger.Log(LogLevel.Error, "[KK_SAGP] Set Field Not Found: " + name);
+                    Logger.Log(LogLevel.Error, "[KK] Set Field Not Found: " + name);
                 }
             }
             return false;
@@ -83,7 +88,7 @@ namespace Extension
             }
             else
             {
-                Logger.Log(LogLevel.Error, "[KK_SAGP] Set Property Not Found: " + name);
+                Logger.Log(LogLevel.Error, "[KK] Set Property Not Found: " + name);
             }
         }
         public static object GetPrivateProperty(this object self, string name)
@@ -121,9 +126,9 @@ namespace Extension
                 {
                     return true;
                 }
-                printArray.Add("[KK_SAGP] FieldName/Type: " + fi.Name + " / " + fi.FieldType);
+                printArray.Add("[KK] FieldName/Type: " + fi.Name + " / " + fi.FieldType);
             }
-            Logger.Log(LogLevel.Debug, "[KK_SAGP] Get " + fieldInfos.Length+" Fields.");
+            Logger.Log(LogLevel.Debug, "[KK] Get " + fieldInfos.Length+" Fields.");
             
             foreach (string st in printArray)
             {

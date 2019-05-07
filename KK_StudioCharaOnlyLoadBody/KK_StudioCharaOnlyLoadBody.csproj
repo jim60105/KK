@@ -59,6 +59,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="KCOX_Support.cs" />
     <Compile Include="KK_StudioCharaOnlyLoadBody.cs" />
     <Compile Include="Patches.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

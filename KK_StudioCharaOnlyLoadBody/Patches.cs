@@ -29,6 +29,9 @@ namespace KK_StudioCharaOnlyLoadBody
             harmony.Patch(typeof(CharaList).GetMethod("OnSelect", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(SetKeepCoorButtonInteractable), null), null);
             harmony.Patch(typeof(CharaList).GetMethod("OnSelectChara", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(SetKeepCoorButtonInteractable), null), null);
             harmony.Patch(typeof(CharaList).GetMethod("OnSort", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(SetKeepCoorButtonInteractable), null), null);
+
+            //KCOX Patch
+            KCOX_Support.InitPatch(harmony);
         }
 
         private static GameObject[] btn = new GameObject[2];
@@ -61,16 +64,21 @@ namespace KK_StudioCharaOnlyLoadBody
             if (selectNode != null && Singleton<Studio.Studio>.Instance.dicInfo.TryGetValue(selectNode, out ObjectCtrlInfo objectCtrlInfo))
             {
                 ChaControl chaCtrl = (objectCtrlInfo as OCIChar).charInfo;
-                Logger.Log(LogLevel.Debug, "[KK_SCOLB] Get ChaCtrl");
+                Logger.Log(LogLevel.Debug, "[KK_SCOLB] Backup Coordinates Start");
 
                 backupCoordinates = new List<byte[]>();
                 foreach(var cor in chaCtrl.chaFile.coordinate)
                 {
                     backupCoordinates.Add(cor.SaveBytes());
                 }
+
+                //Backup KCOX
+                KCOX_Support.RollbackFlag = KK_StudioCharaOnlyLoadBody._isKCOXExist;
+
                 if (null != backupCoordinates && backupCoordinates.Count!=0)
                 {
                     Logger.Log(LogLevel.Debug, "[KK_SCOLB] Backup Coordinates Finish");
+                    Logger.Log(LogLevel.Debug, "[KK_SCOLB] Run original Change function now");
                     var original = GameObject.Find("StudioScene/Canvas Main Menu/01_Add/" + charaListName + "/Button Change");
                     original.GetComponent<Button>().onClick.Invoke();
                 }
@@ -97,6 +105,7 @@ namespace KK_StudioCharaOnlyLoadBody
                 Logger.Log(LogLevel.Error, "[KK_SCOLB] Load original Coordinates!");
                 return ;
             }
+            Logger.Log(LogLevel.Info, "[KK_SCOLB] Rollback Coordinates Start");
             bool success = true;
             for(int i = 0;i<__instance.coordinate.Length;i++)
             {
