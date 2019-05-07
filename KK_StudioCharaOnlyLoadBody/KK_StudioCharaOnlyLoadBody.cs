@@ -32,12 +32,12 @@ namespace KK_StudioCharaOnlyLoadBody
     {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "19.05.07.0";
+        internal const string PLUGIN_VERSION = "19.05.07.1";
 
         private bool _isInit = false;
         public static bool _isKCOXExist = false;
         //public static bool _isABMXExist = false;
-        //public static bool _isMoreAccessoriesExist = false;
+        public static bool _isMoreAccessoriesExist = false;
 
         public void OnSceneLoaded(Scene scene, LoadSceneMode sceneMode)
         {
@@ -79,7 +79,7 @@ namespace KK_StudioCharaOnlyLoadBody
         {
             _isKCOXExist = IsPluginExist("KCOX") && KCOX_Support.LoadAssembly();
             //_isABMXExist = IsPluginExist("KKABMX.Core") && ABMX_Support.LoadAssembly();
-            //_isMoreAccessoriesExist = IsPluginExist("com.joan6694.illusionplugins.moreaccessories") && MoreAccessories_Support.LoadAssembly();
+            _isMoreAccessoriesExist = IsPluginExist("com.joan6694.illusionplugins.moreaccessories") && MoreAccessories_Support.LoadAssembly();
         }
 
         private bool IsPluginExist(string pluginName)

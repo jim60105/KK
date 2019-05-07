@@ -45,8 +45,9 @@ namespace KK_StudioCharaOnlyLoadBody
             if (RollbackFlag)
             {
                 object KCOXController = __instance.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KoiClothesOverlayX"));
+                KCOXController.GetType().InvokeMember("SetExtendedData", BindingFlags.Public | BindingFlags.InvokeMethod, null, KCOXController, new object[] { null });
                 KCOXController.GetType().InvokeMember("OnCardBeingSaved", BindingFlags.NonPublic | BindingFlags.InvokeMethod, null, KCOXController, new object[] { 1 });
-                Logger.Log(LogLevel.Debug, "[KK_SCOLB] ->Overlay Rollback Finish");
+                Logger.Log(LogLevel.Debug, "[KK_SCOLB] Overlay Rollback Finish");
                 RollbackFlag = false;
             }
             return;

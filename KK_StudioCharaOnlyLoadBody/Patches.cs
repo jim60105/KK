@@ -32,6 +32,7 @@ namespace KK_StudioCharaOnlyLoadBody
 
             //KCOX Patch
             KCOX_Support.InitPatch(harmony);
+            MoreAccessories_Support.InitPatch(harmony);
         }
 
         private static GameObject[] btn = new GameObject[2];
@@ -74,6 +75,11 @@ namespace KK_StudioCharaOnlyLoadBody
 
                 //Backup KCOX
                 KCOX_Support.RollbackFlag = KK_StudioCharaOnlyLoadBody._isKCOXExist;
+                if (KK_StudioCharaOnlyLoadBody._isMoreAccessoriesExist)
+                {
+                    MoreAccessories_Support.RollbackFlag = true;
+                    MoreAccessories_Support.CopyMoreAccessoriesData(chaCtrl.chaFile);
+                }
 
                 if (null != backupCoordinates && backupCoordinates.Count!=0)
                 {
@@ -105,7 +111,7 @@ namespace KK_StudioCharaOnlyLoadBody
                 Logger.Log(LogLevel.Error, "[KK_SCOLB] Load original Coordinates!");
                 return ;
             }
-            Logger.Log(LogLevel.Info, "[KK_SCOLB] Rollback Coordinates Start");
+            Logger.Log(LogLevel.Debug, "[KK_SCOLB] Rollback Coordinates Start");
             bool success = true;
             for(int i = 0;i<__instance.coordinate.Length;i++)
             {
