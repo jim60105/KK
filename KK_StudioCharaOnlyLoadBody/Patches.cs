@@ -38,8 +38,11 @@ namespace KK_StudioCharaOnlyLoadBody
             harmony.Patch(typeof(CharaList).GetMethod("OnSelect", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(SetKeepCoorButtonInteractable), null), null);
             harmony.Patch(typeof(CharaList).GetMethod("OnSelectChara", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(SetKeepCoorButtonInteractable), null), null);
             harmony.Patch(typeof(CharaList).GetMethod("OnSort", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(SetKeepCoorButtonInteractable), null), null);
+
+            harmony.Patch(typeof(OCIChar).GetMethod("ChangeChara", AccessTools.all), new HarmonyMethod(typeof(Patches), nameof(ChangeCharaPrefix), null), null, null);
         }
 
+        //Draw the buttons, and add my trigger function
         private static GameObject[] btn = new GameObject[2];
         public static void InitCharaListPostfix(CharaList __instance)
         {
@@ -82,7 +85,7 @@ namespace KK_StudioCharaOnlyLoadBody
                     ocichar.hairDynamic = null;
                     string oldName = ocichar.charInfo.chaFile.parameter.fullname;
 
-                    if (!LoadFile(chaCtrl, fullPath) || !FixSideloader(chaCtrl.chaFile) || !UpdateTreeNodeObjectName(ocichar))
+                    if (!LoadFile(chaCtrl, fullPath) || !FixSideloader(chaCtrl.chaFile) || !LoadExtendedData(ocichar, charaFileSort.selectPath, (byte)i) || !UpdateTreeNodeObjectName(ocichar))
                     {
                         Logger.Log(LogLevel.Error, "[KK_SCOLB] Load Body FAILED");
                     }
@@ -91,6 +94,11 @@ namespace KK_StudioCharaOnlyLoadBody
                     {
                         OIBoneInfo.BoneGroup.Hair
                     });
+
+                    fakeChangeCharaFlag = true;
+                    ocichar.ChangeChara(charaFileSort.selectPath);
+                    fakeChangeCharaFlag = false;
+
                     chaCtrl.Reload(false, false, false, false);
                     Logger.Log(LogLevel.Info, $"[KK_SCOLB] Load Body Finish: {oldName} -> {ocichar.charInfo.chaFile.parameter.fullname}");
                 }
@@ -98,12 +106,14 @@ namespace KK_StudioCharaOnlyLoadBody
             SetKeepCoorButtonInteractable(__instance);
         }
 
+        //Sync my button state with the original change button
         private static void SetKeepCoorButtonInteractable(CharaList __instance)
         {
             int i = (String.Equals(__instance.name, "00_Female") ? 1 : 0);
             btn[i].GetComponent<Button>().interactable = ((Button)__instance.GetPrivate("buttonChange")).interactable;
         }
 
+        //Main load body function
         public static bool LoadFile(ChaControl chaCtrl, string fullPath)
         {
             if (!File.Exists(fullPath))
@@ -178,7 +188,7 @@ namespace KK_StudioCharaOnlyLoadBody
 
                         binaryReader.BaseStream.Seek(position + num2, SeekOrigin.Begin);
                     }
-                    catch (EndOfStreamException ex)
+                    catch (EndOfStreamException)
                     {
                         return false;
                     }
@@ -188,6 +198,7 @@ namespace KK_StudioCharaOnlyLoadBody
             }
         }
 
+        //Clear sideloader extended data which stored on the ChaFile
         public static bool FixSideloader(ChaFile file)
         {
             //Get these codes from Sideloader.AutoResolver.Hooks.ExtendedCardLoad
@@ -201,11 +212,6 @@ namespace KK_StudioCharaOnlyLoadBody
 
                 Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Sideloader marker found, external info count: {extInfo.Count}");
                 Logger.Log(LogLevel.Debug, "[KK_SCOLB] Clean them");
-                //while (extInfo.Count > 0)
-                //{
-                //    Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Remove Extended Data: {extInfo[0].GUID} : {extInfo[0].Property} : {extInfo[0].Slot}");
-                //    extInfo.RemoveAt(0);
-                //}
                 extInfo = null;
 
                 ExtendedSave.SetExtendedDataById(file, UniversalAutoResolver.UARExtID, null);
@@ -226,6 +232,52 @@ namespace KK_StudioCharaOnlyLoadBody
             }
         }
 
+        //Load ExtendedData from the new character card
+        public static bool LoadExtendedData(OCIChar ocichar, string file, byte sex)
+        {
+            string[] copyList = { "com.deathweasel.bepinex.bodyshaders", "com.deathweasel.bepinex.uncensorselector" };
+
+            ChaFileControl tmpChaFile = new ChaFileControl();
+            tmpChaFile.LoadCharaFile(file, sex, true, true);
+
+            foreach (var ext in copyList)
+            {
+                ExtendedSave.SetExtendedDataById(ocichar.charInfo.chaFile, ext, ExtendedSave.GetExtendedDataById(tmpChaFile, ext));
+                Logger.Log(LogLevel.Debug, "[KK_SCOLB] Change Extended Data: " + ext);
+            }
+
+            return true;
+
+            //ReadUncensorData(ocichar.charInfo.chaFile);
+            ////Only used for uncensor selector debug logging
+            //void ReadUncensorData(ChaFile chaFile)
+            //{
+            //    string BodyGUID = null;
+            //    string PenisGUID = null;
+            //    string BallsGUID = null;
+            //    var data = ExtendedSave.GetExtendedDataById(chaFile, "com.deathweasel.bepinex.uncensorselector");
+            //    if (data != null)
+            //    {
+            //        if (data.data.TryGetValue("BodyGUID", out var loadedUncensorGUID) && loadedUncensorGUID != null)
+            //        {
+            //            BodyGUID = loadedUncensorGUID.ToString();
+            //            Logger.Log(LogLevel.Debug, "[KK_SCOLB] BodyGUID: " + BodyGUID);
+            //        }
+            //        if (data.data.TryGetValue("PenisGUID", out var loadedPenisGUID) && loadedPenisGUID != null)
+            //        {
+            //            PenisGUID = loadedPenisGUID.ToString();
+            //            Logger.Log(LogLevel.Debug, "[KK_SCOLB] PenisGUID: " + PenisGUID);
+            //        }
+            //        if (data.data.TryGetValue("BallsGUID", out var loadedBallsGUID) && loadedBallsGUID != null)
+            //        {
+            //            BallsGUID = loadedBallsGUID.ToString();
+            //            Logger.Log(LogLevel.Debug, "[KK_SCOLB] BallsGUID: " + BallsGUID);
+            //        }
+            //    }
+            //}
+        }
+
+        //Update the name on the right panel
         public static bool UpdateTreeNodeObjectName(OCIChar oCIChar)
         {
             oCIChar.charInfo.name = oCIChar.charInfo.chaFile.parameter.fullname;
@@ -233,6 +285,33 @@ namespace KK_StudioCharaOnlyLoadBody
             Logger.Log(LogLevel.Debug, "[KK_SCOLB] Set Name to: " + oCIChar.charInfo.chaFile.parameter.fullname);
 
             return true;
+        }
+
+        //Some plugins hook on this function, so call it to trigger them. (Example: KKAPI.Chara.OnReload)
+        private static bool fakeChangeCharaFlag = false;
+        private static bool ChangeCharaPrefix(OCIChar __instance)
+        {
+            //HSPE will fail without renewing fbsCtrl. He use this as a dictionary key.
+            if (fakeChangeCharaFlag)
+            {
+                var oldFbsCtrl = __instance.charInfo.fbsCtrl;
+                var newFbsCtrl = new FaceBlendShape();
+                if (null != oldFbsCtrl)
+                {
+                    newFbsCtrl.BlinkCtrl = oldFbsCtrl.BlinkCtrl;
+                    newFbsCtrl.EyebrowCtrl = oldFbsCtrl.EyebrowCtrl;
+                    newFbsCtrl.EyeLookController = oldFbsCtrl.EyeLookController;
+                    newFbsCtrl.EyeLookDownCorrect = oldFbsCtrl.EyeLookDownCorrect;
+                    newFbsCtrl.EyeLookSideCorrect = oldFbsCtrl.EyeLookSideCorrect;
+                    newFbsCtrl.EyeLookUpCorrect = oldFbsCtrl.EyeLookUpCorrect;
+                    newFbsCtrl.EyesCtrl = oldFbsCtrl.EyesCtrl;
+                    newFbsCtrl.MouthCtrl = oldFbsCtrl.MouthCtrl;
+                }
+                ChaInfo chaInfo = __instance.charInfo;
+                chaInfo.SetPrivateProperty("fbsCtrl", newFbsCtrl);
+            }
+
+            return !fakeChangeCharaFlag;
         }
     }
 }
