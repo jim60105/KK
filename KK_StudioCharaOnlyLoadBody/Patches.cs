@@ -298,6 +298,7 @@ namespace KK_StudioCharaOnlyLoadBody
         public static bool UpdateTreeNodeObjectName(OCIChar oCIChar)
         {
             oCIChar.charInfo.name = oCIChar.charInfo.chaFile.parameter.fullname;
+            oCIChar.charInfo.chaFile.SetPrivateProperty("charaFileName", oCIChar.charInfo.chaFile.parameter.fullname);
             oCIChar.treeNodeObject.textName = oCIChar.charInfo.chaFile.parameter.fullname;
             Logger.Log(LogLevel.Debug, "[KK_SCOLB] Set Name to: " + oCIChar.charInfo.chaFile.parameter.fullname);
 
