@@ -86,6 +86,7 @@ namespace KK_StudioCharaOnlyLoadBody
                         ocichar.oiCharInfo.bones.Remove(array2[j]);
                     }
                     ocichar.hairDynamic = null;
+                    ocichar.skirtDynamic = null;
 
                     string oldName = ocichar.charInfo.chaFile.parameter.fullname;
 
@@ -97,12 +98,9 @@ namespace KK_StudioCharaOnlyLoadBody
 
                     AddObjectAssist.InitHairBone(ocichar, Singleton<Info>.Instance.dicBoneInfo);
                     ocichar.hairDynamic = AddObjectFemale.GetHairDynamic(ocichar.charInfo.objHair);
+                    ocichar.skirtDynamic = AddObjectFemale.GetSkirtDynamic(ocichar.charInfo.objClothes);
                     ocichar.InitFK(null);
-                    foreach (var __AnonType in FKCtrl.parts.Select((OIBoneInfo.BoneGroup p, int i2) => new
-                    {
-                        p,
-                        i2
-                    }))
+                    foreach (var __AnonType in FKCtrl.parts.Select((OIBoneInfo.BoneGroup p, int i2) => new { p, i2 }))
                     {
                         ocichar.ActiveFK(__AnonType.p, ocichar.oiCharInfo.activeFK[__AnonType.i2], ocichar.oiCharInfo.activeFK[__AnonType.i2]);
                     }
