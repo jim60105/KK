@@ -75,6 +75,9 @@ namespace KK_StudioCharaOnlyLoadBody
                     {
                         Singleton<GuideObjectManager>.Instance.Delete(boneInfo.guideObject, true);
                     }
+                    ocichar.listBones = (from v in ocichar.listBones
+                                         where v.boneGroup != OIBoneInfo.BoneGroup.Hair
+                                         select v).ToList<OCIChar.BoneInfo>();
                     int[] array2 = (from b in ocichar.oiCharInfo.bones
                                     where b.Value.@group == OIBoneInfo.BoneGroup.Hair
                                     select b.Key).ToArray<int>();
@@ -83,23 +86,39 @@ namespace KK_StudioCharaOnlyLoadBody
                         ocichar.oiCharInfo.bones.Remove(array2[j]);
                     }
                     ocichar.hairDynamic = null;
+
                     string oldName = ocichar.charInfo.chaFile.parameter.fullname;
 
                     if (!LoadFile(chaCtrl, fullPath) || !FixSideloader(chaCtrl.chaFile) || !LoadExtendedData(ocichar, charaFileSort.selectPath, (byte)i) || !UpdateTreeNodeObjectName(ocichar))
                     {
                         Logger.Log(LogLevel.Error, "[KK_SCOLB] Load Body FAILED");
                     }
+                    chaCtrl.Reload(false, false, false, false);
+
+                    AddObjectAssist.InitHairBone(ocichar, Singleton<Info>.Instance.dicBoneInfo);
                     ocichar.hairDynamic = AddObjectFemale.GetHairDynamic(ocichar.charInfo.objHair);
+                    ocichar.InitFK(null);
+                    foreach (var __AnonType in FKCtrl.parts.Select((OIBoneInfo.BoneGroup p, int i2) => new
+                    {
+                        p,
+                        i2
+                    }))
+                    {
+                        ocichar.ActiveFK(__AnonType.p, ocichar.oiCharInfo.activeFK[__AnonType.i2], ocichar.oiCharInfo.activeFK[__AnonType.i2]);
+                    }
+                    ocichar.ActiveKinematicMode(OICharInfo.KinematicMode.FK, ocichar.oiCharInfo.enableFK, true);
                     ocichar.UpdateFKColor(new OIBoneInfo.BoneGroup[]
                     {
                         OIBoneInfo.BoneGroup.Hair
                     });
+                    ocichar.ChangeEyesOpen(ocichar.charFileStatus.eyesOpenMax);
+                    ocichar.ChangeBlink(ocichar.charFileStatus.eyesBlink);
+                    ocichar.ChangeMouthOpen(ocichar.oiCharInfo.mouthOpen);
 
                     fakeChangeCharaFlag = true;
                     ocichar.ChangeChara(charaFileSort.selectPath);
                     fakeChangeCharaFlag = false;
 
-                    chaCtrl.Reload(false, false, false, false);
                     Logger.Log(LogLevel.Info, $"[KK_SCOLB] Load Body Finish: {oldName} -> {ocichar.charInfo.chaFile.parameter.fullname}");
                 }
             });
