@@ -222,10 +222,9 @@ namespace KK_StudioCharaOnlyLoadBody
             var extData = ExtendedSave.GetExtendedDataById(file, UniversalAutoResolver.UARExtID);
             List<ResolveInfo> extInfo = null;
 
-            if (extData != null && extData.data.ContainsKey("info"))
+            if (extData != null && extData.data.ContainsKey("info") && extData.data["info"] is object[] tmpExtInfo)
             {
-                var tmpExtInfo = (object[])extData.data["info"];
-                extInfo = tmpExtInfo.Select(x => ResolveInfo.Unserialize((byte[])x)).ToList();
+                extInfo = tmpExtInfo.Select(x => ResolveInfo.Unserialize(x as byte[])).ToList();
 
                 Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Sideloader marker found, external info count: {extInfo.Count}");
                 Logger.Log(LogLevel.Debug, "[KK_SCOLB] Clean them");
