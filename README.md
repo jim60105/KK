@@ -40,6 +40,7 @@
 
 # 需求依賴
 BepInEx v4.1.1<br>
+BepisPlugins r10
 
 # 安裝方式
 - 將所有的「*.dll」檔案放進BepInEx資料夾<br>
