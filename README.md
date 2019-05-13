@@ -29,14 +29,21 @@
 使女性支持單色化功能，用意在於彌補全女插件所造成的限制<br>
 可以和全女插件分開使用<br>
 
+# Studio Chara Only Load Body
+![image](https://github.com/jim60105/KK/raw/master/demo/demo4.gif)<br>
+
+保留衣服和飾品，只替換人物<br>
+目前確定支援Plugin:<br>
+- Koikatu Overlay Mods v4.2.1
+- Koikatu More Accessories v1.0.4
+- Koikatu KKPE v1.2.0
+
 # 需求依賴
 BepInEx v4.1.1<br>
 
 # 安裝方式
-- 將KK_StudioCoordinateLoadOption.dll放進BepInEx資料夾<br>
-- 將KK_StudioAllGirlsPlugin.dll放進BepInEx資料夾<br>
-- 將KK_StudioSimpleColorOnGirls.dll放進BepInEx資料夾<br>
-(OLD、NEW分別對應EC_Yoyaku前、後的版本)
+- 將所有的「*.dll」檔案放進BepInEx資料夾<br>
+((KK_StudioSimpleColorOnGirls: OLD、NEW分別對應EC_Yoyaku前、後的版本))
 
 # 下載位置
 [Latest Release](https://github.com/jim60105/KK/releases/latest "Latest Release")
