@@ -11,6 +11,7 @@ namespace KK_StudioCoordinateLoadOption
     class KCOX_Support
     {
         private static readonly BindingFlags publicFlag = BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance;
+        private static readonly BindingFlags privateFlag = BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance;
         private static object KCOXController;
         private static Dictionary<string, object> KCOXTexDataBackup = null;
 
@@ -99,6 +100,10 @@ namespace KK_StudioCoordinateLoadOption
 
         public static void CleanKCOXBackup()
         {
+            if (null != KCOXController)
+            {
+                KCOXController.GetType().InvokeMember("OnCardBeingSaved", privateFlag, null, KCOXController, new object[] { 1 });
+            }
             KCOXTexDataBackup = null;
             return;
         }
