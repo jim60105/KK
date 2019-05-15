@@ -37,6 +37,8 @@
 - Koikatu Overlay Mods v4.2.1
 - Koikatu More Accessories v1.0.4
 - Koikatu KKPE v1.2.0
+- Koikatu KK_UncensorSelector v3.6
+- Koikatu KKABMX v3.1
 
 # 需求依賴
 BepInEx v4.1.1<br>

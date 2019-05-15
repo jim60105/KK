@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-
+using System.Reflection;
 using BepInEx.Logging;
 
 using ExtensibleSaveFormat;
@@ -28,6 +28,7 @@ namespace KK_StudioCharaOnlyLoadBody
 {
     class Patches
     {
+        private static readonly BindingFlags publicFlag = BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance;
         internal static void InitPatch(HarmonyInstance harmony)
         {
             harmony.Patch(typeof(CharaList).GetMethod("InitCharaList", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(InitCharaListPostfix), null), null);
@@ -251,15 +252,51 @@ namespace KK_StudioCharaOnlyLoadBody
         //Load ExtendedData from the new character card
         public static bool LoadExtendedData(OCIChar ocichar, string file, byte sex)
         {
-            string[] copyList = { "com.deathweasel.bepinex.bodyshaders", "com.deathweasel.bepinex.uncensorselector" };
+            string[] copyList = { "com.deathweasel.bepinex.bodyshaders", "com.deathweasel.bepinex.uncensorselector", "boneData" };
 
             ChaFileControl tmpChaFile = new ChaFileControl();
             tmpChaFile.LoadCharaFile(file, sex, true, true);
 
             foreach (var ext in copyList)
             {
-                ExtendedSave.SetExtendedDataById(ocichar.charInfo.chaFile, ext, ExtendedSave.GetExtendedDataById(tmpChaFile, ext));
-                Logger.Log(LogLevel.Debug, "[KK_SCOLB] Change Extended Data: " + ext);
+                switch (ext)
+                {
+                    case "boneData":
+                        object BoneController = ocichar.charInfo.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
+                        if (null == BoneController)
+                        {
+                            Logger.Log(LogLevel.Debug, "[KK_SCLO] No ABMX BoneController found");
+                            break;
+                        }
+                        //Logger.Log(LogLevel.Debug, "[KK_SCLO] BoneController Get");
+
+                        // Clear previous data for this coordinate from coord specific modifiers
+                        List<object> Modifiers = new List<object>();
+                        foreach (string boneName in (IEnumerable<string>)BoneController.GetType().InvokeMember("GetAllPossibleBoneNames", publicFlag, null, BoneController, null))
+                        {
+                            var tmpModifier = BoneController.GetType().InvokeMember("GetModifier", publicFlag, null, BoneController, new object[] { boneName });
+                            if (null != tmpModifier)
+                            {
+                                Modifiers.Add(tmpModifier);
+                            }
+                        }
+                        //Logger.Log(LogLevel.Debug, "[KK_SCLO] Get Modifiers by AllBoneName");
+                        int i = 0;
+                        foreach (var modifier in Modifiers.Where(x => !(bool)x.GetType().InvokeMember("IsCoordinateSpecific", publicFlag, null, x, null)))
+                        {
+                            Logger.Log(LogLevel.Debug, "[KK_SCLO] Get original ABMX BoneData: " + (string)modifier.GetType().InvokeMember("BoneName", BindingFlags.GetProperty, null, modifier, null));
+                            var y = modifier.GetType().InvokeMember("GetModifier", publicFlag, null, modifier, new object[] { (ChaFileDefine.CoordinateType)ocichar.charInfo.fileStatus.coordinateType });
+                            y.GetType().InvokeMember("Clear", publicFlag, null, y, null);
+                            i++;
+                        }
+                        BoneController.GetType().InvokeMember("OnCardBeingSaved", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.InvokeMethod, null, BoneController, new object[] { 1 });
+                        Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Clear {i} ABMX Bone Modifiers, keep {Modifiers.Count - i} ABMX Bone Modifiers.");
+                        break;
+                    default:
+                        ExtendedSave.SetExtendedDataById(ocichar.charInfo.chaFile, ext, ExtendedSave.GetExtendedDataById(tmpChaFile, ext));
+                        Logger.Log(LogLevel.Debug, "[KK_SCOLB] Change Extended Data: " + ext);
+                        break;
+                }
             }
 
             return true;
