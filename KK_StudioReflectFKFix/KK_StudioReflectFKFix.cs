@@ -32,7 +32,7 @@ namespace KK_StudioReflectFKFix
     {
         internal const string PLUGIN_NAME = "Studio Reflect FK Fix";
         internal const string GUID = "com.jim60105.kk.studioreflectfkfix";
-        internal const string PLUGIN_VERSION = "19.05.16.1";
+        internal const string PLUGIN_VERSION = "19.05.16.2";
 
         private bool _isInit = false;
 

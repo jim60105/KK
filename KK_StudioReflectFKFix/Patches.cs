@@ -51,56 +51,25 @@ namespace KK_StudioReflectFKFix
             InitBtn(__instance);
         }
 
-        private static GameObject[] btn = new GameObject[3];
+        private static GameObject btn;
         private static void InitBtn(MPCharCtrl __instance)
         {
-            //Copy this btn
             var original = GameObject.Find("StudioScene/Canvas Main Menu/01_Add/00_Female/Button Change");
-            //btn[0]: Neck
             var parent = GameObject.Find("StudioScene/Canvas Main Menu/02_Manipulate/00_Chara/02_Kinematic/03_Neck");
-            btn[0] = UnityEngine.Object.Instantiate(original, parent.transform);
-            //btn[1]: LeftHand, btn[2]: RightHand
-            parent = GameObject.Find("StudioScene/Canvas Main Menu/02_Manipulate/00_Chara/02_Kinematic/06_Hand");
-            btn[1] = UnityEngine.Object.Instantiate(original, parent.transform);
-            btn[2] = UnityEngine.Object.Instantiate(original, parent.transform);
+            btn = UnityEngine.Object.Instantiate(original, parent.transform);
+            btn.name = "Copy FK Neck";
+            btn.transform.localPosition = new Vector3(0, -95, 0);
+            btn.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -116), new Vector2(190, -95));
+            btn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioReflectFKFix.Resources.CopyFKNeck.png", 183, 20);
+            btn.GetComponent<Button>().onClick.RemoveAllListeners();
+            btn.GetComponent<Button>().onClick.SetPersistentListenerState(0, UnityEngine.Events.UnityEventCallState.Off);
+            btn.GetComponent<Button>().interactable = true;
 
-            btn[0].name = "Copy FK Neck";
-            btn[1].name = "Copy FK Left Hand";
-            btn[2].name = "Copy FK Right Hand";
-
-            btn[0].transform.localPosition = new Vector3(0,-95, 0);
-            btn[0].transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -116), new Vector2(190, -95));
-            btn[0].GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioReflectFKFix.Resources.CopyFKNeck.png", 183, 20);
-
-            btn[1].transform.localPosition = new Vector3(0, -95, 0);
-            btn[1].transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -116), new Vector2(92.5f, -95));
-            btn[1].GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioReflectFKFix.Resources.CopyFKLeftHand.png", 82, 20);
-
-            btn[2].transform.localPosition = new Vector3(97.5f, -95, 0);
-            btn[2].transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(97.5f, -116), new Vector2(190, -95));
-            btn[2].GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioReflectFKFix.Resources.CopyFKRightHand.png", 82, 20);
-
-            foreach (var b in btn)
+            btn.GetComponent<Button>().onClick.AddListener(() =>
             {
-                b.GetComponent<Button>().onClick.RemoveAllListeners();
-                b.GetComponent<Button>().onClick.SetPersistentListenerState(0, UnityEngine.Events.UnityEventCallState.Off);
-                b.GetComponent<Button>().interactable = true;
-            }
-
-            btn[0].GetComponent<Button>().onClick.AddListener(() =>
-            {
-                typeof(MPCharCtrl).InvokeMember("CopyBoneFK", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod, null, __instance, new object[] { (OIBoneInfo.BoneGroup)256 });
+                typeof(MPCharCtrl).InvokeMember("CopyBoneFK", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod, null, __instance, new object[] { OIBoneInfo.BoneGroup.Neck });
             });
 
-            btn[1].GetComponent<Button>().onClick.AddListener(() =>
-            {
-                typeof(MPCharCtrl).InvokeMember("CopyBoneFK", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod, null, __instance, new object[] { (OIBoneInfo.BoneGroup)64 });
-            });
-
-            btn[2].GetComponent<Button>().onClick.AddListener(() =>
-            {
-                typeof(MPCharCtrl).InvokeMember("CopyBoneFK", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod, null, __instance, new object[] { (OIBoneInfo.BoneGroup)32 });
-            });
             Logger.Log(LogLevel.Debug, "[KK_SRFF] Draw Button Finish");
         }
     }

@@ -97,13 +97,10 @@
   <ItemGroup>
     <None Include="ILMerge.props" />
     <None Include="packages.config" />
-    <None Include="Resources\CopyFKHand.psd" />
     <None Include="Resources\CopyFKNeck.psd" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\CopyFKLeftHand.png" />
     <EmbeddedResource Include="Resources\CopyFKNeck.png" />
-    <EmbeddedResource Include="Resources\CopyFKRightHand.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\UIUtility\UIUtility.csproj">
