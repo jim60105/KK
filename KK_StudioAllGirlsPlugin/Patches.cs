@@ -28,7 +28,7 @@ namespace KK_StudioAllGirlsPlugin
             harmony.Patch(typeof(Studio.Studio).GetMethod("AddMale", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(AddMalePrefix), null), null, null);
             harmony.Patch(typeof(AddObjectAssist).GetMethod("LoadChild", new Type[] { typeof(ObjectInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject) }), new HarmonyMethod(typeof(Patches), nameof(LoadChildPrefix), null), null, null);
             harmony.Patch(typeof(ChaFile).GetMethod("SetParameterBytes", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(SetParameterBytesPostfix), null), null);
-            harmony.Patch(typeof(MPCharCtrl).GetNestedType("OtherInfo", BindingFlags.Public).GetMethod("UpdateInfo", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(UpdateInfoPostfix), null), null);
+            //harmony.Patch(typeof(MPCharCtrl).GetNestedType("OtherInfo", BindingFlags.Public).GetMethod("UpdateInfo", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(UpdateInfoPostfix), null), null);
             harmony.Patch(typeof(PauseCtrl).GetNestedType("FileInfo", BindingFlags.Public).GetMethod("Apply", AccessTools.all), new HarmonyMethod(typeof(Patches), nameof(ApplyPrefix), null), null, null);
         }
 
@@ -206,6 +206,7 @@ namespace KK_StudioAllGirlsPlugin
                 if (oicharInfo.sex == 0)
                 {
                     Logger.Log(LogLevel.Info, $"[KK_SAGP] {female.charInfo.name} is a girl now!");
+                    oicharInfo.SetPrivateProperty("sex",1);
                 }
                 return false;
             }
@@ -228,30 +229,30 @@ namespace KK_StudioAllGirlsPlugin
             return;
         }
 
-        //Active man->female's nipple slider
-        public static void UpdateInfoPostfix(MPCharCtrl.OtherInfo __instance, OCIChar _char)
-        {
-            FieldInfo[] fieldInfo = __instance.GetType().GetFields();
-            foreach (var fi in fieldInfo)
-            {
-                //Logger.Log(LogLevel.Debug, "[KK_SSCOG] Name: " + fi.Name);
-                //Logger.Log(LogLevel.Debug, "[KK_SSCOG] FieldType: " + fi.FieldType);
-                try
-                {
-                    if (fi.Name == "nipple")
-                    {
-                        var o = (MPCharCtrl.StateSliderInfo)fi.GetValue(__instance);
-                        o.active = true;
-                        o.slider.value = _char.oiCharInfo.nipple;
-                    }
-                }
-                catch (Exception e)
-                {
-                    Logger.Log(LogLevel.Error, "[KK_SAGP] Exception: " + e);
-                    Logger.Log(LogLevel.Error, "[KK_SAGP] Exception: " + e.Message);
-                }
-            }
-            Logger.Log(LogLevel.Debug, "[KK_SAGP] Chara Status Info Updated");
-        }
+        ////Active man->female's nipple slider
+        //public static void UpdateInfoPostfix(MPCharCtrl.OtherInfo __instance, OCIChar _char)
+        //{
+        //    FieldInfo[] fieldInfo = __instance.GetType().GetFields();
+        //    foreach (var fi in fieldInfo)
+        //    {
+        //        //Logger.Log(LogLevel.Debug, "[KK_SAGP] Name: " + fi.Name);
+        //        //Logger.Log(LogLevel.Debug, "[KK_SAGP] FieldType: " + fi.FieldType);
+        //        try
+        //        {
+        //            if (fi.Name == "nipple")
+        //            {
+        //                var o = (MPCharCtrl.StateSliderInfo)fi.GetValue(__instance);
+        //                o.active = true;
+        //                o.slider.value = _char.oiCharInfo.nipple;
+        //            }
+        //        }
+        //        catch (Exception e)
+        //        {
+        //            Logger.Log(LogLevel.Error, "[KK_SAGP] Exception: " + e);
+        //            Logger.Log(LogLevel.Error, "[KK_SAGP] Exception: " + e.Message);
+        //        }
+        //    }
+        //    Logger.Log(LogLevel.Debug, "[KK_SAGP] Chara Status Info Updated");
+        //}
     }
 }
