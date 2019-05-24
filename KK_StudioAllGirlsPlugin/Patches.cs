@@ -92,10 +92,10 @@ namespace KK_StudioAllGirlsPlugin
             for (int i = 0; i < num; i++)
             {
                 array[i].ChangeChara((__instance.GetPrivate("charaFileSort") as CharaFileSort).selectPath);
-            }
-            if ((int)((CharaList)__instance).GetPrivate("sex") == 0)
-            {
-                Logger.Log(LogLevel.Info, "[KK_SAGP] He's a girl now!");
+                if ((int)((CharaList)__instance).GetPrivate("sex") == 0)
+                {
+                    Logger.Log(LogLevel.Info, $"[KK_SAGP] {array[i].charInfo.name} is a girl now!");
+                }
             }
 
             return false;
@@ -190,9 +190,9 @@ namespace KK_StudioAllGirlsPlugin
         //Load all the male as female
         //Redirect AddMale to AddFemale
         public static bool AddMalePrefix(string _path)
-        { 
+        {
             Singleton<Studio.Studio>.Instance.AddFemale(_path);
-            Logger.Log(LogLevel.Info, "[KK_SAGP] He's a girl now!");
+            Logger.Log(LogLevel.Info, $"[KK_SAGP] {_path} is a girl now!");
             return false;
         }
 
@@ -201,11 +201,12 @@ namespace KK_StudioAllGirlsPlugin
             if (_child.kind == 0)
             {
                 OICharInfo oicharInfo = _child as OICharInfo;
+                var female = AddObjectFemale.Load(oicharInfo, _parent, _parentNode);
+
                 if (oicharInfo.sex == 0)
                 {
-                    Logger.Log(LogLevel.Info, "[KK_SAGP] He's a girl now!");
+                    Logger.Log(LogLevel.Info, $"[KK_SAGP] {female.charInfo.name} is a girl now!");
                 }
-                AddObjectFemale.Load(oicharInfo, _parent, _parentNode);
                 return false;
             }
             return true;
