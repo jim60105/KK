@@ -23,14 +23,14 @@ namespace KK_StudioCoordinateLoadOption
                 MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
                 if (null == MoreAccessories)
                 {
-                    throw new Exception("[KK_SCLO] Load assembly FAILED: MoreAccessories");
+                    throw new Exception("Load assembly FAILED: MoreAccessories");
                 }
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] MoreAccessories found");
                 return true;
             }
             catch (Exception ex)
             {
-                Logger.Log(LogLevel.Error, ex.Message);
+                Logger.Log(LogLevel.Error, "[KK_SCLO] "+ex.Message);
                 return false;
             }
         }

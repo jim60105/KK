@@ -1,15 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
+
 using BepInEx.Logging;
+
 using Extension;
+
 using Harmony;
+
 using MessagePack;
+
 using Studio;
+
 using UniRx;
+
 using UnityEngine.UI;
+
 using Logger = BepInEx.Logger;
 
 namespace KK_StudioAllGirlsPlugin
@@ -18,40 +26,41 @@ namespace KK_StudioAllGirlsPlugin
     {
         internal static void InitPatch(HarmonyInstance harmony)
         {
-            harmony.Patch(typeof(CharaList).GetMethod("OnSelect", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(OnSelectPrefix), null), null, null);
-            harmony.Patch(typeof(CharaList).GetMethod("OnDelete", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(OnDeletePrefix), null), null, null);
-            harmony.Patch(typeof(CharaList).GetMethod("OnDeselect", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(OnDeselectPrefix), null), null, null);
-            harmony.Patch(typeof(CharaList).GetMethod("OnSelectChara", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), null, new HarmonyMethod(typeof(Patches), nameof(OnSelectCharaPostfix), null), null);
+            harmony.Patch(typeof(PauseCtrl).GetMethod("CheckIdentifyingCode", AccessTools.all), null, null, new HarmonyMethod(typeof(Patches), nameof(CheckIdentifyingCodePrefixTranspiler), null));
+            harmony.Patch(typeof(PauseCtrl).GetNestedType("FileInfo", BindingFlags.Public).GetMethod("Apply", AccessTools.all), new HarmonyMethod(typeof(Patches), nameof(ApplyPrefix), null), null, null);
+
             harmony.Patch(typeof(CharaList).GetMethod("ChangeCharaFemale", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(ChangeCharaPrefix), null), null, null);
             harmony.Patch(typeof(CharaList).GetMethod("ChangeCharaMale", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(ChangeCharaPrefix), null), null, null);
-            harmony.Patch(typeof(PauseCtrl).GetMethod("CheckIdentifyingCode", AccessTools.all), new HarmonyMethod(typeof(Patches), nameof(CheckIdentifyingCodePrefix), null), null, null);
+            harmony.Patch(typeof(CharaList).GetMethod("OnSelectChara", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), null, null, new HarmonyMethod(typeof(Patches), nameof(OnSelectCharaTranspiler), null));
+            harmony.Patch(typeof(CharaList).GetMethod("OnSelect", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), null, null, new HarmonyMethod(typeof(Patches), nameof(OnSelectTranspiler), null));
+            harmony.Patch(typeof(CharaList).GetMethod("OnDeselect", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(OnDeselectPrefix), null), null, null);
+            harmony.Patch(typeof(CharaList).GetMethod("OnDelete", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), null, null, new HarmonyMethod(typeof(Patches), nameof(OnDeleteTranspiler), null));
+
             harmony.Patch(typeof(Studio.Studio).GetMethod("AddMale", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(AddMalePrefix), null), null, null);
             harmony.Patch(typeof(AddObjectAssist).GetMethod("LoadChild", new Type[] { typeof(ObjectInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject) }), new HarmonyMethod(typeof(Patches), nameof(LoadChildPrefix), null), null, null);
             harmony.Patch(typeof(ChaFile).GetMethod("SetParameterBytes", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(SetParameterBytesPostfix), null), null);
-            //harmony.Patch(typeof(MPCharCtrl).GetNestedType("OtherInfo", BindingFlags.Public).GetMethod("UpdateInfo", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(UpdateInfoPostfix), null), null);
-            harmony.Patch(typeof(PauseCtrl).GetNestedType("FileInfo", BindingFlags.Public).GetMethod("Apply", AccessTools.all), new HarmonyMethod(typeof(Patches), nameof(ApplyPrefix), null), null, null);
         }
 
-        //PauseCtrl(PoseCtrl), Cancel gender restrictions of pose reading
-        public static bool CheckIdentifyingCodePrefix(ref bool __result, string _path, int _sex)
+        //PauseCtrl(PoseCtrl), 取消姿勢讀取的性別檢核
+        private static IEnumerable<CodeInstruction> CheckIdentifyingCodePrefixTranspiler(IEnumerable<CodeInstruction> instructions)
         {
-            using (FileStream fileStream = new FileStream(_path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            var codes = new List<CodeInstruction>(instructions);
+            for (int i = 0; i < codes.Count; i++)
             {
-                using (BinaryReader binaryReader = new BinaryReader(fileStream))
+                if (codes[i].opcode == OpCodes.Beq) //Line 23 
                 {
-                    if (string.Compare(binaryReader.ReadString(), "【pose】") != 0)
+                    i++; //Line 24 
+                    if (codes[i].opcode == OpCodes.Ldc_I4_0) //Double Check
                     {
-                        __result = false;
-                        return false;
+                        codes.RemoveRange(i, 3);
                     }
-                    binaryReader.ReadInt32();
+                    break;
                 }
             }
-            __result = true;
-            return false;
+            return codes.AsEnumerable();
         }
 
-        //Fix Pose Loading FK bone not found Error
+        //PauseCtrl(PoseCtrl), 修正姿勢讀取的FK bone not found Error
         private static bool ApplyPrefix(OCIChar _char, PauseCtrl.FileInfo __instance)
         {
             _char.LoadAnime(__instance.group, __instance.category, __instance.no, __instance.normalizedTime);
@@ -81,7 +90,7 @@ namespace KK_StudioAllGirlsPlugin
             return false;
         }
 
-        //Work when change button clicked
+        //將男女的變更角色讀取都導向這裡，取消讀取的性別檢核
         public static bool ChangeCharaPrefix(object __instance)
         {
             OCIChar[] array = (from v in Singleton<GuideObjectManager>.Instance.selectObjectKey
@@ -97,55 +106,48 @@ namespace KK_StudioAllGirlsPlugin
                     Logger.Log(LogLevel.Info, $"[KK_SAGP] {array[i].charInfo.name} is a girl now!");
                 }
             }
-
             return false;
         }
 
-        //OnSelect at the left filesort
-        private static void OnSelectCharaPostfix(object __instance, int _idx)
+        //左側角色清單的OnSelect
+        private static IEnumerable<CodeInstruction> OnSelectCharaTranspiler(IEnumerable<CodeInstruction> instructions)
         {
-            if ((__instance.GetPrivate("buttonChange") as Button).interactable != true)
+            var codes = new List<CodeInstruction>(instructions);
+            for (int i = 0; i < codes.Count; i++)
             {
-                if (_idx < 0)
+                if (codes[i].opcode == OpCodes.Brfalse) //Line 25
                 {
-                    return;
+                    i++; //Line 26
+                    codes.Insert(i, new CodeInstruction(OpCodes.Ldc_I4_1)); //Insert at Line 26
+
+                    for (int j = i; j < codes.Count; j++)
+                    {
+                        if (codes[j].opcode == OpCodes.Ceq)
+                        {
+                            j++;
+                            codes.RemoveRange(i + 1, j - i - 1);  //Remove from Line 26+1(ldloc.1) to Line 31+1(ceq)
+                            break;
+                        }
+                    }
+                    break;
                 }
-                ObjectCtrlInfo ctrlInfo = Studio.Studio.GetCtrlInfo(Singleton<Studio.Studio>.Instance.treeNodeCtrl.selectNode);
-                ((Button)__instance.GetPrivate("buttonChange")).interactable = ctrlInfo is OCIChar ocichar
-                                                                               && ocichar.sex > -1
-                                                                               && ctrlInfo.kind == 0;
-                __instance.SetPrivate("isDelay", true);
-                Observable.Timer(TimeSpan.FromMilliseconds(250.0)).Subscribe(delegate (long _)
-                {
-                    __instance.SetPrivate("isDelay", false);
-                }).AddTo((CharaList)__instance);
-                return;
             }
+            return codes.AsEnumerable();
         }
 
-        //OnSelect at the right panel
-        private static bool OnSelectPrefix(object __instance, TreeNodeObject _node)
+        //右側物品清單的OnSelect
+        private static IEnumerable<CodeInstruction> OnSelectTranspiler(IEnumerable<CodeInstruction> instructions)
         {
-            var buttonChange = (Button)__instance.GetPrivate("buttonChange");
-            if (null == buttonChange || null == __instance.GetPrivate("charaFileSort"))
+            var codes = new List<CodeInstruction>(instructions);
+            for (int i = 0; i < codes.Count; i++)
             {
-                Logger.Log(LogLevel.Error, "[KK_SAGP] Get instance FAILED");
-                return true;
+                if (codes[i].opcode == OpCodes.Stloc_1 && codes[i - 1].opcode == OpCodes.Isinst) //Line 30
+                {
+                    codes.RemoveRange(i, 8);
+                    codes[i].opcode = OpCodes.Brtrue_S;
+                }
             }
-            if (_node == null ||
-                !Singleton<Studio.Studio>.IsInstance() ||
-                !Singleton<Studio.Studio>.Instance.dicInfo.TryGetValue(_node, out ObjectCtrlInfo objectCtrlInfo) ||
-                null == objectCtrlInfo ||
-                objectCtrlInfo.kind != 0)
-            {
-                buttonChange.interactable = false;
-                return false;
-            }
-            if ((__instance.GetPrivate("charaFileSort") as CharaFileSort).select != -1)
-            {
-                buttonChange.interactable = true;
-            }
-            return false;
+            return codes.AsEnumerable();
         }
 
         private static bool OnDeselectPrefix(object __instance, TreeNodeObject _node)
@@ -166,29 +168,22 @@ namespace KK_StudioAllGirlsPlugin
             return false;
         }
 
-        private static bool OnDeletePrefix(object __instance, ObjectCtrlInfo _info)
+        private static IEnumerable<CodeInstruction> OnDeleteTranspiler(IEnumerable<CodeInstruction> instructions)
         {
-            if (_info == null)
+            var codes = new List<CodeInstruction>(instructions);
+            for (int i = 0; i < codes.Count; i++)
             {
-                return false;
+                if (codes[i].opcode == OpCodes.Stloc_0 && codes[i - 1].opcode == OpCodes.Isinst) //Line 30
+                {
+                    codes.RemoveRange(i, 8);
+                    codes[i].opcode = OpCodes.Brtrue_S;
+                }
             }
-            if (_info.kind != 0)
-            {
-                return false;
-            }
-            if (!(_info is OCIChar))
-            {
-                return false;
-            }
-            if ((__instance.GetPrivate("charaFileSort") as CharaFileSort).select != -1)
-            {
-                ((Button)__instance.GetPrivate("buttonChange")).interactable = false;
-            }
-            return false;
+            return codes.AsEnumerable();
         }
 
-        //Load all the male as female
-        //Redirect AddMale to AddFemale
+        //將所有男性讀取為女性
+        //將AddMale重定向至AddFemale
         public static bool AddMalePrefix(string _path)
         {
             Singleton<Studio.Studio>.Instance.AddFemale(_path);
@@ -196,6 +191,7 @@ namespace KK_StudioAllGirlsPlugin
             return false;
         }
 
+        //Studio.AddObjectAssist處的角色讀取，將性別檢核拿掉，只以女性讀取
         public static bool LoadChildPrefix(ObjectInfo _child, ObjectCtrlInfo _parent = null, TreeNodeObject _parentNode = null)
         {
             if (_child.kind == 0)
@@ -206,7 +202,7 @@ namespace KK_StudioAllGirlsPlugin
                 if (oicharInfo.sex == 0)
                 {
                     Logger.Log(LogLevel.Info, $"[KK_SAGP] {female.charInfo.name} is a girl now!");
-                    oicharInfo.SetPrivateProperty("sex",1);
+                    oicharInfo.SetPrivateProperty("sex", 1);
                 }
                 return false;
             }
@@ -223,36 +219,9 @@ namespace KK_StudioAllGirlsPlugin
                 chaFileParameter.SetPrivateProperty("exType", 0);
             }
             chaFileParameter.sex = 1;
-            //Logger.Log(LogLevel.Debug, "[KK_SAGP] Set Sex: " + chaFileParameter.sex);
 
             __instance.parameter.Copy(chaFileParameter);
             return;
         }
-
-        ////Active man->female's nipple slider
-        //public static void UpdateInfoPostfix(MPCharCtrl.OtherInfo __instance, OCIChar _char)
-        //{
-        //    FieldInfo[] fieldInfo = __instance.GetType().GetFields();
-        //    foreach (var fi in fieldInfo)
-        //    {
-        //        //Logger.Log(LogLevel.Debug, "[KK_SAGP] Name: " + fi.Name);
-        //        //Logger.Log(LogLevel.Debug, "[KK_SAGP] FieldType: " + fi.FieldType);
-        //        try
-        //        {
-        //            if (fi.Name == "nipple")
-        //            {
-        //                var o = (MPCharCtrl.StateSliderInfo)fi.GetValue(__instance);
-        //                o.active = true;
-        //                o.slider.value = _char.oiCharInfo.nipple;
-        //            }
-        //        }
-        //        catch (Exception e)
-        //        {
-        //            Logger.Log(LogLevel.Error, "[KK_SAGP] Exception: " + e);
-        //            Logger.Log(LogLevel.Error, "[KK_SAGP] Exception: " + e.Message);
-        //        }
-        //    }
-        //    Logger.Log(LogLevel.Debug, "[KK_SAGP] Chara Status Info Updated");
-        //}
     }
 }

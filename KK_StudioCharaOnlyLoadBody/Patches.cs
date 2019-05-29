@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+
 using BepInEx.Logging;
 
 using ExtensibleSaveFormat;
@@ -53,10 +54,20 @@ namespace KK_StudioCharaOnlyLoadBody
             btn[i].name = "Button Keep Coordinate Change";
             btn[i].transform.position += new Vector3(0, -25, 0);
             btn[i].transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(180, -401), new Vector2(390, -380));
-            if (Application.systemLanguage == SystemLanguage.Chinese)
-                btn[i].GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaOnlyLoadBody.Resources.buttonChange.png", 183, 20);
-            else
-                btn[i].GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaOnlyLoadBody.Resources.buttonChange_EN.png", 183, 20);
+
+            //希望將來可以用文字UI，而不是內嵌於圖片
+            switch (Application.systemLanguage)
+            {
+                case SystemLanguage.Chinese:
+                    btn[i].GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaOnlyLoadBody.Resources.buttonChange.png", 183, 20);
+                    break;
+                case SystemLanguage.Japanese:
+                    btn[i].GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaOnlyLoadBody.Resources.buttonChange_JP.png", 183, 20);
+                    break;
+                default:
+                    btn[i].GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaOnlyLoadBody.Resources.buttonChange_EN.png", 183, 20);
+                    break;
+            }
 
             btn[i].GetComponent<Button>().onClick.RemoveAllListeners();
             btn[i].GetComponent<Button>().onClick.SetPersistentListenerState(0, UnityEngine.Events.UnityEventCallState.Off);

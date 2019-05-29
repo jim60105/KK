@@ -328,9 +328,7 @@ ASALocalRun/
 
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
-/KK_StudioCharaOnlyLoadBody/Patches - 複製.cs
-/KK_StudioCharaOnlyLoadBody/MoreAccessories_Support.cs
-/KK_StudioCharaOnlyLoadBody/KCOX_Support.cs
-/KK_StudioReflectFKFix/Resources/CopyFKHand.psd
-/KK_StudioReflectFKFix/Resources/CopyFKLeftHand.png
-/KK_StudioReflectFKFix/Resources/CopyFKRightHand.png
+
+*.psd
+/KK_StudioTextObject
+/TMPro

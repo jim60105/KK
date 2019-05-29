@@ -69,5 +69,25 @@ namespace KK_StudioCharaOnlyLoadBody.Properties {
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
+        
+        /// <summary>
+        ///   查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+        /// </summary>
+        internal static System.Drawing.Bitmap buttonChange_EN {
+            get {
+                object obj = ResourceManager.GetObject("buttonChange_EN", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+        /// </summary>
+        internal static System.Drawing.Bitmap buttonChange_JP {
+            get {
+                object obj = ResourceManager.GetObject("buttonChange_JP", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
     }
 }

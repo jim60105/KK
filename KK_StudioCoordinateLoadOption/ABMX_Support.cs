@@ -1,6 +1,7 @@
 ﻿using BepInEx.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -15,24 +16,29 @@ namespace KK_StudioCoordinateLoadOption
         private static Dictionary<string, object> ABMXDataBackup = null;
         private static object BoneController = null;
         private static Type BoneModifierType = null;
-        private static Type BoneModifierDataType = null;
 
         public static bool LoadAssembly()
         {
             try
             {
-                BoneModifierType = Assembly.LoadFrom("BepInEx/KKABMPlugin.dll").GetType("KKABMX.Core.BoneModifier");
-                BoneModifierDataType = Assembly.LoadFrom("BepInEx/KKABMPlugin.dll").GetType("KKABMX.Core.BoneModifierData");
-                if (BoneModifierDataType == null && BoneModifierType == null)
+                if (File.Exists("BepInEx/KKABMPlugin.dll"))
                 {
-                    throw new Exception("[KK_SCLO] Load assembly FAILED: KKABMX");
+                    BoneModifierType = Assembly.LoadFrom("BepInEx/KKABMPlugin.dll").GetType("KKABMX.Core.BoneModifier");
+                }
+                else if(File.Exists("BepInEx/KKABMX.dll"))
+                {
+                    BoneModifierType = Assembly.LoadFrom("BepInEx/KKABMX.dll").GetType("KKABMX.Core.BoneModifier");
+                }
+                else  
+                {
+                    throw new Exception("Load assembly FAILED: KKABMX");
                 }
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] KKABMX found");
                 return true;
             }
             catch (Exception ex)
             {
-                Logger.Log(LogLevel.Error, ex.Message);
+                Logger.Log(LogLevel.Error, "[KK_SCLO] "+ex.Message);
                 return false;
             }
         }

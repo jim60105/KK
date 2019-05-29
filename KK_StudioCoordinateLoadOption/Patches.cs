@@ -225,18 +225,6 @@ namespace KK_StudioCoordinateLoadOption
             {
                 MoreAccessories_Support.CopyMoreAccessoriesData(chaCtrl.chaFile);
             }
-
-            //Get whole clothes and whole accessories
-            //byte[] bytes = MessagePackSerializer.Serialize<ChaFileClothes>(chaCtrl.nowCoordinate.clothes);
-            //byte[] originalAccBytes = MessagePackSerializer.Serialize<ChaFileAccessory>(chaCtrl.nowCoordinate.accessory);
-
-            //Change clothes part
-            //clothesIdBackup[kind] = MessagePackSerializer.Serialize<ChaFileClothes.PartsInfo>(clothes.parts[kind]);
-            //chaCtrl.nowCoordinate.clothes.parts[kind] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(clothesIdBackup[kind]);
-
-            //Load function
-            //chaCtrl.nowCoordinate.LoadFile(fullPath);
-            //Logger.Log(LogLevel.Debug,"[KK_SCLO] Loaded new clothes SUCCESS");
         }
 
         //Rollback

@@ -22,14 +22,14 @@ namespace KK_StudioCoordinateLoadOption
                 var ass = Assembly.LoadFrom("BepInEx/KoiClothesOverlay.dll");
                 if (null == ass)
                 {
-                    throw new Exception("[KK_SCLO] Load assembly FAILED: KCOX");
+                    throw new Exception("Load assembly FAILED: KCOX");
                 }
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] KCOX found");
                 return true;
             }
             catch (Exception ex)
             {
-                Logger.Log(LogLevel.Error, ex.Message);
+                Logger.Log(LogLevel.Error, "[KK_SCLO] " + ex.Message);
                 return false;
             }
         }

@@ -45,9 +45,14 @@ namespace KK_StudioReflectFKFix
             ((Button)__instance.GetPrivate("ikInfo").GetPrivate("buttonReflectFK")).onClick.AddListener(delegate ()
             {
                 //__instance.CopyBoneFK((OIBoneInfo.BoneGroup)353);
-                typeof(MPCharCtrl).InvokeMember("CopyBoneFK", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod, null, __instance, new object[] { (OIBoneInfo.BoneGroup)1 });
+                typeof(MPCharCtrl).InvokeMember("CopyBoneFK", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod, null, __instance, new object[] { OIBoneInfo.BoneGroup.Body });
             });
-            Logger.Log(LogLevel.Debug, "[KK_SRFF] IK->FK Function Rewrite Finish");
+            ((Button[])__instance.GetPrivate("fkInfo").GetPrivate("buttonAnimeSingle"))[1].onClick.RemoveAllListeners();
+            ((Button[])__instance.GetPrivate("fkInfo").GetPrivate("buttonAnimeSingle"))[1].onClick.AddListener(delegate ()
+            {
+                typeof(MPCharCtrl).InvokeMember("CopyBoneFK", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod, null, __instance, new object[] { OIBoneInfo.BoneGroup.Neck });
+            });
+            Logger.Log(LogLevel.Debug, "[KK_SRFF] FK Fix Finish");
             InitBtn(__instance);
         }
 
