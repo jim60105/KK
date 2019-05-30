@@ -60,6 +60,7 @@ namespace KK_StudioCoordinateLoadOption
 
         private static void InitPostfix(object __instance)
         {
+            BlockAnotherPlugin();
             Array ClothesKindArray = Enum.GetValues(typeof(ChaFileDefine.ClothesKind));
 
             //Draw Panel and ButtonAll
@@ -114,7 +115,7 @@ namespace KK_StudioCoordinateLoadOption
             Logger.Log(LogLevel.Debug, "[KK_SCLO] Draw Panel Finish");
         }
 
-        public static void OnClickRootPostfix(MPCharCtrl __instance, int _idx)
+        private static void OnClickRootPostfix(MPCharCtrl __instance, int _idx)
         {
             if (_idx > 0 && __instance != null)
             {
@@ -122,6 +123,7 @@ namespace KK_StudioCoordinateLoadOption
             }
         }
 
+        //Backup
         public static bool OnClickLoadPrefix()
         {
             Logger.Log(LogLevel.Debug, "[KK_SCLO] Onclick Patch Start");
@@ -171,7 +173,7 @@ namespace KK_StudioCoordinateLoadOption
             return true;
         }
 
-        public static void BackupCoordinateData()
+        private static void BackupCoordinateData()
         {
             ChaControl chaCtrl = mpCharCtrl.ociChar.charInfo;
             if (chaCtrl == null)
@@ -377,6 +379,19 @@ namespace KK_StudioCoordinateLoadOption
             if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) MoreAccessories_Support.CleanMoreAccBackup();
             Logger.Log(LogLevel.Info, "[KK_SCLO] Change Coordinate Finish");
             Utils.Sound.Play(SystemSE.ok_s);
+        }
+
+        //另一插件(KK_ClothesLoadOption)在和我相同的位置畫Panel，將他Block掉
+        //因為他的插件在CharaMaker和Studio皆有功能，僅Studio部分和我重疊，故採此對策
+        //若是選擇用他的插件，直接將我這插件移除即可。
+        private static void BlockAnotherPlugin()
+        {
+            var anotherPlugin = GameObject.Find("StudioScene/Canvas Main Menu/ClosesLoadOption Panel");
+            if (null != anotherPlugin)
+            {
+                anotherPlugin.transform.localScale = Vector3.zero;
+                Logger.Log(LogLevel.Debug, "[KK_SCLO] Block KK_ClothesLoadOption Panel: "+anotherPlugin.activeSelf);
+            }
         }
     }
 }
