@@ -38,11 +38,56 @@ namespace KK_StudioCoordinateLoadOption
             "ct_shoes_inner",
             "ct_shoes_outer"
         };
+
         public static readonly string[] SubClothesNames =
         {
             "ct_top_parts_A",
             "ct_top_parts_B",
             "ct_top_parts_C"
+        };
+
+        public static string[] ClothesKindName = ClothesKindNameJp;
+
+        public static readonly string[] ClothesKindNameJp =
+        {
+            "トップス",
+            "ボトムス",
+            "ブラ",
+            "ショーツ",
+            "手袋",
+            "パンスト",
+            "靴下",
+            "靴(內履き)",
+            "靴(外履き)",
+            "アクセサリー"
+        };
+
+        public static readonly string[] ClothesKindNameCh =
+        {
+            "上衣",
+            "下裝",
+            "胸罩",
+            "內褲",
+            "手套",
+            "褲襪",
+            "襪子",
+            "室內鞋",
+            "室外鞋",
+            "飾品"
+        };
+
+        public static readonly string[] ClothesKindNameEn =
+        {
+            "Tops",
+            "Bottoms",
+            "Bra",
+            "Shorts",
+            "Gloves",
+            "Pantyhose",
+            "Socks",
+            "Indoor shoes",
+            "Outdoor shoes",
+            "Accessories"
         };
 
         internal static void InitPatch(HarmonyInstance harmony)
@@ -61,12 +106,31 @@ namespace KK_StudioCoordinateLoadOption
         private static void InitPostfix(object __instance)
         {
             BlockAnotherPlugin();
+            switch (Application.systemLanguage)
+            {
+                case SystemLanguage.Chinese:
+                    ClothesKindName = ClothesKindNameCh;
+                    break;
+                case SystemLanguage.Japanese:
+                    ClothesKindName = ClothesKindNameJp;
+                    break;
+                default:
+                    ClothesKindName = ClothesKindNameEn;
+                    break;
+            }
+            var _xua = GameObject.Find("___XUnityAutoTranslator");
+            if(null!= _xua)
+            {
+                ClothesKindName = ClothesKindNameEn;
+                Logger.Log(LogLevel.Info, "[KK_SCLO] Found XUnityAutoTranslator, load English UI!");
+            }
+
             Array ClothesKindArray = Enum.GetValues(typeof(ChaFileDefine.ClothesKind));
 
             //Draw Panel and ButtonAll
             charaFileSort = (CharaFileSort)__instance.GetPrivate("fileSort");
             Image panel = UILib.UIUtility.CreatePanel("TooglePanel", charaFileSort.root.parent.parent.parent);
-            Button btnAll = UILib.UIUtility.CreateButton("BtnAll", panel.transform, "all");
+            Button btnAll = UILib.UIUtility.CreateButton("BtnAll", panel.transform, "All");
             btnAll.GetComponentInChildren<Text>(true).color = Color.white;
             btnAll.GetComponent<Image>().color = Color.gray;
             btnAll.transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(5f, 25f + 20f * ClothesKindArray.Length), new Vector2(-5f, 50f + 20f * (ClothesKindArray.Length)));
@@ -76,18 +140,18 @@ namespace KK_StudioCoordinateLoadOption
             Toggle[] tgls = new Toggle[ClothesKindArray.Length + 1];
             for (int i = 0; i < ClothesKindArray.Length; i++)
             {
-                tgls[i] = UILib.UIUtility.CreateToggle(ClothesKindArray.GetValue(i).ToString(), panel.transform, ClothesKindArray.GetValue(i).ToString());
+                tgls[i] = UILib.UIUtility.CreateToggle(ClothesKindArray.GetValue(i).ToString(), panel.transform, ClothesKindName.GetValue(i).ToString());
                 tgls[i].GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
                 tgls[i].GetComponentInChildren<Text>(true).color = Color.white;
                 tgls[i].transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(5f, 20f * (ClothesKindArray.Length - i)), new Vector2(5f, 25f + 20f * (ClothesKindArray.Length - i)));
-                tgls[i].GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20f, 1f), new Vector2(-5f, -2f));
+                tgls[i].GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
             }
 
-            tgls[ClothesKindArray.Length] = UILib.UIUtility.CreateToggle("ToggleAccessories", panel.transform, "accessories");
+            tgls[ClothesKindArray.Length] = UILib.UIUtility.CreateToggle("accessories", panel.transform,ClothesKindName[ClothesKindName.Length-1]);
             tgls[ClothesKindArray.Length].GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
             tgls[ClothesKindArray.Length].GetComponentInChildren<Text>(true).color = Color.white;
             tgls[ClothesKindArray.Length].transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(5f, 0f), new Vector2(5f, 25f));
-            tgls[ClothesKindArray.Length].GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20f, 1f), new Vector2(-5f, -2f));
+            tgls[ClothesKindArray.Length].GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
 
             panel.transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(407f, 285f - ClothesKindArray.Length * 20), new Vector2(150f, 340f));
             panel.GetComponent<Image>().color = new Color32(80, 80, 80, 220);
@@ -290,9 +354,9 @@ namespace KK_StudioCoordinateLoadOption
                     */
 
                     //Rollback accessories
-                    if (String.Equals(tgl.GetComponentInChildren<Text>(true).text, "accessories"))
+                    if (String.Equals(tgl.name, "accessories"))
                     {
-                        Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Roll back:" + tgl.GetComponentInChildren<Text>(true).text);
+                        Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Roll back:" + tgl.name);
                         //Rollback MoreAccessories first
                         if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist)
                         {
@@ -317,11 +381,11 @@ namespace KK_StudioCoordinateLoadOption
                     object tmpToggleType = null;
                     try
                     {
-                        tmpToggleType = Enum.Parse(typeof(ChaFileDefine.ClothesKind), tgl.GetComponentInChildren<Text>(true).text);
+                        tmpToggleType = Enum.Parse(typeof(ChaFileDefine.ClothesKind), tgl.name);
                     }
                     catch (NullReferenceException)
                     {
-                        Logger.Log(LogLevel.Debug, "[KK_SCLO] Discard Unknown Toggle:" + tgl.GetComponentInChildren<Text>(true).text);
+                        Logger.Log(LogLevel.Debug, "[KK_SCLO] Discard Unknown Toggle:" + tgl.name);
                         Callback?.Invoke();
                         yield break;
                     }
@@ -330,7 +394,7 @@ namespace KK_StudioCoordinateLoadOption
                     //Roll back clothes
                     chaCtrl.ChangeClothes(kind, clothesIdBackup[kind], subClothesIdBackup[0], subClothesIdBackup[1], subClothesIdBackup[2], true);
                     chaCtrl.nowCoordinate.clothes.parts[kind].colorInfo = clothesColorBackup[kind];
-                    Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Roll back:" + tgl.GetComponentInChildren<Text>(true).text + " / ID: " + clothesIdBackup[kind]);
+                    Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Roll back:" + tgl.name + " / ID: " + clothesIdBackup[kind]);
                     //Rollback KCOX
                     if (KK_StudioCoordinateLoadOption._isKCOXExist && clothesIdBackup[kind] != 0)
                     {
@@ -343,7 +407,7 @@ namespace KK_StudioCoordinateLoadOption
 
                     switch (tmpToggleType)
                     {
-                        case ChaFileDefine.ClothesKind.top: 
+                        case ChaFileDefine.ClothesKind.top:
                             //Rollback SubCloth KCOX
                             if (KK_StudioCoordinateLoadOption._isKCOXExist)
                             {
@@ -383,14 +447,14 @@ namespace KK_StudioCoordinateLoadOption
 
         //另一插件(KK_ClothesLoadOption)在和我相同的位置畫Panel，將他Block掉
         //因為他的插件在CharaMaker和Studio皆有功能，僅Studio部分和我重疊，故採此對策
-        //若是選擇用他的插件，直接將我這插件移除即可。
+        //若是要選擇用他的插件，直接將我這插件移除即可。
         private static void BlockAnotherPlugin()
         {
             var anotherPlugin = GameObject.Find("StudioScene/Canvas Main Menu/ClosesLoadOption Panel");
             if (null != anotherPlugin)
             {
                 anotherPlugin.transform.localScale = Vector3.zero;
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] Block KK_ClothesLoadOption Panel: "+anotherPlugin.activeSelf);
+                Logger.Log(LogLevel.Debug, "[KK_SCLO] Block KK_ClothesLoadOption Panel");
             }
         }
     }

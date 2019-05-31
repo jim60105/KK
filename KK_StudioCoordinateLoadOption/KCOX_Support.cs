@@ -29,7 +29,7 @@ namespace KK_StudioCoordinateLoadOption
             }
             catch (Exception ex)
             {
-                Logger.Log(LogLevel.Error, "[KK_SCLO] " + ex.Message);
+                Logger.Log(LogLevel.Debug, "[KK_SCLO] " + ex.Message);
                 return false;
             }
         }
