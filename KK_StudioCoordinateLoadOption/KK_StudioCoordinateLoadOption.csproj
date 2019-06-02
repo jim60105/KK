@@ -68,9 +68,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ABMX_Support.cs" />
-    <Compile Include="Patches.cs" />
-    <Compile Include="MoreAccessories_Support.cs" />
     <Compile Include="KCOX_Support.cs" />
+    <Compile Include="MoreAccessories_Support.cs" />
+    <Compile Include="Patches.cs" />
     <Compile Include="KK_StudioCoordinateLoadOption.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

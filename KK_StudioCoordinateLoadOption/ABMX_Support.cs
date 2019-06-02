@@ -51,7 +51,7 @@ namespace KK_StudioCoordinateLoadOption
                 return;
             }
 
-            Logger.Log(LogLevel.Debug, "[KK_SCLO] BoneController Get");
+            //Logger.Log(LogLevel.Debug, "[KK_SCLO] BoneController Get");
             BoneController.GetType().InvokeMember("ModifiersPurgeEmpty", nonPublicFlag, null, BoneController, null);
             List<object> Modifiers = new List<object>();
             foreach (string boneName in (IEnumerable<string>)BoneController.GetType().InvokeMember("GetAllPossibleBoneNames", publicFlag, null, BoneController, null))
@@ -130,14 +130,10 @@ namespace KK_StudioCoordinateLoadOption
                     BoneController.GetType().InvokeMember("OnDataChangedCo", nonPublicFlag, null, BoneController, null)
                 }); //StartCoroutine(OnDataChangedCo());
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] ->ABMX Bone Rollback complete");
+                ABMXDataBackup = null;
                 return;
             }
             Logger.Log(LogLevel.Debug, "[KK_SCLO] ->ABMX Bone not found");
-            return;
-        }
-
-        public static void CleanABMXBackup()
-        {
             ABMXDataBackup = null;
             return;
         }

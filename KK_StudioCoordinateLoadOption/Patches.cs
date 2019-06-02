@@ -1,33 +1,24 @@
-﻿using BepInEx.Logging;
+﻿using System;
+using System.IO;
+using System.Reflection;
+using BepInEx.Logging;
 using Extension;
 using Harmony;
-using Illusion.Game;
 using MessagePack;
 using Studio;
-using System;
-using System.Collections;
-using System.Reflection;
 using UILib;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Logger = BepInEx.Logger;
 
-namespace KK_StudioCoordinateLoadOption
-{
-    internal class Patches
-    {
-        delegate void callback();
+namespace KK_StudioCoordinateLoadOption {
+    internal class Patches {
         private static CharaFileSort charaFileSort;
         private static MPCharCtrl mpCharCtrl;
-        private static int[] clothesIdBackup = null;
-        private static ChaFileClothes.PartsInfo.ColorInfo[][] clothesColorBackup = null;
-        private static int[] subClothesIdBackup = null;
-        private static ChaFileAccessory.PartsInfo[] accessoriesPartsBackup = null;
         private static Toggle[] toggleList = null;
-        private static bool _skipFlag = false;
 
-        public static readonly string[] MainClothesNames =
-        {
+        public static readonly string[] MainClothesNames = {
             "ct_clothesTop",
             "ct_clothesBot",
             "ct_bra",
@@ -39,17 +30,28 @@ namespace KK_StudioCoordinateLoadOption
             "ct_shoes_outer"
         };
 
-        public static readonly string[] SubClothesNames =
-        {
+        public static readonly string[] SubClothesNames = {
             "ct_top_parts_A",
             "ct_top_parts_B",
             "ct_top_parts_C"
         };
 
+        public enum ClothesKind {
+            top = 0,
+            bot = 1,
+            bra = 2,
+            shorts = 3,
+            gloves = 4,
+            panst = 5,
+            socks = 6,
+            shoes_inner = 7,
+            shoes_outer = 8,
+            accessories = 9 /*注意這個*/
+        }
+
         public static string[] ClothesKindName = ClothesKindNameJp;
 
-        public static readonly string[] ClothesKindNameJp =
-        {
+        public static readonly string[] ClothesKindNameJp = {
             "トップス",
             "ボトムス",
             "ブラ",
@@ -62,8 +64,7 @@ namespace KK_StudioCoordinateLoadOption
             "アクセサリー"
         };
 
-        public static readonly string[] ClothesKindNameCh =
-        {
+        public static readonly string[] ClothesKindNameCh = {
             "上衣",
             "下裝",
             "胸罩",
@@ -76,8 +77,7 @@ namespace KK_StudioCoordinateLoadOption
             "飾品"
         };
 
-        public static readonly string[] ClothesKindNameEn =
-        {
+        public static readonly string[] ClothesKindNameEn = {
             "Tops",
             "Bottoms",
             "Bra",
@@ -90,24 +90,23 @@ namespace KK_StudioCoordinateLoadOption
             "Accessories"
         };
 
-        internal static void InitPatch(HarmonyInstance harmony)
-        {
+        internal static void InitPatch(HarmonyInstance harmony) {
             harmony.Patch(typeof(MPCharCtrl).GetMethod("OnClickRoot", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), null, new HarmonyMethod(typeof(Patches), nameof(OnClickRootPostfix), null), null);
             harmony.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("Init", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), null, new HarmonyMethod(typeof(Patches), nameof(InitPostfix), null), null);
-            harmony.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("OnClickLoad", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(OnClickLoadPrefix), null), new HarmonyMethod(typeof(Patches), nameof(OnClickLoadPostfix), null), null);
+            harmony.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("OnClickLoad", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(OnClickLoadPrefix), null), null, null);
+            harmony.Patch(typeof(ChaFileCoordinate).GetMethod("LoadBytes", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy), new HarmonyMethod(typeof(Patches), nameof(LoadBytesPrefix), null), null, null);
 
-            if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist)
-            {
+            if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
                 MoreAccessories_Support.InitPatch(harmony);
             }
             Logger.Log(LogLevel.Debug, "[KK_SCLO] Patch Insert Complete");
         }
 
-        private static void InitPostfix(object __instance)
-        {
+        private static void InitPostfix(object __instance) {
             BlockAnotherPlugin();
-            switch (Application.systemLanguage)
-            {
+
+            //依照系統語言選擇UI語言
+            switch (Application.systemLanguage) {
                 case SystemLanguage.Chinese:
                     ClothesKindName = ClothesKindNameCh;
                     break;
@@ -118,14 +117,13 @@ namespace KK_StudioCoordinateLoadOption
                     ClothesKindName = ClothesKindNameEn;
                     break;
             }
-            var _xua = GameObject.Find("___XUnityAutoTranslator");
-            if(null!= _xua)
-            {
+            //如果找到機翻就一律顯示英文，否則機翻會毀了我的文字
+            if (null != GameObject.Find("___XUnityAutoTranslator")) {
                 ClothesKindName = ClothesKindNameEn;
-                Logger.Log(LogLevel.Info, "[KK_SCLO] Found XUnityAutoTranslator, load English UI!");
+                Logger.Log(LogLevel.Info, "[KK_SCLO] Found XUnityAutoTranslator, load English UI");
             }
 
-            Array ClothesKindArray = Enum.GetValues(typeof(ChaFileDefine.ClothesKind));
+            Array ClothesKindArray = Enum.GetValues(typeof(ClothesKind));
 
             //Draw Panel and ButtonAll
             charaFileSort = (CharaFileSort)__instance.GetPrivate("fileSort");
@@ -133,45 +131,47 @@ namespace KK_StudioCoordinateLoadOption
             Button btnAll = UILib.UIUtility.CreateButton("BtnAll", panel.transform, "All");
             btnAll.GetComponentInChildren<Text>(true).color = Color.white;
             btnAll.GetComponent<Image>().color = Color.gray;
-            btnAll.transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(5f, 25f + 20f * ClothesKindArray.Length), new Vector2(-5f, 50f + 20f * (ClothesKindArray.Length)));
+            btnAll.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -30), new Vector2(140f, -5f));
             btnAll.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
 
             //Draw Toggles
-            Toggle[] tgls = new Toggle[ClothesKindArray.Length + 1];
-            for (int i = 0; i < ClothesKindArray.Length; i++)
-            {
+            Toggle[] tgls = new Toggle[ClothesKindArray.Length];
+            for (int i = 0; i < ClothesKindArray.Length; i++) {
                 tgls[i] = UILib.UIUtility.CreateToggle(ClothesKindArray.GetValue(i).ToString(), panel.transform, ClothesKindName.GetValue(i).ToString());
                 tgls[i].GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
                 tgls[i].GetComponentInChildren<Text>(true).color = Color.white;
-                tgls[i].transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(5f, 20f * (ClothesKindArray.Length - i)), new Vector2(5f, 25f + 20f * (ClothesKindArray.Length - i)));
+                tgls[i].transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -60f - 25f * i), new Vector2(140f, -35f - 25f * i));
                 tgls[i].GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
             }
 
-            tgls[ClothesKindArray.Length] = UILib.UIUtility.CreateToggle("accessories", panel.transform,ClothesKindName[ClothesKindName.Length-1]);
-            tgls[ClothesKindArray.Length].GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
-            tgls[ClothesKindArray.Length].GetComponentInChildren<Text>(true).color = Color.white;
-            tgls[ClothesKindArray.Length].transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(5f, 0f), new Vector2(5f, 25f));
-            tgls[ClothesKindArray.Length].GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
-
-            panel.transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(407f, 285f - ClothesKindArray.Length * 20), new Vector2(150f, 340f));
+            panel.transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(405f, 52.5f), new Vector2(150f, 340f));
             panel.GetComponent<Image>().color = new Color32(80, 80, 80, 220);
 
+            //拖曳event
+            Vector2 mouse = Vector2.zero;
+            EventTrigger trigger = panel.gameObject.AddComponent<EventTrigger>();
+            EventTrigger.Entry entry = new EventTrigger.Entry { eventID = EventTriggerType.BeginDrag };
+            entry.callback.AddListener((data) => {
+                mouse = new Vector2(Input.mousePosition.x - panel.transform.position.x, Input.mousePosition.y - panel.transform.position.y);
+            });
+            EventTrigger.Entry entry2 = new EventTrigger.Entry { eventID = EventTriggerType.Drag };
+            entry2.callback.AddListener((data) => {
+                panel.transform.position = new Vector3(Input.mousePosition.x - mouse.x, Input.mousePosition.y - mouse.y, 0);
+            });
+            trigger.triggers.Add(entry);
+            trigger.triggers.Add(entry2);
+
             btnAll.onClick.RemoveAllListeners();
-            btnAll.onClick.AddListener(delegate ()
-            {
+            btnAll.onClick.AddListener(()=>{
                 bool flag = false;
-                for (int i = 0; i < tgls.Length; i++)
-                {
-                    if (!tgls[i].isOn)
-                    {
+                for (int i = 0; i < tgls.Length; i++) {
+                    if (!tgls[i].isOn) {
                         flag = true;
                     }
                     tgls[i].isOn = true;
                 }
-                if (!flag)
-                {
-                    for (int j = 0; j < tgls.Length; j++)
-                    {
+                if (!flag) {
+                    for (int j = 0; j < tgls.Length; j++) {
                         tgls[j].isOn = false;
                     }
                 }
@@ -179,280 +179,157 @@ namespace KK_StudioCoordinateLoadOption
             Logger.Log(LogLevel.Debug, "[KK_SCLO] Draw Panel Finish");
         }
 
-        private static void OnClickRootPostfix(MPCharCtrl __instance, int _idx)
-        {
-            if (_idx > 0 && __instance != null)
-            {
+        private static void OnClickRootPostfix(MPCharCtrl __instance, int _idx) {
+            if (_idx > 0 && __instance != null) {
                 mpCharCtrl = __instance;
             }
         }
 
         //Backup
-        public static bool OnClickLoadPrefix()
-        {
-            Logger.Log(LogLevel.Debug, "[KK_SCLO] Onclick Patch Start");
-            _skipFlag = false;
-
-            if (null == charaFileSort)
-            {
-                Logger.Log(LogLevel.Error, "[KK_SCLO] Get charaFileSort FAILED in postfix");
-                _skipFlag = true;
-                return true;
-            }
-            if (charaFileSort == null || charaFileSort.select < 0)
-            {
-                Logger.Log(LogLevel.Error, "[KK_SCLO] Get filesort ERROR");
-                _skipFlag = true;
-                return true;
-            }
+        public static bool OnClickLoadPrefix() {
+            Logger.Log(LogLevel.Debug, "[KK_SCLO] Studio Coordinate Load Option Start");
             toggleList = charaFileSort.root.parent.parent.parent.GetComponentsInChildren<Toggle>();
-            if (toggleList.Length < 0)
-            {
-                Logger.Log(LogLevel.Error, "[KK_SCLO] Getting ToggleList FAILED");
-                _skipFlag = true;
-                return true;
-            }
+
             bool flag = true;
             bool flag2 = false;
-            foreach (Toggle tgl in toggleList)
-            {
+            foreach (Toggle tgl in toggleList) {
                 flag &= tgl.isOn;
                 flag2 |= tgl.isOn;
             }
-            if (flag)
-            {
-                Logger.Log(LogLevel.Info, "[KK_SCLO] Toggle all true, skip roll back");
-                _skipFlag = true;
+            if (flag) {
+                Logger.Log(LogLevel.Info, "[KK_SCLO] Toggle all true, use original game function");
                 toggleList = null;
                 return true;
             }
-            if (!flag2)
-            {
+            if (!flag2) {
                 Logger.Log(LogLevel.Info, "[KK_SCLO] No Toogle selected, skip loading coordinate");
-                _skipFlag = true;
                 toggleList = null;
+                Logger.Log(LogLevel.Debug, "[KK_SCLO] Studio Coordinate Load Option Finish");
                 return false;
             }
-            BackupCoordinateData();
-            return true;
+            LoadCoordinates();
+            Logger.Log(LogLevel.Debug, "[KK_SCLO] Studio Coordinate Load Option Finish");
+            return false;
         }
 
-        private static void BackupCoordinateData()
-        {
+        private static void LoadCoordinates() {
             ChaControl chaCtrl = mpCharCtrl.ociChar.charInfo;
-            if (chaCtrl == null)
-            {
-                Logger.Log(LogLevel.Error, "[KK_SCLO] Get chaCtrl FAILED");
-                _skipFlag = true;
-                return;
-            }
-            //Logger.Log(LogLevel.Debug, "[KK_SCLO] Get ChaCtrl");
-            ChaFileClothes clothes = chaCtrl.nowCoordinate.clothes;
-            ChaFileAccessory accessories = chaCtrl.nowCoordinate.accessory;
+            ChaControl tmpChaCtrl = Singleton<Manager.Character>.Instance.CreateFemale(null, -1);
+            ChaFileCoordinate tmpChaFileCoordinate = tmpChaCtrl.nowCoordinate;
 
-            //Backup
-            clothesIdBackup = new int[clothes.parts.Length];
-            clothesColorBackup = new ChaFileClothes.PartsInfo.ColorInfo[clothes.parts.Length][];
-            subClothesIdBackup = new int[clothes.subPartsId.Length];
-            accessoriesPartsBackup = new ChaFileAccessory.PartsInfo[accessories.parts.Length];
-            for (int i = 0; i < clothes.parts.Length; i++)
-            {
-                clothesIdBackup[i] = clothes.parts[i].id;
-                clothesColorBackup[i] = clothes.parts[i].colorInfo;
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] Get original: " + MainClothesNames[i] + "/ ID: " + clothes.parts[i].id);
-            }
-            for (int j = 0; j < clothes.subPartsId.Length; j++)
-            {
-                subClothesIdBackup[j] = clothes.subPartsId[j];
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] Get original: " + SubClothesNames[j] + "/ ID: " + clothes.subPartsId[j]);
-            }
-            for (int i = 0; i < accessories.parts.Length; i++)
-            {
-                accessoriesPartsBackup[i] = accessories.parts[i];
+            tmpChaFileCoordinate.LoadFile(charaFileSort.selectPath);
 
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] Get original Accessory: " + accessories.parts[i].id);
-            }
-            Logger.Log(LogLevel.Debug, "[KK_SCLO] Get original coordinate SUCCESS");
+            foreach (var tgl in toggleList) {
+                if (tgl.isOn) {
+                    object tmpToggleType = null;
+                    int kind = -2;
+                    try {
+                        tmpToggleType = Enum.Parse(typeof(ClothesKind), tgl.name);
+                        kind = Convert.ToInt32(tmpToggleType);
+                    } catch (ArgumentException) {
+                        kind = -1;
+                    }
 
-            //BackupKCOX
-            if (KK_StudioCoordinateLoadOption._isKCOXExist)
-            {
-                KCOX_Support.BackupKCOXData(chaCtrl, clothes);
+                    if (kind == 9) {
+                        //Copy accessories
+                        chaCtrl.nowCoordinate.accessory = new ChaFileAccessory();
+                        for (int i = 0; i < tmpChaFileCoordinate.accessory.parts.Length; i++) {
+                            var tmp = MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(tmpChaFileCoordinate.accessory.parts[i]);
+                            chaCtrl.nowCoordinate.accessory.parts[i] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tmp);
+                            chaCtrl.ChangeAccessory(i, tmpChaFileCoordinate.accessory.parts[i].type, tmpChaFileCoordinate.accessory.parts[i].id, tmpChaFileCoordinate.accessory.parts[i].parentKey, true);
+                        }
+                        Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Change: " + tgl.name);
+                    } else if (kind >= 0) {
+                        //Change clothes
+                        chaCtrl.ChangeClothes(kind, tmpChaFileCoordinate.clothes.parts[kind].id, tmpChaFileCoordinate.clothes.subPartsId[0], tmpChaFileCoordinate.clothes.subPartsId[1], tmpChaFileCoordinate.clothes.subPartsId[2], true);
+                        chaCtrl.nowCoordinate.clothes.parts[kind].colorInfo = tmpChaFileCoordinate.clothes.parts[kind].colorInfo;
+
+                        Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Change: " + tgl.name + " / ID: " + tmpChaFileCoordinate.clothes.parts[kind].id);
+                    }
+                }
+            }
+            chaCtrl.Reload(false, true, true, true);
+            chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
+
+            LoadExtData(chaCtrl, tmpChaCtrl);
+
+            Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
+        }
+
+        private static void LoadExtData(ChaControl chaCtrl, ChaControl tmpChaCtrl) {
+            //Backup KCOX
+            if (KK_StudioCoordinateLoadOption._isKCOXExist) {
+                KCOX_Support.BackupKCOXData(chaCtrl, chaCtrl.nowCoordinate.clothes);
             }
 
-            //BackupABMX
-            if (KK_StudioCoordinateLoadOption._isABMXExist)
-            {
+            //Backup MoreAcc
+            if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
+                MoreAccessories_Support.CopyMoreAccessoriesData(chaCtrl.chaFile, tmpChaCtrl.chaFile);
+            }
+
+            //Backup ABMX
+            if (KK_StudioCoordinateLoadOption._isABMXExist) {
                 ABMX_Support.BackupABMXData(chaCtrl);
             }
 
-            //BackupMoreAccessories
-            if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist)
-            {
-                MoreAccessories_Support.CopyMoreAccessoriesData(chaCtrl.chaFile);
-            }
-        }
-
-        //Rollback
-        public static void OnClickLoadPostfix()
-        {
-            if (_skipFlag)
-            {
-                CleanBackup();
-                return;
+            //fake load
+            using (FileStream fileStream = new FileStream(charaFileSort.selectPath, FileMode.Open, FileAccess.Read)) {
+                fakeLoadFlag = true;
+                chaCtrl.nowCoordinate.LoadFile(fileStream);
+                fakeLoadFlag = false;
             }
 
-            if (null == accessoriesPartsBackup || null == clothesIdBackup || null == subClothesIdBackup)
-            {
-                Logger.Log(LogLevel.Error, "[KK_SCLO] Get Backup FAILED");
-                CleanBackup();
-                return;
-            }
-
-            ChaControl chaCtrl = mpCharCtrl.ociChar.charInfo;
-            if (chaCtrl == null)
-            {
-                Logger.Log(LogLevel.Error, "[KK_SCLO] Get chaCtrl FAILED");
-                CleanBackup();
-                return;
-            }
-            Logger.Log(LogLevel.Debug, "[KK_SCLO] Starting to roll back origin clothes");
-
-            int doCount = 0;
-            foreach (Toggle tgl in toggleList)
-            {
-                chaCtrl.StartCoroutine(doChange(tgl, () =>
-                {
-                    doCount++;
-                    //Finish Rollback all of the clothes
-                    if (doCount == toggleList.Length)
-                    {
-                        CleanBackup();
-                    }
-                }));
-            }
-
-            IEnumerator doChange(Toggle tgl, callback Callback)
-            {
-                yield return null;
-                if (!tgl.isOn)
-                {
-                    /*
-                    ChaFileDefine.ClothesKind
-                    public enum ClothesKind
-                    {
-                        top,
-                        bot,
-                        bra,
-                        shorts,
-                        gloves,
-                        panst,
-                        socks,
-                        shoes_inner,
-                        shoes_outer
-                    }
-                    */
-
-                    //Rollback accessories
-                    if (String.Equals(tgl.name, "accessories"))
-                    {
-                        Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Roll back:" + tgl.name);
-                        //Rollback MoreAccessories first
-                        if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist)
-                        {
-                            MoreAccessories_Support.RollbackMoreAccessoriesData(chaCtrl.chaFile);
-                        }
-                        //Rollback normal accessories
-                        chaCtrl.nowCoordinate.accessory = new ChaFileAccessory();
-                        for (int i = 0; i < accessoriesPartsBackup.Length; i++)
-                        {
-                            //chaCtrl.nowCoordinate.accessory.parts[i] = accessoriesPartsBackup[i];
-                            var tmp = MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(accessoriesPartsBackup[i]);
-                            chaCtrl.nowCoordinate.accessory.parts[i] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tmp);
-                            chaCtrl.ChangeAccessory(i, accessoriesPartsBackup[i].type, accessoriesPartsBackup[i].id, accessoriesPartsBackup[i].parentKey, true);
-                        }
-                        chaCtrl.Reload(false, true, true, true);
-                        chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
-                        Callback?.Invoke();
-                        yield break;
-                    }
-
-                    //Discard unknown toggle
+            foreach (var tgl in toggleList) {
+                if (!tgl.isOn) {
                     object tmpToggleType = null;
-                    try
-                    {
-                        tmpToggleType = Enum.Parse(typeof(ChaFileDefine.ClothesKind), tgl.name);
-                    }
-                    catch (NullReferenceException)
-                    {
-                        Logger.Log(LogLevel.Debug, "[KK_SCLO] Discard Unknown Toggle:" + tgl.name);
-                        Callback?.Invoke();
-                        yield break;
+                    int kind;
+                    try {
+                        tmpToggleType = Enum.Parse(typeof(ClothesKind), tgl.name);
+                        kind = Convert.ToInt32(tmpToggleType);
+                    } catch (ArgumentException) {
+                        kind = -1;
                     }
 
-                    int kind = Convert.ToInt32(tmpToggleType);
-                    //Roll back clothes
-                    chaCtrl.ChangeClothes(kind, clothesIdBackup[kind], subClothesIdBackup[0], subClothesIdBackup[1], subClothesIdBackup[2], true);
-                    chaCtrl.nowCoordinate.clothes.parts[kind].colorInfo = clothesColorBackup[kind];
-                    Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Roll back:" + tgl.name + " / ID: " + clothesIdBackup[kind]);
-                    //Rollback KCOX
-                    if (KK_StudioCoordinateLoadOption._isKCOXExist && clothesIdBackup[kind] != 0)
-                    {
-                        chaCtrl.Reload(false, true, true, true);
-                        chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
-                        KCOX_Support.RollbackOverlay(true, kind);
-                    }
-                    chaCtrl.Reload(false, true, true, true);
-                    chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
-
-                    switch (tmpToggleType)
-                    {
-                        case ChaFileDefine.ClothesKind.top:
-                            //Rollback SubCloth KCOX
-                            if (KK_StudioCoordinateLoadOption._isKCOXExist)
-                            {
-                                for (int j = 0; j < 3; j++)
-                                {
+                    if (kind == 9) {
+                        //Rollback MoreAcc
+                        if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
+                            MoreAccessories_Support.CopyMoreAccessoriesData(tmpChaCtrl.chaFile, chaCtrl.chaFile);
+                        }
+                    } else if (kind >= 0) {
+                        //Rollback KCOX
+                        if (KK_StudioCoordinateLoadOption._isKCOXExist) {
+                            KCOX_Support.RollbackOverlay(true, kind);
+                            if (kind == 0) {
+                                for (int j = 0; j < 3; j++) {
                                     KCOX_Support.RollbackOverlay(false, j);
                                 }
                             }
-                            break;
-                        case ChaFileDefine.ClothesKind.bot:
-                            //Rollback ABMX if bot select
-                            if (KK_StudioCoordinateLoadOption._isABMXExist)
-                            {
+                        }
+                        if (kind == 1) {
+                            //Rollback ABMX
+                            if (KK_StudioCoordinateLoadOption._isABMXExist) {
                                 ABMX_Support.RollbackABMXBone(chaCtrl);
                             }
-                            break;
-                        default:
-                            break;
+                        }
                     }
                 }
-                Callback?.Invoke();
-                yield break;
             }
+
+            KCOX_Support.CleanKCOXBackup();
         }
 
-        private static void CleanBackup()
-        {
-            clothesIdBackup = null;
-            accessoriesPartsBackup = null;
-            subClothesIdBackup = null;
-            if (KK_StudioCoordinateLoadOption._isKCOXExist) KCOX_Support.CleanKCOXBackup();
-            if (KK_StudioCoordinateLoadOption._isABMXExist) ABMX_Support.CleanABMXBackup();
-            if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) MoreAccessories_Support.CleanMoreAccBackup();
-            Logger.Log(LogLevel.Info, "[KK_SCLO] Change Coordinate Finish");
-            Utils.Sound.Play(SystemSE.ok_s);
+        private static bool fakeLoadFlag = false;
+        private static bool LoadBytesPrefix(ref bool __result) {
+            __result = fakeLoadFlag;
+            return !fakeLoadFlag;
         }
 
         //另一插件(KK_ClothesLoadOption)在和我相同的位置畫Panel，將他Block掉
         //因為他的插件在CharaMaker和Studio皆有功能，僅Studio部分和我重疊，故採此對策
         //若是要選擇用他的插件，直接將我這插件移除即可。
-        private static void BlockAnotherPlugin()
-        {
+        private static void BlockAnotherPlugin() {
             var anotherPlugin = GameObject.Find("StudioScene/Canvas Main Menu/ClosesLoadOption Panel");
-            if (null != anotherPlugin)
-            {
+            if (null != anotherPlugin) {
                 anotherPlugin.transform.localScale = Vector3.zero;
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] Block KK_ClothesLoadOption Panel");
             }

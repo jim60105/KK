@@ -32,7 +32,7 @@ namespace KK_StudioCoordinateLoadOption
     {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "19.05.31.1";
+        internal const string PLUGIN_VERSION = "19.06.02.0";
 
         private bool _isInit = false;
         public static bool _isKCOXExist = false;

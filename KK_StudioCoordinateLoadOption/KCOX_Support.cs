@@ -1,6 +1,7 @@
 ﻿using BepInEx.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -15,23 +16,14 @@ namespace KK_StudioCoordinateLoadOption
         private static object KCOXController;
         private static Dictionary<string, object> KCOXTexDataBackup = null;
 
-        public static bool LoadAssembly()
-        {
-            try
-            {
-                var ass = Assembly.LoadFrom("BepInEx/KoiClothesOverlay.dll");
-                if (null == ass)
-                {
-                    throw new Exception("Load assembly FAILED: KCOX");
-                }
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] KCOX found");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] " + ex.Message);
+        public static bool LoadAssembly() {
+            if (!File.Exists("BepInEx/KoiClothesOverlay.dll")) {
+                Logger.Log(LogLevel.Debug, "[KK_SCLO] Load assembly FAILED: KCOX");
                 return false;
+            } else {
+                Logger.Log(LogLevel.Debug, "[KK_SCLO] KCOX found");
             }
+            return true;
         }
 
         public static void BackupKCOXData(ChaControl chaCtrl, ChaFileClothes clothes)
@@ -59,7 +51,7 @@ namespace KK_StudioCoordinateLoadOption
                         cnt++;
                     }
                 }
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] Get original Overlay: " + cnt);
+                Logger.Log(LogLevel.Debug, "[KK_SCLO] Get Original Overlay Total: " + cnt);
             }
             return;
         }
@@ -69,12 +61,12 @@ namespace KK_StudioCoordinateLoadOption
             KCOXTexDataBackup[name] = KCOXController.GetType().InvokeMember("GetOverlayTex", publicFlag, null, KCOXController, new object[] { name });
             if (null == KCOXTexDataBackup[name])
             {
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] " + name + " not found");
+                //Logger.Log(LogLevel.Debug, "[KK_SCLO] " + name + " not found");
                 return false;
             }
             else
             {
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] Get original overlay: " + name);
+                Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Get Original Overlay: " + name);
                 return true;
             }
         }
@@ -94,7 +86,7 @@ namespace KK_StudioCoordinateLoadOption
                     return;
                 }
             }
-            Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Overlay not found: " + name);
+            //Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Overlay not found: " + name);
             return;
         }
 

@@ -34,7 +34,7 @@ namespace KK_StudioCoordinateLoadOption
                 return false;
             }
         }
-        private static ChaFile chaFileTemp = null;
+
         private static bool fakeCopyCall = false;
         private static bool CopyAllPrefix()
         {
@@ -42,45 +42,19 @@ namespace KK_StudioCoordinateLoadOption
             return !fakeCopyCall;
         }
 
-        public static void CopyMoreAccessoriesData(ChaFile chaFile)
+        public static void CopyMoreAccessoriesData(ChaFile oriChaFile ,ChaFile targetChaFile)
         {
-            chaFileTemp = new ChaFile();
             fakeCopyCall = true;
-            chaFileTemp.CopyAll(chaFile);
+            targetChaFile.CopyAll(oriChaFile);
             fakeCopyCall = false;
 
+            MoreAccessories.InvokeMember("Update", 
+                BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance,
+                null,
+                MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null),
+                null);
+
             Logger.Log(LogLevel.Debug, "[KK_SCLO] Copy MoreAccessories Finish");
-            return;
-        }
-
-        public static void RollbackMoreAccessoriesData(ChaFile chaFile)
-        {
-            if (null != chaFileTemp)
-            {
-                fakeCopyCall = true;
-                chaFile.CopyAll(chaFileTemp);
-                fakeCopyCall = false;
-                CleanMoreAccBackup();
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] Rollback MoreAccessories Finish");
-            }
-            else
-            {
-                Logger.Log(LogLevel.Error, "[KK_SCLO] chaFileTemp is Null");
-            }
-            Update();
-            return;
-        }
-
-        public static void Update()
-        {
-            var moreAcc = MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null);
-            MoreAccessories.InvokeMember("Update", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, moreAcc, null);
-            Logger.Log(LogLevel.Debug, "[KK_SCLO] Update MoreAccessories Finish");
-        }
-
-        public static void CleanMoreAccBackup()
-        {
-            chaFileTemp = null;
             return;
         }
     }
