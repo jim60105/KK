@@ -32,7 +32,7 @@ namespace KK_StudioCharaOnlyLoadBody
     {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "19.05.27.0";
+        internal const string PLUGIN_VERSION = "19.06.06.0";
 
         private bool _isInit = false;
 
