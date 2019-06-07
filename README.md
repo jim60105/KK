@@ -26,6 +26,7 @@
 
 使女性支持單色化功能，用意在於彌補全女插件所造成的限制<br>
 可以和全女插件分開使用<br>
+**依賴Darkness特典，0201版用戶請下載[舊版v1.0.1](https://github.com/jim60105/KK/releases/download/v19.05.16.2/OLD_KK_StudioSimpleColorOnGirls1.0.1.rar)版**<br>
 
 # Studio換人插件 (Studio Chara Only Load Body)
 ![image](https://github.com/jim60105/KK/raw/master/demo/demo4.gif)<br>
@@ -53,7 +54,6 @@ BepisPlugins r10.1
 
 # 安裝方式
 - 將所有的「*.dll」檔案放進BepInEx資料夾<br>
-((KK_StudioSimpleColorOnGirls: OLD、NEW分別對應EC_Yoyaku前、後的版本))
 
 # 下載位置
 [Latest Release](https://github.com/jim60105/KK/releases/latest "Latest Release")
