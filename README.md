@@ -5,8 +5,8 @@
 遇到任何問題，**請將選項盤全勾即會調用遊戲原始程式碼**<br>
 目前確定支援Plugin:<br>
 - Koikatu Overlay Mods v4.2.1
-- Koikatu ABMX V3.1
-- Koikatu More Accessories v1.0.4
+- Koikatu ABMX V3.1.1
+- Koikatu More Accessories v1.0.5
 
 # Studio全是妹子插件 (Studio All Girls Plugin)
 ![image](https://github.com/jim60105/KK/raw/master/demo/demo2.gif)<br>
@@ -33,10 +33,10 @@
 保留衣服和飾品，只替換人物<br>
 目前確定支援Plugin:<br>
 - Koikatu Overlay Mods v4.2.1
-- Koikatu More Accessories v1.0.4
+- Koikatu More Accessories v1.0.5
 - Koikatu KKPE v1.2.0
-- Koikatu KK_UncensorSelector v3.6
-- Koikatu KKABMX v3.1
+- Koikatu KK_UncensorSelector v3.6.4
+- Koikatu KKABMX v3.1.1
 
 # Studio IK→FK修正插件 (Studio Reflect FK Fix)
 <a href="https://blog.maki0419.com/2019/05/koikatu-studio-reflect-fk-fix.html" target="_blank"><img src="https://github.com/jim60105/KK/raw/master/demo/demo5-5.png" width="800" title="Click the image to watch demo"></a><br>
@@ -49,7 +49,7 @@
 
 # 需求依賴
 BepInEx v4.1.1<br>
-BepisPlugins r10
+BepisPlugins r10.1
 
 # 安裝方式
 - 將所有的「*.dll」檔案放進BepInEx資料夾<br>
