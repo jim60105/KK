@@ -17,59 +17,77 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
-using System;
-using System.Collections.Generic;
 using System.Reflection;
 using BepInEx;
 using BepInEx.Logging;
+using Extension;
 using Harmony;
-using UnityEngine.SceneManagement;
+using Studio;
+using UILib;
+using UnityEngine;
+using UnityEngine.UI;
+using Logger = BepInEx.Logger;
 
-namespace KK_StudioReflectFKFix 
-{
+namespace KK_StudioReflectFKFix {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
-    public class KK_StudioReflectFKFix : BaseUnityPlugin
-    {
+    [BepInProcess("CharaStudio")]
+    public class KK_StudioReflectFKFix : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Reflect FK Fix";
         internal const string GUID = "com.jim60105.kk.studioreflectfkfix";
-        internal const string PLUGIN_VERSION = "19.05.30.0";
+        internal const string PLUGIN_VERSION = "19.06.06.0";
 
-        private bool _isInit = false;
+        public void Awake() => HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
+    }
 
-        public void OnSceneLoaded(Scene scene, LoadSceneMode sceneMode)
-        {
-            string name = SceneManager.GetActiveScene().name;
-            bool flag2 = !_isInit && name == "Studio";
-            if (flag2)
-            {
-                _isInit = true;
-                HarmonyInstance harmonyInstance = HarmonyInstance.Create(GUID);
-                foreach (Type type2 in Assembly.GetExecutingAssembly().GetTypes())
-                {
-                    try
-                    {
-                        List<HarmonyMethod> harmonyMethods = HarmonyMethodExtensions.GetHarmonyMethods(type2);
-                        if (harmonyMethods != null && harmonyMethods.Count > 0)
-                        {
-                            HarmonyMethod harmonyMethod = HarmonyMethod.Merge(harmonyMethods);
-                            new PatchProcessor(harmonyInstance, type2, harmonyMethod).Patch();
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Log(LogLevel.Debug, "[KK_SRFF] Exception occured when patching: " + ex.ToString());
-                    }
-                }
-                //HarmonyInstance.DEBUG = true;
+    class Patches {
+        //public enum BoneGroup
+        //{
+        //    Body = 1,
+        //    RightLeg,
+        //    LeftLeg = 4,
+        //    RightArm = 8,
+        //    LeftArm = 16,
+        //    RightHand = 32,
+        //    LeftHand = 64,
+        //    Hair = 128,
+        //    Neck = 256,
+        //    Breast = 512,
+        //    Skirt = 1024
+        //}
 
-                Patches.InitPatch(harmonyInstance);
-                Logger.Log(LogLevel.Debug, "[KK_SRFF] Patch Insert Complete");
-            }
+        [HarmonyPostfix, HarmonyPatch(typeof(MPCharCtrl), "Awake")]
+        public static void AwakePostfix(MPCharCtrl __instance) {
+            ((Button)__instance.GetField("ikInfo").GetField("buttonReflectFK")).onClick.RemoveAllListeners();
+            ((Button)__instance.GetField("ikInfo").GetField("buttonReflectFK")).onClick.AddListener(delegate () {
+                //__instance.CopyBoneFK((OIBoneInfo.BoneGroup)353);
+                typeof(MPCharCtrl).InvokeMember("CopyBoneFK", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod, null, __instance, new object[] { OIBoneInfo.BoneGroup.Body });
+            });
+            ((Button[])__instance.GetField("fkInfo").GetField("buttonAnimeSingle"))[1].onClick.RemoveAllListeners();
+            ((Button[])__instance.GetField("fkInfo").GetField("buttonAnimeSingle"))[1].onClick.AddListener(delegate () {
+                typeof(MPCharCtrl).InvokeMember("CopyBoneFK", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod, null, __instance, new object[] { OIBoneInfo.BoneGroup.Neck });
+            });
+            Logger.Log(LogLevel.Debug, "[KK_SRFF] FK Fix Finish");
+            InitBtn(__instance);
         }
 
-        public void Awake()
-        {
-            SceneManager.sceneLoaded += this.OnSceneLoaded;
+        private static GameObject btn;
+        private static void InitBtn(MPCharCtrl __instance) {
+            var original = GameObject.Find("StudioScene/Canvas Main Menu/01_Add/00_Female/Button Change");
+            var parent = GameObject.Find("StudioScene/Canvas Main Menu/02_Manipulate/00_Chara/02_Kinematic/03_Neck");
+            btn = UnityEngine.Object.Instantiate(original, parent.transform);
+            btn.name = "Copy FK Neck";
+            btn.transform.localPosition = new Vector3(0, -95, 0);
+            btn.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -116), new Vector2(190, -95));
+            btn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioReflectFKFix.Resources.CopyFKNeck.png", 183, 20);
+            btn.GetComponent<Button>().onClick.RemoveAllListeners();
+            btn.GetComponent<Button>().onClick.SetPersistentListenerState(0, UnityEngine.Events.UnityEventCallState.Off);
+            btn.GetComponent<Button>().interactable = true;
+
+            btn.GetComponent<Button>().onClick.AddListener(() => {
+                typeof(MPCharCtrl).InvokeMember("CopyBoneFK", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod, null, __instance, new object[] { OIBoneInfo.BoneGroup.Neck });
+            });
+
+            Logger.Log(LogLevel.Debug, "[KK_SRFF] Draw Button Finish");
         }
     }
 }
