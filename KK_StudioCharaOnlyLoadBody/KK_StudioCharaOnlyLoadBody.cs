@@ -21,11 +21,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using BepInEx;
 using BepInEx.Logging;
 using ExtensibleSaveFormat;
 using Extension;
 using Harmony;
+using Illusion.Extensions;
 using MessagePack;
 using Sideloader.AutoResolver;
 using Studio;
@@ -40,7 +42,7 @@ namespace KK_StudioCharaOnlyLoadBody {
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "19.06.06.1";
+        internal const string PLUGIN_VERSION = "19.06.10.0";
 
         public void Awake() => HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
     }
@@ -111,7 +113,7 @@ namespace KK_StudioCharaOnlyLoadBody {
                 string oldName = ocichar.charInfo.chaFile.parameter.fullname;
 
                 //Main Load Control
-                if (!LoadFile(chaCtrl, fullPath) || !FixSideloader(chaCtrl.chaFile) || !LoadExtendedData(ocichar, charaFileSort.selectPath, (byte)sex) || !UpdateTreeNodeObjectName(ocichar)) {
+                if (!LoadFile(chaCtrl, fullPath) || !LoadExtendedData(ocichar, charaFileSort.selectPath, (byte)sex) || !UpdateTreeNodeObjectName(ocichar)) {
                     Logger.Log(LogLevel.Error, "[KK_SCOLB] Load Body FAILED");
                 }
                 chaCtrl.Reload(false, false, false, false);
@@ -230,44 +232,14 @@ namespace KK_StudioCharaOnlyLoadBody {
             }
         }
 
-        //清除角色身上的sideloader資料
-        public static bool FixSideloader(ChaFile file) {
-            //Get these codes from Sideloader.AutoResolver.Hooks.ExtendedCardLoad
-            var extData = ExtendedSave.GetExtendedDataById(file, UniversalAutoResolver.UARExtID);
-            List<ResolveInfo> extInfo = null;
-
-            if (extData != null && extData.data.ContainsKey("info") && extData.data["info"] is object[] tmpExtInfo) {
-                extInfo = tmpExtInfo.Select(x => ResolveInfo.Unserialize(x as byte[])).ToList();
-
-                Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Sideloader marker found, external info count: {extInfo.Count}");
-                Logger.Log(LogLevel.Debug, "[KK_SCOLB] Clean them");
-                extInfo = null;
-
-                ExtendedSave.SetExtendedDataById(file, UniversalAutoResolver.UARExtID, null);
-            }
-            Logger.Log(LogLevel.Debug, "[KK_SCOLB] Sideloader Extended Data is Clean");
-
-            IterateCardPrefixes(UniversalAutoResolver.ResolveStructure);
-
-            Logger.Log(LogLevel.Debug, "[KK_SCOLB] Fix Sideloader mods Finish");
-            return true;
-
-            void IterateCardPrefixes(Action<Dictionary<CategoryProperty, StructValue<int>>, object, ICollection<ResolveInfo>, string> action) {
-                action(StructReference.ChaFileFaceProperties, file.custom.face, extInfo, "");
-                action(StructReference.ChaFileBodyProperties, file.custom.body, extInfo, "");
-                action(StructReference.ChaFileHairProperties, file.custom.hair, extInfo, "");
-                action(StructReference.ChaFileMakeupProperties, file.custom.face.baseMakeup, extInfo, "");
-            }
-        }
-
         //載入擴充資料
         public static bool LoadExtendedData(OCIChar ocichar, string file, byte sex) {
-            string[] copyList = { "com.deathweasel.bepinex.bodyshaders", "com.deathweasel.bepinex.uncensorselector", "KKABMPlugin.ABMData" };
+            string[] GUIDList = { "com.deathweasel.bepinex.bodyshaders", "com.deathweasel.bepinex.uncensorselector", "KKABMPlugin.ABMData", UniversalAutoResolver.UARExtID };
 
             ChaFileControl tmpChaFile = new ChaFileControl();
             tmpChaFile.LoadCharaFile(file, sex);
 
-            foreach (var ext in copyList) {
+            foreach (var ext in GUIDList) {
                 switch (ext) {
                     case "KKABMPlugin.ABMData":
                         //取得BoneController
@@ -350,6 +322,70 @@ namespace KK_StudioCharaOnlyLoadBody {
                             }
                         }
                         Logger.Log(LogLevel.Debug, "[KK_SCOLB] --List End--");
+                        break;
+                    case UniversalAutoResolver.UARExtID:
+                        //判斷CategoryNo分類function
+                        bool isBelongsToCharaBody(ChaListDefine.CategoryNo categoryNo) =>
+                            StructReference.ChaFileFaceProperties.Keys.Any(x => x.Category == categoryNo) ||
+                            StructReference.ChaFileBodyProperties.Keys.Any(x => x.Category == categoryNo) ||
+                            StructReference.ChaFileHairProperties.Keys.Any(x => x.Category == categoryNo) ||
+                            StructReference.ChaFileMakeupProperties.Keys.Any(x => x.Category == categoryNo);
+
+                        //extInfo整理
+                        int cleanExtData(ref PluginData tmpExtData, bool keepBodyData) {
+                            tmpExtData = ExtendedSave.GetExtendedDataById(ocichar.charInfo.chaFile, ext);
+                            if (tmpExtData != null && tmpExtData.data.ContainsKey("info")) {
+                                if (tmpExtData.data.TryGetValue("info", out object tmpExtInfo)) {
+                                    List<object> tmpExtList = new List<object>(tmpExtInfo as object[]);
+                                    Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Sideloader count: {tmpExtList.Count}");
+                                    ResolveInfo tmpResolveInfo;
+                                    for (int j = 0; j < tmpExtList.Count;) {
+                                        tmpResolveInfo = ResolveInfo.Unserialize((byte[])tmpExtList[j]);
+                                        if (keepBodyData == isBelongsToCharaBody(tmpResolveInfo.CategoryNo)) {
+                                            Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Add Sideloader info: {tmpResolveInfo.GUID} : {tmpResolveInfo.Property} : {tmpResolveInfo.Slot}");
+                                            j++;
+                                        } else {
+                                            Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Remove Sideloader info: {tmpResolveInfo.GUID} : {tmpResolveInfo.Property} : {tmpResolveInfo.Slot}");
+                                            tmpExtList.RemoveAt(j);
+                                        }
+                                    }
+                                    tmpExtData.data["info"] = tmpExtList.ToArray();
+                                    return tmpExtList.Count;
+                                }
+                            }
+                            return 0;
+                        }
+
+                        //提出角色身上原始的Sideloader extData
+                        PluginData oldExtData = ExtendedSave.GetExtendedDataById(ocichar.charInfo.chaFile, ext);
+                        Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Get Old Sideloader Start");
+                        int L1 = cleanExtData(ref oldExtData, false);
+                        Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Get Old Sideloader: {L1}");
+
+                        //將擴充資料由暫存複製到角色身上
+                        ExtendedSave.SetExtendedDataById(ocichar.charInfo.chaFile, ext, ExtendedSave.GetExtendedDataById(tmpChaFile, ext));
+
+                        //清理新角色數據
+                        PluginData newExtData = ExtendedSave.GetExtendedDataById(ocichar.charInfo.chaFile, ext);
+                        Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Get New Sideloader Start");
+                        int L2 = cleanExtData(ref newExtData, true);
+                        Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Get New Sideloader: {L2}");
+
+                        //合併新舊數據
+                        PluginData extData = oldExtData;
+                        object[] tmpObj = new object[L1 + L2];
+                        (oldExtData.data["info"] as object[]).CopyTo(tmpObj, 0);
+                        (newExtData.data["info"] as object[]).CopyTo(tmpObj, L1);
+                        extData.data["info"] = tmpObj;
+
+                        //儲存
+                        ExtendedSave.SetExtendedDataById(ocichar.charInfo.chaFile, UniversalAutoResolver.UARExtID, extData);
+                        Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Merge and Save Sideloader: {tmpObj.Length}");
+
+                        //調用原始sideloader載入hook function
+                        typeof(Sideloader.AutoResolver.Hooks).InvokeMember("ExtendedCardLoad", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.InvokeMethod, null, null, new[] { (ChaFile)ocichar.charInfo.chaFile });
+
+                        Logger.Log(LogLevel.Debug, "[KK_SCOLB] Sideloader Data Loaded");
                         break;
                     default:
                         ExtendedSave.SetExtendedDataById(ocichar.charInfo.chaFile, ext, ExtendedSave.GetExtendedDataById(tmpChaFile, ext));
