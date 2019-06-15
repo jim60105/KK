@@ -42,7 +42,7 @@ namespace KK_StudioCharaOnlyLoadBody {
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "19.06.10.0";
+        internal const string PLUGIN_VERSION = "19.06.15.1";
 
         public void Awake() => HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
     }
@@ -116,6 +116,7 @@ namespace KK_StudioCharaOnlyLoadBody {
                 if (!LoadFile(chaCtrl, fullPath) || !LoadExtendedData(ocichar, charaFileSort.selectPath, (byte)sex) || !UpdateTreeNodeObjectName(ocichar)) {
                     Logger.Log(LogLevel.Error, "[KK_SCOLB] Load Body FAILED");
                 }
+                ocichar.charInfo.AssignCoordinate((ChaFileDefine.CoordinateType)ocichar.charInfo.fileStatus.coordinateType);
                 chaCtrl.Reload(false, false, false, false);
 
                 AddObjectAssist.InitHairBone(ocichar, Singleton<Info>.Instance.dicBoneInfo);
@@ -234,7 +235,13 @@ namespace KK_StudioCharaOnlyLoadBody {
 
         //載入擴充資料
         public static bool LoadExtendedData(OCIChar ocichar, string file, byte sex) {
-            string[] GUIDList = { "com.deathweasel.bepinex.bodyshaders", "com.deathweasel.bepinex.uncensorselector", "KKABMPlugin.ABMData", UniversalAutoResolver.UARExtID };
+            string[] GUIDList = {
+                "KSOX",
+                "com.deathweasel.bepinex.bodyshaders",
+                "com.deathweasel.bepinex.uncensorselector",
+                "KKABMPlugin.ABMData",
+                UniversalAutoResolver.UARExtID
+            };
 
             ChaFileControl tmpChaFile = new ChaFileControl();
             tmpChaFile.LoadCharaFile(file, sex);
@@ -372,14 +379,20 @@ namespace KK_StudioCharaOnlyLoadBody {
                         Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Get New Sideloader: {L2}");
 
                         //合併新舊數據
-                        PluginData extData = oldExtData;
                         object[] tmpObj = new object[L1 + L2];
-                        (oldExtData.data["info"] as object[]).CopyTo(tmpObj, 0);
-                        (newExtData.data["info"] as object[]).CopyTo(tmpObj, L1);
-                        extData.data["info"] = tmpObj;
+                        (oldExtData?.data?["info"] as object[])?.CopyTo(tmpObj, 0);
+                        (newExtData?.data?["info"] as object[])?.CopyTo(tmpObj, L1);
+                        PluginData extData = null;
+                        if (tmpObj.Length != 0) {
+                            extData = new PluginData {
+                                data = new Dictionary<string, object> {
+                                    ["info"] = tmpObj
+                                }
+                            };
+                        }
 
                         //儲存
-                        ExtendedSave.SetExtendedDataById(ocichar.charInfo.chaFile, UniversalAutoResolver.UARExtID, extData);
+                        ExtendedSave.SetExtendedDataById(ocichar.charInfo.chaFile, ext, extData);
                         Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Merge and Save Sideloader: {tmpObj.Length}");
 
                         //調用原始sideloader載入hook function
@@ -392,6 +405,8 @@ namespace KK_StudioCharaOnlyLoadBody {
                         Logger.Log(LogLevel.Debug, "[KK_SCOLB] Change Extended Data: " + ext);
                         break;
                 }
+                        var KCOXController = ocichar.charInfo.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KoiClothesOverlayX"));
+                        KCOXController?.Invoke("OnCardBeingSaved", new object[] { 1 });
             }
             return true;
         }
