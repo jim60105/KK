@@ -42,9 +42,21 @@ namespace KK_StudioCharaOnlyLoadBody {
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "19.06.15.1";
+        internal const string PLUGIN_VERSION = "19.06.15.2";
 
-        public void Awake() => HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
+        public void Awake() {
+            HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
+            BepInEx.Config.ReloadConfig();
+            ExtendedDataToCopy = BepInEx.Config.GetEntry("ExtendedDataToCopy", string.Join(";", ExtendedDataToCopy), GUID).Split(';');
+        }
+
+        public static string[] ExtendedDataToCopy = {
+            "KSOX",
+            "com.deathweasel.bepinex.bodyshaders",
+            "com.deathweasel.bepinex.uncensorselector",
+            "KKABMPlugin.ABMData",
+            "com.bepis.sideloader.universalautoresolver"
+        };
     }
 
     class Patches {
@@ -235,18 +247,10 @@ namespace KK_StudioCharaOnlyLoadBody {
 
         //載入擴充資料
         public static bool LoadExtendedData(OCIChar ocichar, string file, byte sex) {
-            string[] GUIDList = {
-                "KSOX",
-                "com.deathweasel.bepinex.bodyshaders",
-                "com.deathweasel.bepinex.uncensorselector",
-                "KKABMPlugin.ABMData",
-                UniversalAutoResolver.UARExtID
-            };
-
             ChaFileControl tmpChaFile = new ChaFileControl();
             tmpChaFile.LoadCharaFile(file, sex);
 
-            foreach (var ext in GUIDList) {
+            foreach (var ext in KK_StudioCharaOnlyLoadBody.ExtendedDataToCopy) {
                 switch (ext) {
                     case "KKABMPlugin.ABMData":
                         //取得BoneController
@@ -330,7 +334,7 @@ namespace KK_StudioCharaOnlyLoadBody {
                         }
                         Logger.Log(LogLevel.Debug, "[KK_SCOLB] --List End--");
                         break;
-                    case UniversalAutoResolver.UARExtID:
+                    case "com.bepis.sideloader.universalautoresolver":
                         //判斷CategoryNo分類function
                         bool isBelongsToCharaBody(ChaListDefine.CategoryNo categoryNo) =>
                             StructReference.ChaFileFaceProperties.Keys.Any(x => x.Category == categoryNo) ||
@@ -405,8 +409,8 @@ namespace KK_StudioCharaOnlyLoadBody {
                         Logger.Log(LogLevel.Debug, "[KK_SCOLB] Change Extended Data: " + ext);
                         break;
                 }
-                        var KCOXController = ocichar.charInfo.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KoiClothesOverlayX"));
-                        KCOXController?.Invoke("OnCardBeingSaved", new object[] { 1 });
+                var KCOXController = ocichar.charInfo.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KoiClothesOverlayX"));
+                KCOXController?.Invoke("OnCardBeingSaved", new object[] { 1 });
             }
             return true;
         }
