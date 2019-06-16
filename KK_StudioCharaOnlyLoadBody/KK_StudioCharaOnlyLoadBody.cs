@@ -19,7 +19,6 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using BepInEx;
@@ -28,7 +27,6 @@ using ExtensibleSaveFormat;
 using Extension;
 using Harmony;
 using Illusion.Extensions;
-using MessagePack;
 using Sideloader.AutoResolver;
 using Studio;
 using UILib;
@@ -42,7 +40,7 @@ namespace KK_StudioCharaOnlyLoadBody {
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "19.06.15.2";
+        internal const string PLUGIN_VERSION = "19.06.16.0";
 
         public void Awake() {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -125,7 +123,7 @@ namespace KK_StudioCharaOnlyLoadBody {
                 string oldName = ocichar.charInfo.chaFile.parameter.fullname;
 
                 //Main Load Control
-                if (!LoadFile(chaCtrl, fullPath) || !LoadExtendedData(ocichar, charaFileSort.selectPath, (byte)sex) || !UpdateTreeNodeObjectName(ocichar)) {
+                if (chaCtrl.chaFile.LoadFileLimited(fullPath, (byte)sex, true, true, true, true, false) || !LoadExtendedData(ocichar, charaFileSort.selectPath, (byte)sex) || !UpdateTreeNodeObjectName(ocichar)) {
                     Logger.Log(LogLevel.Error, "[KK_SCOLB] Load Body FAILED");
                 }
                 ocichar.charInfo.AssignCoordinate((ChaFileDefine.CoordinateType)ocichar.charInfo.fileStatus.coordinateType);
@@ -175,74 +173,6 @@ namespace KK_StudioCharaOnlyLoadBody {
         private static void SetKeepCoorButtonInteractable(CharaList __instance) {
             int i = (String.Equals(__instance.name, "00_Female") ? 1 : 0);
             btn[i].GetComponent<Button>().interactable = ((Button)__instance.GetField("buttonChange")).interactable;
-        }
-
-        //讀取檔案
-        public static bool LoadFile(ChaControl chaCtrl, string fullPath) {
-            if (!File.Exists(fullPath)) {
-                return false;
-            }
-            using (FileStream fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read)) {
-                using (BinaryReader binaryReader = new BinaryReader(fileStream)) {
-                    long pngSize = PngFile.GetPngSize(binaryReader);
-                    if (pngSize != 0L) {
-                        binaryReader.BaseStream.Seek(pngSize, SeekOrigin.Current);
-
-                        if (binaryReader.BaseStream.Length - binaryReader.BaseStream.Position == 0L) {
-                            return false;
-                        }
-                    }
-                    try {
-                        var loadProductNo = binaryReader.ReadInt32();
-                        if (loadProductNo > 100) {
-                            return false;
-                        }
-                        string a = binaryReader.ReadString();
-                        if (a != "【KoiKatuChara】") {
-                            return false;
-                        }
-                        var loadVersion = new Version(binaryReader.ReadString());
-                        if (0 > ChaFileDefine.ChaFileVersion.CompareTo(loadVersion)) {
-                            return false;
-                        }
-                        int num = binaryReader.ReadInt32();
-                        if (num != 0) {
-                            var facePngData = binaryReader.ReadBytes(num);
-                        }
-                        int count = binaryReader.ReadInt32();
-                        byte[] bytes = binaryReader.ReadBytes(count);
-                        BlockHeader blockHeader = MessagePackSerializer.Deserialize<BlockHeader>(bytes);
-                        long num2 = binaryReader.ReadInt64();
-                        long position = binaryReader.BaseStream.Position;
-
-                        BlockHeader.Info info = blockHeader.SearchInfo(ChaFileCustom.BlockName);
-                        if (info != null) {
-                            Version version = new Version(info.version);
-                            if (0 <= ChaFileDefine.ChaFileCustomVersion.CompareTo(version)) {
-                                binaryReader.BaseStream.Seek(position + info.pos, SeekOrigin.Begin);
-                                byte[] data = binaryReader.ReadBytes((int)info.size);
-                                chaCtrl.chaFile.SetCustomBytes(data, version);
-                            }
-                        }
-
-                        info = blockHeader.SearchInfo(ChaFileParameter.BlockName);
-                        if (info != null) {
-                            Version value = new Version(info.version);
-                            if (0 <= ChaFileDefine.ChaFileParameterVersion.CompareTo(value)) {
-                                binaryReader.BaseStream.Seek(position + info.pos, SeekOrigin.Begin);
-                                byte[] parameterBytes = binaryReader.ReadBytes((int)info.size);
-                                chaCtrl.chaFile.SetParameterBytes(parameterBytes);
-                            }
-                        }
-
-                        binaryReader.BaseStream.Seek(position + num2, SeekOrigin.Begin);
-                    } catch (EndOfStreamException) {
-                        return false;
-                    }
-                    Logger.Log(LogLevel.Debug, "[KK_SCOLB] Load Raw Body Finish");
-                    return true;
-                }
-            }
         }
 
         //載入擴充資料

@@ -12,11 +12,11 @@ namespace KK_StudioCoordinateLoadOption {
         private static Dictionary<string, object> KCOXTexDataBackup = null;
 
         public static bool LoadAssembly() {
-            if (!File.Exists("BepInEx/KoiClothesOverlay.dll")) {
+            if (File.Exists("BepInEx/KoiClothesOverlay.dll") || File.Exists("BepInEx/KK.OverlayMods.dll")) {
+                Logger.Log(LogLevel.Debug, "[KK_SCLO] KCOX found");
+            } else {
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] Load assembly FAILED: KCOX");
                 return false;
-            } else {
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] KCOX found");
             }
             return true;
         }
