@@ -36,7 +36,7 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "19.06.26.0";
+        internal const string PLUGIN_VERSION = "19.06.26.1";
 
         public void Awake() {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -86,8 +86,10 @@ namespace KK_StudioTextPlugin {
         public static void LoadPostfix(ref OCIFolder __result, OIFolderInfo _info) {
             if (creatingTextObj || __result.name.IndexOf(displayPrefix) >= 0) {
                 __result.name = creatingTextObj ? displayPrefix+"New Text" : _info.name;
-                MakeTextObj(__result.objectItem, creatingTextObj ? "New Text" : _info.name.Replace(displayPrefix, ""));
+                var t = MakeTextObj(__result.objectItem, creatingTextObj ? "New Text" : _info.name.Replace(displayPrefix, ""));
                 _info.changeAmount.OnChange();
+                t.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+
             }
         }
 
@@ -114,19 +116,19 @@ namespace KK_StudioTextPlugin {
             __instance.SetField("isUpdateInfo", false);
         }
 
-        public static void MakeTextObj(GameObject parentGO, string text) {
+        public static TextMesh MakeTextObj(GameObject parentGO, string text) {
             parentGO.layer = 10;
             TextMesh t = parentGO.AddComponent<TextMesh>();
             t.fontSize = 200;
             t.anchor = TextAnchor.MiddleCenter;
             t.characterSize = 0.01f;
-            t.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
             t.font = Font.CreateDynamicFontFromOSFont("MS Gothic", 200);
+            t.text = text;
             parentGO.GetComponentInChildren<MeshRenderer>().material = font3DMaterial;
             parentGO.GetComponentInChildren<MeshRenderer>().material.SetTexture("_MainTex", t.font.material.mainTexture);
             parentGO.GetComponentInChildren<MeshRenderer>().material.EnableKeyword("_NORMALMAP");
-            t.text = text;
             Logger.Log(LogLevel.Info, "[KK_STP] Create Text");
+            return t;
         }
     }
 }
