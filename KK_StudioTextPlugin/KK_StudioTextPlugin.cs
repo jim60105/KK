@@ -37,7 +37,7 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "19.06.28.1";
+        internal const string PLUGIN_VERSION = "19.06.28.2";
 
         public void Awake() {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -50,6 +50,7 @@ namespace KK_StudioTextPlugin {
         private static bool isCreatingTextFolder = false;
         private static bool isCreatingTextStructure = false;
         private static bool isConfigPanelCreated = false;
+        private static bool onUpdating = false;
         public static readonly string TextObjPrefix = "-Text Plugin:";
         public static readonly string TextConfigPrefix = "-Text Config";
         public static readonly string TextConfigFontPrefix = "-Text Font:";
@@ -78,7 +79,9 @@ namespace KK_StudioTextPlugin {
             d.AddOptions(fontList.ToList());
             //Change Font
             d.onValueChanged.AddListener(delegate {
-                TextPlugin.ChangeFont(fontList[d.value]);
+                if (!onUpdating) {
+                    TextPlugin.ChangeFont(fontList[d.value]);
+                }
             });
 
             panel.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -300), new Vector2(160, -70));
@@ -118,8 +121,9 @@ namespace KK_StudioTextPlugin {
                     objectCtrlInfo is OCIFolder oCIFolder &&
                     oCIFolder.name.Contains(TextObjPrefix)
                 ) {
+                onUpdating = true;
                 panel.gameObject.SetActive(true);
-                TextPlugin.MakeAndSetConfigStructure(__instance);
+                //TextPlugin.MakeAndSetConfigStructure(__instance);
 
                 OCIFolder textOCIFolder = Studio.Studio.GetCtrlInfo(__instance) as OCIFolder;
                 TextMesh t = textOCIFolder.objectItem.GetComponent<TextMesh>();
@@ -134,7 +138,10 @@ namespace KK_StudioTextPlugin {
                 //FontSize
 
                 //Color
+
+                onUpdating = false;
             }
+
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(TreeNodeObject), "OnDeselect")]
@@ -243,7 +250,8 @@ namespace KK_StudioTextPlugin {
         public static void RefreshHierachyLoopPostfix(TreeNodeObject _source, int _indent, bool _visible) {
             //套用文字狀態
             ObjectCtrlInfo objectCtrlInfo = Studio.Studio.GetCtrlInfo(_source);
-            if (objectCtrlInfo.objectInfo.kind == 3 &&
+            if (null != objectCtrlInfo &&
+                    objectCtrlInfo.objectInfo.kind == 3 &&
                     objectCtrlInfo is OCIFolder oCIFolder &&
                     oCIFolder.name.Contains(TextObjPrefix) &&
                     !isCreatingTextStructure
