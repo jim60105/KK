@@ -37,7 +37,7 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "19.06.28.0";
+        internal const string PLUGIN_VERSION = "19.06.28.1";
 
         public void Awake() {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -46,31 +46,25 @@ namespace KK_StudioTextPlugin {
         }
     }
 
-    class Patches {
-        private static Material font3DMaterial;
-        private static bool creatingTextFolder = false;
-        private static bool creatingTextStructure = false;
-        private static readonly string displayPrefix = "-Text Plugin:";
+    static class Patches {
+        private static bool isCreatingTextFolder = false;
+        private static bool isCreatingTextStructure = false;
         private static bool isConfigPanelCreated = false;
-        public static void Start() {
-            if (AssetBundle.LoadFromMemory(Properties.Resources.text) is AssetBundle assetBundle) {
-                font3DMaterial = assetBundle.LoadAsset<Material>("Font3DMaterial");
-                font3DMaterial.color = Color.white;
-                assetBundle.Unload(false);
-            } else {
-                Logger.Log(LogLevel.Error, "[KK_STP] Load assetBundle faild");
-            }
-        }
+        public static readonly string TextObjPrefix = "-Text Plugin:";
+        public static readonly string TextConfigPrefix = "-Text Config";
+        public static readonly string TextConfigFontPrefix = "-Text Font:";
+        public static readonly string TextConfigFontSizePrefix = "-Text FontSize:";
+        public static readonly string TextConfigColorPrefix = "-Text Color:";
+        internal static void Start() => TextPlugin.Start();
 
         private static Image panel;
-        private static void DrawConfigPanel() {
+        internal static void DrawConfigPanel() {
             if (isConfigPanelCreated) {
                 return;
             }
 
             //畫Config視窗
             var panelRoot = GameObject.Find("StudioScene/Canvas Main Menu/02_Manipulate/04_Folder");
-            //Draw Panel and ButtonAll
             panel = UIUtility.CreatePanel("ConfigPanel", panelRoot.transform);
             //Config1: Font
             var text1 = UIUtility.CreateText("FontText", panel.transform, "Font");
@@ -84,14 +78,7 @@ namespace KK_StudioTextPlugin {
             d.AddOptions(fontList.ToList());
             //Change Font
             d.onValueChanged.AddListener(delegate {
-                OCIFolder[] folderArray = (from v in Singleton<GuideObjectManager>.Instance.selectObjectKey
-                                           select Studio.Studio.GetCtrlInfo(v) as OCIFolder into v
-                                           where v != null
-                                           select v).ToArray();
-                foreach (var oCIFolder in folderArray) {
-                    SetFont(oCIFolder.objectItem, fontList[d.value]);
-                    MakeAndSetConfigStructure(oCIFolder.treeNodeObject, Config.Font);
-                }
+                TextPlugin.ChangeFont(fontList[d.value]);
             });
 
             panel.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -300), new Vector2(160, -70));
@@ -101,6 +88,9 @@ namespace KK_StudioTextPlugin {
             foreach (var text in panel.GetComponentsInChildren<Text>()) {
                 text.color = Color.white;
             }
+
+            //Config2: FontSize (CharacterSize)
+            //Config3: Color
 
             //拖曳event
             Vector2 mouse = Vector2.zero;
@@ -115,34 +105,48 @@ namespace KK_StudioTextPlugin {
             });
             trigger.triggers.Add(entry);
             trigger.triggers.Add(entry2);
+
+            panel.gameObject.SetActive(false);
             Logger.Log(LogLevel.Info, "[KK_STP] Draw ConfigPanel Finish");
             isConfigPanelCreated = true;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(TreeNodeObject), "OnClickSelect")]
         public static void OnClickSelectPostfix(TreeNodeObject __instance) {
-            if (__instance.name.IndexOf(displayPrefix) >= 0) {
+            ObjectCtrlInfo objectCtrlInfo = Studio.Studio.GetCtrlInfo(__instance);
+            if (objectCtrlInfo.objectInfo.kind == 3 &&
+                    objectCtrlInfo is OCIFolder oCIFolder &&
+                    oCIFolder.name.Contains(TextObjPrefix)
+                ) {
                 panel.gameObject.SetActive(true);
-                MakeAndSetConfigStructure(__instance);
+                TextPlugin.MakeAndSetConfigStructure(__instance);
 
                 OCIFolder textOCIFolder = Studio.Studio.GetCtrlInfo(__instance) as OCIFolder;
                 TextMesh t = textOCIFolder.objectItem.GetComponent<TextMesh>();
                 MeshRenderer m = textOCIFolder.objectItem.GetComponent<MeshRenderer>();
-                var i = Array.IndexOf(Font.GetOSInstalledFontNames(), t.font.name);
-                if (i >= 0) {
-                    panel.GetComponentInChildren<Dropdown>().value = i;
+
+                //加載編輯選單內容
+                //Font
+                if (TextPlugin.CheckFontInOS(t.font.name)) {
+                    panel.GetComponentInChildren<Dropdown>().value = Array.IndexOf(Font.GetOSInstalledFontNames(), t.font.name);
                 }
+
+                //FontSize
+
+                //Color
             }
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(TreeNodeObject), "OnDeselect")]
         public static void OnDeselectPostfix(TreeNodeObject __instance) {
+            //TextObj失焦
             panel.gameObject.SetActive(false);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ItemCategoryList), "InitList")]
         public static void InitListPostfix(int _group, ItemCategoryList __instance) {
-            if (_group == 9) {
+            //創建項目至"Add/物品/2D效果"清單內
+            if (_group == 9) {  //2D效果
                 GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>((GameObject)__instance.GetField("objectPrefab"));
                 if (!gameObject.activeSelf) {
                     gameObject.SetActive(true);
@@ -152,99 +156,38 @@ namespace KK_StudioTextPlugin {
                 component.text = "文字Text";
                 component.AddActionToButton(delegate {
                     TreeNodeCtrl treeNodeCtrl = Singleton<Studio.Studio>.Instance.treeNodeCtrl;
-                    //創建文字
-                    creatingTextFolder = true;
-                    creatingTextStructure = true;
+                    isCreatingTextFolder = true;
+                    isCreatingTextStructure = true;
                     OCIFolder textOCIFolder = AddObjectFolder.Add();
                     Singleton<UndoRedoManager>.Instance.Clear();
                     if (Studio.Studio.optionSystem.autoSelect && textOCIFolder != null) {
                         treeNodeCtrl.SelectSingle(textOCIFolder.treeNodeObject);
                     }
-                    TextMesh t = textOCIFolder.objectItem.GetComponent<TextMesh>();
-                    t.transform.localRotation *= Quaternion.Euler(0f, 180f, 0f);
+                    //作動不正確
+                    //TextMesh t = textOCIFolder.objectItem.GetComponent<TextMesh>();
+                    //t.transform.localRotation *= Quaternion.Euler(0f, 180f, 0f);
                 });
-                ((Dictionary<int, Image>)__instance.GetField("dicNode")).Add(60105, gameObject.GetComponent<Image>());
-            }
-        }
-
-        public enum Config {
-            All = 0,
-            Font,
-            FontSize,
-            Color
-        }
-        public static void MakeAndSetConfigStructure(TreeNodeObject textTreeNodeObject, Config config = Config.All) {
-            OCIFolder textOCIFolder = Studio.Studio.GetCtrlInfo(textTreeNodeObject) as OCIFolder;
-            TextMesh t = textOCIFolder.objectItem.GetComponent<TextMesh>();
-            MeshRenderer m = textOCIFolder.objectItem.GetComponent<MeshRenderer>();
-            TreeNodeCtrl treeNodeCtrl = Singleton<Studio.Studio>.Instance.treeNodeCtrl;
-
-            TreeNodeObject nConfig = doMain("-Text Config", "", textTreeNodeObject);
-            if (config == Config.Font || config == Config.All)
-                doMain("-Text Font:", t.font.name, nConfig);
-            if (config == Config.FontSize || config == Config.All)
-                doMain("-Text FontSize:", t.characterSize.ToString(), nConfig);
-            if (config == Config.Color || config == Config.All)
-                doMain("-Text Color:", m.material.color.ToString(), nConfig);
-
-            TreeNodeObject doMain(string prefix, string value, TreeNodeObject nRoot) {
-                TreeNodeObject node = nRoot.child?.Where((x) => {
-                    return (Studio.Studio.GetCtrlInfo(x) is OCIFolder y) && y.name.IndexOf(prefix) >= 0;
-                }).FirstOrDefault();
-                OCIFolder folder;
-                if (null == node) {
-                    folder = AddObjectFolder.Add();
-                    treeNodeCtrl.SetParent(folder.treeNodeObject, nRoot);
-                    folder.objectInfo.changeAmount.Reset();
-                    node = folder.treeNodeObject;
-
-                } else {
-                    folder = Studio.Studio.GetCtrlInfo(node) as OCIFolder;
-                }
-                folder.name = folder.objectItem.name = node.name = prefix + value;
-                return node;
-            }
-        }
-
-        public static string GetConfig(TreeNodeObject textTreeNodeObject, Config config) {
-            OCIFolder textOCIFolder = Studio.Studio.GetCtrlInfo(textTreeNodeObject) as OCIFolder;
-            TextMesh t = textOCIFolder.objectItem.GetComponent<TextMesh>();
-            MeshRenderer m = textOCIFolder.objectItem.GetComponent<MeshRenderer>();
-            TreeNodeObject GetChildNode(string prefix, TreeNodeObject nRoot) {
-                return nRoot.child?.Where((x) => {
-                    return (Studio.Studio.GetCtrlInfo(x) is OCIFolder y) && y.name.IndexOf(prefix) >= 0;
-                }).FirstOrDefault();
-            }
-
-            TreeNodeObject nConfig = GetChildNode("-Text Config", textTreeNodeObject);
-            string GetValue(string prefix) {
-                OCIFolder f = Studio.Studio.GetCtrlInfo(GetChildNode(prefix, nConfig)) as OCIFolder;
-                return f.name.Replace(prefix,"");
-            }
-
-            switch (config) {
-                case Config.Font:
-                    return GetValue("-Text Font:");
-                case Config.FontSize:
-                    return GetValue("-Text FontSize:");
-                case Config.Color:
-                    return GetValue("-Text Color:");
-                default:
-                    return "";
+                //目前最大的漢字編碼是臺灣的國家標準CNS11643，目前（4.0）共收錄可考證之正簡、日、韓語漢字共76,067個
+                ((Dictionary<int, Image>)__instance.GetField("dicNode")).Add(76067, gameObject.GetComponent<Image>());
             }
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(AddObjectFolder), "Load", new Type[] { typeof(OIFolderInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject), typeof(bool), typeof(int) })]
         public static void LoadPostfix(ref OCIFolder __result, OIFolderInfo _info, ObjectCtrlInfo _parent, TreeNodeObject _parentNode, bool _addInfo, int _initialPosition) {
+            //Scene讀取的進入點
+            //處理Folder未定義OnVisible造成的不隱藏
             __result.treeNodeObject.onVisible = (TreeNodeObject.OnVisibleFunc)Delegate.Combine(__result.treeNodeObject.onVisible, new TreeNodeObject.OnVisibleFunc(__result.OnVisible));
-            if (creatingTextFolder || __result.name.IndexOf(displayPrefix) >= 0) {
-                __result.name = __result.treeNodeObject.name = creatingTextFolder ? displayPrefix + "New Text" : _info.name;
-                var t = MakeTextObj(__result, creatingTextFolder ? "New Text" : _info.name.Replace(displayPrefix, ""));
-                creatingTextFolder = false;
+
+            if (isCreatingTextFolder || __result.name.Contains(TextObjPrefix)) {
+                __result.name = isCreatingTextFolder ? TextObjPrefix + "New Text" : _info.name;
+                var t = TextPlugin.MakeTextObj(__result, isCreatingTextFolder ? "New Text" : _info.name.Replace(TextObjPrefix, ""));
+                isCreatingTextFolder = false;
                 if (_addInfo) {
-                    MakeAndSetConfigStructure(__result.treeNodeObject);
+                    //Scene Load就不創建Config資料夾結構
+                    TextPlugin.MakeAndSetConfigStructure(__result.treeNodeObject);
                 }
-                creatingTextStructure = false;
+                isCreatingTextStructure = false;
+                //套用座標、旋轉、縮放
                 _info.changeAmount.OnChange();
                 Logger.Log(LogLevel.Debug, $"[KK_STP] Pos:{_info.changeAmount.pos.ToString()}");
                 Logger.Log(LogLevel.Debug, $"[KK_STP] Rot:{_info.changeAmount.rot.ToString()}");
@@ -255,15 +198,16 @@ namespace KK_StudioTextPlugin {
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(OCIFolder), "OnVisible")]
-        public static void OnVisiblePostfix(bool _visible,OCIFolder __instance) {
+        public static void OnVisiblePostfix(bool _visible, OCIFolder __instance) {
             __instance.objectItem.SetActive(_visible);
         }
 
-
         [HarmonyPrefix, HarmonyPatch(typeof(MPFolderCtrl), "OnEndEditName")]
         public static bool OnEditNamePrefix(MPFolderCtrl __instance, string _value) {
-            if (__instance.ociFolder.objectItem.GetComponents<TextMesh>().Length != 0) {
-                __instance.ociFolder.name = displayPrefix + _value;
+            if (__instance.ociFolder.name.Contains(TextObjPrefix)) {
+                //對資料夾名稱做編輯，加上prefix
+                __instance.ociFolder.name = __instance.ociFolder.objectItem.name = TextObjPrefix + _value;
+                //改文字
                 __instance.ociFolder.objectItem.GetComponent<TextMesh>().text = _value;
                 Logger.Log(LogLevel.Info, "[KK_STP] Edit Text: " + _value);
                 return false;
@@ -276,63 +220,36 @@ namespace KK_StudioTextPlugin {
             if (__instance.ociFolder == null) {
                 return;
             }
-            __instance.SetField("isUpdateInfo", true);
-            InputField input = (InputField)__instance.GetField("inputName");
-            input.text = __instance.ociFolder.name.Replace(displayPrefix, "");
-            __instance.SetField("inputName", input);
-            __instance.SetField("isUpdateInfo", false);
-        }
 
-        public static TextMesh MakeTextObj(OCIFolder folder, string text) {
-            folder.objectItem.layer = 10;
-            TextMesh t = folder.objectItem.AddComponent<TextMesh>();
-            t.fontSize = 200;
-            t.anchor = TextAnchor.MiddleCenter;
-            t.characterSize = 0.01f;
-            t.text = text;
-            SetFont(folder.objectItem);
-            DrawConfigPanel();
-
-            Logger.Log(LogLevel.Info, "[KK_STP] Create Text");
-            return t;
-        }
-
-        public static bool CheckFontInOS(string fontName) {
-            var i = Array.IndexOf(Font.GetOSInstalledFontNames(), fontName);
-            if (i >= 0) {
-                return true;
+            if (__instance.ociFolder.name.Contains(TextConfigPrefix) ||
+                    __instance.ociFolder.name.Contains(TextConfigFontPrefix) ||
+                    __instance.ociFolder.name.Contains(TextConfigFontSizePrefix) ||
+                    __instance.ociFolder.name.Contains(TextConfigColorPrefix)
+                ) {
+                __instance.active = false;
             }
-            Logger.Log(LogLevel.Message, "[KK_STP] Missing font: " + fontName);
-            return false;
-        }
 
-        public static void SetFont(GameObject textGO, string fontName = "MS Gothic") {
-            if (!CheckFontInOS(fontName)) {
-                if (!String.Equals(fontName, "MS Gothic")) {
-                    Logger.Log(LogLevel.Message, "[KK_STP] Fallback to MS Gothic");
-                    fontName = "MS Gothic";
-                } else {
-                    Logger.Log(LogLevel.Message, "[KK_STP] Fallback to Arial");
-                    fontName = "Arial";
-                }
+            if (__instance.ociFolder.name.Contains(TextObjPrefix)) {
+                __instance.SetField("isUpdateInfo", true);
+                InputField input = (InputField)__instance.GetField("inputName");
+                //文字帶入編輯器時去掉prefix
+                input.text = __instance.ociFolder.name.Replace(TextObjPrefix, "");
+                __instance.SetField("inputName", input);
+                __instance.SetField("isUpdateInfo", false);
             }
-            textGO.GetComponent<TextMesh>().font = Font.CreateDynamicFontFromOSFont(fontName, 200);
-            textGO.GetComponent<MeshRenderer>().material = font3DMaterial;
-            textGO.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", textGO.GetComponent<TextMesh>().font.material.mainTexture);
-            textGO.GetComponent<MeshRenderer>().material.EnableKeyword("_NORMALMAP");
-            return;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(TreeNodeCtrl), "RefreshHierachyLoop")]
         public static void RefreshHierachyLoopPostfix(TreeNodeObject _source, int _indent, bool _visible) {
+            //套用文字狀態
             ObjectCtrlInfo objectCtrlInfo = Studio.Studio.GetCtrlInfo(_source);
             if (objectCtrlInfo.objectInfo.kind == 3 &&
                     objectCtrlInfo is OCIFolder oCIFolder &&
-                    oCIFolder.name.IndexOf(displayPrefix) >= 0 &&
-                    !creatingTextStructure
+                    oCIFolder.name.Contains(TextObjPrefix) &&
+                    !isCreatingTextStructure
                 ) {
-                SetFont(oCIFolder.objectItem, GetConfig(oCIFolder.treeNodeObject, Config.Font));
-                MakeAndSetConfigStructure(oCIFolder.treeNodeObject, Config.Font);
+                TextPlugin.SetFont(oCIFolder, TextPlugin.GetConfig(oCIFolder.treeNodeObject, TextPlugin.Config.Font));
+                TextPlugin.MakeAndSetConfigStructure(oCIFolder.treeNodeObject, TextPlugin.Config.Font);
                 oCIFolder.objectItem.SetActive(_source.visible);
             }
         }
