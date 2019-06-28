@@ -40,7 +40,7 @@ namespace KK_StudioCharaOnlyLoadBody {
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "19.06.16.0";
+        internal const string PLUGIN_VERSION = "19.06.23.0";
 
         public void Awake() {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -277,21 +277,28 @@ namespace KK_StudioCharaOnlyLoadBody {
                             tmpExtData = ExtendedSave.GetExtendedDataById(ocichar.charInfo.chaFile, ext);
                             if (tmpExtData != null && tmpExtData.data.ContainsKey("info")) {
                                 if (tmpExtData.data.TryGetValue("info", out object tmpExtInfo)) {
-                                    List<object> tmpExtList = new List<object>(tmpExtInfo as object[]);
-                                    Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Sideloader count: {tmpExtList.Count}");
-                                    ResolveInfo tmpResolveInfo;
-                                    for (int j = 0; j < tmpExtList.Count;) {
-                                        tmpResolveInfo = ResolveInfo.Unserialize((byte[])tmpExtList[j]);
-                                        if (keepBodyData == isBelongsToCharaBody(tmpResolveInfo.CategoryNo)) {
-                                            Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Add Sideloader info: {tmpResolveInfo.GUID} : {tmpResolveInfo.Property} : {tmpResolveInfo.Slot}");
-                                            j++;
-                                        } else {
-                                            Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Remove Sideloader info: {tmpResolveInfo.GUID} : {tmpResolveInfo.Property} : {tmpResolveInfo.Slot}");
-                                            tmpExtList.RemoveAt(j);
+                                    if (null != tmpExtInfo as object[])
+                                    {
+                                        List<object> tmpExtList = new List<object>(tmpExtInfo as object[]);
+                                        Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Sideloader count: {tmpExtList.Count}");
+                                        ResolveInfo tmpResolveInfo;
+                                        for (int j = 0; j < tmpExtList.Count;)
+                                        {
+                                            tmpResolveInfo = ResolveInfo.Unserialize((byte[])tmpExtList[j]);
+                                            if (keepBodyData == isBelongsToCharaBody(tmpResolveInfo.CategoryNo))
+                                            {
+                                                Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Add Sideloader info: {tmpResolveInfo.GUID} : {tmpResolveInfo.Property} : {tmpResolveInfo.Slot}");
+                                                j++;
+                                            }
+                                            else
+                                            {
+                                                Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Remove Sideloader info: {tmpResolveInfo.GUID} : {tmpResolveInfo.Property} : {tmpResolveInfo.Slot}");
+                                                tmpExtList.RemoveAt(j);
+                                            }
                                         }
+                                        tmpExtData.data["info"] = tmpExtList.ToArray();
+                                        return tmpExtList.Count;
                                     }
-                                    tmpExtData.data["info"] = tmpExtList.ToArray();
-                                    return tmpExtList.Count;
                                 }
                             }
                             return 0;
