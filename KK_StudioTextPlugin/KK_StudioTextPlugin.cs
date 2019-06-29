@@ -37,7 +37,7 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "19.06.29.1";
+        internal const string PLUGIN_VERSION = "19.06.29.3";
 
         public void Awake() {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -48,17 +48,18 @@ namespace KK_StudioTextPlugin {
 
     static class Patches {
         private static bool isCreatingTextFolder = false;
-        private static bool isCreatingTextStructure = false;
+        internal static bool isCreatingTextStructure = false;
         private static bool isConfigPanelCreated = false;
         private static bool onUpdating = false;
         public static readonly string TextObjPrefix = "-Text Plugin:";
         public static readonly string TextConfigPrefix = "-Text Config";
         public static readonly string TextConfigFontPrefix = "-Text Font:";
         public static readonly string TextConfigFontSizePrefix = "-Text FontSize:";
+        public static readonly string TextConfigFontStylePrefix = "-Text FontStyle:";
         public static readonly string TextConfigColorPrefix = "-Text Color:";
         internal static void Start() => TextPlugin.Start();
 
-        private static Image panel;
+        internal static Image panel;
         internal static void DrawConfigPanel() {
             if (isConfigPanelCreated) {
                 return;
@@ -69,10 +70,10 @@ namespace KK_StudioTextPlugin {
             panel = UIUtility.CreatePanel("ConfigPanel", panelRoot.transform);
             //Config1: Font
             var text1 = UIUtility.CreateText("FontText", panel.transform, "Font");
-            text1.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -30), new Vector2(155f, -5f));
+            text1.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -30f), new Vector2(155f, -5f));
             var d = UIUtility.CreateDropdown("fontDropdown", panel.transform);
             d.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -85f), new Vector2(155f, -35f));
-            d.GetComponentInChildren<Text>().resizeTextMaxSize = 16;
+            d.GetComponentInChildren<Text>().resizeTextMaxSize = 18;
             //Font List
             d.options.Clear();
             var fontList = Font.GetOSInstalledFontNames();
@@ -87,9 +88,9 @@ namespace KK_StudioTextPlugin {
 
             //Config2: FontSize (CharacterSize)
             var text2 = UIUtility.CreateText("FontSize", panel.transform, "FontSize");
-            text2.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -115), new Vector2(155f, -90f));
+            text2.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -115f), new Vector2(155f, -90f));
             var input = UIUtility.CreateInputField("fontSizeInput", panel.transform);
-            input.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -145), new Vector2(155f, -120f));
+            input.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -145f), new Vector2(155f, -120f));
             input.text = "1";
             input.onEndEdit.AddListener(delegate {
                 if (!onUpdating) {
@@ -103,15 +104,46 @@ namespace KK_StudioTextPlugin {
                 }
             });
 
-            //Config3: Color
+            //Config3: FontStyle
+            var text3 = UIUtility.CreateText("FontStyle", panel.transform, "FontStyle");
+            text3.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -175f), new Vector2(155f, -150f));
+            var d2 = UIUtility.CreateDropdown("fontStyleDropdown", panel.transform);
+            d2.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -215f), new Vector2(155f, -180f));
+            //Font List
+            d2.options.Clear();
+            var fontStyle = Enum.GetNames(typeof(FontStyle));
+            d2.AddOptions(fontStyle.ToList());
+            d2.value = 0;
+            //Change FontStyle
+            d2.onValueChanged.AddListener(delegate {
+                if (!onUpdating) {
+                    TextPlugin.ChangeFontStyle(fontStyle[d2.value]);
+                }
+            });
 
-            panel.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -300), new Vector2(160, -70));
+            //Config4: Color
+            var text4 = UIUtility.CreateText("Color", panel.transform, "Color");
+            text4.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -245f), new Vector2(155f, -220f));
+            var btn = UIUtility.CreateButton("color", panel.transform, "");
+            btn.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -275f), new Vector2(155f, -250f));
+            btn.onClick.AddListener(delegate {
+                if (!onUpdating) {
+                    if (!ColorUtility.TryParseHtmlString(TextPlugin.GetConfig(null, TextPlugin.Config.Color), out var color)) {
+                        color = Color.white;
+                    }
+                    Singleton<Studio.Studio>.Instance.colorPalette.Setup("字體顏色", color, new Action<Color>(TextPlugin.ChangeColor), true);
+                    Singleton<Studio.Studio>.Instance.colorPalette.visible = true;
+                }
+            });
+
+            panel.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -350), new Vector2(160, -70));
             foreach (var image in panel.GetComponentsInChildren<Image>()) {
                 image.color = new Color32(120, 120, 120, 220);
             }
             foreach (var text in panel.GetComponentsInChildren<Text>()) {
                 text.color = Color.white;
             }
+            btn.image.color = Color.white;
 
             //拖曳event
             Vector2 mouse = Vector2.zero;
@@ -136,40 +168,47 @@ namespace KK_StudioTextPlugin {
         public static void OnClickSelectPostfix(TreeNodeObject __instance) {
             ObjectCtrlInfo objectCtrlInfo = Studio.Studio.GetCtrlInfo(__instance);
             if (objectCtrlInfo.objectInfo.kind == 3 && objectCtrlInfo is OCIFolder oCIFolder ) {
+                if (oCIFolder.name.Contains(TextConfigPrefix)) {
+                    TreeNodeCtrl treeNodeCtrl = Singleton<Studio.Studio>.Instance.treeNodeCtrl;
+                    treeNodeCtrl.SelectSingle(__instance.parent);
+                    oCIFolder = Studio.Studio.GetCtrlInfo(__instance.parent) as OCIFolder;
+                } else if (
+                        oCIFolder.name.Contains(TextConfigFontPrefix) ||
+                        oCIFolder.name.Contains(TextConfigFontSizePrefix) ||
+                        oCIFolder.name.Contains(TextConfigFontStylePrefix) ||
+                        oCIFolder.name.Contains(TextConfigColorPrefix)
+                    ) {
+                    TreeNodeCtrl treeNodeCtrl = Singleton<Studio.Studio>.Instance.treeNodeCtrl;
+                    treeNodeCtrl.SelectSingle(__instance.parent.parent);
+                    oCIFolder = Studio.Studio.GetCtrlInfo(__instance.parent.parent) as OCIFolder;
+                }
                 if (oCIFolder.name.Contains(TextObjPrefix)) {
-                    OCIFolder textOCIFolder = Studio.Studio.GetCtrlInfo(__instance) as OCIFolder;
-                    TextMesh t = textOCIFolder.objectItem.GetComponentInChildren<TextMesh>();
+                    TextMesh t = oCIFolder.objectItem.GetComponentInChildren<TextMesh>();
                     if (null == t) {
-                        isCreatingTextStructure = true;
                         TextPlugin.MakeTextObj(oCIFolder, oCIFolder.name.Replace(TextObjPrefix,""));
-                        TextPlugin.MakeAndSetConfigStructure(textOCIFolder.treeNodeObject);
-                        isCreatingTextStructure = false;
-                        t = textOCIFolder.objectItem.GetComponentInChildren<TextMesh>();
+                        TextPlugin.MakeAndSetConfigStructure(oCIFolder.treeNodeObject);
+                        t = oCIFolder.objectItem.GetComponentInChildren<TextMesh>();
                     }
-                    MeshRenderer m = textOCIFolder.objectItem.GetComponentInChildren<MeshRenderer>();
+                    MeshRenderer m = oCIFolder.objectItem.GetComponentInChildren<MeshRenderer>();
                     onUpdating = true;
                     panel.gameObject.SetActive(true);
 
                     //加載編輯選單內容
                     //Font
                     if (TextPlugin.CheckFontInOS(t.font.name)) {
-                        panel.GetComponentInChildren<Dropdown>().value = Array.IndexOf(Font.GetOSInstalledFontNames(), t.font.name);
+                        panel.GetComponentsInChildren<Dropdown>()[0].value = Array.IndexOf(Font.GetOSInstalledFontNames(), t.font.name);
                     }
 
                     //FontSize
                     panel.GetComponentInChildren<InputField>().text = (t.characterSize * 500).ToString();
 
+                    //FontStyle
+                    panel.GetComponentsInChildren<Dropdown>()[1].value = Array.IndexOf(Enum.GetNames(typeof(FontStyle)), t.fontStyle.ToString());
+
                     //Color
+                    panel.GetComponentInChildren<Button>().image.color = m.material.color;
 
                     onUpdating = false;
-                } else if (oCIFolder.name.Contains(TextConfigPrefix) ||
-                    oCIFolder.name.Contains(TextConfigFontPrefix) ||
-                    oCIFolder.name.Contains(TextConfigFontSizePrefix) ||
-                    oCIFolder.name.Contains(TextConfigColorPrefix)
-                ) {
-                    if (Singleton<MPFolderCtrl>.Instance is MPFolderCtrl mp) {
-                        mp.active = false;
-                    }
                 }
             }
         }
@@ -191,10 +230,10 @@ namespace KK_StudioTextPlugin {
                 gameObject.transform.SetParent((Transform)__instance.GetField("transformRoot"), false);
                 ListNode component = gameObject.GetComponent<ListNode>();
                 component.text = "文字Text";
+                component.GetComponentInChildren<Text>().color = Color.yellow;
                 component.AddActionToButton(delegate {
                     TreeNodeCtrl treeNodeCtrl = Singleton<Studio.Studio>.Instance.treeNodeCtrl;
                     isCreatingTextFolder = true;
-                    isCreatingTextStructure = true;
                     OCIFolder textOCIFolder = AddObjectFolder.Add();
                     Singleton<UndoRedoManager>.Instance.Clear();
                     if (Studio.Studio.optionSystem.autoSelect && textOCIFolder != null) {
@@ -220,7 +259,6 @@ namespace KK_StudioTextPlugin {
                     //Scene Load就不創建Config資料夾結構
                     TextPlugin.MakeAndSetConfigStructure(__result.treeNodeObject);
                 }
-                isCreatingTextStructure = false;
                 //套用座標、旋轉、縮放
                 _info.changeAmount.OnChange();
                 Logger.Log(LogLevel.Debug, $"[KK_STP] Pos:{_info.changeAmount.pos.ToString()}");
@@ -237,7 +275,7 @@ namespace KK_StudioTextPlugin {
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(MPFolderCtrl), "OnEndEditName")]
-        public static bool OnEditNamePrefix(MPFolderCtrl __instance,ref string _value) {
+        public static bool OnEditNamePrefix(MPFolderCtrl __instance, ref string _value) {
             if (_value.Contains(TextObjPrefix)) {
                 _value = _value.Replace(TextObjPrefix, "");
                 __instance.ociFolder.name = __instance.ociFolder.objectItem.name = TextObjPrefix + _value;
@@ -265,6 +303,7 @@ namespace KK_StudioTextPlugin {
             if (__instance.ociFolder.name.Contains(TextConfigPrefix) ||
                     __instance.ociFolder.name.Contains(TextConfigFontPrefix) ||
                     __instance.ociFolder.name.Contains(TextConfigFontSizePrefix) ||
+                    __instance.ociFolder.name.Contains(TextConfigFontStylePrefix) ||
                     __instance.ociFolder.name.Contains(TextConfigColorPrefix)
                 ) {
                 __instance.active = false;
@@ -299,8 +338,21 @@ namespace KK_StudioTextPlugin {
                 ) {
                 TextPlugin.SetFont(oCIFolder, TextPlugin.GetConfig(oCIFolder.treeNodeObject, TextPlugin.Config.Font));
                 TextPlugin.MakeAndSetConfigStructure(oCIFolder.treeNodeObject, TextPlugin.Config.Font);
-                TextPlugin.SetCharacterSize(oCIFolder, float.Parse(TextPlugin.GetConfig(oCIFolder.treeNodeObject, TextPlugin.Config.FontSize)));
+
+                if (!float.TryParse(TextPlugin.GetConfig(oCIFolder.treeNodeObject, TextPlugin.Config.FontSize), out var f)) {
+                    f = 1f;
+                }
+                TextPlugin.SetCharacterSize(oCIFolder, f);
                 TextPlugin.MakeAndSetConfigStructure(oCIFolder.treeNodeObject, TextPlugin.Config.FontSize);
+
+                TextPlugin.SetFontStyle(oCIFolder, TextPlugin.GetConfig(oCIFolder.treeNodeObject, TextPlugin.Config.FontStyle));
+                TextPlugin.MakeAndSetConfigStructure(oCIFolder.treeNodeObject, TextPlugin.Config.FontStyle);
+
+                if (!ColorUtility.TryParseHtmlString(TextPlugin.GetConfig(oCIFolder.treeNodeObject, TextPlugin.Config.Color), out var color)) {
+                    color = Color.white;
+                }
+                TextPlugin.SetColor(oCIFolder, color);
+                TextPlugin.MakeAndSetConfigStructure(oCIFolder.treeNodeObject, TextPlugin.Config.Color);
                 oCIFolder.objectItem.SetActive(_source.visible);
             }
         }
