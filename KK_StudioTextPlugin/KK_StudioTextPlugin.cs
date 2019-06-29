@@ -37,7 +37,7 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "19.06.29.0";
+        internal const string PLUGIN_VERSION = "19.06.29.1";
 
         public void Awake() {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -77,12 +77,33 @@ namespace KK_StudioTextPlugin {
             d.options.Clear();
             var fontList = Font.GetOSInstalledFontNames();
             d.AddOptions(fontList.ToList());
+            d.value = Array.IndexOf(fontList, "MS Gothic");
             //Change Font
             d.onValueChanged.AddListener(delegate {
                 if (!onUpdating) {
                     TextPlugin.ChangeFont(fontList[d.value]);
                 }
             });
+
+            //Config2: FontSize (CharacterSize)
+            var text2 = UIUtility.CreateText("FontSize", panel.transform, "FontSize");
+            text2.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -115), new Vector2(155f, -90f));
+            var input = UIUtility.CreateInputField("fontSizeInput", panel.transform);
+            input.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -145), new Vector2(155f, -120f));
+            input.text = "1";
+            input.onEndEdit.AddListener(delegate {
+                if (!onUpdating) {
+                    if(!float.TryParse(input.text,out float f)){
+                        Logger.Log(LogLevel.Error, "[KK_STP] FormatException: Please input only numbers into FontSize.");
+                        Logger.Log(LogLevel.Message, "[KK_STP] FormatException: Please input only numbers into FontSize.");
+                        input.text = TextPlugin.GetConfig(null,TextPlugin.Config.FontSize);
+                    } else {
+                        TextPlugin.ChangeCharacterSize(f);
+                    }
+                }
+            });
+
+            //Config3: Color
 
             panel.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -300), new Vector2(160, -70));
             foreach (var image in panel.GetComponentsInChildren<Image>()) {
@@ -91,9 +112,6 @@ namespace KK_StudioTextPlugin {
             foreach (var text in panel.GetComponentsInChildren<Text>()) {
                 text.color = Color.white;
             }
-
-            //Config2: FontSize (CharacterSize)
-            //Config3: Color
 
             //拖曳event
             Vector2 mouse = Vector2.zero;
@@ -109,7 +127,7 @@ namespace KK_StudioTextPlugin {
             trigger.triggers.Add(entry);
             trigger.triggers.Add(entry2);
 
-            panel.gameObject.SetActive(false);
+            panel.gameObject.SetActive(true);
             Logger.Log(LogLevel.Info, "[KK_STP] Draw ConfigPanel Finish");
             isConfigPanelCreated = true;
         }
@@ -117,36 +135,49 @@ namespace KK_StudioTextPlugin {
         [HarmonyPostfix, HarmonyPatch(typeof(TreeNodeObject), "OnClickSelect")]
         public static void OnClickSelectPostfix(TreeNodeObject __instance) {
             ObjectCtrlInfo objectCtrlInfo = Studio.Studio.GetCtrlInfo(__instance);
-            if (objectCtrlInfo.objectInfo.kind == 3 &&
-                    objectCtrlInfo is OCIFolder oCIFolder &&
-                    oCIFolder.name.Contains(TextObjPrefix)
+            if (objectCtrlInfo.objectInfo.kind == 3 && objectCtrlInfo is OCIFolder oCIFolder ) {
+                if (oCIFolder.name.Contains(TextObjPrefix)) {
+                    OCIFolder textOCIFolder = Studio.Studio.GetCtrlInfo(__instance) as OCIFolder;
+                    TextMesh t = textOCIFolder.objectItem.GetComponentInChildren<TextMesh>();
+                    if (null == t) {
+                        isCreatingTextStructure = true;
+                        TextPlugin.MakeTextObj(oCIFolder, oCIFolder.name.Replace(TextObjPrefix,""));
+                        TextPlugin.MakeAndSetConfigStructure(textOCIFolder.treeNodeObject);
+                        isCreatingTextStructure = false;
+                        t = textOCIFolder.objectItem.GetComponentInChildren<TextMesh>();
+                    }
+                    MeshRenderer m = textOCIFolder.objectItem.GetComponentInChildren<MeshRenderer>();
+                    onUpdating = true;
+                    panel.gameObject.SetActive(true);
+
+                    //加載編輯選單內容
+                    //Font
+                    if (TextPlugin.CheckFontInOS(t.font.name)) {
+                        panel.GetComponentInChildren<Dropdown>().value = Array.IndexOf(Font.GetOSInstalledFontNames(), t.font.name);
+                    }
+
+                    //FontSize
+                    panel.GetComponentInChildren<InputField>().text = (t.characterSize * 500).ToString();
+
+                    //Color
+
+                    onUpdating = false;
+                } else if (oCIFolder.name.Contains(TextConfigPrefix) ||
+                    oCIFolder.name.Contains(TextConfigFontPrefix) ||
+                    oCIFolder.name.Contains(TextConfigFontSizePrefix) ||
+                    oCIFolder.name.Contains(TextConfigColorPrefix)
                 ) {
-                onUpdating = true;
-                panel.gameObject.SetActive(true);
-                //TextPlugin.MakeAndSetConfigStructure(__instance);
-
-                OCIFolder textOCIFolder = Studio.Studio.GetCtrlInfo(__instance) as OCIFolder;
-                TextMesh t = textOCIFolder.objectItem.GetComponentInChildren<TextMesh>();
-                MeshRenderer m = textOCIFolder.objectItem.GetComponentInChildren<MeshRenderer>();
-
-                //加載編輯選單內容
-                //Font
-                if (TextPlugin.CheckFontInOS(t.font.name)) {
-                    panel.GetComponentInChildren<Dropdown>().value = Array.IndexOf(Font.GetOSInstalledFontNames(), t.font.name);
+                    if (Singleton<MPFolderCtrl>.Instance is MPFolderCtrl mp) {
+                        mp.active = false;
+                    }
                 }
-
-                //FontSize
-
-                //Color
-
-                onUpdating = false;
             }
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(TreeNodeObject), "OnDeselect")]
         public static void OnDeselectPostfix(TreeNodeObject __instance) {
             //TextObj失焦
-            panel.gameObject.SetActive(false);
+            panel?.gameObject?.SetActive(false);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ItemCategoryList), "InitList")]
@@ -206,7 +237,13 @@ namespace KK_StudioTextPlugin {
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(MPFolderCtrl), "OnEndEditName")]
-        public static bool OnEditNamePrefix(MPFolderCtrl __instance, string _value) {
+        public static bool OnEditNamePrefix(MPFolderCtrl __instance,ref string _value) {
+            if (_value.Contains(TextObjPrefix)) {
+                _value = _value.Replace(TextObjPrefix, "");
+                __instance.ociFolder.name = __instance.ociFolder.objectItem.name = TextObjPrefix + _value;
+                OnClickSelectPostfix(__instance.ociFolder.treeNodeObject);
+                UpdateInfoPostfix(__instance);
+            }
             if (__instance.ociFolder.name.Contains(TextObjPrefix)) {
                 //對資料夾名稱做編輯，加上prefix
                 __instance.ociFolder.name = __instance.ociFolder.objectItem.name = TextObjPrefix + _value;
@@ -220,6 +257,7 @@ namespace KK_StudioTextPlugin {
 
         [HarmonyPostfix, HarmonyPatch(typeof(MPFolderCtrl), "UpdateInfo")]
         public static void UpdateInfoPostfix(MPFolderCtrl __instance) {
+            //創建、更新編輯框時觸發
             if (__instance.ociFolder == null) {
                 return;
             }
@@ -242,6 +280,13 @@ namespace KK_StudioTextPlugin {
             }
         }
 
+        [HarmonyPostfix, HarmonyPatch(typeof(ManipulatePanelCtrl), "SetActive")]
+        public static void SetActivePostfix(ManipulatePanelCtrl __instance) {
+            if (__instance.GetField("folderPanelInfo")?.GetField("m_MPFolderCtrl") != null) {
+                UpdateInfoPostfix(__instance.GetField("folderPanelInfo")?.GetField("m_MPFolderCtrl") as MPFolderCtrl);
+            }
+        }
+
         [HarmonyPostfix, HarmonyPatch(typeof(TreeNodeCtrl), "RefreshHierachyLoop")]
         public static void RefreshHierachyLoopPostfix(TreeNodeObject _source, int _indent, bool _visible) {
             //套用文字狀態
@@ -254,6 +299,8 @@ namespace KK_StudioTextPlugin {
                 ) {
                 TextPlugin.SetFont(oCIFolder, TextPlugin.GetConfig(oCIFolder.treeNodeObject, TextPlugin.Config.Font));
                 TextPlugin.MakeAndSetConfigStructure(oCIFolder.treeNodeObject, TextPlugin.Config.Font);
+                TextPlugin.SetCharacterSize(oCIFolder, float.Parse(TextPlugin.GetConfig(oCIFolder.treeNodeObject, TextPlugin.Config.FontSize)));
+                TextPlugin.MakeAndSetConfigStructure(oCIFolder.treeNodeObject, TextPlugin.Config.FontSize);
                 oCIFolder.objectItem.SetActive(_source.visible);
             }
         }

@@ -36,6 +36,21 @@ namespace KK_StudioTextPlugin {
         }
 
         /// <summary>
+        /// 更改選取項目的字體大小
+        /// </summary>
+        /// <param name="size">字體大小</param>
+        public static void ChangeCharacterSize(float size) {
+            OCIFolder[] folderArray = (from v in Singleton<GuideObjectManager>.Instance.selectObjectKey
+                                       select Studio.Studio.GetCtrlInfo(v) as OCIFolder into v
+                                       where v != null
+                                       select v).ToArray();
+            foreach (var oCIFolder in folderArray) {
+                SetCharacterSize(oCIFolder, size);
+                MakeAndSetConfigStructure(oCIFolder.treeNodeObject, Config.FontSize);
+            }
+        }
+
+        /// <summary>
         /// 在給定的OCIFolder GameObject下添加TextMesh
         /// </summary>
         /// <param name="folder">要添加TextMesh的OCIFolder</param>
@@ -48,12 +63,12 @@ namespace KK_StudioTextPlugin {
             go.layer = 10;
             go.transform.localPosition = Vector3.zero;
             TextMesh t = go.AddComponent<TextMesh>();
-            t.fontSize = 200;
+            t.fontSize = 500;
             t.anchor = TextAnchor.MiddleCenter;
-            t.characterSize = 0.01f;
             t.text = text;
             go.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
             SetFont(folder);
+            SetCharacterSize(folder);
             Patches.DrawConfigPanel();
 
             Logger.Log(LogLevel.Info, "[KK_STP] Create Text");
@@ -63,7 +78,7 @@ namespace KK_StudioTextPlugin {
         /// <summary>
         /// 設定字型，預設為MS Gothic
         /// </summary>
-        /// <param name="folder">要更改字型的OCIFolder</param>
+        /// <param name="folder">對象OCIFolder</param>
         /// <param name="fontName">字型名稱</param>
         public static void SetFont(OCIFolder folder, string fontName = "MS Gothic") {
             if (!CheckFontInOS(fontName)) {
@@ -79,6 +94,16 @@ namespace KK_StudioTextPlugin {
             folder.objectItem.GetComponentInChildren<MeshRenderer>().material = font3DMaterial;
             folder.objectItem.GetComponentInChildren<MeshRenderer>().material.SetTexture("_MainTex", folder.objectItem.GetComponentInChildren<TextMesh>().font.material.mainTexture);
             folder.objectItem.GetComponentInChildren<MeshRenderer>().material.EnableKeyword("_NORMALMAP");
+            return;
+        }
+
+        /// <summary>
+        /// 設定字體大小，單位放大一百倍
+        /// </summary>
+        /// <param name="folder">對象OCIFolder</param>
+        /// <param name="size">字體大小</param>
+        public static void SetCharacterSize(OCIFolder folder, float size = 1) {
+            folder.objectItem.GetComponentInChildren<TextMesh>().characterSize = 0.002f * size;
             return;
         }
 
@@ -121,7 +146,7 @@ namespace KK_StudioTextPlugin {
             if (config == Config.Font || config == Config.All)
                 doMain(Patches.TextConfigFontPrefix, t.font.name, nConfig);
             if (config == Config.FontSize || config == Config.All)
-                doMain(Patches.TextConfigFontSizePrefix, t.characterSize.ToString(), nConfig);
+                doMain(Patches.TextConfigFontSizePrefix, (t.characterSize*500).ToString(), nConfig);
             if (config == Config.Color || config == Config.All)
                 doMain(Patches.TextConfigColorPrefix, m.material.color.ToString(), nConfig);
 
@@ -153,6 +178,12 @@ namespace KK_StudioTextPlugin {
         /// <param name="config">要讀取的項目</param>
         /// <returns></returns>
         public static string GetConfig(TreeNodeObject textTreeNodeObject, Config config) {
+            if (null == textTreeNodeObject) {
+                textTreeNodeObject = (from v in Singleton<GuideObjectManager>.Instance.selectObjectKey
+                                      select Studio.Studio.GetCtrlInfo(v) as OCIFolder into v
+                                      where v != null
+                                      select v.treeNodeObject).FirstOrDefault();
+            }
             OCIFolder textOCIFolder = Studio.Studio.GetCtrlInfo(textTreeNodeObject) as OCIFolder;
             TextMesh t = textOCIFolder.objectItem.GetComponentInChildren<TextMesh>();
             MeshRenderer m = textOCIFolder.objectItem.GetComponentInChildren<MeshRenderer>();
@@ -174,7 +205,7 @@ namespace KK_StudioTextPlugin {
                 case Config.Font:
                     return GetValue(Patches.TextConfigFontPrefix);
                 case Config.FontSize:
-                    return GetValue(Patches.TextConfigFontSizePrefix);
+                    return GetValue(Patches.TextConfigFontSizePrefix).ToString();
                 case Config.Color:
                     return GetValue(Patches.TextConfigColorPrefix);
                 default:
