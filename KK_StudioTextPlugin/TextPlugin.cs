@@ -43,11 +43,16 @@ namespace KK_StudioTextPlugin {
         /// <returns></returns>
         public static TextMesh MakeTextObj(OCIFolder folder, string text) {
             folder.objectItem.layer = 10;
-            TextMesh t = folder.objectItem.AddComponent<TextMesh>();
+            GameObject go = new GameObject();
+            go.transform.SetParent(folder.objectItem.transform);
+            go.layer = 10;
+            go.transform.localPosition = Vector3.zero;
+            TextMesh t = go.AddComponent<TextMesh>();
             t.fontSize = 200;
             t.anchor = TextAnchor.MiddleCenter;
             t.characterSize = 0.01f;
             t.text = text;
+            go.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
             SetFont(folder);
             Patches.DrawConfigPanel();
 
@@ -70,10 +75,10 @@ namespace KK_StudioTextPlugin {
                     fontName = "Arial";
                 }
             }
-            folder.objectItem.GetComponent<TextMesh>().font = Font.CreateDynamicFontFromOSFont(fontName, 200);
-            folder.objectItem.GetComponent<MeshRenderer>().material = font3DMaterial;
-            folder.objectItem.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", folder.objectItem.GetComponent<TextMesh>().font.material.mainTexture);
-            folder.objectItem.GetComponent<MeshRenderer>().material.EnableKeyword("_NORMALMAP");
+            folder.objectItem.GetComponentInChildren<TextMesh>().font = Font.CreateDynamicFontFromOSFont(fontName, 200);
+            folder.objectItem.GetComponentInChildren<MeshRenderer>().material = font3DMaterial;
+            folder.objectItem.GetComponentInChildren<MeshRenderer>().material.SetTexture("_MainTex", folder.objectItem.GetComponentInChildren<TextMesh>().font.material.mainTexture);
+            folder.objectItem.GetComponentInChildren<MeshRenderer>().material.EnableKeyword("_NORMALMAP");
             return;
         }
 
@@ -108,8 +113,8 @@ namespace KK_StudioTextPlugin {
         /// <param name="config">要設定的項目</param>
         public static void MakeAndSetConfigStructure(TreeNodeObject textTreeNodeObject, Config config = Config.All) {
             OCIFolder textOCIFolder = Studio.Studio.GetCtrlInfo(textTreeNodeObject) as OCIFolder;
-            TextMesh t = textOCIFolder.objectItem.GetComponent<TextMesh>();
-            MeshRenderer m = textOCIFolder.objectItem.GetComponent<MeshRenderer>();
+            TextMesh t = textOCIFolder.objectItem.GetComponentInChildren<TextMesh>();
+            MeshRenderer m = textOCIFolder.objectItem.GetComponentInChildren<MeshRenderer>();
             TreeNodeCtrl treeNodeCtrl = Singleton<Studio.Studio>.Instance.treeNodeCtrl;
 
             TreeNodeObject nConfig = doMain(Patches.TextConfigPrefix, "", textTreeNodeObject);
@@ -149,8 +154,8 @@ namespace KK_StudioTextPlugin {
         /// <returns></returns>
         public static string GetConfig(TreeNodeObject textTreeNodeObject, Config config) {
             OCIFolder textOCIFolder = Studio.Studio.GetCtrlInfo(textTreeNodeObject) as OCIFolder;
-            TextMesh t = textOCIFolder.objectItem.GetComponent<TextMesh>();
-            MeshRenderer m = textOCIFolder.objectItem.GetComponent<MeshRenderer>();
+            TextMesh t = textOCIFolder.objectItem.GetComponentInChildren<TextMesh>();
+            MeshRenderer m = textOCIFolder.objectItem.GetComponentInChildren<MeshRenderer>();
             TreeNodeObject GetChildNode(string prefix, TreeNodeObject nRoot) {
                 return nRoot.child?.Where((x) =>
                     Studio.Studio.GetCtrlInfo(x).objectInfo.kind == 3 &&

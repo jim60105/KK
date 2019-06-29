@@ -37,7 +37,7 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "19.06.28.3";
+        internal const string PLUGIN_VERSION = "19.06.29.0";
 
         public void Awake() {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -126,8 +126,8 @@ namespace KK_StudioTextPlugin {
                 //TextPlugin.MakeAndSetConfigStructure(__instance);
 
                 OCIFolder textOCIFolder = Studio.Studio.GetCtrlInfo(__instance) as OCIFolder;
-                TextMesh t = textOCIFolder.objectItem.GetComponent<TextMesh>();
-                MeshRenderer m = textOCIFolder.objectItem.GetComponent<MeshRenderer>();
+                TextMesh t = textOCIFolder.objectItem.GetComponentInChildren<TextMesh>();
+                MeshRenderer m = textOCIFolder.objectItem.GetComponentInChildren<MeshRenderer>();
 
                 //加載編輯選單內容
                 //Font
@@ -141,7 +141,6 @@ namespace KK_StudioTextPlugin {
 
                 onUpdating = false;
             }
-
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(TreeNodeObject), "OnDeselect")]
@@ -170,9 +169,6 @@ namespace KK_StudioTextPlugin {
                     if (Studio.Studio.optionSystem.autoSelect && textOCIFolder != null) {
                         treeNodeCtrl.SelectSingle(textOCIFolder.treeNodeObject);
                     }
-                    //作動不正確
-                    //TextMesh t = textOCIFolder.objectItem.GetComponent<TextMesh>();
-                    //t.transform.localRotation *= Quaternion.Euler(0f, 180f, 0f);
                 });
                 //目前最大的漢字編碼是臺灣的國家標準CNS11643，目前（4.0）共收錄可考證之正簡、日、韓語漢字共76,067個
                 ((Dictionary<int, Image>)__instance.GetField("dicNode")).Add(76067, gameObject.GetComponent<Image>());
@@ -215,7 +211,7 @@ namespace KK_StudioTextPlugin {
                 //對資料夾名稱做編輯，加上prefix
                 __instance.ociFolder.name = __instance.ociFolder.objectItem.name = TextObjPrefix + _value;
                 //改文字
-                __instance.ociFolder.objectItem.GetComponent<TextMesh>().text = _value;
+                __instance.ociFolder.objectItem.GetComponentInChildren<TextMesh>().text = _value;
                 Logger.Log(LogLevel.Info, "[KK_STP] Edit Text: " + _value);
                 return false;
             }
