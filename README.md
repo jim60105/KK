@@ -55,7 +55,7 @@
 建議分享Scene時一併分享使用的Fonts (It is recommended to share the Fonts used when sharing Scene.)<br>
 
 ### 注意事項:<br>
-- Fonts會列出OS內安裝的所有字體<br>
+- Fonts會列出OS內安裝，支援Unity動態生成的所有字體<br>
 - 若Scene保存後，在其他沒有安裝此Font的OS讀取，會加載MS Gothic<br>
 - Color選取使用右下角遊戲原生Color選擇器<br>
 - 文字重疊時偶爾會渲染不正確，這是Unity的問題，似乎無解<br>
