@@ -48,6 +48,18 @@
 - 原始的「FK 首 個別參照」功能，是直接複製アニメ的脖子方向<br>
 → 改成了會複製真實方向。意即可以使用「首操作 カメラ」定位後，再按我的「->FK(首)」按鈕複製至脖子FK
 
+# Studio文字插件 (Studio Text Plugin)
+![image](https://github.com/jim60105/KK/raw/master/demo/demo6.gif)<br>
+
+從「add→アイテム→2D効果→文字Text」加載，右側選中後在anim選單編輯<br>
+建議分享Scene時一併分享使用的Fonts (It is recommended to share the Fonts used when sharing Scene.)<br>
+
+### 注意事項:<br>
+- Fonts會列出OS內安裝，支援Unity動態生成的所有字體<br>
+- 若Scene保存後，在其他沒有安裝此Font的OS讀取，會加載MS Gothic<br>
+- Color選取使用右下角遊戲原生Color選擇器<br>
+- 文字重疊時偶爾會渲染不正確，這是Unity的問題，似乎無解<br>
+
 # 需求依賴
 BepInEx v4.1.1<br>
 BepisPlugins r10.1
