@@ -40,7 +40,7 @@ namespace KK_StudioCharaOnlyLoadBody {
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "19.06.23.0";
+        internal const string PLUGIN_VERSION = "19.07.01.0";
 
         public void Awake() {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -229,7 +229,6 @@ namespace KK_StudioCharaOnlyLoadBody {
                                 newModifiers.Add(x);
                             }
                         });
-                        BoneController.Invoke("ModifiersPurgeEmpty");
 
                         //將舊的衣服數據合併回到角色身上
                         i = 0;

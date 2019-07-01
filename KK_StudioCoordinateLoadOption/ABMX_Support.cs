@@ -39,7 +39,6 @@ namespace KK_StudioCoordinateLoadOption {
             }
 
             //Logger.Log(LogLevel.Debug, "[KK_SCLO] BoneController Get");
-            BoneController.Invoke("ModifiersPurgeEmpty");
             List<object> Modifiers = new List<object>();
             foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames")) {
                 var tmpModifier = BoneController.Invoke("GetModifier", new object[] { boneName });
@@ -49,6 +48,7 @@ namespace KK_StudioCoordinateLoadOption {
             }
             var toSave = Modifiers
                 .Where(x => (bool)x.Invoke("IsCoordinateSpecific"))
+                .Where(x => !(bool)x.Invoke("IsEmpty"))
                 .ToDictionary(
                     x => (string)x.GetProperty("BoneName"), //x.BoneName,
                     x => {
