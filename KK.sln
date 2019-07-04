@@ -25,10 +25,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioReflectFKFix", "KK
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioTextPlugin", "KK_StudioTextPlugin\KK_StudioTextPlugin.csproj", "{D02E90AF-BE20-4EAE-A462-5EFDA36095A9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_FBIOpenUp", "KK_FBIOpenUp\KK_FBIOpenUp.csproj", "{661B77CE-D337-49D2-A359-AD85E68986B2}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Extension\Extension.projitems*{0646be09-f599-4edb-b115-de4043c8d3be}*SharedItemsImports = 13
 		Extension\Extension.projitems*{0c47ebaa-b09c-44e1-b114-5337b8beba79}*SharedItemsImports = 4
+		Extension\Extension.projitems*{661b77ce-d337-49d2-a359-ad85e68986b2}*SharedItemsImports = 4
 		Extension\Extension.projitems*{670a8493-10c7-4071-8fc8-a49ace4ccfdb}*SharedItemsImports = 4
 		Extension\Extension.projitems*{85268fd6-a1fd-41aa-84d9-71f18815c034}*SharedItemsImports = 4
 		Extension\Extension.projitems*{ac89e605-c385-4e44-b781-5ee60c7bc70a}*SharedItemsImports = 4
@@ -92,6 +95,13 @@ Global
 		{D02E90AF-BE20-4EAE-A462-5EFDA36095A9}.Release|Any CPU.ActiveCfg = Release|x64
 		{D02E90AF-BE20-4EAE-A462-5EFDA36095A9}.Release|x64.ActiveCfg = Release|x64
 		{D02E90AF-BE20-4EAE-A462-5EFDA36095A9}.Release|x64.Build.0 = Release|x64
+		{661B77CE-D337-49D2-A359-AD85E68986B2}.Debug|Any CPU.ActiveCfg = Release|x64
+		{661B77CE-D337-49D2-A359-AD85E68986B2}.Debug|Any CPU.Build.0 = Release|x64
+		{661B77CE-D337-49D2-A359-AD85E68986B2}.Debug|x64.ActiveCfg = Release|x64
+		{661B77CE-D337-49D2-A359-AD85E68986B2}.Debug|x64.Build.0 = Release|x64
+		{661B77CE-D337-49D2-A359-AD85E68986B2}.Release|Any CPU.ActiveCfg = Release|x64
+		{661B77CE-D337-49D2-A359-AD85E68986B2}.Release|x64.ActiveCfg = Release|x64
+		{661B77CE-D337-49D2-A359-AD85E68986B2}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

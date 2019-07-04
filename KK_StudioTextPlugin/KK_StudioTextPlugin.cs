@@ -37,7 +37,7 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "19.06.29.3";
+        internal const string PLUGIN_VERSION = "19.07.04.0";
 
         public void Awake() {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -73,7 +73,7 @@ namespace KK_StudioTextPlugin {
             text1.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -30f), new Vector2(155f, -5f));
             var d = UIUtility.CreateDropdown("fontDropdown", panel.transform);
             d.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -85f), new Vector2(155f, -35f));
-            d.GetComponentInChildren<Text>().resizeTextMaxSize = 18;
+            d.GetComponentInChildren<Text>(true).resizeTextMaxSize = 18;
             //Font List
             d.options.Clear();
             var fontList = Font.GetOSInstalledFontNames();
@@ -94,10 +94,10 @@ namespace KK_StudioTextPlugin {
             input.text = "1";
             input.onEndEdit.AddListener(delegate {
                 if (!onUpdating) {
-                    if(!float.TryParse(input.text,out float f)){
+                    if (!float.TryParse(input.text, out float f)) {
                         Logger.Log(LogLevel.Error, "[KK_STP] FormatException: Please input only numbers into FontSize.");
                         Logger.Log(LogLevel.Message, "[KK_STP] FormatException: Please input only numbers into FontSize.");
-                        input.text = TextPlugin.GetConfig(null,TextPlugin.Config.FontSize);
+                        input.text = TextPlugin.GetConfig(null, TextPlugin.Config.FontSize);
                     } else {
                         TextPlugin.ChangeCharacterSize(f);
                     }
@@ -137,10 +137,10 @@ namespace KK_StudioTextPlugin {
             });
 
             panel.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -350), new Vector2(160, -70));
-            foreach (var image in panel.GetComponentsInChildren<Image>()) {
+            foreach (var image in panel.GetComponentsInChildren<Image>(true)) {
                 image.color = new Color32(120, 120, 120, 220);
             }
-            foreach (var text in panel.GetComponentsInChildren<Text>()) {
+            foreach (var text in panel.GetComponentsInChildren<Text>(true)) {
                 text.color = Color.white;
             }
             btn.image.color = Color.white;
@@ -167,7 +167,7 @@ namespace KK_StudioTextPlugin {
         [HarmonyPostfix, HarmonyPatch(typeof(TreeNodeObject), "OnClickSelect")]
         public static void OnClickSelectPostfix(TreeNodeObject __instance) {
             ObjectCtrlInfo objectCtrlInfo = Studio.Studio.GetCtrlInfo(__instance);
-            if (objectCtrlInfo.objectInfo.kind == 3 && objectCtrlInfo is OCIFolder oCIFolder ) {
+            if (objectCtrlInfo.objectInfo.kind == 3 && objectCtrlInfo is OCIFolder oCIFolder) {
                 if (oCIFolder.name.Contains(TextConfigPrefix)) {
                     TreeNodeCtrl treeNodeCtrl = Singleton<Studio.Studio>.Instance.treeNodeCtrl;
                     treeNodeCtrl.SelectSingle(__instance.parent);
@@ -183,30 +183,30 @@ namespace KK_StudioTextPlugin {
                     oCIFolder = Studio.Studio.GetCtrlInfo(__instance.parent.parent) as OCIFolder;
                 }
                 if (oCIFolder.name.Contains(TextObjPrefix)) {
-                    TextMesh t = oCIFolder.objectItem.GetComponentInChildren<TextMesh>();
+                    TextMesh t = oCIFolder.objectItem.GetComponentInChildren<TextMesh>(true);
                     if (null == t) {
-                        TextPlugin.MakeTextObj(oCIFolder, oCIFolder.name.Replace(TextObjPrefix,""));
+                        TextPlugin.MakeTextObj(oCIFolder, oCIFolder.name.Replace(TextObjPrefix, ""));
                         TextPlugin.MakeAndSetConfigStructure(oCIFolder.treeNodeObject);
-                        t = oCIFolder.objectItem.GetComponentInChildren<TextMesh>();
+                        t = oCIFolder.objectItem.GetComponentInChildren<TextMesh>(true);
                     }
-                    MeshRenderer m = oCIFolder.objectItem.GetComponentInChildren<MeshRenderer>();
+                    MeshRenderer m = oCIFolder.objectItem.GetComponentInChildren<MeshRenderer>(true);
                     onUpdating = true;
                     panel.gameObject.SetActive(true);
 
                     //加載編輯選單內容
                     //Font
                     if (TextPlugin.CheckFontInOS(t.font.name)) {
-                        panel.GetComponentsInChildren<Dropdown>()[0].value = Array.IndexOf(Font.GetOSInstalledFontNames(), t.font.name);
+                        panel.GetComponentsInChildren<Dropdown>(true)[0].value = Array.IndexOf(Font.GetOSInstalledFontNames(), t.font.name);
                     }
 
                     //FontSize
-                    panel.GetComponentInChildren<InputField>().text = (t.characterSize * 500).ToString();
+                    panel.GetComponentInChildren<InputField>(true).text = (t.characterSize * 500).ToString();
 
                     //FontStyle
-                    panel.GetComponentsInChildren<Dropdown>()[1].value = Array.IndexOf(Enum.GetNames(typeof(FontStyle)), t.fontStyle.ToString());
+                    panel.GetComponentsInChildren<Dropdown>(true)[1].value = Array.IndexOf(Enum.GetNames(typeof(FontStyle)), t.fontStyle.ToString());
 
                     //Color
-                    panel.GetComponentInChildren<Button>().image.color = m.material.color;
+                    panel.GetComponentInChildren<Button>(true).image.color = m.material.color;
 
                     onUpdating = false;
                 }
@@ -248,9 +248,6 @@ namespace KK_StudioTextPlugin {
         [HarmonyPostfix, HarmonyPatch(typeof(AddObjectFolder), "Load", new Type[] { typeof(OIFolderInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject), typeof(bool), typeof(int) })]
         public static void LoadPostfix(ref OCIFolder __result, OIFolderInfo _info, ObjectCtrlInfo _parent, TreeNodeObject _parentNode, bool _addInfo, int _initialPosition) {
             //Scene讀取的進入點
-            //處理Folder未定義OnVisible造成的不隱藏
-            __result.treeNodeObject.onVisible = (TreeNodeObject.OnVisibleFunc)Delegate.Combine(__result.treeNodeObject.onVisible, new TreeNodeObject.OnVisibleFunc(__result.OnVisible));
-
             if (isCreatingTextFolder || __result.name.Contains(TextObjPrefix)) {
                 __result.name = isCreatingTextFolder ? TextObjPrefix + "New Text" : _info.name;
                 var t = TextPlugin.MakeTextObj(__result, isCreatingTextFolder ? "New Text" : _info.name.Replace(TextObjPrefix, ""));
@@ -267,11 +264,18 @@ namespace KK_StudioTextPlugin {
 
                 Logger.Log(LogLevel.Info, "[KK_STP] Load Text:" + t.text);
             }
+
+            //處理Folder未定義OnVisible造成的不隱藏
+            if (__result.name.Contains(TextObjPrefix))
+                __result.treeNodeObject.onVisible = (TreeNodeObject.OnVisibleFunc)Delegate.Combine(__result.treeNodeObject.onVisible, new TreeNodeObject.OnVisibleFunc(__result.OnVisible));
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(OCIFolder), "OnVisible")]
         public static void OnVisiblePostfix(bool _visible, OCIFolder __instance) {
-            __instance.objectItem.SetActive(_visible);
+            if (__instance.name.Contains(TextObjPrefix)) {
+                GameObject go = __instance.objectItem.GetComponentInChildren<TextMesh>(true).gameObject;
+                go?.SetActive(_visible);
+            }
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(MPFolderCtrl), "OnEndEditName")]
@@ -286,7 +290,7 @@ namespace KK_StudioTextPlugin {
                 //對資料夾名稱做編輯，加上prefix
                 __instance.ociFolder.name = __instance.ociFolder.objectItem.name = TextObjPrefix + _value;
                 //改文字
-                __instance.ociFolder.objectItem.GetComponentInChildren<TextMesh>().text = _value;
+                __instance.ociFolder.objectItem.GetComponentInChildren<TextMesh>(true).text = _value;
                 Logger.Log(LogLevel.Info, "[KK_STP] Edit Text: " + _value);
                 return false;
             }

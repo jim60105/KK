@@ -40,8 +40,8 @@ namespace KK_StudioTextPlugin {
         public static void MakeAndSetConfigStructure(TreeNodeObject textTreeNodeObject, Config config = Config.All) {
             Patches.isCreatingTextStructure = true;
             OCIFolder textOCIFolder = Studio.Studio.GetCtrlInfo(textTreeNodeObject) as OCIFolder;
-            TextMesh t = textOCIFolder.objectItem.GetComponentInChildren<TextMesh>();
-            MeshRenderer m = textOCIFolder.objectItem.GetComponentInChildren<MeshRenderer>();
+            TextMesh t = textOCIFolder.objectItem.GetComponentInChildren<TextMesh>(true);
+            MeshRenderer m = textOCIFolder.objectItem.GetComponentInChildren<MeshRenderer>(true);
             TreeNodeCtrl treeNodeCtrl = Singleton<Studio.Studio>.Instance.treeNodeCtrl;
 
             TreeNodeObject nConfig = doMain(Patches.TextConfigPrefix, "", textTreeNodeObject);
@@ -91,10 +91,10 @@ namespace KK_StudioTextPlugin {
                                       select v.treeNodeObject).FirstOrDefault();
             }
             OCIFolder textOCIFolder = Studio.Studio.GetCtrlInfo(textTreeNodeObject) as OCIFolder;
-            TextMesh t = textOCIFolder.objectItem.GetComponentInChildren<TextMesh>();
-            MeshRenderer m = textOCIFolder.objectItem.GetComponentInChildren<MeshRenderer>();
+            TextMesh t = textOCIFolder.objectItem.GetComponentInChildren<TextMesh>(true);
+            MeshRenderer m = textOCIFolder.objectItem.GetComponentInChildren<MeshRenderer>(true);
             TreeNodeObject GetChildNode(string prefix, TreeNodeObject nRoot) {
-                return nRoot.child?.Where((x) =>
+                return nRoot?.child?.Where((x) =>
                     Studio.Studio.GetCtrlInfo(x).objectInfo.kind == 3 &&
                     (Studio.Studio.GetCtrlInfo(x) is OCIFolder y) &&
                     y.name.Contains(prefix)
@@ -181,12 +181,12 @@ namespace KK_StudioTextPlugin {
                     fontName = "Arial";
                 }
             }
-            Color color = folder.objectItem.GetComponentInChildren<MeshRenderer>().material.color;
+            Color color = folder.objectItem.GetComponentInChildren<MeshRenderer>(true).material.color;
 
-            folder.objectItem.GetComponentInChildren<TextMesh>().font = Font.CreateDynamicFontFromOSFont(fontName, 200);
-            folder.objectItem.GetComponentInChildren<MeshRenderer>().material = font3DMaterial;
-            folder.objectItem.GetComponentInChildren<MeshRenderer>().material.SetTexture("_MainTex", folder.objectItem.GetComponentInChildren<TextMesh>().font.material.mainTexture);
-            folder.objectItem.GetComponentInChildren<MeshRenderer>().material.EnableKeyword("_NORMALMAP");
+            folder.objectItem.GetComponentInChildren<TextMesh>(true).font = Font.CreateDynamicFontFromOSFont(fontName, 200);
+            folder.objectItem.GetComponentInChildren<MeshRenderer>(true).material = font3DMaterial;
+            folder.objectItem.GetComponentInChildren<MeshRenderer>(true).material.SetTexture("_MainTex", folder.objectItem.GetComponentInChildren<TextMesh>(true).font.material.mainTexture);
+            folder.objectItem.GetComponentInChildren<MeshRenderer>(true).material.EnableKeyword("_NORMALMAP");
             SetColor(folder, color);
         }
 
@@ -225,7 +225,7 @@ namespace KK_StudioTextPlugin {
         /// <param name="folder">對象OCIFolder</param>
         /// <param name="size">字體大小</param>
         public static void SetCharacterSize(OCIFolder folder, float size = 1) {
-            folder.objectItem.GetComponentInChildren<TextMesh>().characterSize = 0.002f * size;
+            folder.objectItem.GetComponentInChildren<TextMesh>(true).characterSize = 0.002f * size;
         }
 
         /// <summary>
@@ -240,7 +240,7 @@ namespace KK_StudioTextPlugin {
             foreach (var oCIFolder in folderArray) {
                 SetColor(oCIFolder, color);
                 MakeAndSetConfigStructure(oCIFolder.treeNodeObject, Config.Color);
-                Patches.panel.GetComponentInChildren<Button>().image.color = color;
+                Patches.panel.GetComponentInChildren<Button>(true).image.color = color;
             }
         }
 
@@ -253,7 +253,7 @@ namespace KK_StudioTextPlugin {
             if (color == default) {
                 color = Color.white;
             }
-            folder.objectItem.GetComponentInChildren<MeshRenderer>().material.color = color;
+            folder.objectItem.GetComponentInChildren<MeshRenderer>(true).material.color = color;
         }
 
         /// <summary>
@@ -281,11 +281,11 @@ namespace KK_StudioTextPlugin {
                 if (style == "") {
                     throw new OverflowException();
                 }
-                folder.objectItem.GetComponentInChildren<TextMesh>().fontStyle = (FontStyle)Enum.Parse(typeof(FontStyle), style);
+                folder.objectItem.GetComponentInChildren<TextMesh>(true).fontStyle = (FontStyle)Enum.Parse(typeof(FontStyle), style);
             } catch (OverflowException) {
                 Logger.Log(LogLevel.Error, "[KK_STP] OverflowException: Please use a correct FontStyle.");
                 Logger.Log(LogLevel.Error, "[KK_STP] Fallback to FontStyle.Normal");
-                folder.objectItem.GetComponentInChildren<TextMesh>().fontStyle = FontStyle.Normal;
+                folder.objectItem.GetComponentInChildren<TextMesh>(true).fontStyle = FontStyle.Normal;
             }
         }
     }
