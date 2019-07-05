@@ -63,9 +63,29 @@ namespace KK_FBIOpenUp.Properties {
         /// <summary>
         ///   查詢類型 System.Drawing.Bitmap 的當地語系化資源。
         /// </summary>
+        internal static System.Drawing.Bitmap beam {
+            get {
+                object obj = ResourceManager.GetObject("beam", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+        /// </summary>
         internal static System.Drawing.Bitmap redBag {
             get {
                 object obj = ResourceManager.GetObject("redBag", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類型 System.Drawing.Bitmap 的當地語系化資源。
+        /// </summary>
+        internal static System.Drawing.Bitmap saikodaze {
+            get {
+                object obj = ResourceManager.GetObject("saikodaze", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

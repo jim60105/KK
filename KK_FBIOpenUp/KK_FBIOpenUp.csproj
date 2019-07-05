@@ -98,6 +98,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="ILMergeOrder.txt" />
+    <EmbeddedResource Include="Resources\beam.png" />
+    <EmbeddedResource Include="Resources\saikodaze.jpg" />
     <EmbeddedResource Include="Resources\redBag.png" />
     <EmbeddedResource Include="Resources\sample_chara.png" />
   </ItemGroup>
