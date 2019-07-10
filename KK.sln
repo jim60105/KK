@@ -27,6 +27,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioTextPlugin", "KK_S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_FBIOpenUp", "KK_FBIOpenUp\KK_FBIOpenUp.csproj", "{661B77CE-D337-49D2-A359-AD85E68986B2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioAutoCloseLoadScene", "KK_StudioAutoCloseLoadScene\KK_StudioAutoCloseLoadScene.csproj", "{A5F430A2-AE7A-4BCD-A380-0F73ADD7A4A3}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Extension\Extension.projitems*{0646be09-f599-4edb-b115-de4043c8d3be}*SharedItemsImports = 13
@@ -34,6 +36,7 @@ Global
 		Extension\Extension.projitems*{661b77ce-d337-49d2-a359-ad85e68986b2}*SharedItemsImports = 4
 		Extension\Extension.projitems*{670a8493-10c7-4071-8fc8-a49ace4ccfdb}*SharedItemsImports = 4
 		Extension\Extension.projitems*{85268fd6-a1fd-41aa-84d9-71f18815c034}*SharedItemsImports = 4
+		Extension\Extension.projitems*{a5f430a2-ae7a-4bcd-a380-0f73add7a4a3}*SharedItemsImports = 4
 		Extension\Extension.projitems*{ac89e605-c385-4e44-b781-5ee60c7bc70a}*SharedItemsImports = 4
 		Extension\Extension.projitems*{d02e90af-be20-4eae-a462-5efda36095a9}*SharedItemsImports = 4
 		Extension\Extension.projitems*{dad31687-4de7-47c3-af78-6d366da10407}*SharedItemsImports = 4
@@ -102,6 +105,13 @@ Global
 		{661B77CE-D337-49D2-A359-AD85E68986B2}.Release|Any CPU.ActiveCfg = Release|x64
 		{661B77CE-D337-49D2-A359-AD85E68986B2}.Release|x64.ActiveCfg = Release|x64
 		{661B77CE-D337-49D2-A359-AD85E68986B2}.Release|x64.Build.0 = Release|x64
+		{A5F430A2-AE7A-4BCD-A380-0F73ADD7A4A3}.Debug|Any CPU.ActiveCfg = Release|x64
+		{A5F430A2-AE7A-4BCD-A380-0F73ADD7A4A3}.Debug|Any CPU.Build.0 = Release|x64
+		{A5F430A2-AE7A-4BCD-A380-0F73ADD7A4A3}.Debug|x64.ActiveCfg = Release|x64
+		{A5F430A2-AE7A-4BCD-A380-0F73ADD7A4A3}.Debug|x64.Build.0 = Release|x64
+		{A5F430A2-AE7A-4BCD-A380-0F73ADD7A4A3}.Release|Any CPU.ActiveCfg = Release|x64
+		{A5F430A2-AE7A-4BCD-A380-0F73ADD7A4A3}.Release|x64.ActiveCfg = Release|x64
+		{A5F430A2-AE7A-4BCD-A380-0F73ADD7A4A3}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
