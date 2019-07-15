@@ -17,6 +17,7 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
+using System.ComponentModel;
 using BepInEx;
 using BepInEx.Logging;
 using Extension;
@@ -30,14 +31,17 @@ namespace KK_StudioAutoCloseLoadScene {
     public class KK_StudioAutoCloseLoadScene : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Auto Close Load Scene";
         internal const string GUID = "com.jim60105.kk.studioautocloseloadscene";
-        internal const string PLUGIN_VERSION = "19.07.15.0";
+        internal const string PLUGIN_VERSION = "19.07.15.1";
 
         public void Awake() {
-            BepInEx.Config.ReloadConfig();
-            if (string.Equals(BepInEx.Config.GetEntry("enabled", "True", PLUGIN_NAME), "True")) {
-                HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
-            }
+            HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
         }
+
+        [DisplayName("Auto close after scene \"Load\"")]
+        public static ConfigWrapper<bool> EnableOnLoad { get; } = new ConfigWrapper<bool>(nameof(EnableOnLoad), PLUGIN_NAME, true);
+
+        [DisplayName("Auto close after scene \"Import\"")]
+        public static ConfigWrapper<bool> EnableOnImport { get; } = new ConfigWrapper<bool>(nameof(EnableOnImport), PLUGIN_NAME, true);
     }
 
     class Patches {
@@ -45,9 +49,16 @@ namespace KK_StudioAutoCloseLoadScene {
         private static SceneLoadScene sceneLoadScene;
 
         [HarmonyPrefix, HarmonyPatch(typeof(SceneLoadScene), "OnClickLoad")]
-        public static void OnClickLoadPrefix(SceneLoadScene __instance) => StartLoad(__instance);
+        public static void OnClickLoadPrefix(SceneLoadScene __instance) {
+            if (KK_StudioAutoCloseLoadScene.EnableOnLoad.Value)
+                StartLoad(__instance);
+        }
+
         [HarmonyPrefix, HarmonyPatch(typeof(SceneLoadScene), "OnClickImport")]
-        public static void OnClickImportPrefix(SceneLoadScene __instance) => StartLoad(__instance);
+        public static void OnClickImportPrefix(SceneLoadScene __instance) {
+            if (KK_StudioAutoCloseLoadScene.EnableOnImport.Value)
+                StartLoad(__instance);
+        }
 
         private static void StartLoad(SceneLoadScene __instance) {
             isLoading = true;
