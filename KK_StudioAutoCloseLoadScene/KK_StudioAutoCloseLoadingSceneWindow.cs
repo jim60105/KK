@@ -25,13 +25,13 @@ using Harmony;
 using Studio;
 using Logger = BepInEx.Logger;
 
-namespace KK_StudioAutoCloseLoadScene {
+namespace KK_StudioAutoCloseLoadingSceneWindow {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
-    public class KK_StudioAutoCloseLoadScene : BaseUnityPlugin {
-        internal const string PLUGIN_NAME = "Studio Auto Close Load Scene";
-        internal const string GUID = "com.jim60105.kk.studioautocloseloadscene";
-        internal const string PLUGIN_VERSION = "19.07.15.1";
+    public class KK_StudioAutoCloseLoadingSceneWindow : BaseUnityPlugin {
+        internal const string PLUGIN_NAME = "Studio Auto Close Loading Scene Window";
+        internal const string GUID = "com.jim60105.kk.studioautocloseloadingscenewindow";
+        internal const string PLUGIN_VERSION = "19.07.15.2";
 
         public void Awake() {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -50,13 +50,13 @@ namespace KK_StudioAutoCloseLoadScene {
 
         [HarmonyPrefix, HarmonyPatch(typeof(SceneLoadScene), "OnClickLoad")]
         public static void OnClickLoadPrefix(SceneLoadScene __instance) {
-            if (KK_StudioAutoCloseLoadScene.EnableOnLoad.Value)
+            if (KK_StudioAutoCloseLoadingSceneWindow.EnableOnLoad.Value)
                 StartLoad(__instance);
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(SceneLoadScene), "OnClickImport")]
         public static void OnClickImportPrefix(SceneLoadScene __instance) {
-            if (KK_StudioAutoCloseLoadScene.EnableOnImport.Value)
+            if (KK_StudioAutoCloseLoadingSceneWindow.EnableOnImport.Value)
                 StartLoad(__instance);
         }
 
