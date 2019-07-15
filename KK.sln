@@ -27,7 +27,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioTextPlugin", "KK_S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_FBIOpenUp", "KK_FBIOpenUp\KK_FBIOpenUp.csproj", "{661B77CE-D337-49D2-A359-AD85E68986B2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioAutoCloseLoadingSceneWindow", "KK_StudioAutoCloseLoadScene\KK_StudioAutoCloseLoadingSceneWindow.csproj", "{A5F430A2-AE7A-4BCD-A380-0F73ADD7A4A3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioAutoCloseLoadingSceneWindow", "KK_StudioAutoCloseLoadingSceneWindow\KK_StudioAutoCloseLoadingSceneWindow.csproj", "{A5F430A2-AE7A-4BCD-A380-0F73ADD7A4A3}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
