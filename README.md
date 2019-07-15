@@ -54,6 +54,12 @@
 從「add→アイテム→2D効果→文字Text」加載，右側選中後在anim選單編輯<br>
 建議分享Scene時一併分享使用的Fonts (It is recommended to share the Fonts used when sharing Scene.)<br>
 
+# Studio 自動關閉Scene載入視窗 (Studio Auto Close Load Scene Window)
+![image](https://github.com/jim60105/KK/raw/master/demo/demo7.png)<br>
+
+Load Scene視窗處，在Import或Load後自動關閉視窗<br>
+可以使用Configuration Manager個別設定Import/Load是否啟用 (預設皆啟用)<br>
+
 ### 注意事項:<br>
 - Fonts會列出OS內安裝，支援Unity動態生成的所有字體<br>
 - 若Scene保存後，在其他沒有安裝此Font的OS讀取，會加載MS Gothic<br>
@@ -62,7 +68,7 @@
 
 # 需求依賴
 BepInEx v4.1.1<br>
-BepisPlugins r10.1
+BepisPlugins r1.1
 
 # 安裝方式
 - 將所有的「*.dll」檔案放進BepInEx資料夾<br>
