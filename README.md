@@ -60,7 +60,7 @@
 - Color選取使用右下角遊戲原生Color選擇器<br>
 - 文字重疊時偶爾會渲染不正確，這是Unity的問題，似乎無解<br>
 
-# Studio 自動關閉Scene載入視窗 (Studio Auto Close Loading Scene Window)
+# Studio自動關閉Scene載入視窗 (Studio Auto Close Loading Scene Window)
 ![image](https://github.com/jim60105/KK/raw/master/demo/demo7.png)<br>
 
 Load Scene視窗處，在Import或Load後自動關閉視窗<br>
