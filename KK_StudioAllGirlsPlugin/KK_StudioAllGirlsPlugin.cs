@@ -37,7 +37,7 @@ namespace KK_StudioAllGirlsPlugin {
     public class KK_StudioAllGirlsPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio All Girls Plugin";
         internal const string GUID = "com.jim60105.kk.studioallgirlsplugin";
-        internal const string PLUGIN_VERSION = "19.06.15.0";
+        internal const string PLUGIN_VERSION = "19.07.15.0";
 
         public void Awake(){
             BepInEx.Config.ReloadConfig();
@@ -59,8 +59,8 @@ namespace KK_StudioAllGirlsPlugin {
                     if (codes[i].opcode == OpCodes.Ldc_I4_0) //Double Check
                     {
                         codes.RemoveRange(i, 3);
+                        break;
                     }
-                    break;
                 }
             }
             return codes.AsEnumerable();

@@ -30,7 +30,7 @@ namespace KK_StudioAutoCloseLoadScene {
     public class KK_StudioAutoCloseLoadScene : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Auto Close Load Scene";
         internal const string GUID = "com.jim60105.kk.studioautocloseloadscene";
-        internal const string PLUGIN_VERSION = "19.07.10.0";
+        internal const string PLUGIN_VERSION = "19.07.15.0";
 
         public void Awake() {
             BepInEx.Config.ReloadConfig();
@@ -41,14 +41,26 @@ namespace KK_StudioAutoCloseLoadScene {
     }
 
     class Patches {
-        [HarmonyPostfix, HarmonyPatch(typeof(SceneLoadScene), "OnClickLoad")]
-        public static void OnClickLoadPostfix(SceneLoadScene __instance) => Close(__instance);
-        [HarmonyPostfix, HarmonyPatch(typeof(SceneLoadScene), "OnClickImport")]
-        public static void OnClickImportPostfix(SceneLoadScene __instance) => Close(__instance);
+        private static bool isLoading = false;
+        private static SceneLoadScene sceneLoadScene;
 
-        private static void Close(SceneLoadScene __instance) {
-            __instance.Invoke("OnClickClose");
-            Logger.Log(LogLevel.Debug, "[KK_SACLS] Auto close load scene window");
+        [HarmonyPrefix, HarmonyPatch(typeof(SceneLoadScene), "OnClickLoad")]
+        public static void OnClickLoadPrefix(SceneLoadScene __instance) => StartLoad(__instance);
+        [HarmonyPrefix, HarmonyPatch(typeof(SceneLoadScene), "OnClickImport")]
+        public static void OnClickImportPrefix(SceneLoadScene __instance) => StartLoad(__instance);
+
+        private static void StartLoad(SceneLoadScene __instance) {
+            isLoading = true;
+            sceneLoadScene = __instance;
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(Manager.Scene), nameof(Manager.Scene.LoadStart))]
+        public static void LoadReservePostfix(Manager.Scene __instance, Manager.Scene.Data data) {
+            if (isLoading && data.levelName == "StudioNotification") {
+                isLoading = false;
+                sceneLoadScene.Invoke("OnClickClose");
+                Logger.Log(LogLevel.Debug, "[KK_SACLS] Auto close load scene window");
+            }
         }
     }
 }
