@@ -68,7 +68,7 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 
 # 需求依賴
 BepInEx v4.1.1<br>
-BepisPlugins r1.1
+BepisPlugins r11.1
 
 # 安裝方式
 - 將所有的「*.dll」檔案放進BepInEx資料夾<br>
