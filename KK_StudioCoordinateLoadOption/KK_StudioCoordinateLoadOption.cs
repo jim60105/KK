@@ -39,7 +39,7 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "19.07.01.0";
+        internal const string PLUGIN_VERSION = "19.07.24.1";
 
         public void Awake() {
             UIUtility.Init();
@@ -67,7 +67,6 @@ namespace KK_StudioCoordinateLoadOption {
 
     class Patches {
         private static CharaFileSort charaFileSort;
-        private static MPCharCtrl mpCharCtrl;
         private static Toggle[] toggleList = null;
 
         public static readonly string[] MainClothesNames = {
@@ -219,15 +218,8 @@ namespace KK_StudioCoordinateLoadOption {
             Logger.Log(LogLevel.Debug, "[KK_SCLO] Draw Panel Finish");
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(MPCharCtrl), "OnClickRoot")]
-        public static void OnClickRootPostfix(MPCharCtrl __instance, int _idx) {
-            if (_idx > 0 && __instance != null) {
-                mpCharCtrl = __instance;
-            }
-        }
-
         //Backup
-        public static bool OnClickLoadPrefix() {
+        public static bool OnClickLoadPrefix(object __instance) {
             Logger.Log(LogLevel.Debug, "[KK_SCLO] Studio Coordinate Load Option Start");
             toggleList = charaFileSort.root.parent.parent.parent.GetComponentsInChildren<Toggle>();
 
@@ -237,28 +229,38 @@ namespace KK_StudioCoordinateLoadOption {
                 flag &= tgl.isOn;
                 flag2 |= tgl.isOn;
             }
-            if (flag) {
-                Logger.Log(LogLevel.Info, "[KK_SCLO] Toggle all true, use original game function");
-                toggleList = null;
-                return true;
-            }
             if (!flag2) {
                 Logger.Log(LogLevel.Info, "[KK_SCLO] No Toogle selected, skip loading coordinate");
                 toggleList = null;
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] Studio Coordinate Load Option Finish");
                 return false;
             }
-            LoadCoordinates();
-            Logger.Log(LogLevel.Debug, "[KK_SCLO] Studio Coordinate Load Option Finish");
+
+            OCIChar[] array = (from v in Singleton<GuideObjectManager>.Instance.selectObjectKey
+                               select Studio.Studio.GetCtrlInfo(v) as OCIChar into v
+                               where v != null
+                               select v).ToArray();
+            if (flag) {
+                Logger.Log(LogLevel.Info, "[KK_SCLO] Toggle all true, use original game function");
+                foreach (var ocichar in array) {
+                    ocichar.LoadClothesFile(charaFileSort.selectPath);
+                }
+                toggleList = null;
+            } else {
+                ChaControl tmpChaCtrl = Singleton<Manager.Character>.Instance.CreateFemale(null, -1);
+                tmpChaCtrl.nowCoordinate.LoadFile(charaFileSort.selectPath);
+                foreach (var ocichar in array) {
+                    LoadCoordinates(ocichar.charInfo, tmpChaCtrl);
+                }
+                Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
+
+                Logger.Log(LogLevel.Debug, "[KK_SCLO] Studio Coordinate Load Option Finish");
+            }
             return false;
         }
 
-        private static void LoadCoordinates() {
-            ChaControl chaCtrl = mpCharCtrl.ociChar.charInfo;
-            ChaControl tmpChaCtrl = Singleton<Manager.Character>.Instance.CreateFemale(null, -1);
+        private static void LoadCoordinates(ChaControl chaCtrl, ChaControl tmpChaCtrl) {
             ChaFileCoordinate tmpChaFileCoordinate = tmpChaCtrl.nowCoordinate;
-
-            tmpChaFileCoordinate.LoadFile(charaFileSort.selectPath);
 
             foreach (var tgl in toggleList) {
                 if (tgl.isOn) {
@@ -293,8 +295,6 @@ namespace KK_StudioCoordinateLoadOption {
             chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
 
             LoadExtData(chaCtrl, tmpChaCtrl);
-
-            Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
         }
 
         private static void LoadExtData(ChaControl chaCtrl, ChaControl tmpChaCtrl) {
