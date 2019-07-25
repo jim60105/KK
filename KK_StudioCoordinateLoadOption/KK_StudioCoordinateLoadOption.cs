@@ -18,6 +18,7 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -26,6 +27,7 @@ using BepInEx.Logging;
 using Extension;
 using Harmony;
 using MessagePack;
+using Sideloader.AutoResolver;
 using Studio;
 using UILib;
 using UnityEngine;
@@ -39,7 +41,7 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "19.07.24.1";
+        internal const string PLUGIN_VERSION = "19.07.26.0";
 
         public void Awake() {
             UIUtility.Init();
@@ -48,6 +50,7 @@ namespace KK_StudioCoordinateLoadOption {
             harmonyInstance.PatchAll(typeof(MoreAccessories_Support));
             harmonyInstance.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("Init", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(Patches.InitPostfix), null), null);
             harmonyInstance.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("OnClickLoad", AccessTools.all), new HarmonyMethod(typeof(Patches), nameof(Patches.OnClickLoadPrefix), null), null, null);
+            harmonyInstance.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("OnSelect", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(Patches.OnSelectPostfix), null), null);
         }
 
         public static bool _isKCOXExist = false;
@@ -67,7 +70,6 @@ namespace KK_StudioCoordinateLoadOption {
 
     class Patches {
         private static CharaFileSort charaFileSort;
-        private static Toggle[] toggleList = null;
 
         public static readonly string[] MainClothesNames = {
             "ct_clothesTop",
@@ -141,6 +143,10 @@ namespace KK_StudioCoordinateLoadOption {
             "Accessories"
         };
 
+        private static Toggle[] tgls2 = new Toggle[0]; //使用時再初始化
+        private static Toggle[] tgls;
+        private static Image panel2;
+        private static RectTransform toggleGroup;
         public static void InitPostfix(object __instance) {
             BlockAnotherPlugin();
 
@@ -166,7 +172,7 @@ namespace KK_StudioCoordinateLoadOption {
 
             //Draw Panel and ButtonAll
             charaFileSort = (CharaFileSort)__instance.GetField("fileSort");
-            Image panel = UIUtility.CreatePanel("TooglePanel", charaFileSort.root.parent.parent.parent);
+            Image panel = UIUtility.CreatePanel("CoordinateTooglePanel", charaFileSort.root.parent.parent.parent);
             Button btnAll = UIUtility.CreateButton("BtnAll", panel.transform, "All");
             btnAll.GetComponentInChildren<Text>(true).color = Color.white;
             btnAll.GetComponent<Image>().color = Color.gray;
@@ -174,17 +180,41 @@ namespace KK_StudioCoordinateLoadOption {
             btnAll.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
 
             //Draw Toggles
-            Toggle[] tgls = new Toggle[ClothesKindArray.Length];
+            tgls = new Toggle[ClothesKindArray.Length];
             for (int i = 0; i < ClothesKindArray.Length; i++) {
                 tgls[i] = UIUtility.CreateToggle(ClothesKindArray.GetValue(i).ToString(), panel.transform, ClothesKindName.GetValue(i).ToString());
-                tgls[i].GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
+                tgls[i].GetComponentInChildren<Text>(true).alignment = TextAnchor.MiddleLeft;
                 tgls[i].GetComponentInChildren<Text>(true).color = Color.white;
                 tgls[i].transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -60f - 25f * i), new Vector2(140f, -35f - 25f * i));
                 tgls[i].GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
+                if (tgls[i].name == "accessories") {
+                    tgls[i].onValueChanged.AddListener((x) => {
+                        if (tgls2.Length != 0 && null != panel2) {
+                            panel2.gameObject.SetActive(x);
+                        }
+                    });
+                }
             }
-
             panel.transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(405f, 52.5f), new Vector2(150f, 340f));
             panel.GetComponent<Image>().color = new Color32(80, 80, 80, 220);
+
+
+            //Draw accessories panel
+            panel2 = UIUtility.CreatePanel("AccessoriesTooglePanel", panel.transform);
+            Button btnAll2 = UIUtility.CreateButton("BtnAll2", panel2.transform, "All");
+            btnAll2.GetComponentInChildren<Text>(true).color = Color.white;
+            btnAll2.GetComponent<Image>().color = Color.gray;
+            btnAll2.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -30), new Vector2(170f, -5f));
+            btnAll2.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
+            panel2.transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(150f, -250f), new Vector2(180f, 287.5f));
+            panel2.GetComponent<Image>().color = new Color32(80, 80, 80, 220);
+
+            ScrollRect scrollRect = UIUtility.CreateScrollView("scroll", panel2.transform);
+            toggleGroup = scrollRect.content;
+            scrollRect.transform.SetRect(Vector2.zero, new Vector2(1f, 1f), Vector2.zero, new Vector2(0, -35f));
+            scrollRect.GetComponent<Image>().color = new Color32(0, 0, 0, 0);
+            scrollRect.scrollSensitivity = 30;
+            panel2.gameObject.SetActive(false);
 
             //拖曳event
             Vector2 mouse = Vector2.zero;
@@ -204,34 +234,121 @@ namespace KK_StudioCoordinateLoadOption {
             btnAll.onClick.AddListener(() => {
                 bool flag = false;
                 for (int i = 0; i < tgls.Length; i++) {
-                    if (!tgls[i].isOn) {
+                    if (!tgls[i].isOn && !flag) {
                         flag = true;
+                        i = 0;
                     }
-                    tgls[i].isOn = true;
+                    tgls[i].isOn = flag;
                 }
-                if (!flag) {
-                    for (int j = 0; j < tgls.Length; j++) {
-                        tgls[j].isOn = false;
+            });
+            btnAll2.onClick.RemoveAllListeners();
+            btnAll2.onClick.AddListener(() => {
+                bool flag = false;
+                for (int i = 0; i < tgls2.Length; i++) {
+                    if (!tgls2[i].isOn && !flag) {
+                        flag = true;
+                        i = 0;
                     }
+                    tgls2[i].isOn = flag;
                 }
             });
             Logger.Log(LogLevel.Debug, "[KK_SCLO] Draw Panel Finish");
         }
 
-        //Backup
-        public static bool OnClickLoadPrefix(object __instance) {
-            Logger.Log(LogLevel.Debug, "[KK_SCLO] Studio Coordinate Load Option Start");
-            toggleList = charaFileSort.root.parent.parent.parent.GetComponentsInChildren<Toggle>();
-
-            bool flag = true;
-            bool flag2 = false;
-            foreach (Toggle tgl in toggleList) {
-                flag &= tgl.isOn;
-                flag2 |= tgl.isOn;
+        internal static void OnSelectPostfix(object __instance) {
+            if (null == panel2) {
+                return;
             }
-            if (!flag2) {
+
+            string[] accNames = LoadAccNames(charaFileSort.selectPath);
+
+            foreach (var tgl in panel2.gameObject.GetComponentsInChildren<Toggle>()) {
+                GameObject.Destroy(tgl.gameObject);
+            }
+            tgls2 = new Toggle[accNames.Length];
+            for (int i = 0; i < accNames.Length; i++) {
+                tgls2[i] = UIUtility.CreateToggle(Enum.GetValues(typeof(ClothesKind)).GetValue(9).ToString(), toggleGroup.transform, accNames[i]);
+                tgls2[i].GetComponentInChildren<Text>(true).alignment = TextAnchor.MiddleLeft;
+                tgls2[i].GetComponentInChildren<Text>(true).color = Color.white;
+                tgls2[i].transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -25f * (i + 1)), new Vector2(175f, -25f * i));
+                tgls2[i].GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
+            }
+            toggleGroup.transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(0, -(25f * (accNames.Length - 20))), new Vector2(0, 0));
+            panel2.gameObject.SetActive(true);
+            Logger.Log(LogLevel.Debug, "[KK_SCLO] Onselect");
+        }
+
+        internal static List<ListInfoBase> accessoriesList = new List<ListInfoBase>();
+        private static void GetAccList() {
+            if (accessoriesList.Count != 0) {
+                return;
+            }
+            ChaListControl chaListCtrl = Singleton<Manager.Character>.Instance.chaListCtrl;
+            for (int i = 121; i < 131; i++) {
+                accessoriesList.AddRange(chaListCtrl.GetCategoryInfo((ChaListDefine.CategoryNo)i).Values.ToList());
+            }
+            Logger.Log(LogLevel.Debug, "[KK_SCLO] AccList Length: " + accessoriesList.Count);
+        }
+
+        public static string TryGetResolutionInfo(int id, ChaListDefine.CategoryNo categoryNo) {
+            var resolveInfo = UniversalAutoResolver.LoadedResolutionInfo?.ToList()?.FirstOrDefault(x => x.CategoryNo == categoryNo && x.Slot == id);
+            if (null != resolveInfo) {
+                return Singleton<Manager.Character>.Instance.chaListCtrl.GetListInfo(categoryNo, resolveInfo.LocalSlot)?.Name;
+            } else {
+                return "";
+            }
+        }
+
+        private static string[] LoadAccNames(string path) {
+            //GetAccList();
+            var tmpChaFileCoordinate = new ChaFileCoordinate();
+            tmpChaFileCoordinate.LoadFile(path);
+            List<string> result = new List<string>();
+            ChaListControl chaListControl = Singleton<Manager.Character>.Instance.chaListCtrl;
+
+            result.AddRange(tmpChaFileCoordinate.accessory.parts.Select(x => {
+                Logger.Log(LogLevel.Debug, "[KK_SCLO] Find id: " + x.id);
+
+                string name = "";
+                if (x.id == 0) {
+                    name = "空";
+                }
+                if (null == name || "" == name) {
+                    name = chaListControl.GetListInfo((ChaListDefine.CategoryNo)x.type, x.id)?.Name;
+                }
+                if (null == name || "" == name) {
+                    name = TryGetResolutionInfo(x.id, (ChaListDefine.CategoryNo)x.type);
+                }
+                if (null == name || "" == name) {
+                    name = "未識別";
+                }
+                return name;
+            }));
+
+            if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
+                result.AddRange(MoreAccessories_Support.LoadMoreAccNames(tmpChaFileCoordinate));
+            }
+
+            return result.ToArray();
+        }
+
+        //Backup
+        public static bool OnClickLoadPrefix() {
+            Logger.Log(LogLevel.Debug, "[KK_SCLO] Studio Coordinate Load Option Start");
+
+            bool isAllTrueFlag = true;
+            bool isAllFalseFlag = true;
+            foreach (Toggle tgl in tgls) {
+                isAllTrueFlag &= tgl.isOn;
+                isAllFalseFlag &= !tgl.isOn;
+            }
+            foreach (Toggle tgl in tgls2) {
+                isAllTrueFlag &= tgl.isOn;
+                isAllFalseFlag &= !tgl.isOn;
+            }
+            if (isAllFalseFlag) {
                 Logger.Log(LogLevel.Info, "[KK_SCLO] No Toogle selected, skip loading coordinate");
-                toggleList = null;
+                tgls = null;
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] Studio Coordinate Load Option Finish");
                 return false;
             }
@@ -240,12 +357,11 @@ namespace KK_StudioCoordinateLoadOption {
                                select Studio.Studio.GetCtrlInfo(v) as OCIChar into v
                                where v != null
                                select v).ToArray();
-            if (flag) {
+            if (isAllTrueFlag) {
                 Logger.Log(LogLevel.Info, "[KK_SCLO] Toggle all true, use original game function");
                 foreach (var ocichar in array) {
                     ocichar.LoadClothesFile(charaFileSort.selectPath);
                 }
-                toggleList = null;
             } else {
                 ChaControl tmpChaCtrl = Singleton<Manager.Character>.Instance.CreateFemale(null, -1);
                 tmpChaCtrl.nowCoordinate.LoadFile(charaFileSort.selectPath);
@@ -262,7 +378,7 @@ namespace KK_StudioCoordinateLoadOption {
         private static void LoadCoordinates(ChaControl chaCtrl, ChaControl tmpChaCtrl) {
             ChaFileCoordinate tmpChaFileCoordinate = tmpChaCtrl.nowCoordinate;
 
-            foreach (var tgl in toggleList) {
+            foreach (var tgl in tgls) {
                 if (tgl.isOn) {
                     object tmpToggleType = null;
                     int kind = -2;
@@ -275,11 +391,13 @@ namespace KK_StudioCoordinateLoadOption {
 
                     if (kind == 9) {
                         //Copy accessories
-                        chaCtrl.nowCoordinate.accessory = new ChaFileAccessory();
                         for (int i = 0; i < tmpChaFileCoordinate.accessory.parts.Length; i++) {
-                            var tmp = MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(tmpChaFileCoordinate.accessory.parts[i]);
-                            chaCtrl.nowCoordinate.accessory.parts[i] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tmp);
-                            chaCtrl.ChangeAccessory(i, tmpChaFileCoordinate.accessory.parts[i].type, tmpChaFileCoordinate.accessory.parts[i].id, tmpChaFileCoordinate.accessory.parts[i].parentKey, true);
+                            if ((bool)tgls2[i]?.isOn) {
+                                var tmp = MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(tmpChaFileCoordinate.accessory.parts[i]);
+                                chaCtrl.nowCoordinate.accessory.parts[i] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tmp);
+                                chaCtrl.ChangeAccessory(i, tmpChaFileCoordinate.accessory.parts[i].type, tmpChaFileCoordinate.accessory.parts[i].id, tmpChaFileCoordinate.accessory.parts[i].parentKey, true);
+                            }
+                            Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Acc {i} id : {tmpChaFileCoordinate.accessory.parts[i].id}");
                         }
                         Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Change: " + tgl.name);
                     } else if (kind >= 0) {
@@ -320,17 +438,14 @@ namespace KK_StudioCoordinateLoadOption {
                 fakeLoadFlag = false;
             }
 
-            foreach (var tgl in toggleList) {
+            foreach (var tgl in tgls) {
+                int kind;
+                try {
+                    kind = Convert.ToInt32(Enum.Parse(typeof(ClothesKind), tgl.name));
+                } catch (ArgumentException) {
+                    kind = -1;
+                }
                 if (!tgl.isOn) {
-                    object tmpToggleType = null;
-                    int kind;
-                    try {
-                        tmpToggleType = Enum.Parse(typeof(ClothesKind), tgl.name);
-                        kind = Convert.ToInt32(tmpToggleType);
-                    } catch (ArgumentException) {
-                        kind = -1;
-                    }
-
                     if (kind == 9) {
                         //Rollback MoreAcc
                         if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
@@ -351,6 +466,12 @@ namespace KK_StudioCoordinateLoadOption {
                             if (KK_StudioCoordinateLoadOption._isABMXExist) {
                                 ABMX_Support.RollbackABMXBone(chaCtrl);
                             }
+                        }
+                    }
+                } else {
+                    if (kind == 9) {
+                        if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
+                            MoreAccessories_Support.CopyMoreAccessoriesData(tmpChaCtrl.chaFile, chaCtrl.chaFile, (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, tgls2.Select(x => !x.isOn).Skip(20).ToArray());
                         }
                     }
                 }
