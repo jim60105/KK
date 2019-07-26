@@ -114,7 +114,7 @@ namespace Extension {
                 }
                 printArray.Add("[KK_Extension] Property Name/Type: " + pi.Name + " / " + pi.PropertyType);
             }
-            Logger.Log(LogLevel.Debug, "[KK_Extension] Get " + propertyInfos.Length + " Fields.");
+            Logger.Log(LogLevel.Debug, "[KK_Extension] Get " + propertyInfos.Length + " Properties.");
 
             foreach (string st in printArray) {
                 Logger.Log(LogLevel.Debug, st);
