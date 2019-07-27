@@ -41,7 +41,7 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "19.07.27.0";
+        internal const string PLUGIN_VERSION = "19.07.27.1";
 
         public void Awake() {
             UIUtility.Init();
@@ -148,6 +148,8 @@ namespace KK_StudioCoordinateLoadOption {
         private static RectTransform toggleGroup;
         internal static bool excludeHairAcc = true;
         private static string unrecognizedWord = "Unrecognized";
+        private static string clearAccWord = "Clear Acc.";
+        private static bool doClearAccFlag = false;
 
 
         public static void InitPostfix(object __instance) {
@@ -168,18 +170,21 @@ namespace KK_StudioCoordinateLoadOption {
                     emptyWord = "空";
                     excludeHairAccWord = "鎖定頭髮飾品";
                     unrecognizedWord = "未識別";
+                    clearAccWord = "清空飾品";
                     break;
                 case SystemLanguage.Japanese:
                     ClothesKindName = ClothesKindNameJp;
                     emptyWord = "なし";
                     excludeHairAccWord = "髪アクセロック";
                     unrecognizedWord = "不明";
+                    clearAccWord = "クリアアクセ";
                     break;
                 default:
                     ClothesKindName = ClothesKindNameEn;
                     emptyWord = "Empty";
-                    excludeHairAccWord = "Lock Hair accessories";
+                    excludeHairAccWord = "Lock Hair Acc.";
                     unrecognizedWord = "Unrecognized";
+                    clearAccWord = "Clear Acc.";
                     break;
             }
 
@@ -188,6 +193,9 @@ namespace KK_StudioCoordinateLoadOption {
             //Draw Panel and ButtonAll
             charaFileSort = (CharaFileSort)__instance.GetField("fileSort");
             Image panel = UIUtility.CreatePanel("CoordinateTooglePanel", charaFileSort.root.parent.parent.parent);
+            panel.transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(405f, -7.5f), new Vector2(150f, 340f));
+            panel.GetComponent<Image>().color = new Color32(80, 80, 80, 220);
+
             Button btnAll = UIUtility.CreateButton("BtnAll", panel.transform, "All");
             btnAll.GetComponentInChildren<Text>(true).color = Color.white;
             btnAll.GetComponent<Image>().color = Color.gray;
@@ -210,12 +218,33 @@ namespace KK_StudioCoordinateLoadOption {
                     });
                 }
             }
-            panel.transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(405f, 52.5f), new Vector2(150f, 340f));
-            panel.GetComponent<Image>().color = new Color32(80, 80, 80, 220);
+
+            //分隔線
+            Image line = UIUtility.CreateImage("line", panel.transform);
+            line.color = Color.gray;
+            line.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -287.5f), new Vector2(140f, -286f));
+
+            //排除頭髮飾品toggle
+            Toggle tglHair = UIUtility.CreateToggle("excludeHairAcc", panel.transform, excludeHairAccWord);
+            tglHair.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
+            tglHair.GetComponentInChildren<Text>(true).color = Color.yellow;
+            tglHair.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -317.5f), new Vector2(140f, -292.5f));
+            tglHair.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
+            tglHair.isOn = excludeHairAcc;
+            tglHair.onValueChanged.AddListener((x) => {
+                excludeHairAcc = x;
+            });
+
+            Button btnClearAcc = UIUtility.CreateButton("BtnClearAcc", panel.transform, clearAccWord);
+            btnClearAcc.GetComponentInChildren<Text>(true).color = Color.white;
+            btnClearAcc.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperCenter;
+            btnClearAcc.GetComponent<Image>().color = Color.gray;
+            btnClearAcc.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -342.5f), new Vector2(140f, -317.5f));
+            btnClearAcc.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
 
             //Draw accessories panel
             panel2 = UIUtility.CreatePanel("AccessoriesTooglePanel", panel.transform);
-            panel2.transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(150f, -275f), new Vector2(180f, 287.5f));
+            panel2.transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(150f, -190f), new Vector2(180f, 347.5f));
             panel2.GetComponent<Image>().color = new Color32(80, 80, 80, 220);
             panel2.gameObject.SetActive(false);
             Button btnAll2 = UIUtility.CreateButton("BtnAll2", panel2.transform, "All");
@@ -224,23 +253,15 @@ namespace KK_StudioCoordinateLoadOption {
             btnAll2.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -30), new Vector2(170f, -5f));
             btnAll2.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
 
-            //排除頭髮飾品toggle
-            Toggle tglHair = UIUtility.CreateToggle("excludeHairAcc", panel2.transform, excludeHairAccWord);
-            tglHair.GetComponentInChildren<Text>(true).alignment = TextAnchor.MiddleLeft;
-            tglHair.GetComponentInChildren<Text>(true).color = Color.yellow;
-            tglHair.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -560f), new Vector2(175f, -535f));
-            tglHair.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
-            tglHair.isOn = excludeHairAcc;
-            tglHair.onValueChanged.AddListener((x) => {
-                excludeHairAcc = x;
-            });
-
             //滾動元件
             ScrollRect scrollRect = UIUtility.CreateScrollView("scroll", panel2.transform);
             toggleGroup = scrollRect.content;
-            scrollRect.transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(0, 30f), new Vector2(0, -35f));
+            scrollRect.transform.SetRect(Vector2.zero, new Vector2(1f, 1f), Vector2.zero, new Vector2(0, -35f));
             scrollRect.GetComponent<Image>().color = new Color32(0, 0, 0, 0);
-            scrollRect.GetComponentInChildren<Scrollbar>().image.color = new Color32(80, 80, 80, 220);
+            foreach (var img in scrollRect.verticalScrollbar.GetComponentsInChildren<Image>()) {
+                img.color = Color.Lerp(img.color, Color.black, 0.6f);
+            } 
+            (scrollRect.verticalScrollbar.transform as RectTransform).offsetMin = new Vector2(-16f, 0);
             scrollRect.scrollSensitivity = 30;
 
             //拖曳event
@@ -279,6 +300,33 @@ namespace KK_StudioCoordinateLoadOption {
                     }
                     tgls2[i].isOn = flag;
                 }
+            });
+            btnClearAcc.onClick.RemoveAllListeners();
+            btnClearAcc.onClick.AddListener(() => {
+                OCIChar[] array = (from v in Singleton<GuideObjectManager>.Instance.selectObjectKey
+                                   select Studio.Studio.GetCtrlInfo(v) as OCIChar into v
+                                   where v != null
+                                   select v).ToArray();
+                foreach (var ocichar in array) {
+                    for(int i = 0; i < 20; i++) {
+                        if(!IsHairAccessory(ocichar.charInfo, i)) {
+                            ocichar.charInfo.nowCoordinate.accessory.parts[i] = new ChaFileAccessory.PartsInfo();
+                        }
+                        ocichar.charInfo.ChangeAccessory(true);
+                    }
+                    if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
+                        ocichar.charInfo.chaFile.coordinate[ocichar.charInfo.fileStatus.coordinateType] = ocichar.charInfo.nowCoordinate;
+                        int size = MoreAccessories_Support.GetAccessoriesAmount(ocichar.charInfo.chaFile);
+                        Logger.Log(LogLevel.Debug, "[KK_SCLO] MoreAccessories Count: "+size);
+                        bool[] bools = Enumerable.Repeat(true, size+20).ToArray();
+                        ChaControl tmpChaCtrl = Singleton<Manager.Character>.Instance.CreateFemale(null, -1);
+                        MoreAccessories_Support.CopyMoreAccessoriesData(tmpChaCtrl, ocichar.charInfo, (ChaFileDefine.CoordinateType)ocichar.charInfo.fileStatus.coordinateType, bools);
+                        ocichar.charInfo.ChangeAccessory(true);
+                        Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
+                    }
+                }
+
+                Logger.Log(LogLevel.Debug, "[KK_SCLO] Clear accessories Finish");
             });
             Logger.Log(LogLevel.Debug, "[KK_SCLO] Draw UI Finish");
         }
@@ -322,6 +370,7 @@ namespace KK_StudioCoordinateLoadOption {
             //取得飾品清單
             var tmpChaFileCoordinate = new ChaFileCoordinate();
             tmpChaFileCoordinate.LoadFile(charaFileSort.selectPath);
+
             List<string> accNames = new List<string>();
 
             accNames.AddRange(tmpChaFileCoordinate.accessory.parts.Select(x => GetNameFromID(x.id, (ChaListDefine.CategoryNo)x.type)));
@@ -336,9 +385,13 @@ namespace KK_StudioCoordinateLoadOption {
             var tmpTgls = new List<Toggle>();
             foreach (var accName in accNames) {
                 Toggle toggle = UIUtility.CreateToggle(Enum.GetValues(typeof(ClothesKind)).GetValue(9).ToString(), toggleGroup.transform, accName);
-                toggle.GetComponentInChildren<Text>(true).alignment = TextAnchor.MiddleLeft;
+                toggle.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
                 toggle.GetComponentInChildren<Text>(true).color = Color.white;
-                toggle.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -25f * (tmpTgls.Count + 1)), new Vector2(175f, -25f * tmpTgls.Count));
+                if (accNames.Count > 20) {
+                    toggle.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -25f * (tmpTgls.Count + 1)), new Vector2(167f, -25f * tmpTgls.Count));
+                } else {
+                    toggle.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -25f * (tmpTgls.Count + 1)), new Vector2(175f, -25f * tmpTgls.Count));
+                }
                 toggle.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
                 tmpTgls.Add(toggle);
             }
@@ -379,6 +432,7 @@ namespace KK_StudioCoordinateLoadOption {
                     ocichar.LoadClothesFile(charaFileSort.selectPath);
                 }
             } else {
+                
                 ChaControl tmpChaCtrl = Singleton<Manager.Character>.Instance.CreateFemale(null, -1);
                 tmpChaCtrl.nowCoordinate.LoadFile(charaFileSort.selectPath);
                 foreach (var ocichar in array) {
@@ -403,7 +457,11 @@ namespace KK_StudioCoordinateLoadOption {
             if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
                 chaAccessoryComponent = MoreAccessories_Support.GetChaAccessoryComponent(chaCtrl, index);
             } else {
-                chaAccessoryComponent = chaCtrl.cusAcsCmp[index];
+                if (index < chaCtrl.cusAcsCmp.Length) {
+                    chaAccessoryComponent = chaCtrl.cusAcsCmp[index];
+                } else {
+                    chaAccessoryComponent = null;
+                }
             }
             return chaAccessoryComponent?.gameObject.GetComponent<ChaCustomHairComponent>() != null;
         }
@@ -437,11 +495,13 @@ namespace KK_StudioCoordinateLoadOption {
                                     }
                                 } else {
                                     chaCtrl.nowCoordinate.accessory.parts[i] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tmp);
-                                    chaCtrl.ChangeAccessory(i, chaCtrl.nowCoordinate.accessory.parts[i].type, chaCtrl.nowCoordinate.accessory.parts[i].id, chaCtrl.nowCoordinate.accessory.parts[i].parentKey, true);
+                                    //chaCtrl.ChangeAccessory(i, chaCtrl.nowCoordinate.accessory.parts[i].type, chaCtrl.nowCoordinate.accessory.parts[i].id, chaCtrl.nowCoordinate.accessory.parts[i].parentKey, true);
                                     Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Change: Acc{i} / ID: {tmpChaFileCoordinate.accessory.parts[i].id}");
                                 }
                             }
                         }
+                        chaCtrl.ChangeAccessory(true);
+
                         //遍歷空欄dequeue accQueue
                         for (int j = 0; j < chaCtrl.nowCoordinate.accessory.parts.Length && accQueue.Count > 0; j++) {
                             if (chaCtrl.nowCoordinate.accessory.parts[j].type == 120) {
@@ -467,7 +527,7 @@ namespace KK_StudioCoordinateLoadOption {
                         var tmp = MessagePackSerializer.Serialize<ChaFileClothes.PartsInfo>(tmpChaFileCoordinate.clothes.parts[kind]);
                         chaCtrl.nowCoordinate.clothes.parts[kind] = MessagePackSerializer.Deserialize<ChaFileClothes.PartsInfo>(tmp);
                         chaCtrl.ChangeClothes(kind, tmpChaFileCoordinate.clothes.parts[kind].id, tmpChaFileCoordinate.clothes.subPartsId[0], tmpChaFileCoordinate.clothes.subPartsId[1], tmpChaFileCoordinate.clothes.subPartsId[2], true);
-                        
+
                         Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Change: " + tgl.name + " / ID: " + tmpChaFileCoordinate.clothes.parts[kind].id);
                     }
                 }

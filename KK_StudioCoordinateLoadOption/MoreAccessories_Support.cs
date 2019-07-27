@@ -125,9 +125,18 @@ namespace KK_StudioCoordinateLoadOption {
                 }
             }
 
+            //由後往前刪除空欄
+            for (int i = targetParts.Count - 1; i >= 0; i--) {
+                if (targetParts[i].type == 120) {
+                    targetParts.RemoveAt(i);
+                } else {
+                    break;
+                }
+            }
+
+            //資料寫入MoreAcc
             Dictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>> rawAccessoriesInfos = targetCharAdditionalData.GetField("rawAccessoriesInfos").ToDictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>>();
             rawAccessoriesInfos[coordinateType] = targetParts;
-            targetCharAdditionalData.SetField("rawAccessoriesInfos", rawAccessoriesInfos);
 
             List<ListInfoBase> infoAccessory = targetCharAdditionalData.GetField("infoAccessory").ToList<ListInfoBase>();
             List<GameObject> objAccessory = targetCharAdditionalData.GetField("objAccessory").ToList<GameObject>();
@@ -147,16 +156,12 @@ namespace KK_StudioCoordinateLoadOption {
                 showAccessories.Add(true);
 
             targetCharAdditionalData.SetField("infoAccessory", infoAccessory);
-            //Logger.Log(LogLevel.Debug, "[KK_SCLO] infoAccessory Count: "+infoAccessory.Count);
             targetCharAdditionalData.SetField("objAccessory", objAccessory);
-            //Logger.Log(LogLevel.Debug, "[KK_SCLO] objAccessory Count: "+objAccessory.Count);
             targetCharAdditionalData.SetField("objAcsMove", objAcsMove);
-            //Logger.Log(LogLevel.Debug, "[KK_SCLO] objAcsMove Count: "+objAcsMove.Count);
             targetCharAdditionalData.SetField("cusAcsCmp", cusAcsCmp);
-            //Logger.Log(LogLevel.Debug, "[KK_SCLO] cusAcsCmp Count: "+cusAcsCmp.Count);
             targetCharAdditionalData.SetField("showAccessories", showAccessories);
-            //Logger.Log(LogLevel.Debug, "[KK_SCLO] showAccessories Count: "+showAccessories.Count);
             targetCharAdditionalData.SetField("nowAccessories", targetParts);
+            targetCharAdditionalData.SetField("rawAccessoriesInfos", rawAccessoriesInfos);
 
             //_accessoriesByChar[targetChaCtrl.chaFile] = targetCharAdditionalData;
             MoreAccObj.SetField("_accessoriesByChar", _accessoriesByChar);
@@ -168,18 +173,18 @@ namespace KK_StudioCoordinateLoadOption {
         /// <summary>
         /// 讀取MoreAccessories的名稱
         /// </summary>
-        /// <param name="tmpChaFileCoordinate">讀取的衣裝對象</param>
+        /// <param name="chaFileCoordinate">讀取的衣裝對象</param>
         /// <returns></returns>
-        public static string[] LoadMoreAccNames(ChaFileCoordinate tmpChaFileCoordinate) {
-            MoreAccessories.InvokeMember("Update",
-                BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance,
-                null,
-                MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null),
-                null);
+        public static string[] LoadMoreAccNames(ChaFileCoordinate chaFileCoordinate) {
+            //MoreAccessories.InvokeMember("Update",
+            //    BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance,
+            //    null,
+            //    MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null),
+            //    null);
             List<ChaFileAccessory.PartsInfo> nowAccessories = new List<ChaFileAccessory.PartsInfo>();
 
             XmlNode node = null;
-            PluginData pluginData = ExtendedSave.GetExtendedDataById(tmpChaFileCoordinate, "moreAccessories");
+            PluginData pluginData = ExtendedSave.GetExtendedDataById(chaFileCoordinate, "moreAccessories");
             if (pluginData != null && pluginData.data.TryGetValue("additionalAccessories", out object xmlData)) {
                 XmlDocument doc = new XmlDocument();
                 doc.LoadXml((string)xmlData);
@@ -223,6 +228,14 @@ namespace KK_StudioCoordinateLoadOption {
                 null,
                 MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null),
                 new object[] { chaCtrl, index });
+        }
+
+        public static int GetAccessoriesAmount(ChaFile chaFile) {
+            (MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null))
+            .GetField("_accessoriesByChar")
+            .ToDictionary<ChaFile, object>()
+            .TryGetValue(chaFile, out var charAdditionalData);
+            return charAdditionalData?.GetField("nowAccessories").ToList<ChaFileAccessory.PartsInfo>().Count ?? 0;
         }
     }
 }
