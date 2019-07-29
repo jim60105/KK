@@ -41,13 +41,18 @@ namespace KK_FBIOpenUp {
     public class KK_FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "19.07.07.1";
+        internal const string PLUGIN_VERSION = "19.07.29.1";
 
         internal static bool _isenabled = false;
         internal static bool _isABMXExist = false;
-        internal enum SceneName {
+        internal enum GameMode {
             Studio = 0,
-            MainTitle
+            LOGO,
+            MyRoom,
+            MainGame,
+            Maker,
+            FreeHMenu,
+            FreeH
         }
         public void Awake() {
             UIUtility.Init();
@@ -317,13 +322,23 @@ namespace KK_FBIOpenUp {
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "InitCharaList")]
         public static void InitCharaListPostfix(CharaList __instance) {
             if (String.Equals(__instance.name, "00_Female")) {
-                DrawRedBagBtn(__instance, KK_FBIOpenUp.SceneName.Studio);
+                DrawRedBagBtn(__instance, KK_FBIOpenUp.GameMode.Studio);
             }
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(TitleScene), "Start")]
-        public static void StartPostfix(TitleScene __instance) {
-            DrawRedBagBtn(__instance, KK_FBIOpenUp.SceneName.MainTitle);
+        [HarmonyPostfix, HarmonyPatch(typeof(ActionGame.NightMainMenu), "Start")]
+        public static void StartPostfix(ActionGame.NightMainMenu __instance) {
+            DrawRedBagBtn(__instance, KK_FBIOpenUp.GameMode.MyRoom);
+        }
+
+        //[HarmonyPostfix, HarmonyPatch(typeof(TitleScene), "Start")]
+        //public static void StartPostfix2(TitleScene __instance) {
+        //    DrawRedBagBtn(__instance, KK_FBIOpenUp.GameMode.LOGO);
+        //}
+
+        [HarmonyPostfix, HarmonyPatch(typeof(ActionScene), "Start")]
+        public static void StartPostfix3(ActionScene __instance) {
+            DrawRedBagBtn(__instance, KK_FBIOpenUp.GameMode.MainGame);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(AddObjectFemale), "Add", new Type[] { typeof(ChaControl), typeof(OICharInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject), typeof(bool), typeof(int) })]
@@ -361,11 +376,11 @@ namespace KK_FBIOpenUp {
         /// 切換紅色書包圖標顯示
         /// </summary>
         /// <param name="showPic">是否顯示過場圖片</param>
-        private static void ChangeRedBagBtn(bool showPic = true,KK_FBIOpenUp.SceneName sceneName = KK_FBIOpenUp.SceneName.Studio) {
+        private static void ChangeRedBagBtn(bool showPic = true,KK_FBIOpenUp.GameMode gameMode = KK_FBIOpenUp.GameMode.Studio) {
             if (KK_FBIOpenUp._isenabled) {
                 redBagBtn.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
                 if (showPic) {
-                    DrawSlidePic(1,sceneName);
+                    DrawSlidePic(1,gameMode);
                 }
                 Logger.Log(LogLevel.Info, "[KK_FBIOU] Enable Plugin");
             } else {
@@ -376,20 +391,33 @@ namespace KK_FBIOpenUp {
 
         private static float btnClickTimer = 0;
         private static bool downState = false;
-        private static void DrawRedBagBtn(object __instance, KK_FBIOpenUp.SceneName sceneName) {
+        private static void DrawRedBagBtn(object __instance, KK_FBIOpenUp.GameMode gameMode) {
             GameObject original, parent;
             Vector2 offsetMin, offsetMax;
-            switch (sceneName) {
-                case KK_FBIOpenUp.SceneName.Studio:
+            switch (gameMode) {
+                case KK_FBIOpenUp.GameMode.Studio:
                     CharaList charaList = __instance as CharaList;
                     original = GameObject.Find($"StudioScene/Canvas Main Menu/01_Add/{charaList.name}/Button Change");
                     parent = original.transform.parent.gameObject;
                     offsetMin = new Vector2(-120, -270);
                     offsetMax = new Vector2(-40, -190);
                     break;
-                case KK_FBIOpenUp.SceneName.MainTitle:
+                case KK_FBIOpenUp.GameMode.LOGO:
                     original = GameObject.Find("TitleScene/Canvas/Panel/Buttons/FirstButtons/Button Start");
                     parent = original.transform.parent.parent.parent.gameObject;
+                    offsetMin = new Vector2(0, -80);
+                    offsetMax = new Vector2(80, 0);
+                    break;
+                case KK_FBIOpenUp.GameMode.MyRoom:
+                    original = GameObject.Find("ActionScene/UI/ActionMenuCanvas/ModeAnimation/Status");
+                    parent = GameObject.Find("NightMenuScene/Canvas/Panel/base");
+                    //parent = original.transform.parent.gameObject;
+                    offsetMin = new Vector2(0, -80);
+                    offsetMax = new Vector2(80, 0);
+                    break;
+                case KK_FBIOpenUp.GameMode.MainGame:
+                    original = GameObject.Find("ActionScene/UI/ActionMenuCanvas/ModeAnimation/Status");
+                    parent = original.transform.parent.gameObject;
                     offsetMin = new Vector2(0, -80);
                     offsetMax = new Vector2(80, 0);
                     break;
@@ -403,7 +431,9 @@ namespace KK_FBIOpenUp {
             redBagBtn.GetComponent<Button>().spriteState = new SpriteState();
             redBagBtn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_FBIOpenUp.Resources.redBag.png", 100, 100);
             redBagBtn.GetComponent<Button>().onClick.RemoveAllListeners();
-            redBagBtn.GetComponent<Button>().onClick.SetPersistentListenerState(0, UnityEngine.Events.UnityEventCallState.Off);
+            for(int i = 0;i < redBagBtn.GetComponent<Button>().onClick.GetPersistentEventCount(); i++) {
+                redBagBtn.GetComponent<Button>().onClick.SetPersistentListenerState(i, UnityEngine.Events.UnityEventCallState.Off);
+            }
             redBagBtn.GetComponent<Button>().interactable = true;
 
             //因為要handle長按，改為監聽PointerDown、PointerUp Event
@@ -414,9 +444,10 @@ namespace KK_FBIOpenUp {
                 eventID = EventTriggerType.PointerDown,
                 callback = new EventTrigger.TriggerEvent()
             };
-            pointerDown.callback.AddListener(delegate {
+            pointerDown.callback.AddListener((baseEventData)=>{
                 btnClickTimer = 0;
                 downState = true;
+                //baseEventData.selectedObject.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.65f);
             });
             trigger.triggers.Add(pointerDown);
 
@@ -424,20 +455,21 @@ namespace KK_FBIOpenUp {
                 eventID = EventTriggerType.PointerUp,
                 callback = new EventTrigger.TriggerEvent()
             };
-            pointerUp.callback.AddListener(delegate {
+            pointerUp.callback.AddListener((baseEventData)=>{
                 downState = false;
                 var clickDeltaTime = btnClickTimer;
                 btnClickTimer = 0;
-                if (clickDeltaTime <= 1f || sceneName==KK_FBIOpenUp.SceneName.MainTitle) {
+                //baseEventData.selectedObject.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
+                if (clickDeltaTime <= 1f || gameMode==KK_FBIOpenUp.GameMode.LOGO || gameMode==KK_FBIOpenUp.GameMode.MyRoom) {
                     KK_FBIOpenUp.ToggleEnabled();
-                    ChangeRedBagBtn(true, sceneName);
+                    ChangeRedBagBtn(true, gameMode);
                 } else {
-                    DrawSlidePic(10, sceneName);
+                    DrawSlidePic(10, gameMode);
                 }
             });
             trigger.triggers.Add(pointerUp);
 
-            ChangeRedBagBtn(false,sceneName);
+            ChangeRedBagBtn(false,gameMode);
         }
 
         public static float smoothTime = 0.5f;
@@ -449,14 +481,20 @@ namespace KK_FBIOpenUp {
         /// </summary>
         /// <param name="_step">繪製完後要進入的腳本位置</param>
         /// <param name="sceneName">Scene名稱</param>
-        private static void DrawSlidePic(int _step, KK_FBIOpenUp.SceneName sceneName) {
+        private static void DrawSlidePic(int _step, KK_FBIOpenUp.GameMode sceneName) {
             GameObject parent;
             switch (sceneName) {
-                case KK_FBIOpenUp.SceneName.Studio:
+                case KK_FBIOpenUp.GameMode.Studio:
                     parent = GameObject.Find("StudioScene/Canvas Main Menu");
                     break;
-                case KK_FBIOpenUp.SceneName.MainTitle:
+                case KK_FBIOpenUp.GameMode.LOGO:
                     parent = GameObject.Find("TitleScene/Canvas/Panel");
+                    break;
+                case KK_FBIOpenUp.GameMode.MyRoom:
+                    parent = GameObject.Find("NightMenuScene/Canvas/Panel/base");
+                    break;
+                case KK_FBIOpenUp.GameMode.MainGame:
+                    parent = GameObject.Find("ActionScene/UI/ActionMenuCanvas/ModeAnimation");
                     break;
                 default:
                     return;
