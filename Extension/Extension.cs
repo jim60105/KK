@@ -1,9 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using BepInEx;
 using BepInEx.Logging;
 using Harmony;
 using UnityEngine;
@@ -30,7 +30,7 @@ namespace Extension {
         private static readonly Dictionary<FieldKey, FieldInfo> _fieldCache = new Dictionary<FieldKey, FieldInfo>();
         public static object GetField(this object self, string name) {
             if (!self.SearchForFields(name)) {
-                Logger.Log(LogLevel.Error, "[KK] Field Not Found: " + name);
+                Logger.Log(LogLevel.Error, "[KK_Extension] Field Not Found: " + name);
                 return false;
             }
             FieldKey key = new FieldKey(self.GetType(), name);
@@ -42,7 +42,7 @@ namespace Extension {
         }
         public static bool SetField(this object self, string name, object value) {
             if (!self.SearchForFields(name)) {
-                Logger.Log(LogLevel.Error, "[KK] Field Not Found: " + name);
+                Logger.Log(LogLevel.Error, "[KK_Extension] Field Not Found: " + name);
                 return false;
             }
             FieldKey fieldKey = new FieldKey(self.GetType(), name);
@@ -53,14 +53,14 @@ namespace Extension {
                     field.SetValue(self, value);
                     return true;
                 } else {
-                    Logger.Log(LogLevel.Error, "[KK] Set Field Not Found: " + name);
+                    Logger.Log(LogLevel.Error, "[KK_Extension] Set Field Not Found: " + name);
                 }
             }
             return false;
         }
         public static bool SetProperty(this object self, string name, object value) {
             if (!self.SearchForProperties(name)) {
-                Logger.Log(LogLevel.Error, "[KK] Field Not Found: " + name);
+                Logger.Log(LogLevel.Error, "[KK_Extension] Field Not Found: " + name);
                 return false;
             }
             PropertyInfo propertyInfo;
@@ -69,13 +69,13 @@ namespace Extension {
                 propertyInfo.SetValue(self, value, null);
                 return true;
             } else {
-                Logger.Log(LogLevel.Error, "[KK] Set Property Not Found: " + name);
+                Logger.Log(LogLevel.Error, "[KK_Extension] Set Property Not Found: " + name);
                 return false;
             }
         }
         public static object GetProperty(this object self, string name) {
             if (!self.SearchForProperties(name)) {
-                Logger.Log(LogLevel.Error, "[KK] Field Not Found: " + name);
+                Logger.Log(LogLevel.Error, "[KK_Extension] Field Not Found: " + name);
                 return false;
             }
             PropertyInfo propertyInfo;
@@ -94,9 +94,9 @@ namespace Extension {
                 if (fi.Name == name) {
                     return true;
                 }
-                printArray.Add("[KK] Field Name/Type: " + fi.Name + " / " + fi.FieldType);
+                printArray.Add("[KK_Extension] Field Name/Type: " + fi.Name + " / " + fi.FieldType);
             }
-            Logger.Log(LogLevel.Debug, "[KK] Get " + fieldInfos.Length + " Fields.");
+            Logger.Log(LogLevel.Debug, "[KK_Extension] Get " + fieldInfos.Length + " Fields.");
 
             foreach (string st in printArray) {
                 Logger.Log(LogLevel.Debug, st);
@@ -112,9 +112,9 @@ namespace Extension {
                 if (pi.Name == name) {
                     return true;
                 }
-                printArray.Add("[KK] Property Name/Type: " + pi.Name + " / " + pi.PropertyType);
+                printArray.Add("[KK_Extension] Property Name/Type: " + pi.Name + " / " + pi.PropertyType);
             }
-            Logger.Log(LogLevel.Debug, "[KK] Get " + propertyInfos.Length + " Fields.");
+            Logger.Log(LogLevel.Debug, "[KK_Extension] Get " + propertyInfos.Length + " Properties.");
 
             foreach (string st in printArray) {
                 Logger.Log(LogLevel.Debug, st);
@@ -197,5 +197,32 @@ namespace Extension {
             }
         }
 
+        public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this object self) {
+            if (!(self is IDictionary dictionary)) {
+                Logger.Log(LogLevel.Error, "[KK_Extension] Faild to cast to Dictionary!");
+                return null;
+            }
+            Dictionary<TKey, TValue> newDictionary =
+                CastDict(dictionary)
+                .ToDictionary(entry => (TKey)entry.Key,
+                              entry => (TValue)entry.Value);
+            return newDictionary;
+
+            IEnumerable<DictionaryEntry> CastDict(IDictionary dic) {
+                foreach (DictionaryEntry entry in dic) {
+                    yield return entry;
+                }
+            }
+        }
+
+        public static List<T> ToList<T>(this object self) {
+            if (!(self is IEnumerable<T> iEnumerable)) {
+                Logger.Log(LogLevel.Error, "[KK_Extension] Faild to cast to List!");
+                return null;
+            }
+            //List<T> newList = new List<T>(list.ToArray());
+            List<T> newList = new List<T>(iEnumerable);
+            return newList;
+        }
     }
 }

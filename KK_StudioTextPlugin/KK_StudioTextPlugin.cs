@@ -37,7 +37,7 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "19.07.04.0";
+        internal const string PLUGIN_VERSION = "19.07.22.0";
 
         public void Awake() {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -167,7 +167,7 @@ namespace KK_StudioTextPlugin {
         [HarmonyPostfix, HarmonyPatch(typeof(TreeNodeObject), "OnClickSelect")]
         public static void OnClickSelectPostfix(TreeNodeObject __instance) {
             ObjectCtrlInfo objectCtrlInfo = Studio.Studio.GetCtrlInfo(__instance);
-            if (objectCtrlInfo.objectInfo.kind == 3 && objectCtrlInfo is OCIFolder oCIFolder) {
+            if (objectCtrlInfo?.objectInfo?.kind == 3 && objectCtrlInfo is OCIFolder oCIFolder) {
                 if (oCIFolder.name.Contains(TextConfigPrefix)) {
                     TreeNodeCtrl treeNodeCtrl = Singleton<Studio.Studio>.Instance.treeNodeCtrl;
                     treeNodeCtrl.SelectSingle(__instance.parent);
