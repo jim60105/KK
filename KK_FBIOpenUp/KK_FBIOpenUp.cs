@@ -37,7 +37,7 @@ using Logger = BepInEx.Logger;
 
 namespace KK_FBIOpenUp {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
-    [BepInProcess("CharaStudio")]
+    //[BepInProcess("CharaStudio")]
     public class KK_FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
@@ -45,6 +45,10 @@ namespace KK_FBIOpenUp {
 
         internal static bool _isenabled = false;
         internal static bool _isABMXExist = false;
+        internal enum SceneName {
+            Studio = 0,
+            MainTitle
+        }
         public void Awake() {
             UIUtility.Init();
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -92,8 +96,7 @@ namespace KK_FBIOpenUp {
             BepInEx.Config.ReloadConfig();
         }
     }
-
-    class Patches {
+    internal class Patches {
         private static List<float> sampleShapeValueFace;
         private static List<float> sampleShapeValueBody;
         private static PluginData sampleABMXData;
@@ -121,11 +124,11 @@ namespace KK_FBIOpenUp {
         /// </summary>
         /// <param name="stream">角色圖片讀取為Stream</param>
         public static void LoadSampleChara(Stream stream) {
-            isIniting = true;
+            blockChanging = true;
             ChaFileControl chaFile = new ChaFileControl();
             chaFile.Invoke("LoadCharaFile", new object[] { stream, true, true });
             Logger.Log(LogLevel.Debug, "[KK_FBIOU] Loaded sample chara: " + chaFile.parameter.fullname);
-            isIniting = false;
+            blockChanging = false;
             var face = MessagePackSerializer.Deserialize<ChaFileFace>(MessagePackSerializer.Serialize<ChaFileFace>(chaFile.custom.face));
             var body = MessagePackSerializer.Deserialize<ChaFileBody>(MessagePackSerializer.Serialize<ChaFileBody>(chaFile.custom.body));
             //Logger.Log(LogLevel.Message, "[KK_FBIOU] Length Face: " + face.shapeValueFace.Length);
@@ -133,7 +136,7 @@ namespace KK_FBIOpenUp {
             sampleShapeValueFace = face.shapeValueFace.ToList();
             sampleShapeValueBody = body.shapeValueBody.ToList();
 
-            sampleABMXData = ExtensibleSaveFormat.ExtendedSave.GetExtendedDataById(chaFile, "KKABMPlugin.ABMData");
+            sampleABMXData = ExtendedSave.GetExtendedDataById(chaFile, "KKABMPlugin.ABMData");
             if (null != sampleABMXData) {
                 Logger.Log(LogLevel.Debug, "[KK_FBIOU] Loaded sample chara ABMX");
             } else {
@@ -153,20 +156,28 @@ namespace KK_FBIOpenUp {
         /// <param name="changeFace">是否替換臉部</param>
         /// <param name="changeBody">是否替換身體</param>
         public static void ChangeChara(ChaControl chaCtrl, bool changeFace = true, bool changeBody = true, bool forceChange = true) {
+            if (blockChanging || !KK_FBIOpenUp._isenabled) {
+                return;
+            }
+
             if (chaCtrl.chaFile.parameter.sex != 1) {
                 Logger.Log(LogLevel.Info, "[KK_FBIOU] Skip changing because of wrong sex.");
                 return;
             }
 
+            int iii = 0;
+            Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++iii);
             List<float> originalShapeValueFace;
             List<float> originalShapeValueBody;
             ChaFileCustom chaFileCustom = chaCtrl.chaFile.custom;
+            Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++iii);
 
             //Logger.Log(LogLevel.Message, "[KK_FBIOU] Length Face: " + chaFileCustom.face.shapeValueFace.Length);
             //Logger.Log(LogLevel.Message, "[KK_FBIOU] Length Body: " + chaFileCustom.body.shapeValueBody.Length);
             originalShapeValueFace = chaFileCustom.face.shapeValueFace.ToList();
             originalShapeValueBody = chaFileCustom.body.shapeValueBody.ToList();
             List<float> result;
+            Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++iii);
 
             //如果角色第一次替換，紀錄其原始數據至dict
             //如果在dict內有找到替換紀錄，以其原始數據來做替換
@@ -182,6 +193,7 @@ namespace KK_FBIOpenUp {
                 chaFileCustomDict.Add(chaFileCustom, new List<float>[] { new List<float>(originalShapeValueFace), new List<float>(originalShapeValueBody) });
                 Logger.Log(LogLevel.Debug, "[KK_FBIOU] chaFileCustomDict.Count: " + chaFileCustomDict.Count);
             }
+            Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++iii);
 
             if (null != sampleShapeValueFace && changeFace) {
                 if (originalShapeValueFace.Count == sampleShapeValueFace.Count) {
@@ -193,6 +205,7 @@ namespace KK_FBIOpenUp {
                 } else { Logger.Log(LogLevel.Error, "[KK_FBIOU] Sample data is not match to target data!"); }
                 Logger.Log(LogLevel.Debug, "[KK_FBIOU] Changed face finish");
             }
+            Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++iii);
 
             if (null != sampleShapeValueBody && changeBody) {
                 if (originalShapeValueBody.Count == sampleShapeValueBody.Count) {
@@ -206,6 +219,7 @@ namespace KK_FBIOpenUp {
                 Logger.Log(LogLevel.Debug, "[KK_FBIOU] Changed body finish");
             }
 
+            Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++iii);
             if (KK_FBIOpenUp._isABMXExist) {
                 //取得BoneController
                 object BoneController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
@@ -303,25 +317,25 @@ namespace KK_FBIOpenUp {
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "InitCharaList")]
         public static void InitCharaListPostfix(CharaList __instance) {
             if (String.Equals(__instance.name, "00_Female")) {
-                DrawRedBagBtn(__instance);
+                DrawRedBagBtn(__instance, KK_FBIOpenUp.SceneName.Studio);
             }
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(TitleScene), "Start")]
+        public static void StartPostfix(TitleScene __instance) {
+            DrawRedBagBtn(__instance, KK_FBIOpenUp.SceneName.MainTitle);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(AddObjectFemale), "Add", new Type[] { typeof(ChaControl), typeof(OICharInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject), typeof(bool), typeof(int) })]
-        public static void AddPostfix(ChaControl _female, OICharInfo _info) {
-            if (KK_FBIOpenUp._isenabled && !isIniting) {
-                ChangeChara(_female);
-            }
-        }
+        public static void AddPostfix(ChaControl _female, OICharInfo _info) => ChangeChara(_female);
 
         [HarmonyPostfix, HarmonyPatch(typeof(OCIChar), "ChangeChara")]
-        public static void ChangeCharaPostfix(OCIChar __instance) {
-            if (KK_FBIOpenUp._isenabled && !isIniting) {
-                ChangeChara(__instance.charInfo);
-            }
-        }
+        public static void ChangeCharaPostfix(OCIChar __instance) => ChangeChara(__instance.charInfo);
 
-        private static bool isIniting = false;
+        //[HarmonyPostfix, HarmonyPatch(typeof(SaveData.CharaData), "Load")]
+        //public static void LoadPostfix(SaveData.CharaData __instance) => ChangeChara(__instance.chaCtrl);
+
+        private static bool blockChanging = false;
         [HarmonyPrefix, HarmonyPatch(typeof(CharaList), "InitFemaleList")]
         public static void InitFemaleListPrefix() => SetInitFlag(true);
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "InitFemaleList")]
@@ -332,13 +346,8 @@ namespace KK_FBIOpenUp {
         [HarmonyPostfix, HarmonyPatch(typeof(SceneLoadScene), "OnClickClose")]
         public static void LoadPostfix() => SetInitFlag(false);
 
-        //[HarmonyPrefix, HarmonyPatch(typeof(SceneInfo), "Import", new Type[] { typeof(string) })]
-        //public static void ImportPrefix() => SetInitFlag(true);
-        //[HarmonyPostfix, HarmonyPatch(typeof(SceneInfo), "Import", new Type[] { typeof(string) })]
-        //public static void ImportPostfix() => SetInitFlag(false);
-
         public static void SetInitFlag(bool flag) {
-            isIniting = flag;
+            blockChanging = flag;
             if (flag) {
                 chaFileCustomDict.Clear();
             }
@@ -352,11 +361,11 @@ namespace KK_FBIOpenUp {
         /// 切換紅色書包圖標顯示
         /// </summary>
         /// <param name="showPic">是否顯示過場圖片</param>
-        private static void ChangeRedBagBtn(bool showPic = true) {
+        private static void ChangeRedBagBtn(bool showPic = true,KK_FBIOpenUp.SceneName sceneName = KK_FBIOpenUp.SceneName.Studio) {
             if (KK_FBIOpenUp._isenabled) {
                 redBagBtn.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
                 if (showPic) {
-                    DrawSlidePic(1);
+                    DrawSlidePic(1,sceneName);
                 }
                 Logger.Log(LogLevel.Info, "[KK_FBIOU] Enable Plugin");
             } else {
@@ -367,11 +376,31 @@ namespace KK_FBIOpenUp {
 
         private static float btnClickTimer = 0;
         private static bool downState = false;
-        private static void DrawRedBagBtn(CharaList __instance) {
-            var original = GameObject.Find($"StudioScene/Canvas Main Menu/01_Add/{__instance.name}/Button Change");
-            redBagBtn = UnityEngine.Object.Instantiate(original, original.transform.parent.transform);
+        private static void DrawRedBagBtn(object __instance, KK_FBIOpenUp.SceneName sceneName) {
+            GameObject original, parent;
+            Vector2 offsetMin, offsetMax;
+            switch (sceneName) {
+                case KK_FBIOpenUp.SceneName.Studio:
+                    CharaList charaList = __instance as CharaList;
+                    original = GameObject.Find($"StudioScene/Canvas Main Menu/01_Add/{charaList.name}/Button Change");
+                    parent = original.transform.parent.gameObject;
+                    offsetMin = new Vector2(-120, -270);
+                    offsetMax = new Vector2(-40, -190);
+                    break;
+                case KK_FBIOpenUp.SceneName.MainTitle:
+                    original = GameObject.Find("TitleScene/Canvas/Panel/Buttons/FirstButtons/Button Start");
+                    parent = original.transform.parent.parent.parent.gameObject;
+                    offsetMin = new Vector2(0, -80);
+                    offsetMax = new Vector2(80, 0);
+                    break;
+                default:
+                    return;
+            }
+            redBagBtn = UnityEngine.Object.Instantiate(original, parent.transform);
             redBagBtn.name = "redBagBtn";
-            redBagBtn.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(-120, -270), new Vector2(-40, -190));
+            redBagBtn.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), offsetMin, offsetMax);
+
+            redBagBtn.GetComponent<Button>().spriteState = new SpriteState();
             redBagBtn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_FBIOpenUp.Resources.redBag.png", 100, 100);
             redBagBtn.GetComponent<Button>().onClick.RemoveAllListeners();
             redBagBtn.GetComponent<Button>().onClick.SetPersistentListenerState(0, UnityEngine.Events.UnityEventCallState.Off);
@@ -381,32 +410,34 @@ namespace KK_FBIOpenUp {
             redBagBtn.AddComponent<EventTrigger>();
             EventTrigger trigger = redBagBtn.gameObject.GetComponent<EventTrigger>();
 
-            EventTrigger.Entry pointerDown = new EventTrigger.Entry();
-            pointerDown.eventID = EventTriggerType.PointerDown;
-            pointerDown.callback = new EventTrigger.TriggerEvent();
+            EventTrigger.Entry pointerDown = new EventTrigger.Entry {
+                eventID = EventTriggerType.PointerDown,
+                callback = new EventTrigger.TriggerEvent()
+            };
             pointerDown.callback.AddListener(delegate {
                 btnClickTimer = 0;
                 downState = true;
             });
             trigger.triggers.Add(pointerDown);
 
-            EventTrigger.Entry pointerUp = new EventTrigger.Entry();
-            pointerUp.eventID = EventTriggerType.PointerUp;
-            pointerUp.callback = new EventTrigger.TriggerEvent();
+            EventTrigger.Entry pointerUp = new EventTrigger.Entry {
+                eventID = EventTriggerType.PointerUp,
+                callback = new EventTrigger.TriggerEvent()
+            };
             pointerUp.callback.AddListener(delegate {
                 downState = false;
                 var clickDeltaTime = btnClickTimer;
                 btnClickTimer = 0;
-                if (clickDeltaTime > 1f) {
-                    DrawSlidePic(10);
-                } else {
+                if (clickDeltaTime <= 1f || sceneName==KK_FBIOpenUp.SceneName.MainTitle) {
                     KK_FBIOpenUp.ToggleEnabled();
-                    ChangeRedBagBtn();
+                    ChangeRedBagBtn(true, sceneName);
+                } else {
+                    DrawSlidePic(10, sceneName);
                 }
             });
             trigger.triggers.Add(pointerUp);
 
-            ChangeRedBagBtn(false);
+            ChangeRedBagBtn(false,sceneName);
         }
 
         public static float smoothTime = 0.5f;
@@ -417,8 +448,19 @@ namespace KK_FBIOpenUp {
         /// 繪製轉場圖片
         /// </summary>
         /// <param name="_step">繪製完後要進入的腳本位置</param>
-        private static void DrawSlidePic(int _step) {
-            var parent = GameObject.Find("StudioScene/Canvas Main Menu");
+        /// <param name="sceneName">Scene名稱</param>
+        private static void DrawSlidePic(int _step, KK_FBIOpenUp.SceneName sceneName) {
+            GameObject parent;
+            switch (sceneName) {
+                case KK_FBIOpenUp.SceneName.Studio:
+                    parent = GameObject.Find("StudioScene/Canvas Main Menu");
+                    break;
+                case KK_FBIOpenUp.SceneName.MainTitle:
+                    parent = GameObject.Find("TitleScene/Canvas/Panel");
+                    break;
+                default:
+                    return;
+            }
             GameObject gameObject = new GameObject();
             gameObject.transform.SetParent(parent.transform, false);
             if (null == image) {
