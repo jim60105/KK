@@ -98,20 +98,25 @@
     <Compile Include="UIUtility.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\DefaultResources.unity3d" />
-    <None Include="Resources\DefaultResourcesKOI.unity3d" />
+    <EmbeddedResource Include="Resources\DefaultResources.unity3d" />
+    <EmbeddedResource Include="Resources\DefaultResourcesKOI.unity3d" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath>C:\illusion\Koikatu\CharaStudio_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
     </Reference>
-    <Reference Include="System" />
+    <Reference Include="System">
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="UnityEngine">
       <HintPath>C:\illusion\Koikatu\CharaStudio_Data\Managed\UnityEngine.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
       <HintPath>C:\illusion\Koikatu\CharaStudio_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>

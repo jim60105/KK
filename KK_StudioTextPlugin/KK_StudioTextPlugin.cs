@@ -37,7 +37,7 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "19.07.22.0";
+        internal const string PLUGIN_VERSION = "19.07.30.0";
 
         public void Awake() {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -250,7 +250,7 @@ namespace KK_StudioTextPlugin {
             //Scene讀取的進入點
             if (isCreatingTextFolder || __result.name.Contains(TextObjPrefix)) {
                 __result.name = isCreatingTextFolder ? TextObjPrefix + "New Text" : _info.name;
-                var t = TextPlugin.MakeTextObj(__result, isCreatingTextFolder ? "New Text" : _info.name.Replace(TextObjPrefix, ""));
+                var t = TextPlugin.MakeTextObj(__result, isCreatingTextFolder ? "New Text" : _info.name.Replace(TextObjPrefix, "").Replace("\\n", "\n"));
                 isCreatingTextFolder = false;
                 if (_addInfo) {
                     //Scene Load就不創建Config資料夾結構
@@ -290,7 +290,7 @@ namespace KK_StudioTextPlugin {
                 //對資料夾名稱做編輯，加上prefix
                 __instance.ociFolder.name = __instance.ociFolder.objectItem.name = TextObjPrefix + _value;
                 //改文字
-                __instance.ociFolder.objectItem.GetComponentInChildren<TextMesh>(true).text = _value;
+                __instance.ociFolder.objectItem.GetComponentInChildren<TextMesh>(true).text = _value.Replace("\\n", "\n");
                 Logger.Log(LogLevel.Info, "[KK_STP] Edit Text: " + _value);
                 return false;
             }
