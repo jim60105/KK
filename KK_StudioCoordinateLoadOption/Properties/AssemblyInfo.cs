@@ -1,4 +1,5 @@
-﻿using System;
+﻿using System.Resources;
+using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -14,3 +15,4 @@ using System.Runtime.InteropServices;
 [assembly: Guid("EF0169B6-166D-4298-A1B8-05CCA0E095BC")]
 [assembly: AssemblyVersion(KK_StudioCoordinateLoadOption.KK_StudioCoordinateLoadOption.PLUGIN_VERSION)]
 [assembly: AssemblyFileVersion(KK_StudioCoordinateLoadOption.KK_StudioCoordinateLoadOption.PLUGIN_VERSION)]
+

@@ -99,7 +99,7 @@ namespace KK_StudioCoordinateLoadOption {
             for (int i = 0; i < oriParts.Count || i < bools.Length; i++) {
                 var tmp = MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(oriParts.ElementAtOrDefault(i) ?? new ChaFileAccessory.PartsInfo());
                 //倒回時，如果遇到原始是頭髮飾品，就強制替換入該位置，並把原來佔位的飾品EnQueue
-                if (Patches.IsHairAccessory(oriChaCtrl, i + 20) && !bools[i]) {
+                if (i<bools.Length &&( Patches.IsHairAccessory(oriChaCtrl, i + 20) || !bools[i] || Patches.addAccModeFlag)) {
                     accQueue.Enqueue(MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(targetParts[i] ?? new ChaFileAccessory.PartsInfo()));
                     targetParts[i] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tmp);
                     Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->HairLock: MoreAcc{i} / ID: {oriParts.ElementAtOrDefault(i)?.id ?? 0}");
@@ -206,7 +206,7 @@ namespace KK_StudioCoordinateLoadOption {
 
             //由後往前刪除空欄
             for (int i = result.Count - 1; i >= 0; i--) {
-                if (result[i] == Patches.emptyWord) {
+                if (result[i] == StringResources.StringResourcesManager.GetString("empty")) {
                     result.RemoveAt(i);
                 } else {
                     break;

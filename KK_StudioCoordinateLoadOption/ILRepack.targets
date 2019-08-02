@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Target Name="ILRepacker" AfterTargets="Build;Rebuild" Condition="'$(Configuration)' == 'Release'">
+
+    <ItemGroup>
+        <InputAssemblies Include="$(OutputPath)\KK_StudioCoordinateLoadOption.dll" />
+        <InputAssemblies Include="$(OutputPath)\UIUtility.dll" />
+        <InputAssemblies Include="$(OutputPath)\*\KK_StudioCoordinateLoadOption.resources.dll" />
+    </ItemGroup>
+
+    <ILRepack
+        Parallel="true"
+        InputAssemblies="@(InputAssemblies)"
+        TargetKind="Dll"
+        OutputFile="$(OutputPath)\$(AssemblyName).dll"
+		Wildcards="true"
+		LibraryPath="C:\illusion\Koikatu\BepInEx\core;C:\illusion\Koikatu\BepInEx;C:\illusion\Koikatu\CharaStudio_Data\Managed"
+    />
+
+    </Target>
+</Project>

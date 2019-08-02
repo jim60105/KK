@@ -41,7 +41,7 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "19.07.27.1";
+        internal const string PLUGIN_VERSION = "19.08.02.0";
 
         public void Awake() {
             UIUtility.Init();
@@ -65,6 +65,8 @@ namespace KK_StudioCoordinateLoadOption {
             _isKCOXExist = IsPluginExist("KCOX") && KCOX_Support.LoadAssembly();
             _isABMXExist = IsPluginExist("KKABMX.Core") && ABMX_Support.LoadAssembly();
             _isMoreAccessoriesExist = IsPluginExist("com.joan6694.illusionplugins.moreaccessories") && MoreAccessories_Support.LoadAssembly();
+
+            StringResources.StringResourcesManager.SetUICulture();
         }
     }
 
@@ -102,104 +104,49 @@ namespace KK_StudioCoordinateLoadOption {
             accessories = 9 /*注意這個*/
         }
 
-        public static string[] ClothesKindName = ClothesKindNameJp;
-        public static readonly string[] ClothesKindNameJp = {
-            "トップス",
-            "ボトムス",
-            "ブラ",
-            "ショーツ",
-            "手袋",
-            "パンスト",
-            "靴下",
-            "靴(內履き)",
-            "靴(外履き)",
-            "アクセサリー"
-        };
-        public static readonly string[] ClothesKindNameCh = {
-            "上衣",
-            "下裝",
-            "胸罩",
-            "內褲",
-            "手套",
-            "褲襪",
-            "襪子",
-            "室內鞋",
-            "室外鞋",
-            "飾品"
-        };
-        public static readonly string[] ClothesKindNameEn = {
-            "Tops",
-            "Bottoms",
-            "Bra",
-            "Shorts",
-            "Gloves",
-            "Pantyhose",
-            "Socks",
-            "Indoor shoes",
-            "Outdoor shoes",
-            "Accessories"
-        };
-        public static string emptyWord;
-        public static string excludeHairAccWord;
+        public static string[] ClothesKindName;
 
         private static Toggle[] tgls2 = new Toggle[0]; //使用時再初始化
         private static Toggle[] tgls;
         private static Image panel2;
         private static RectTransform toggleGroup;
         internal static bool excludeHairAcc = true;
-        private static string unrecognizedWord = "Unrecognized";
-        private static string clearAccWord = "Clear Acc.";
-        private static bool doClearAccFlag = false;
-
+        internal static bool addAccModeFlag = true;
 
         public static void InitPostfix(object __instance) {
             BlockAnotherPlugin();
 
-            SystemLanguage lan = Application.systemLanguage;
-
             //如果找到機翻就一律顯示英文，否則機翻會毀了我的文字
             if (null != GameObject.Find("___XUnityAutoTranslator")) {
-                lan = SystemLanguage.English;
+                StringResources.StringResourcesManager.SetUICulture("en-US");
                 Logger.Log(LogLevel.Info, "[KK_SCLO] Found XUnityAutoTranslator, load English UI");
             }
 
-            //依照系統語言選擇UI語言
-            switch (lan) {
-                case SystemLanguage.Chinese:
-                    ClothesKindName = ClothesKindNameCh;
-                    emptyWord = "空";
-                    excludeHairAccWord = "鎖定頭髮飾品";
-                    unrecognizedWord = "未識別";
-                    clearAccWord = "清空飾品";
-                    break;
-                case SystemLanguage.Japanese:
-                    ClothesKindName = ClothesKindNameJp;
-                    emptyWord = "なし";
-                    excludeHairAccWord = "髪アクセロック";
-                    unrecognizedWord = "不明";
-                    clearAccWord = "クリアアクセ";
-                    break;
-                default:
-                    ClothesKindName = ClothesKindNameEn;
-                    emptyWord = "Empty";
-                    excludeHairAccWord = "Lock Hair Acc.";
-                    unrecognizedWord = "Unrecognized";
-                    clearAccWord = "Clear Acc.";
-                    break;
-            }
+            ClothesKindName = new string[]{
+                StringResources.StringResourcesManager.GetString("ClothesKind_top"),
+                StringResources.StringResourcesManager.GetString("ClothesKind_bot"),
+                StringResources.StringResourcesManager.GetString("ClothesKind_bra"),
+                StringResources.StringResourcesManager.GetString("ClothesKind_shorts"),
+                StringResources.StringResourcesManager.GetString("ClothesKind_gloves"),
+                StringResources.StringResourcesManager.GetString("ClothesKind_panst"),
+                StringResources.StringResourcesManager.GetString("ClothesKind_socks"),
+                StringResources.StringResourcesManager.GetString("ClothesKind_shoes_inner"),
+                StringResources.StringResourcesManager.GetString("ClothesKind_shoes_outer"),
+                StringResources.StringResourcesManager.GetString("ClothesKind_accessories")
+            };
 
             Array ClothesKindArray = Enum.GetValues(typeof(ClothesKind));
 
             //Draw Panel and ButtonAll
             charaFileSort = (CharaFileSort)__instance.GetField("fileSort");
             Image panel = UIUtility.CreatePanel("CoordinateTooglePanel", charaFileSort.root.parent.parent.parent);
-            panel.transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(405f, -7.5f), new Vector2(150f, 340f));
+            panel.transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(405f, -33f), new Vector2(150f, 340f));
             panel.GetComponent<Image>().color = new Color32(80, 80, 80, 220);
 
             Button btnAll = UIUtility.CreateButton("BtnAll", panel.transform, "All");
             btnAll.GetComponentInChildren<Text>(true).color = Color.white;
             btnAll.GetComponent<Image>().color = Color.gray;
-            btnAll.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -30), new Vector2(140f, -5f));
+            btnAll.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -30), new Vector2(-5f, -5f));
             btnAll.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
 
             //Draw Toggles
@@ -208,7 +155,7 @@ namespace KK_StudioCoordinateLoadOption {
                 tgls[i] = UIUtility.CreateToggle(ClothesKindArray.GetValue(i).ToString(), panel.transform, ClothesKindName.GetValue(i).ToString());
                 tgls[i].GetComponentInChildren<Text>(true).alignment = TextAnchor.MiddleLeft;
                 tgls[i].GetComponentInChildren<Text>(true).color = Color.white;
-                tgls[i].transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -60f - 25f * i), new Vector2(140f, -35f - 25f * i));
+                tgls[i].transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -60f - 25f * i), new Vector2(-5f, -35f - 25f * i));
                 tgls[i].GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
                 if (i == (int)ClothesKind.accessories) {
                     tgls[i].onValueChanged.AddListener((x) => {
@@ -225,42 +172,51 @@ namespace KK_StudioCoordinateLoadOption {
             line.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -287.5f), new Vector2(140f, -286f));
 
             //排除頭髮飾品toggle
-            Toggle tglHair = UIUtility.CreateToggle("excludeHairAcc", panel.transform, excludeHairAccWord);
+            Toggle tglHair = UIUtility.CreateToggle("excludeHairAcc", panel.transform, StringResources.StringResourcesManager.GetString("lockHairAcc"));
             tglHair.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
             tglHair.GetComponentInChildren<Text>(true).color = Color.yellow;
-            tglHair.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -317.5f), new Vector2(140f, -292.5f));
+            tglHair.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -317.5f), new Vector2(-5f, -292.5f));
             tglHair.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
             tglHair.isOn = excludeHairAcc;
             tglHair.onValueChanged.AddListener((x) => {
                 excludeHairAcc = x;
             });
 
-            Button btnClearAcc = UIUtility.CreateButton("BtnClearAcc", panel.transform, clearAccWord);
+            //飾品載入模式btn
+            Button btnChangeAccLoadMode = UIUtility.CreateButton("BtnChangeAccLoadMode", panel.transform,"AccModeBtn");
+            btnChangeAccLoadMode.GetComponentInChildren<Text>(true).color = Color.white;
+            btnChangeAccLoadMode.GetComponentInChildren<Text>(true).alignment = TextAnchor.MiddleCenter;
+            btnChangeAccLoadMode.GetComponent<Image>().color = Color.gray;
+            btnChangeAccLoadMode.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -342.5f), new Vector2(140f, -317.5f));
+            btnChangeAccLoadMode.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
+
+            //清空飾品btn
+            Button btnClearAcc = UIUtility.CreateButton("BtnClearAcc", panel.transform, StringResources.StringResourcesManager.GetString("clearAccWord"));
             btnClearAcc.GetComponentInChildren<Text>(true).color = Color.white;
             btnClearAcc.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperCenter;
             btnClearAcc.GetComponent<Image>().color = Color.gray;
-            btnClearAcc.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -342.5f), new Vector2(140f, -317.5f));
+            btnClearAcc.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -369f), new Vector2(140f, -344f));
             btnClearAcc.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
 
             //Draw accessories panel
             panel2 = UIUtility.CreatePanel("AccessoriesTooglePanel", panel.transform);
-            panel2.transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(150f, -190f), new Vector2(180f, 347.5f));
+            panel2.transform.SetRect(Vector2.one, Vector2.one, new Vector2(5f, -537.5f), new Vector2(180f, 0f));
             panel2.GetComponent<Image>().color = new Color32(80, 80, 80, 220);
             panel2.gameObject.SetActive(false);
             Button btnAll2 = UIUtility.CreateButton("BtnAll2", panel2.transform, "All");
             btnAll2.GetComponentInChildren<Text>(true).color = Color.white;
             btnAll2.GetComponent<Image>().color = Color.gray;
-            btnAll2.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -30), new Vector2(170f, -5f));
+            btnAll2.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -30), new Vector2(-5f, -5f));
             btnAll2.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
 
             //滾動元件
             ScrollRect scrollRect = UIUtility.CreateScrollView("scroll", panel2.transform);
             toggleGroup = scrollRect.content;
-            scrollRect.transform.SetRect(Vector2.zero, new Vector2(1f, 1f), Vector2.zero, new Vector2(0, -35f));
+            scrollRect.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(0f, 5f), new Vector2(0, -35f));
             scrollRect.GetComponent<Image>().color = new Color32(0, 0, 0, 0);
             foreach (var img in scrollRect.verticalScrollbar.GetComponentsInChildren<Image>()) {
                 img.color = Color.Lerp(img.color, Color.black, 0.6f);
-            } 
+            }
             (scrollRect.verticalScrollbar.transform as RectTransform).offsetMin = new Vector2(-16f, 0);
             scrollRect.scrollSensitivity = 30;
 
@@ -278,7 +234,7 @@ namespace KK_StudioCoordinateLoadOption {
             trigger.triggers.Add(entry);
             trigger.triggers.Add(entry2);
 
-            //Button All邏輯
+            //Button邏輯
             btnAll.onClick.RemoveAllListeners();
             btnAll.onClick.AddListener(() => {
                 bool flag = false;
@@ -308,8 +264,8 @@ namespace KK_StudioCoordinateLoadOption {
                                    where v != null
                                    select v).ToArray();
                 foreach (var ocichar in array) {
-                    for(int i = 0; i < 20; i++) {
-                        if(!IsHairAccessory(ocichar.charInfo, i)) {
+                    for (int i = 0; i < 20; i++) {
+                        if (!IsHairAccessory(ocichar.charInfo, i)) {
                             ocichar.charInfo.nowCoordinate.accessory.parts[i] = new ChaFileAccessory.PartsInfo();
                         }
                         ocichar.charInfo.ChangeAccessory(true);
@@ -317,8 +273,8 @@ namespace KK_StudioCoordinateLoadOption {
                     if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
                         ocichar.charInfo.chaFile.coordinate[ocichar.charInfo.fileStatus.coordinateType] = ocichar.charInfo.nowCoordinate;
                         int size = MoreAccessories_Support.GetAccessoriesAmount(ocichar.charInfo.chaFile);
-                        Logger.Log(LogLevel.Debug, "[KK_SCLO] MoreAccessories Count: "+size);
-                        bool[] bools = Enumerable.Repeat(true, size+20).ToArray();
+                        Logger.Log(LogLevel.Debug, "[KK_SCLO] MoreAccessories Count: " + size);
+                        bool[] bools = Enumerable.Repeat(true, size + 20).ToArray();
                         ChaControl tmpChaCtrl = Singleton<Manager.Character>.Instance.CreateFemale(null, -1);
                         MoreAccessories_Support.CopyMoreAccessoriesData(tmpChaCtrl, ocichar.charInfo, (ChaFileDefine.CoordinateType)ocichar.charInfo.fileStatus.coordinateType, bools);
                         ocichar.charInfo.ChangeAccessory(true);
@@ -328,6 +284,18 @@ namespace KK_StudioCoordinateLoadOption {
 
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] Clear accessories Finish");
             });
+
+            btnChangeAccLoadMode.onClick.RemoveAllListeners();
+            btnChangeAccLoadMode.onClick.AddListener(() => {
+                addAccModeFlag = !addAccModeFlag;
+                btnChangeAccLoadMode.GetComponentInChildren<Text>().text = 
+                    addAccModeFlag ? 
+                    StringResources.StringResourcesManager.GetString("addMode") : 
+                    StringResources.StringResourcesManager.GetString("replaceMode");
+                Logger.Log(LogLevel.Debug, "[KK_SCLO] Set add accessories mode to "+(addAccModeFlag?"add":"replace")+" mode");
+            });
+            btnChangeAccLoadMode.onClick.Invoke();
+
             Logger.Log(LogLevel.Debug, "[KK_SCLO] Draw UI Finish");
         }
 
@@ -337,7 +305,7 @@ namespace KK_StudioCoordinateLoadOption {
 
             string name = "";
             if (id == 0) {
-                name = emptyWord;
+                name = StringResources.StringResourcesManager.GetString("empty");
             }
             if (null == name || "" == name) {
                 name = chaListControl.GetListInfo(type, id)?.Name;
@@ -346,7 +314,7 @@ namespace KK_StudioCoordinateLoadOption {
                 name = TryGetResolutionInfo(id, type);
             }
             if (null == name || "" == name) {
-                name = unrecognizedWord;
+                name = StringResources.StringResourcesManager.GetString("unreconized");
             }
 
             return name;
@@ -387,11 +355,11 @@ namespace KK_StudioCoordinateLoadOption {
                 Toggle toggle = UIUtility.CreateToggle(Enum.GetValues(typeof(ClothesKind)).GetValue(9).ToString(), toggleGroup.transform, accName);
                 toggle.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
                 toggle.GetComponentInChildren<Text>(true).color = Color.white;
-                if (accNames.Count > 20) {
-                    toggle.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -25f * (tmpTgls.Count + 1)), new Vector2(167f, -25f * tmpTgls.Count));
-                } else {
-                    toggle.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -25f * (tmpTgls.Count + 1)), new Vector2(175f, -25f * tmpTgls.Count));
-                }
+                //if (accNames.Count > 20) {
+                toggle.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -25f * (tmpTgls.Count + 1)), new Vector2(0f, -25f * tmpTgls.Count));
+                //} else {
+                //    toggle.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -25f * (tmpTgls.Count + 1)), new Vector2(-5f, -25f * tmpTgls.Count));
+                //}
                 toggle.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
                 tmpTgls.Add(toggle);
             }
@@ -432,7 +400,7 @@ namespace KK_StudioCoordinateLoadOption {
                     ocichar.LoadClothesFile(charaFileSort.selectPath);
                 }
             } else {
-                
+
                 ChaControl tmpChaCtrl = Singleton<Manager.Character>.Instance.CreateFemale(null, -1);
                 tmpChaCtrl.nowCoordinate.LoadFile(charaFileSort.selectPath);
                 foreach (var ocichar in array) {
@@ -452,6 +420,7 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="index">飾品欄位index</param>
         /// <returns></returns>
         public static bool IsHairAccessory(ChaControl chaCtrl, int index) {
+            //if (!addAccModeFlag) { return true; }
             if (!excludeHairAcc) { return false; }
             ChaAccessoryComponent chaAccessoryComponent;
             if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
@@ -486,7 +455,7 @@ namespace KK_StudioCoordinateLoadOption {
                         for (int i = 0; i < tmpChaFileCoordinate.accessory.parts.Length; i++) {
                             if ((bool)tgls2[i]?.isOn) {
                                 var tmp = MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(tmpChaFileCoordinate.accessory.parts[i]);
-                                if (IsHairAccessory(chaCtrl, i)) {
+                                if (IsHairAccessory(chaCtrl, i) || addAccModeFlag) {
                                     //如果要替入的不是空格，就放進accQueue
                                     if (tmpChaFileCoordinate.accessory.parts[i].type != 120) {
                                         accQueue.Enqueue(tmp);
