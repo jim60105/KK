@@ -160,7 +160,7 @@
     <value>アクセサリー</value>
   </data>
   <data name="addMode" xml:space="preserve">
-    <value>「増加」モード</value>
+    <value>「追加」モード</value>
   </data>
   <data name="replaceMode" xml:space="preserve">
     <value>「置き換え」モード</value>

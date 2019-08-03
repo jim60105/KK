@@ -1,10 +1,10 @@
-﻿using System;
+﻿using BepInEx.Logging;
+using Extension;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using BepInEx.Logging;
-using Extension;
 using UnityEngine;
 using Logger = BepInEx.Logger;
 
@@ -97,7 +97,7 @@ namespace KK_StudioCoordinateLoadOption {
                     target.Invoke("MakeCoordinateSpecific");
                     var tmp = (object[])target.GetProperty("CoordinateModifiers");
                     tmp[chaCtrl.fileStatus.coordinateType] = modifierDict.Value;
-                    target.SetProperty("CoordinateModifiers",tmp);
+                    target.SetProperty("CoordinateModifiers", tmp);
                     Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Insert Modifier: " + modifierDict.Key);
                 }
                 BoneController.Invoke("StartCoroutine", new object[] {

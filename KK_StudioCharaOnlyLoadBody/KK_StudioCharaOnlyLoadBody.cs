@@ -17,10 +17,6 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using BepInEx;
 using BepInEx.Logging;
 using ExtensibleSaveFormat;
@@ -29,6 +25,10 @@ using Harmony;
 using Illusion.Extensions;
 using Sideloader.AutoResolver;
 using Studio;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using UILib;
 using UnityEngine;
 using UnityEngine.UI;
@@ -40,7 +40,7 @@ namespace KK_StudioCharaOnlyLoadBody {
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "19.07.01.0";
+        internal const string PLUGIN_VERSION = "19.08.04.0";
 
         public void Awake() {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -63,7 +63,7 @@ namespace KK_StudioCharaOnlyLoadBody {
         public static void InitCharaListPostfix(CharaList __instance) {
             //繪製UI
             var original = GameObject.Find("StudioScene/Canvas Main Menu/01_Add/" + __instance.name + "/Button Change");
-            int i = (String.Equals(__instance.name, "00_Female") ? 1 : 0);
+            int i = (string.Equals(__instance.name, "00_Female") ? 1 : 0);
             btn[i] = UnityEngine.Object.Instantiate(original, original.transform.parent);
             btn[i].name = "Button Keep Coordinate Change";
             btn[i].transform.position += new Vector3(0, -25, 0);
@@ -156,23 +156,37 @@ namespace KK_StudioCharaOnlyLoadBody {
 
         //將我的按鈕和官方的變更按鈕同步狀態
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnDelete")]
-        public static void OnDelete(CharaList __instance) => SetKeepCoorButtonInteractable(__instance);
+        public static void OnDelete(CharaList __instance) {
+            SetKeepCoorButtonInteractable(__instance);
+        }
 
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnDeselect")]
-        public static void OnDeselect(CharaList __instance) => SetKeepCoorButtonInteractable(__instance);
+        public static void OnDeselect(CharaList __instance) {
+            SetKeepCoorButtonInteractable(__instance);
+        }
 
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnSelect")]
-        public static void OnSelect(CharaList __instance) => SetKeepCoorButtonInteractable(__instance);
+        public static void OnSelect(CharaList __instance) {
+            SetKeepCoorButtonInteractable(__instance);
+        }
 
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnSelectChara")]
-        public static void OnSelectChara(CharaList __instance) => SetKeepCoorButtonInteractable(__instance);
+        public static void OnSelectChara(CharaList __instance) {
+            SetKeepCoorButtonInteractable(__instance);
+        }
 
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnSort")]
-        public static void OnSort(CharaList __instance) => SetKeepCoorButtonInteractable(__instance);
+        public static void OnSort(CharaList __instance) {
+            SetKeepCoorButtonInteractable(__instance);
+        }
 
         private static void SetKeepCoorButtonInteractable(CharaList __instance) {
-            int i = (String.Equals(__instance.name, "00_Female") ? 1 : 0);
-            btn[i].GetComponent<Button>().interactable = ((Button)__instance.GetField("buttonChange")).interactable;
+            if (null != __instance) {
+                int i = (string.Equals(__instance.name, "00_Female") ? 1 : 0);
+                if (null != btn[i] && null != btn[i].GetComponent<Button>() && null != __instance.GetField("buttonChange")) {
+                    btn[i].GetComponent<Button>().interactable = ((Button)__instance.GetField("buttonChange")).interactable;
+                }
+            }
         }
 
         //載入擴充資料
@@ -234,7 +248,7 @@ namespace KK_StudioCharaOnlyLoadBody {
                         i = 0;
                         foreach (var modifier in previousModifier) {
                             string bonename = (string)modifier.GetProperty("BoneName");
-                            if (!newModifiers.Any(x => String.Equals(bonename, (string)x.GetProperty("BoneName")))) {
+                            if (!newModifiers.Any(x => string.Equals(bonename, (string)x.GetProperty("BoneName")))) {
                                 BoneController.Invoke("AddModifier", new object[] { modifier });
                                 Logger.Log(LogLevel.Debug, "[KK_SCOLB] Rollback cooridnate ABMX BoneData: " + bonename);
                             } else {
@@ -265,32 +279,28 @@ namespace KK_StudioCharaOnlyLoadBody {
                         break;
                     case "com.bepis.sideloader.universalautoresolver":
                         //判斷CategoryNo分類function
-                        bool isBelongsToCharaBody(ChaListDefine.CategoryNo categoryNo) =>
-                            StructReference.ChaFileFaceProperties.Keys.Any(x => x.Category == categoryNo) ||
-                            StructReference.ChaFileBodyProperties.Keys.Any(x => x.Category == categoryNo) ||
-                            StructReference.ChaFileHairProperties.Keys.Any(x => x.Category == categoryNo) ||
-                            StructReference.ChaFileMakeupProperties.Keys.Any(x => x.Category == categoryNo);
+                        bool isBelongsToCharaBody(ChaListDefine.CategoryNo categoryNo) {
+                            return StructReference.ChaFileFaceProperties.Keys.Any(x => x.Category == categoryNo) ||
+StructReference.ChaFileBodyProperties.Keys.Any(x => x.Category == categoryNo) ||
+StructReference.ChaFileHairProperties.Keys.Any(x => x.Category == categoryNo) ||
+StructReference.ChaFileMakeupProperties.Keys.Any(x => x.Category == categoryNo);
+                        }
 
                         //extInfo整理
                         int cleanExtData(ref PluginData tmpExtData, bool keepBodyData) {
                             tmpExtData = ExtendedSave.GetExtendedDataById(ocichar.charInfo.chaFile, ext);
                             if (tmpExtData != null && tmpExtData.data.ContainsKey("info")) {
                                 if (tmpExtData.data.TryGetValue("info", out object tmpExtInfo)) {
-                                    if (null != tmpExtInfo as object[])
-                                    {
+                                    if (null != tmpExtInfo as object[]) {
                                         List<object> tmpExtList = new List<object>(tmpExtInfo as object[]);
                                         Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Sideloader count: {tmpExtList.Count}");
                                         ResolveInfo tmpResolveInfo;
-                                        for (int j = 0; j < tmpExtList.Count;)
-                                        {
+                                        for (int j = 0; j < tmpExtList.Count;) {
                                             tmpResolveInfo = ResolveInfo.Unserialize((byte[])tmpExtList[j]);
-                                            if (keepBodyData == isBelongsToCharaBody(tmpResolveInfo.CategoryNo))
-                                            {
+                                            if (keepBodyData == isBelongsToCharaBody(tmpResolveInfo.CategoryNo)) {
                                                 Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Add Sideloader info: {tmpResolveInfo.GUID} : {tmpResolveInfo.Property} : {tmpResolveInfo.Slot}");
                                                 j++;
-                                            }
-                                            else
-                                            {
+                                            } else {
                                                 Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Remove Sideloader info: {tmpResolveInfo.GUID} : {tmpResolveInfo.Property} : {tmpResolveInfo.Slot}");
                                                 tmpExtList.RemoveAt(j);
                                             }

@@ -17,18 +17,17 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
 using BepInEx;
 using BepInEx.Logging;
 using Extension;
 using Harmony;
 using MessagePack;
-using Sideloader.AutoResolver;
 using Studio;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using UILib;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -41,7 +40,7 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "19.08.02.0";
+        internal const string PLUGIN_VERSION = "19.08.04.0";
 
         public void Awake() {
             UIUtility.Init();
@@ -183,7 +182,7 @@ namespace KK_StudioCoordinateLoadOption {
             });
 
             //飾品載入模式btn
-            Button btnChangeAccLoadMode = UIUtility.CreateButton("BtnChangeAccLoadMode", panel.transform,"AccModeBtn");
+            Button btnChangeAccLoadMode = UIUtility.CreateButton("BtnChangeAccLoadMode", panel.transform, "AccModeBtn");
             btnChangeAccLoadMode.GetComponentInChildren<Text>(true).color = Color.white;
             btnChangeAccLoadMode.GetComponentInChildren<Text>(true).alignment = TextAnchor.MiddleCenter;
             btnChangeAccLoadMode.GetComponent<Image>().color = Color.gray;
@@ -268,18 +267,12 @@ namespace KK_StudioCoordinateLoadOption {
                         if (!IsHairAccessory(ocichar.charInfo, i)) {
                             ocichar.charInfo.nowCoordinate.accessory.parts[i] = new ChaFileAccessory.PartsInfo();
                         }
-                        ocichar.charInfo.ChangeAccessory(true);
                     }
                     if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
                         ocichar.charInfo.chaFile.coordinate[ocichar.charInfo.fileStatus.coordinateType] = ocichar.charInfo.nowCoordinate;
-                        int size = MoreAccessories_Support.GetAccessoriesAmount(ocichar.charInfo.chaFile);
-                        Logger.Log(LogLevel.Debug, "[KK_SCLO] MoreAccessories Count: " + size);
-                        bool[] bools = Enumerable.Repeat(true, size + 20).ToArray();
-                        ChaControl tmpChaCtrl = Singleton<Manager.Character>.Instance.CreateFemale(null, -1);
-                        MoreAccessories_Support.CopyMoreAccessoriesData(tmpChaCtrl, ocichar.charInfo, (ChaFileDefine.CoordinateType)ocichar.charInfo.fileStatus.coordinateType, bools);
-                        ocichar.charInfo.ChangeAccessory(true);
-                        Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
+                        MoreAccessories_Support.ClearMoreAccessoriesData(ocichar.charInfo);
                     }
+                    ocichar.charInfo.ChangeAccessory(true);
                 }
 
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] Clear accessories Finish");
@@ -288,11 +281,11 @@ namespace KK_StudioCoordinateLoadOption {
             btnChangeAccLoadMode.onClick.RemoveAllListeners();
             btnChangeAccLoadMode.onClick.AddListener(() => {
                 addAccModeFlag = !addAccModeFlag;
-                btnChangeAccLoadMode.GetComponentInChildren<Text>().text = 
-                    addAccModeFlag ? 
-                    StringResources.StringResourcesManager.GetString("addMode") : 
+                btnChangeAccLoadMode.GetComponentInChildren<Text>().text =
+                    addAccModeFlag ?
+                    StringResources.StringResourcesManager.GetString("addMode") :
                     StringResources.StringResourcesManager.GetString("replaceMode");
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] Set add accessories mode to "+(addAccModeFlag?"add":"replace")+" mode");
+                Logger.Log(LogLevel.Debug, "[KK_SCLO] Set add accessories mode to " + (addAccModeFlag ? "add" : "replace") + " mode");
             });
             btnChangeAccLoadMode.onClick.Invoke();
 
@@ -304,29 +297,17 @@ namespace KK_StudioCoordinateLoadOption {
             Logger.Log(LogLevel.Debug, $"[KK_SCLO] Find id / type: {id} / {type}");
 
             string name = "";
-            if (id == 0) {
+            if (type == (ChaListDefine.CategoryNo)120) {
                 name = StringResources.StringResourcesManager.GetString("empty");
             }
             if (null == name || "" == name) {
                 name = chaListControl.GetListInfo(type, id)?.Name;
             }
             if (null == name || "" == name) {
-                name = TryGetResolutionInfo(id, type);
-            }
-            if (null == name || "" == name) {
                 name = StringResources.StringResourcesManager.GetString("unreconized");
             }
 
             return name;
-
-            string TryGetResolutionInfo(int ID, ChaListDefine.CategoryNo categoryNo) {
-                var resolveInfo = UniversalAutoResolver.LoadedResolutionInfo?.ToList()?.FirstOrDefault(x => x.CategoryNo == categoryNo && x.Slot == ID);
-                if (null != resolveInfo) {
-                    return Singleton<Manager.Character>.Instance.chaListCtrl.GetListInfo(categoryNo, resolveInfo.LocalSlot)?.Name;
-                } else {
-                    return "";
-                }
-            }
         }
 
         //選擇衣裝
@@ -344,7 +325,7 @@ namespace KK_StudioCoordinateLoadOption {
             accNames.AddRange(tmpChaFileCoordinate.accessory.parts.Select(x => GetNameFromID(x.id, (ChaListDefine.CategoryNo)x.type)));
 
             if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
-                accNames.AddRange(MoreAccessories_Support.LoadMoreAccNames(tmpChaFileCoordinate));
+                accNames.AddRange(MoreAccessories_Support.LoadMoreAcc(tmpChaFileCoordinate));
             }
 
             foreach (var tgl in toggleGroup.gameObject.GetComponentsInChildren<Toggle>()) {
@@ -355,11 +336,7 @@ namespace KK_StudioCoordinateLoadOption {
                 Toggle toggle = UIUtility.CreateToggle(Enum.GetValues(typeof(ClothesKind)).GetValue(9).ToString(), toggleGroup.transform, accName);
                 toggle.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
                 toggle.GetComponentInChildren<Text>(true).color = Color.white;
-                //if (accNames.Count > 20) {
                 toggle.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -25f * (tmpTgls.Count + 1)), new Vector2(0f, -25f * tmpTgls.Count));
-                //} else {
-                //    toggle.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -25f * (tmpTgls.Count + 1)), new Vector2(-5f, -25f * tmpTgls.Count));
-                //}
                 toggle.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
                 tmpTgls.Add(toggle);
             }
@@ -420,7 +397,6 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="index">飾品欄位index</param>
         /// <returns></returns>
         public static bool IsHairAccessory(ChaControl chaCtrl, int index) {
-            //if (!addAccModeFlag) { return true; }
             if (!excludeHairAcc) { return false; }
             ChaAccessoryComponent chaAccessoryComponent;
             if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
@@ -459,13 +435,13 @@ namespace KK_StudioCoordinateLoadOption {
                                     //如果要替入的不是空格，就放進accQueue
                                     if (tmpChaFileCoordinate.accessory.parts[i].type != 120) {
                                         accQueue.Enqueue(tmp);
-                                        Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->HairLock: Acc{i} / ID: {chaCtrl.nowCoordinate.accessory.parts[i].id}");
+                                        Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Lock: Acc{i} / ID: {chaCtrl.nowCoordinate.accessory.parts[i].id}");
                                         Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->EnQueue: Acc{i} / ID: {tmpChaFileCoordinate.accessory.parts[i].id}");
                                     }
                                 } else {
                                     chaCtrl.nowCoordinate.accessory.parts[i] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tmp);
                                     //chaCtrl.ChangeAccessory(i, chaCtrl.nowCoordinate.accessory.parts[i].type, chaCtrl.nowCoordinate.accessory.parts[i].id, chaCtrl.nowCoordinate.accessory.parts[i].parentKey, true);
-                                    Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Change: Acc{i} / ID: {tmpChaFileCoordinate.accessory.parts[i].id}");
+                                    Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Changed: Acc{i} / ID: {tmpChaFileCoordinate.accessory.parts[i].id}");
                                 }
                             }
                         }
@@ -490,14 +466,14 @@ namespace KK_StudioCoordinateLoadOption {
                                 Logger.Log(LogLevel.Message, "[KK_SCLO] Accessories slot is not enough! Discard " + GetNameFromID(c.id, (ChaListDefine.CategoryNo)c.type));
                             }
                         }
-                        Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Change: " + tgl.name);
+                        Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Changed: " + tgl.name);
                     } else if (kind >= 0) {
                         //Change clothes
                         var tmp = MessagePackSerializer.Serialize<ChaFileClothes.PartsInfo>(tmpChaFileCoordinate.clothes.parts[kind]);
                         chaCtrl.nowCoordinate.clothes.parts[kind] = MessagePackSerializer.Deserialize<ChaFileClothes.PartsInfo>(tmp);
                         chaCtrl.ChangeClothes(kind, tmpChaFileCoordinate.clothes.parts[kind].id, tmpChaFileCoordinate.clothes.subPartsId[0], tmpChaFileCoordinate.clothes.subPartsId[1], tmpChaFileCoordinate.clothes.subPartsId[2], true);
 
-                        Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Change: " + tgl.name + " / ID: " + tmpChaFileCoordinate.clothes.parts[kind].id);
+                        Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Changed: " + tgl.name + " / ID: " + tmpChaFileCoordinate.clothes.parts[kind].id);
                     }
                 }
             }
@@ -537,33 +513,27 @@ namespace KK_StudioCoordinateLoadOption {
                 } catch (ArgumentException) {
                     kind = -1;
                 }
-                if (!tgl.isOn) {
-                    if (kind == 9) {
-                        //Rollback All MoreAcc
-                        if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
-                            MoreAccessories_Support.CopyMoreAccessoriesData(tmpChaCtrl, chaCtrl);
-                        }
-                    } else if (kind >= 0) {
-                        //Rollback KCOX
-                        if (KK_StudioCoordinateLoadOption._isKCOXExist) {
-                            KCOX_Support.RollbackOverlay(true, kind);
-                            if (kind == 0) {
-                                for (int j = 0; j < 3; j++) {
-                                    KCOX_Support.RollbackOverlay(false, j);
-                                }
-                            }
-                        }
-                        if (kind == 1) {
-                            //Rollback ABMX
-                            if (KK_StudioCoordinateLoadOption._isABMXExist) {
-                                ABMX_Support.RollbackABMXBone(chaCtrl);
+
+                if (tgl.isOn) {
+                    if (kind == 9 && KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
+                        MoreAccessories_Support.CopyMoreAccessoriesData(tmpChaCtrl, chaCtrl);
+                        MoreAccessories_Support.LoadMoreAccFromCoodrinate(chaCtrl, (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, tgls2.Select(x => x.isOn).ToArray());
+                    }
+                } else if (kind >= 0 && kind != 9) {
+                    //Rollback KCOX
+                    if (KK_StudioCoordinateLoadOption._isKCOXExist) {
+                        KCOX_Support.RollbackOverlay(true, kind);
+                        if (kind == 0) {
+                            for (int j = 0; j < 3; j++) {
+                                KCOX_Support.RollbackOverlay(false, j);
                             }
                         }
                     }
-                } else if (kind == 9) {
-                    //Rollback MoreAcc
-                    if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
-                        MoreAccessories_Support.CopyMoreAccessoriesData(tmpChaCtrl, chaCtrl, (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, tgls2.Select(x => !x.isOn).ToArray());
+                    if (kind == 1) {
+                        //Rollback ABMX
+                        if (KK_StudioCoordinateLoadOption._isABMXExist) {
+                            ABMX_Support.RollbackABMXBone(chaCtrl);
+                        }
                     }
                 }
             }
