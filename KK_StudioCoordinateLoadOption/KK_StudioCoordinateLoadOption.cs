@@ -40,7 +40,7 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "19.08.04.0";
+        internal const string PLUGIN_VERSION = "19.08.08.0";
 
         public void Awake() {
             UIUtility.Init();
@@ -55,15 +55,25 @@ namespace KK_StudioCoordinateLoadOption {
         public static bool _isKCOXExist = false;
         public static bool _isABMXExist = false;
         public static bool _isMoreAccessoriesExist = false;
+        public static bool _isMaterialEditorExist = false;
 
         public void Start() {
-            bool IsPluginExist(string pluginName) {
-                return null != BepInEx.Bootstrap.Chainloader.Plugins.Select(MetadataHelper.GetMetadata).FirstOrDefault(x => x.GUID == pluginName);
+            bool IsPluginExist(string pluginName, System.Version minimumVersion) {
+                var target = BepInEx.Bootstrap.Chainloader.Plugins.Select(MetadataHelper.GetMetadata).FirstOrDefault(x => x.GUID == pluginName);
+                if (null != target) {
+                    if (target.Version >= minimumVersion) {
+                        return true;
+                    }
+                    Logger.Log(LogLevel.Message, $"[KK_StudioCoordinateLoadOption] {pluginName} is detacted OUTDATED.");
+                    Logger.Log(LogLevel.Message, $"[KK_StudioCoordinateLoadOption] Please update {pluginName} to at least v{minimumVersion.ToString()} to enable related feature.");
+                }
+                return false;
             }
 
-            _isKCOXExist = IsPluginExist("KCOX") && KCOX_Support.LoadAssembly();
-            _isABMXExist = IsPluginExist("KKABMX.Core") && ABMX_Support.LoadAssembly();
-            _isMoreAccessoriesExist = IsPluginExist("com.joan6694.illusionplugins.moreaccessories") && MoreAccessories_Support.LoadAssembly();
+            _isKCOXExist = IsPluginExist("KCOX", new Version(5, 0)) && KCOX_Support.LoadAssembly();
+            _isABMXExist = IsPluginExist("KKABMX.Core", null) && ABMX_Support.LoadAssembly();
+            _isMoreAccessoriesExist = IsPluginExist("com.joan6694.illusionplugins.moreaccessories", null) && MoreAccessories_Support.LoadAssembly();
+            _isMaterialEditorExist = IsPluginExist("com.deathweasel.bepinex.materialeditor", null) && MaterialEditor_Support.LoadAssembly();
 
             StringResources.StringResourcesManager.SetUICulture();
         }
@@ -499,11 +509,23 @@ namespace KK_StudioCoordinateLoadOption {
                 ABMX_Support.BackupABMXData(chaCtrl);
             }
 
+            //Backup Material
+            if (KK_StudioCoordinateLoadOption._isMaterialEditorExist) {
+                MaterialEditor_Support.BackupMaterialData(chaCtrl);
+            }
+
             //fake load
             using (FileStream fileStream = new FileStream(charaFileSort.selectPath, FileMode.Open, FileAccess.Read)) {
                 fakeLoadFlag = true;
                 chaCtrl.nowCoordinate.LoadFile(fileStream);
                 fakeLoadFlag = false;
+            }
+
+            //Rollback All MoreAccessories
+            //因飾品邏輯較複雜，不採用「單純倒回不變更的飾品」的方式
+            //先全部回退後再手動載入飾品，以免邏輯亂套
+            if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
+                MoreAccessories_Support.CopyMoreAccessoriesData(tmpChaCtrl, chaCtrl);
             }
 
             foreach (var tgl in tgls) {
@@ -515,27 +537,52 @@ namespace KK_StudioCoordinateLoadOption {
                 }
 
                 if (tgl.isOn) {
+                    //Load MoreAccessories
                     if (kind == 9 && KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
-                        MoreAccessories_Support.CopyMoreAccessoriesData(tmpChaCtrl, chaCtrl);
                         MoreAccessories_Support.LoadMoreAccFromCoodrinate(chaCtrl, (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, tgls2.Select(x => x.isOn).ToArray());
                     }
-                } else if (kind >= 0 && kind != 9) {
-                    //Rollback KCOX
-                    if (KK_StudioCoordinateLoadOption._isKCOXExist) {
-                        KCOX_Support.RollbackOverlay(true, kind);
-                        if (kind == 0) {
-                            for (int j = 0; j < 3; j++) {
-                                KCOX_Support.RollbackOverlay(false, j);
+                } else {
+                    if (kind >= 0 && kind != 9) {
+                        //Rollback KCOX
+                        if (KK_StudioCoordinateLoadOption._isKCOXExist) {
+                            KCOX_Support.RollbackOverlay(true, kind, chaCtrl);
+                            if (kind == 0) {
+                                for (int j = 0; j < 3; j++) {
+                                    KCOX_Support.RollbackOverlay(false, j, chaCtrl);
+                                }
+                                foreach (var maskKind in KCOX_Support.MaskKind) {
+                                    KCOX_Support.RollbackOverlay(true, 0, chaCtrl, maskKind);
+                                }
+                            }
+                        }
+
+                        //Rollback Clothes Material
+                        if (KK_StudioCoordinateLoadOption._isMaterialEditorExist) {
+                            MaterialEditor_Support.RollbackMaterialData((int)MaterialEditor_Support.ObjectType.Clothing, chaCtrl.fileStatus.coordinateType, kind);
+                        }
+
+                        //Rollback ABMX
+                        if (KK_StudioCoordinateLoadOption._isABMXExist) {
+                            if (kind == 1) {
+                                ABMX_Support.RollbackABMXBone(chaCtrl);
                             }
                         }
                     }
-                    if (kind == 1) {
-                        //Rollback ABMX
-                        if (KK_StudioCoordinateLoadOption._isABMXExist) {
-                            ABMX_Support.RollbackABMXBone(chaCtrl);
-                        }
+                }
+            }
+
+            //Rollback Accessories Material
+            if (KK_StudioCoordinateLoadOption._isMaterialEditorExist) {
+                int rollbackAmount = 20;
+                if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
+                    rollbackAmount = MoreAccessories_Support.GetAccessoriesAmount(tmpChaCtrl.chaFile);
+                }
+                for (int i = 0; i < rollbackAmount; i++) {
+                    if (!tgls[(int)ClothesKind.accessories].isOn || tgls2.Length <= i || !tgls2[i].isOn) {
+                        MaterialEditor_Support.RollbackMaterialData((int)MaterialEditor_Support.ObjectType.Accessory, chaCtrl.fileStatus.coordinateType, i);
                     }
                 }
+                MaterialEditor_Support.CleanMaterialBackup();
             }
 
             KCOX_Support.CleanKCOXBackup();

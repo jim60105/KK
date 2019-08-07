@@ -268,7 +268,7 @@ namespace KK_StudioCoordinateLoadOption {
             .GetField("_accessoriesByChar")
             .ToDictionary<ChaFile, object>()
             .TryGetValue(chaFile, out var charAdditionalData);
-            return charAdditionalData?.GetField("nowAccessories").ToList<ChaFileAccessory.PartsInfo>().Count ?? 0;
+            return charAdditionalData?.GetField("nowAccessories").ToList<ChaFileAccessory.PartsInfo>().Count+20 ?? 20;
         }
     }
 }

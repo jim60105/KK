@@ -1,11 +1,11 @@
-﻿using System;
+﻿using BepInEx.Logging;
+using Harmony;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using BepInEx.Logging;
-using Harmony;
 using UnityEngine;
 using Logger = BepInEx.Logger;
 
@@ -220,9 +220,90 @@ namespace Extension {
                 Logger.Log(LogLevel.Error, "[KK_Extension] Faild to cast to List!");
                 return null;
             }
-            //List<T> newList = new List<T>(list.ToArray());
             List<T> newList = new List<T>(iEnumerable);
             return newList;
         }
+
+        #region Fake Linq for "List<unknown>" which cast into "object"
+        public static object ToListWithoutType(this object self) {
+            Type type = self.GetType();
+            foreach (Type interfaceType in type.GetInterfaces()) {
+                if (interfaceType.IsGenericType &&
+                   interfaceType.GetGenericTypeDefinition() == typeof(IList<>)) {
+                    Type itemType = type.GetGenericArguments()[0];
+                    MethodInfo method = typeof(Extension).GetMethod("ToList", BindingFlags.Public | BindingFlags.Static);
+                    if (null != itemType) {
+                        method = method.MakeGenericMethod(itemType);
+                    }
+
+                    return method.Invoke(null, new object[] { self });
+                }
+            }
+            return null;
+        }
+
+        public static void RemoveAll(this object obj, Predicate<object> match) {
+            if (obj is IList list) {
+                for (int i = 0; i < list.Count; i++) {
+                    if (match(list[i])) {
+                        list.RemoveAt(i);
+                        //Logger.Log(LogLevel.Debug, $"[KK_Extension] Remove at {i}/{list.Count}");
+                    }
+                }
+                //Logger.Log(LogLevel.Debug, $"[KK_Extension] RemoveAll: Output Obj Count {list.Count}");
+            }
+        }
+
+        public static object Where(this object self, Predicate<object> match) {
+            if (self is IList list) {
+                Type selfType = self.GetType();
+                Type selfItemType = null;
+                foreach (Type interfaceType in selfType.GetInterfaces()) {
+                    if (interfaceType.IsGenericType &&
+                       interfaceType.GetGenericTypeDefinition() == typeof(IList<>)) {
+                        selfItemType = selfType.GetGenericArguments()[0];
+                    }
+                }
+                MethodInfo method = typeof(Extension).GetMethod("ToList", BindingFlags.Public | BindingFlags.Static);
+                if (null != selfItemType) {
+                    method = method.MakeGenericMethod(selfItemType);
+                }
+
+                IList result =(IList)method.Invoke(null, new object[] { self });
+
+                result.RemoveAll(x=> !match(x));
+                //Logger.Log(LogLevel.Debug, $"[KK_Extension] Where: Obj found {result.Count}/{list.Count}");
+                return result;
+            }
+            return null;
+        }
+
+        public static void AddRange(this object self, object obj2Add) {
+            if (self is IList oriList && obj2Add is IList listToAdd) {
+                Type selfItemType = null;
+                foreach (Type interfaceType in self.GetType().GetInterfaces()) {
+                    if (interfaceType.IsGenericType &&
+                       interfaceType.GetGenericTypeDefinition() == typeof(IList<>)) {
+                        selfItemType = self.GetType().GetGenericArguments()[0];
+                    }
+                }
+                Type addItemType = null;
+                foreach (Type interfaceType in obj2Add.GetType().GetInterfaces()) {
+                    if (interfaceType.IsGenericType &&
+                       interfaceType.GetGenericTypeDefinition() == typeof(IList<>)) {
+                        addItemType = obj2Add.GetType().GetGenericArguments()[0];
+                    }
+                }
+                if (null != selfItemType && addItemType == selfItemType) {
+                    foreach (var o in listToAdd) {
+                        oriList.Add(o);
+                    }
+                    //Logger.Log(LogLevel.Debug, $"[KK_Extension] AddRange: Add {listToAdd.Count} item.");
+                } else {
+                    Logger.Log(LogLevel.Error, $"[KK_Extension] Type not Match! Cannot Add {addItemType.FullName} into {selfItemType.FullName}");
+                }
+            }
+        }
+        #endregion
     }
 }
