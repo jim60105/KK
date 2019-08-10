@@ -246,7 +246,7 @@ namespace KK_StudioCoordinateLoadOption {
                 }
             }
 
-            return tempLoadedAccessories.Select(x => Patches.GetNameFromID(x.id, (ChaListDefine.CategoryNo)x.type)).ToArray();
+            return tempLoadedAccessories.Select(x => Patches.GetNameFromIDAndType(x.id, (ChaListDefine.CategoryNo)x.type)).ToArray();
         }
 
         /// <summary>

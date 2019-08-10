@@ -30,6 +30,7 @@ using Studio;
 using UniRx;
 using UnityEngine.UI;
 using Logger = BepInEx.Logger;
+using System.ComponentModel;
 
 namespace KK_StudioAllGirlsPlugin {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
@@ -37,14 +38,16 @@ namespace KK_StudioAllGirlsPlugin {
     public class KK_StudioAllGirlsPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio All Girls Plugin";
         internal const string GUID = "com.jim60105.kk.studioallgirlsplugin";
-        internal const string PLUGIN_VERSION = "19.07.15.0";
+        internal const string PLUGIN_VERSION = "19.08.11.0";
 
         public void Awake(){
-            BepInEx.Config.ReloadConfig();
-            if (String.Equals(BepInEx.Config.GetEntry("enabled", "True", GUID),"True")) {
+            if (Enable.Value) {
                 HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
             }
         }
+
+        [DisplayName("Load all boys as girls.\n(Restart the game to make this effect)")]
+        public static ConfigWrapper<bool> Enable { get; } = new ConfigWrapper<bool>(nameof(Enable), PLUGIN_NAME, true);
     }
 
     class Patches {

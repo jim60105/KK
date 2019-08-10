@@ -40,7 +40,7 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "19.08.08.0";
+        internal const string PLUGIN_VERSION = "19.08.11.0";
 
         public void Awake() {
             UIUtility.Init();
@@ -302,9 +302,9 @@ namespace KK_StudioCoordinateLoadOption {
             Logger.Log(LogLevel.Debug, "[KK_SCLO] Draw UI Finish");
         }
 
-        internal static string GetNameFromID(int id, ChaListDefine.CategoryNo type) {
+        internal static string GetNameFromIDAndType(int id, ChaListDefine.CategoryNo type) {
             ChaListControl chaListControl = Singleton<Manager.Character>.Instance.chaListCtrl;
-            Logger.Log(LogLevel.Debug, $"[KK_SCLO] Find id / type: {id} / {type}");
+            Logger.Log(LogLevel.Debug, $"[KK_SCLO] Find Accessory id / type: {id} / {type}");
 
             string name = "";
             if (type == (ChaListDefine.CategoryNo)120) {
@@ -332,7 +332,7 @@ namespace KK_StudioCoordinateLoadOption {
 
             List<string> accNames = new List<string>();
 
-            accNames.AddRange(tmpChaFileCoordinate.accessory.parts.Select(x => GetNameFromID(x.id, (ChaListDefine.CategoryNo)x.type)));
+            accNames.AddRange(tmpChaFileCoordinate.accessory.parts.Select(x => GetNameFromIDAndType(x.id, (ChaListDefine.CategoryNo)x.type)));
 
             if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
                 accNames.AddRange(MoreAccessories_Support.LoadMoreAcc(tmpChaFileCoordinate));
@@ -408,6 +408,10 @@ namespace KK_StudioCoordinateLoadOption {
         /// <returns></returns>
         public static bool IsHairAccessory(ChaControl chaCtrl, int index) {
             if (!excludeHairAcc) { return false; }
+            return GetChaAccessoryComponent(chaCtrl, index)?.gameObject.GetComponent<ChaCustomHairComponent>() != null;
+        }
+
+        public static ChaAccessoryComponent GetChaAccessoryComponent(ChaControl chaCtrl, int index) {
             ChaAccessoryComponent chaAccessoryComponent;
             if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
                 chaAccessoryComponent = MoreAccessories_Support.GetChaAccessoryComponent(chaCtrl, index);
@@ -418,7 +422,7 @@ namespace KK_StudioCoordinateLoadOption {
                     chaAccessoryComponent = null;
                 }
             }
-            return chaAccessoryComponent?.gameObject.GetComponent<ChaCustomHairComponent>() != null;
+            return chaAccessoryComponent;
         }
 
         private static void LoadCoordinates(ChaControl chaCtrl, ChaControl tmpChaCtrl) {
@@ -473,7 +477,7 @@ namespace KK_StudioCoordinateLoadOption {
                         } else {
                             while (accQueue.Count > 0) {
                                 ChaFileAccessory.PartsInfo c = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(accQueue.Dequeue());
-                                Logger.Log(LogLevel.Message, "[KK_SCLO] Accessories slot is not enough! Discard " + GetNameFromID(c.id, (ChaListDefine.CategoryNo)c.type));
+                                Logger.Log(LogLevel.Message, "[KK_SCLO] Accessories slot is not enough! Discard " + GetNameFromIDAndType(c.id, (ChaListDefine.CategoryNo)c.type));
                             }
                         }
                         Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Changed: " + tgl.name);
@@ -547,7 +551,7 @@ namespace KK_StudioCoordinateLoadOption {
                         if (KK_StudioCoordinateLoadOption._isKCOXExist) {
                             KCOX_Support.RollbackOverlay(true, kind, chaCtrl);
                             if (kind == 0) {
-                                for (int j = 0; j < 3; j++) {
+                                for (int j = 0; j < SubClothesNames.Length; j++) {
                                     KCOX_Support.RollbackOverlay(false, j, chaCtrl);
                                 }
                                 foreach (var maskKind in KCOX_Support.MaskKind) {
@@ -578,14 +582,17 @@ namespace KK_StudioCoordinateLoadOption {
                     rollbackAmount = MoreAccessories_Support.GetAccessoriesAmount(tmpChaCtrl.chaFile);
                 }
                 for (int i = 0; i < rollbackAmount; i++) {
-                    if (!tgls[(int)ClothesKind.accessories].isOn || tgls2.Length <= i || !tgls2[i].isOn) {
+                    if ((!tgls[(int)ClothesKind.accessories].isOn || tgls2.Length <= i || !tgls2[i].isOn) && null != GetChaAccessoryComponent(chaCtrl, i)?.gameObject) {
                         MaterialEditor_Support.RollbackMaterialData((int)MaterialEditor_Support.ObjectType.Accessory, chaCtrl.fileStatus.coordinateType, i);
                     }
                 }
-                MaterialEditor_Support.CleanMaterialBackup();
             }
 
+            MaterialEditor_Support.CleanMaterialBackup();
             KCOX_Support.CleanKCOXBackup();
+
+            //KCOX和MaterialEditor需要Reload
+            chaCtrl.Reload(false, true, true, true);
         }
 
         private static bool fakeLoadFlag = false;

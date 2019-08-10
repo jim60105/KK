@@ -44,6 +44,8 @@ namespace KK_StudioCharaOnlyLoadBody {
 
         public void Awake() {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
+
+            //config.ini設定
             BepInEx.Config.ReloadConfig();
             ExtendedDataToCopy = BepInEx.Config.GetEntry("ExtendedDataToCopy", string.Join(";", ExtendedDataToCopy), GUID).Split(';');
         }
@@ -281,9 +283,9 @@ namespace KK_StudioCharaOnlyLoadBody {
                         //判斷CategoryNo分類function
                         bool isBelongsToCharaBody(ChaListDefine.CategoryNo categoryNo) {
                             return StructReference.ChaFileFaceProperties.Keys.Any(x => x.Category == categoryNo) ||
-StructReference.ChaFileBodyProperties.Keys.Any(x => x.Category == categoryNo) ||
-StructReference.ChaFileHairProperties.Keys.Any(x => x.Category == categoryNo) ||
-StructReference.ChaFileMakeupProperties.Keys.Any(x => x.Category == categoryNo);
+                                    StructReference.ChaFileBodyProperties.Keys.Any(x => x.Category == categoryNo) ||
+                                    StructReference.ChaFileHairProperties.Keys.Any(x => x.Category == categoryNo) ||
+                                    StructReference.ChaFileMakeupProperties.Keys.Any(x => x.Category == categoryNo);
                         }
 
                         //extInfo整理

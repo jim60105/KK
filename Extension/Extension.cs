@@ -75,7 +75,7 @@ namespace Extension {
         }
         public static object GetProperty(this object self, string name) {
             if (!self.SearchForProperties(name)) {
-                Logger.Log(LogLevel.Error, "[KK_Extension] Field Not Found: " + name);
+                Logger.Log(LogLevel.Error, "[KK_Extension] Property Not Found: " + name);
                 return false;
             }
             PropertyInfo propertyInfo;
@@ -83,7 +83,7 @@ namespace Extension {
             return propertyInfo.GetValue(self, null);
         }
         public static object Invoke(this object self, string name, object[] p = null) {
-            return self.GetType().InvokeMember(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod, null, self, p);
+            return self?.GetType().InvokeMember(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod, null, self, p);
         }
 
         //List all the fields inside the object if name not found.
@@ -239,18 +239,34 @@ namespace Extension {
                     return method.Invoke(null, new object[] { self });
                 }
             }
+            Logger.Log(LogLevel.Error, "[KK_Extension] Faild to cast to List<unknown>!");
             return null;
         }
 
-        public static void RemoveAll(this object obj, Predicate<object> match) {
-            if (obj is IList list) {
+        public static int RemoveAll(this object self, Predicate<object> match) {
+                int amount = 0;
+            if (self is IList list) {
                 for (int i = 0; i < list.Count; i++) {
                     if (match(list[i])) {
                         list.RemoveAt(i);
+                        amount++;
+                        i--;
                         //Logger.Log(LogLevel.Debug, $"[KK_Extension] Remove at {i}/{list.Count}");
                     }
                 }
                 //Logger.Log(LogLevel.Debug, $"[KK_Extension] RemoveAll: Output Obj Count {list.Count}");
+            } else {
+                Logger.Log(LogLevel.Error, $"[KK_Extension] RemoveAll: Input Object is not type of List<unknown>!");
+            }
+            return amount;
+        }
+
+        public static int Count(this object self) {
+            if (self is IList list) {
+                return list.Count;
+            } else {
+                Logger.Log(LogLevel.Error, $"[KK_Extension] Count: Input Object is not type of List<unknown>!");
+                return -1;
             }
         }
 
@@ -269,13 +285,32 @@ namespace Extension {
                     method = method.MakeGenericMethod(selfItemType);
                 }
 
-                IList result =(IList)method.Invoke(null, new object[] { self });
+                IList result = (IList)method.Invoke(null, new object[] { self });
 
-                result.RemoveAll(x=> !match(x));
-                //Logger.Log(LogLevel.Debug, $"[KK_Extension] Where: Obj found {result.Count}/{list.Count}");
+                result.RemoveAll(x => !match(x));
                 return result;
+            } else {
+                Logger.Log(LogLevel.Error, $"[KK_Extension] Where: Input Object is not type of List<unknown>!");
             }
             return null;
+        }
+
+        public static void Add(this object self, object obj2Add) {
+            if (self is IList oriList) {
+                Type selfItemType = null;
+                foreach (Type interfaceType in self.GetType().GetInterfaces()) {
+                    if (interfaceType.IsGenericType &&
+                       interfaceType.GetGenericTypeDefinition() == typeof(IList<>)) {
+                        selfItemType = self.GetType().GetGenericArguments()[0];
+                    }
+                }
+                if (null != selfItemType && obj2Add.GetType() == selfItemType) {
+                    oriList.Add(obj2Add);
+                    //Logger.Log(LogLevel.Debug, $"[KK_Extension] AddRange: Add {listToAdd.Count} item.");
+                } else {
+                    Logger.Log(LogLevel.Error, $"[KK_Extension] Type not Match! Cannot Add {obj2Add.GetType().FullName} into {selfItemType.FullName}");
+                }
+            }
         }
 
         public static void AddRange(this object self, object obj2Add) {
@@ -294,7 +329,7 @@ namespace Extension {
                         addItemType = obj2Add.GetType().GetGenericArguments()[0];
                     }
                 }
-                if (null != selfItemType && addItemType == selfItemType) {
+                if (null != selfItemType && selfItemType == addItemType) {
                     foreach (var o in listToAdd) {
                         oriList.Add(o);
                     }

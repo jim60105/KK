@@ -11,7 +11,7 @@ namespace KK_StudioCoordinateLoadOption {
         private static object KCOXController;
         private static Dictionary<string, object> KCOXTexDataBackup = null;
 
-        internal static string[] MaskKind = { "BodyMask","InnerMask","InnerMask" };
+        internal static string[] MaskKind = { "BodyMask", "InnerMask", "InnerMask" };
         public static bool LoadAssembly() {
             if (File.Exists("BepInEx/KoiClothesOverlay.dll") || File.Exists("BepInEx/KK.OverlayMods.dll")) {
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] KCOX found");
@@ -30,19 +30,13 @@ namespace KK_StudioCoordinateLoadOption {
                 KCOXTexDataBackup = new Dictionary<string, object>();
                 int cnt = 0;
                 for (int i = 0; i < clothes.parts.Length; i++) {
-                    if (GetOverlay(Patches.MainClothesNames[i])) {
-                        cnt++;
-                    }
+                    cnt += GetOverlay(Patches.MainClothesNames[i]) ? 1 : 0;
                 }
                 for (int j = 0; j < clothes.subPartsId.Length; j++) {
-                    if (GetOverlay(Patches.SubClothesNames[j])) {
-                        cnt++;
-                    }
+                    cnt += GetOverlay(Patches.SubClothesNames[j]) ? 1 : 0;
                 }
-                foreach(var maskKind in MaskKind) {
-                    if (GetOverlay(maskKind)) {
-                        cnt++;
-                    }
+                foreach (var maskKind in MaskKind) {
+                    cnt += GetOverlay(maskKind) ? 1 : 0;
                 }
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] Get Original Overlay/Mask Total: " + cnt);
             }
@@ -67,31 +61,30 @@ namespace KK_StudioCoordinateLoadOption {
             }
 
             if (null != KCOXController && null != KCOXTexDataBackup) {
-                KCOXTexDataBackup.TryGetValue(name, out var tex);
+                bool exist = KCOXTexDataBackup.TryGetValue(name, out var tex);
 
                 //KCOXController.Invoke("SetOverlayTex", new object[] { tex, name });
-                Dictionary<string, object> CurrentOverlayTextures = KCOXController.GetProperty("CurrentOverlayTextures").ToDictionary<string, object>();
                 var coordinateType = (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType;
                 Dictionary<ChaFileDefine.CoordinateType, object> _allOverlayTextures = KCOXController.GetField("_allOverlayTextures").ToDictionary<ChaFileDefine.CoordinateType, object>();
-                if (CurrentOverlayTextures.TryGetValue(name, out var existing)) {
-                    existing?.Invoke("Dispose");
-                    if (tex == null || (bool)tex.Invoke("IsEmpty")) {
-                        CurrentOverlayTextures.Remove(name);
+                if (KCOXController.GetProperty("CurrentOverlayTextures").ToDictionary<string, object>().TryGetValue(name, out var clothesTexData)) {
+                    clothesTexData.Invoke("Clear");
+                    clothesTexData.SetField("Override", false);
+                    if (!exist || tex == null || (bool)tex.Invoke("IsEmpty")) {
+                        _allOverlayTextures[coordinateType].Invoke("Remove", new object[] { name });
+                        Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Clear Overlay/Mask: {name}");
                     } else {
-                        CurrentOverlayTextures[name].SetProperty("Texture", tex.GetProperty("Texture"));
+                        clothesTexData.SetProperty("Texture", tex.GetProperty("Texture"));
+                        if (null != tex.GetField("Override")) {
+                            clothesTexData.SetField("Override", tex.GetField("Override"));
+                        }
                         Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Overlay/Mask Rollback: {name} (Replace)");
                     }
                 } else {
-                    if (tex == null || (bool)tex.Invoke("IsEmpty")) {
-                        CurrentOverlayTextures.Remove(name);
-                    } else {
+                    if (exist && tex != null && !(bool)tex.Invoke("IsEmpty")) {
                         _allOverlayTextures[coordinateType].Invoke("Add", new object[] { name, tex });
                         Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Overlay/Mask Rollback: {name} (Add)");
                     }
                 }
-                KCOXController.Invoke("RefreshTexture", new object[] { name });
-            } else {
-                //Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Overlay/Mask not found: " + name);
             }
         }
 
