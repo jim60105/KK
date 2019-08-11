@@ -40,7 +40,7 @@ namespace KK_StudioCharaOnlyLoadBody {
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "19.08.04.0";
+        internal const string PLUGIN_VERSION = "19.08.11.0";
 
         public void Awake() {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -376,26 +376,6 @@ namespace KK_StudioCharaOnlyLoadBody {
         //Some plugins hook on this function, so call it to trigger them. (Example: KKAPI.Chara.OnReload)
         private static bool fakeChangeCharaFlag = false;
         [HarmonyPrefix, HarmonyPatch(typeof(OCIChar), "ChangeChara")]
-        public static bool ChangeCharaPrefix(OCIChar __instance) {
-            //HSPE will fail without renewing fbsCtrl. He use this as a dictionary key.
-            if (fakeChangeCharaFlag) {
-                var oldFbsCtrl = __instance.charInfo.fbsCtrl;
-                var newFbsCtrl = new FaceBlendShape();
-                if (null != oldFbsCtrl) {
-                    newFbsCtrl.BlinkCtrl = oldFbsCtrl.BlinkCtrl;
-                    newFbsCtrl.EyebrowCtrl = oldFbsCtrl.EyebrowCtrl;
-                    newFbsCtrl.EyeLookController = oldFbsCtrl.EyeLookController;
-                    newFbsCtrl.EyeLookDownCorrect = oldFbsCtrl.EyeLookDownCorrect;
-                    newFbsCtrl.EyeLookSideCorrect = oldFbsCtrl.EyeLookSideCorrect;
-                    newFbsCtrl.EyeLookUpCorrect = oldFbsCtrl.EyeLookUpCorrect;
-                    newFbsCtrl.EyesCtrl = oldFbsCtrl.EyesCtrl;
-                    newFbsCtrl.MouthCtrl = oldFbsCtrl.MouthCtrl;
-                }
-                ChaInfo chaInfo = __instance.charInfo;
-                chaInfo.SetProperty("fbsCtrl", newFbsCtrl);
-            }
-
-            return !fakeChangeCharaFlag;
-        }
+        public static bool ChangeCharaPrefix(OCIChar __instance) => !fakeChangeCharaFlag;
     }
 }
