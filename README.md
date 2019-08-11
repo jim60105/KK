@@ -2,11 +2,15 @@
 ![image](https://github.com/jim60105/KK/raw/master/demo/demo1.gif)<br>
 
 在Studio的服裝卡讀取那裡，多一個選項盤讓你可以選擇性載入服裝<br>
-遇到任何問題，**請將選項盤全勾即會調用遊戲原始程式碼**<br>
+飾品可選擇「取代模式」和「增加模式」<br>
+取代模式會複寫同欄位的飾品，而增加模式會往空欄位一直附加上去<br>
+「鎖定頭髮飾品」可將頭髮飾品鎖定，使之不會受到清除和複寫<br>
+**將「鎖定頭髮飾品」以外的選項全勾即會調用遊戲原始程式碼**<br>
 目前確定支援Plugin:<br>
-- Koikatu Overlay Mods v4.2.1
-- Koikatu ABMX V3.2
+- Koikatu Overlay Mods **v5.0以上** **v4.2版用戶請下載[舊版v2.0.2](https://github.com/jim60105/KK/releases/download/v19.07.22.0/KK_StudioCoordinateLoadOption2.0.2.rar)版**<br>
+- Koikatu ABMX V3.3
 - Koikatu More Accessories v1.0.5
+- Koikatu MaterialEditor v1.4.1
 
 # Studio全是妹子插件 (Studio All Girls Plugin)
 ![image](https://github.com/jim60105/KK/raw/master/demo/demo2.gif)<br>
@@ -15,6 +19,7 @@
 身體外型依照其原始數據女體化<br>
 以此插件可以實現跨性別替換角色卡功能<br>
 例: 讀取一般的男女Scene，將男角色替換成女角色，就變成了百合Scene!<br>
+插件可從Configuration Manager暫時關閉功能
 
 ### **警語**:<br>
 1. 所有角色將以女性載入<br>
@@ -35,7 +40,6 @@
 目前確定支援Plugin:<br>
 - Koikatu Overlay Mods v4.2.1
 - Koikatu More Accessories v1.0.5
-- Koikatu KKPE v1.2.0
 - Koikatu KK_UncensorSelector v3.6.4
 - Koikatu KKABMX v3.2
 
