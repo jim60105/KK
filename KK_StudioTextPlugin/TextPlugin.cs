@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using BepInEx.Logging;
 using Studio;
@@ -9,6 +10,7 @@ using Logger = BepInEx.Logger;
 namespace KK_StudioTextPlugin {
     static class TextPlugin {
         private static Material font3DMaterial;
+        public static Dictionary<string, Font> DynamicFonts = new Dictionary<string, Font>();
         internal static void Start() {
             //載入font3DMaterial，為了解決UI文字穿透其他物品的問題
             //因為文字無法編輯Shader，只能做Material來用
@@ -19,6 +21,11 @@ namespace KK_StudioTextPlugin {
             } else {
                 Logger.Log(LogLevel.Error, "[KK_STP] Load assetBundle faild");
             }
+            string[] fontlist = Font.GetOSInstalledFontNames();
+            foreach(var fontname in fontlist) {
+                DynamicFonts.Add(fontname, Font.CreateDynamicFontFromOSFont(fontname, 200));
+            }
+            Logger.Log(LogLevel.Debug, $"[KK_STP] Generate {DynamicFonts.Count} System Fonts");
         }
 
         /// <summary>
@@ -183,7 +190,8 @@ namespace KK_StudioTextPlugin {
             }
             Color color = folder.objectItem.GetComponentInChildren<MeshRenderer>(true).material.color;
 
-            folder.objectItem.GetComponentInChildren<TextMesh>(true).font = Font.CreateDynamicFontFromOSFont(fontName, 200);
+            //folder.objectItem.GetComponentInChildren<TextMesh>(true).font = Font.CreateDynamicFontFromOSFont(fontName, 200);
+            folder.objectItem.GetComponentInChildren<TextMesh>(true).font = DynamicFonts[fontName];
             folder.objectItem.GetComponentInChildren<MeshRenderer>(true).material = font3DMaterial;
             folder.objectItem.GetComponentInChildren<MeshRenderer>(true).material.SetTexture("_MainTex", folder.objectItem.GetComponentInChildren<TextMesh>(true).font.material.mainTexture);
             folder.objectItem.GetComponentInChildren<MeshRenderer>(true).material.EnableKeyword("_NORMALMAP");
@@ -196,12 +204,13 @@ namespace KK_StudioTextPlugin {
         /// <param name="fontName">字型名稱</param>
         /// <returns></returns>
         public static bool CheckFontInOS(string fontName) {
-            var i = Array.IndexOf(Font.GetOSInstalledFontNames(), fontName);
-            if (i >= 0) {
-                return true;
-            }
-            Logger.Log(LogLevel.Message, "[KK_STP] Missing font: " + fontName);
-            return false;
+            return DynamicFonts.ContainsKey(fontName);
+            //var i = Array.IndexOf(Font.GetOSInstalledFontNames(), fontName);
+            //if (i >= 0) {
+            //    return true;
+            //}
+            //Logger.Log(LogLevel.Message, "[KK_STP] Missing font: " + fontName);
+            //return false;
         }
 
         /// <summary>
