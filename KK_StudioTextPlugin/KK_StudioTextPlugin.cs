@@ -37,7 +37,7 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "19.08.13.0";
+        internal const string PLUGIN_VERSION = "19.08.14.4";
 
         public void Awake() {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -47,16 +47,23 @@ namespace KK_StudioTextPlugin {
     }
 
     static class Patches {
+        //Flag
         private static bool isCreatingTextFolder = false;
         internal static bool isCreatingTextStructure = false;
         private static bool isConfigPanelCreated = false;
         private static bool onUpdating = false;
+
+        //資料夾名稱前墜
         public static readonly string TextObjPrefix = "-Text Plugin:";
         public static readonly string TextConfigPrefix = "-Text Config";
         public static readonly string TextConfigFontPrefix = "-Text Font:";
         public static readonly string TextConfigFontSizePrefix = "-Text FontSize:";
         public static readonly string TextConfigFontStylePrefix = "-Text FontStyle:";
         public static readonly string TextConfigColorPrefix = "-Text Color:";
+
+        // 新增字體物件時的預設文字
+        public static readonly string newText = "New Text";
+
         internal static void Start() {
             TextPlugin.Start();
         }
@@ -67,6 +74,7 @@ namespace KK_StudioTextPlugin {
             if (isConfigPanelCreated) {
                 return;
             }
+            TextPlugin.CreateDynamicFonts();
 
             //畫Config視窗
             var panelRoot = GameObject.Find("StudioScene/Canvas Main Menu/02_Manipulate/04_Folder");
@@ -74,24 +82,14 @@ namespace KK_StudioTextPlugin {
             //Config1: Font
             var text1 = UIUtility.CreateText("FontText", panel.transform, "Font");
             text1.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -30f), new Vector2(155f, -5f));
-            //var d = UIUtility.CreateDropdown("fontDropdown", panel.transform);
-            //d.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -85f), new Vector2(155f, -35f));
-            //d.GetComponentInChildren<Text>(true).resizeTextMaxSize = 18;
-            ////Font List
-            //d.options.Clear();
-            //string[] fontList = TextPlugin.DynamicFonts.Keys.ToArray();
-            //d.AddOptions(fontList.ToList());
-            //d.value = Array.IndexOf(fontList, "MS Gothic");
-            ////Change Font
-            //d.onValueChanged.AddListener(delegate {
-            //    if (!onUpdating) {
-            //        TextPlugin.ChangeFont(fontList[d.value]);
-            //    }
-            //});
 
             //畫SelectFont視窗
             panelSelectFont = UIUtility.CreatePanel("SelectFontPanel", panel.transform);
-            panelSelectFont.transform.SetRect(Vector2.up, Vector2.up, new Vector2(165f, -900f), new Vector2(645f, 0f));
+            if (!TextPlugin.DisablePreview) {
+                panelSelectFont.transform.SetRect(Vector2.up, Vector2.up, new Vector2(165f, -900f), new Vector2(645f, 0f));
+            } else {
+                panelSelectFont.transform.SetRect(Vector2.up, Vector2.up, new Vector2(165f, -900f), new Vector2(500f, 0f));
+            }
 
             Button selectFontBtn = UIUtility.CreateButton("SelectFontBtn", panel.transform, "MS Gothic");
             selectFontBtn.GetComponentInChildren<Text>(true).color = Color.white;
@@ -112,38 +110,46 @@ namespace KK_StudioTextPlugin {
             }
             (scrollRect.verticalScrollbar.transform as RectTransform).offsetMin = new Vector2(-16f, 0);
             scrollRect.scrollSensitivity = 50;
-            //foreach (var btn2 in btnGroup.gameObject.GetComponentsInChildren<Toggle>()) {
-            //    GameObject.Destroy(btn2.gameObject);
-            //}
+            //字體預覽之按鈕清單
             var tmpBtns = new List<Button>();
-            foreach (var kp in TextPlugin.DynamicFonts) {
-                Button fontDisplayBtn = UIUtility.CreateButton("fontDisplayBtn", btnGroup.transform, kp.Key);
+            foreach (string fontName in TextPlugin.GetDynamicFontNames()) {
+                Button fontDisplayBtn = UIUtility.CreateButton("fontDisplayBtn", btnGroup.transform, fontName);
                 Text text = fontDisplayBtn.GetComponentInChildren<Text>(true);
                 text.color = Color.white;
-                text.resizeTextForBestFit = false;
-                text.fontSize = 30;
                 text.transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 7.5f), new Vector2(-5f, -5f));
-                text.alignment = TextAnchor.UpperLeft;
-                text.text = kp.Key;
+                text.text = fontName;
 
-                Text demoText = UnityEngine.Object.Instantiate(text,text.transform.parent);
-                demoText.name = "demoText";
-                demoText.alignment = TextAnchor.LowerLeft;
-                demoText.text = "New Text";
-                demoText.font = kp.Value;
+                if (!TextPlugin.DisablePreview) {
+                    text.alignment = TextAnchor.UpperLeft;
+                    text.resizeTextForBestFit = false;
+                    text.fontSize = 30;
+                    Text demoText = UnityEngine.Object.Instantiate(text, text.transform.parent);
+                    demoText.name = "demoText";
+                    demoText.alignment = TextAnchor.LowerLeft;
+                    demoText.text = newText;
+                    demoText.font = TextPlugin.GetFont(fontName);
+                    demoText.font.RequestCharactersInTexture(newText);
+                    fontDisplayBtn.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -75f * (tmpBtns.Count + 1)), new Vector2(-5f, -75f * tmpBtns.Count));
+                } else {
+                    text.alignment = TextAnchor.MiddleLeft;
+                    fontDisplayBtn.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -35f * (tmpBtns.Count + 1)), new Vector2(-5f, -35f * tmpBtns.Count));
+                }
 
                 fontDisplayBtn.GetComponent<Image>().color = Color.gray;
-                fontDisplayBtn.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -75f * (tmpBtns.Count + 1)), new Vector2(-5f, -75f * tmpBtns.Count));
                 fontDisplayBtn.onClick.AddListener(delegate {
                     if (!onUpdating) {
-                        selectFontBtn.GetComponentInChildren<Text>().text = kp.Key;
-                        TextPlugin.ChangeFont(kp.Key);
+                        selectFontBtn.GetComponentInChildren<Text>().text = fontName;
+                        TextPlugin.ChangeFont(fontName);
                         panelSelectFont.gameObject.SetActive(false);
                     }
                 });
                 tmpBtns.Add(fontDisplayBtn);
             }
-            btnGroup.transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(0, 900f-(75f * tmpBtns.Count)-10f), new Vector2(0, 0));
+            if (TextPlugin.DisablePreview) {
+                btnGroup.transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(0, 900f - (35f * tmpBtns.Count) - 10f), new Vector2(0, 0));
+            } else {
+                btnGroup.transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(0, 900f - (75f * tmpBtns.Count) - 10f), new Vector2(0, 0));
+            }
             panelSelectFont.gameObject.SetActive(false);
 
             //Config2: FontSize (CharacterSize)
@@ -220,7 +226,7 @@ namespace KK_StudioTextPlugin {
             trigger.triggers.Add(entry2);
 
             panel.gameObject.SetActive(true);
-            Logger.Log(LogLevel.Info, "[KK_STP] Draw ConfigPanel Finish");
+            Logger.Log(LogLevel.Debug, "[KK_STP] Draw ConfigPanel Finish");
             isConfigPanelCreated = true;
         }
 
@@ -257,12 +263,14 @@ namespace KK_StudioTextPlugin {
                     //Font
                     if (TextPlugin.CheckFontInOS(t.font.name)) {
                         panel.transform.Find("SelectFontBtn").GetComponent<Button>().GetComponentInChildren<Text>().text = t.font.name;
-                        foreach (var text in panelSelectFont.transform.GetComponentsInChildren<Text>()) {
-                            if (text.name == "demoText") {
-                                text.text = t.text;
+                        if (!TextPlugin.DisablePreview) {
+                            foreach (var text in panelSelectFont.transform.GetComponentsInChildren<Text>()) {
+                                if (text.name == "demoText") {
+                                    text.font.RequestCharactersInTexture(t.text);
+                                    text.text = t.text;
+                                }
                             }
                         }
-                        //panel.GetComponentsInChildren<Dropdown>(true)[0].value = Array.IndexOf(Font.GetOSInstalledFontNames(), t.font.name);
                     }
 
                     //FontSize
@@ -272,7 +280,6 @@ namespace KK_StudioTextPlugin {
                     panel.GetComponentInChildren<Dropdown>(true).value = Array.IndexOf(Enum.GetNames(typeof(FontStyle)), t.fontStyle.ToString());
 
                     //Color
-                    //panel.GetComponentInChildren<Button>(true).image.color = m.material.color;
                     panel.transform.Find("color").GetComponent<Button>().image.color = m.material.color;
 
                     onUpdating = false;
@@ -316,8 +323,8 @@ namespace KK_StudioTextPlugin {
         public static void LoadPostfix(ref OCIFolder __result, OIFolderInfo _info, ObjectCtrlInfo _parent, TreeNodeObject _parentNode, bool _addInfo, int _initialPosition) {
             //Scene讀取的進入點
             if (isCreatingTextFolder || __result.name.Contains(TextObjPrefix)) {
-                __result.name = isCreatingTextFolder ? TextObjPrefix + "New Text" : _info.name;
-                var t = TextPlugin.MakeTextObj(__result, isCreatingTextFolder ? "New Text" : _info.name.Replace(TextObjPrefix, "").Replace("\\n", "\n"));
+                __result.name = isCreatingTextFolder ? TextObjPrefix + newText : _info.name;
+                var t = TextPlugin.MakeTextObj(__result, isCreatingTextFolder ? newText : _info.name.Replace(TextObjPrefix, "").Replace("\\n", "\n"));
                 isCreatingTextFolder = false;
                 if (_addInfo) {
                     //Scene Load就不創建Config資料夾結構
@@ -359,9 +366,12 @@ namespace KK_StudioTextPlugin {
                 //改文字
                 _value = _value.Replace("\\n", "\n");
                 __instance.ociFolder.objectItem.GetComponentInChildren<TextMesh>(true).text = _value;
-                foreach (var text in panelSelectFont.transform.GetComponentsInChildren<Text>()) {
-                    if (text.name == "demoText") {
-                        text.text = _value;
+                if (!TextPlugin.DisablePreview) {
+                    foreach (var text in panelSelectFont.transform.GetComponentsInChildren<Text>()) {
+                        if (text.name == "demoText") {
+                            text.font.RequestCharactersInTexture(_value);
+                            text.text = _value;
+                        }
                     }
                 }
                 Logger.Log(LogLevel.Info, "[KK_STP] Edit Text: " + _value);
