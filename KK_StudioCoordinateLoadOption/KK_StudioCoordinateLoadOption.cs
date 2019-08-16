@@ -40,7 +40,7 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "19.08.11.0";
+        internal const string PLUGIN_VERSION = "19.08.15.0";
 
         public void Awake() {
             UIUtility.Init();
@@ -73,7 +73,7 @@ namespace KK_StudioCoordinateLoadOption {
             _isKCOXExist = IsPluginExist("KCOX", new Version(5, 0)) && KCOX_Support.LoadAssembly();
             _isABMXExist = IsPluginExist("KKABMX.Core", null) && ABMX_Support.LoadAssembly();
             _isMoreAccessoriesExist = IsPluginExist("com.joan6694.illusionplugins.moreaccessories", null) && MoreAccessories_Support.LoadAssembly();
-            _isMaterialEditorExist = IsPluginExist("com.deathweasel.bepinex.materialeditor", null) && MaterialEditor_Support.LoadAssembly();
+            _isMaterialEditorExist = IsPluginExist("com.deathweasel.bepinex.materialeditor",new Version(1,4)) && MaterialEditor_Support.LoadAssembly();
 
             StringResources.StringResourcesManager.SetUICulture();
         }
