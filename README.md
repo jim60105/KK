@@ -56,12 +56,14 @@
 ![image](https://github.com/jim60105/KK/raw/master/demo/demo6.gif)<br>
 
 從「add→アイテム→2D効果→文字Text」加載，右側選中後在anim選單編輯<br>
+文字物件可修改字體、大小、樣式、顏色、錨點位置、對齊(換行觸發)。<br>
 建議分享Scene時一併分享使用的Fonts (It is recommended to share the Fonts used when sharing Scene.)<br>
 
 ### 注意事項:<br>
-- Fonts會列出OS內安裝，支援Unity動態生成的所有字體<br>
+- Fonts會列出OS內安裝，支援Unity動態生成的所有字體，字體總數在500以下時可以顯示預覽<br>
 - 若Scene保存後，在其他沒有安裝此Font的OS讀取，會加載MS Gothic<br>
 - Color選取使用右下角遊戲原生Color選擇器<br>
+- 文字中插入換行符「\n」可以換行，插入換行符後會顯示「對齊」編輯選項<br>
 - 文字重疊時偶爾會渲染不正確，這是Unity的問題，似乎無解<br>
 
 # Studio自動關閉Scene載入視窗 (Studio Auto Close Loading Scene Window)
