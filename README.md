@@ -53,8 +53,8 @@
 → 改成了會複製真實方向。意即可以使用「首操作 カメラ」定位後，再按我的「->FK(首)」按鈕複製至脖子FK
 
 # Studio文字插件 (Studio Text Plugin)
-![image](https://github.com/jim60105/KK/raw/master/demo/demo6.gif)<br>
-
+<a href="https://gfycat.com/frayedsecretiberianbarbel" target="_blank"><img src="https://github.com/jim60105/KK/raw/master/demo/demo6-2.JPG" width="800" title="Click the image to watch demo"></a><br>
+↑ 請點選圖片觀看範例影片 ↑ Click the image to watch demo! ↑  (備用載點: [影片](https://github.com/jim60105/KK/raw/master/demo/demo6.mp4))<br>
 從「add→アイテム→2D効果→文字Text」加載，右側選中後在anim選單編輯<br>
 文字物件可修改字體、大小、樣式、顏色、錨點位置、對齊(換行觸發)。<br>
 建議分享Scene時一併分享使用的Fonts (It is recommended to share the Fonts used when sharing Scene.)<br>
