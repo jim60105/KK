@@ -37,7 +37,7 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "19.08.16.0";
+        internal const string PLUGIN_VERSION = "19.08.18.0";
 
         public void Awake() {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -131,6 +131,7 @@ namespace KK_StudioTextPlugin {
                     demoText.text = newText;
                     demoText.font = TextPlugin.GetFont(fontName);
                     demoText.font.RequestCharactersInTexture(newText);
+                    demoText.transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 7.5f), new Vector2(-5f, -30f));
                     fontDisplayBtn.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -75f * (tmpBtns.Count + 1)), new Vector2(-5f, -75f * tmpBtns.Count));
                 } else {
                     text.alignment = TextAnchor.MiddleLeft;
@@ -302,14 +303,7 @@ namespace KK_StudioTextPlugin {
                     //Font
                     if (TextPlugin.CheckFontInOS(t.font.name)) {
                         panel.transform.Find("SelectFontBtn").GetComponent<Button>().GetComponentInChildren<Text>().text = t.font.name;
-                        if (!TextPlugin.DisablePreview) {
-                            foreach (var text in panelSelectFont.transform.GetComponentsInChildren<Text>()) {
-                                if (text.name == "demoText") {
-                                    text.font.RequestCharactersInTexture(t.text);
-                                    text.text = t.text;
-                                }
-                            }
-                        }
+                        EditDemoText(t.text);
                     }
 
                     //FontSize
@@ -409,14 +403,7 @@ namespace KK_StudioTextPlugin {
                 //改文字
                 _value = _value.Replace("\\n", "\n");
                 __instance.ociFolder.objectItem.GetComponentInChildren<TextMesh>(true).text = _value;
-                if (!TextPlugin.DisablePreview) {
-                    foreach (var text in panelSelectFont.transform.GetComponentsInChildren<Text>()) {
-                        if (text.name == "demoText") {
-                            text.font.RequestCharactersInTexture(_value);
-                            text.text = _value;
-                        }
-                    }
-                }
+                EditDemoText(_value);
                 CheckAlignSettingActive();
                 Logger.Log(LogLevel.Info, "[KK_STP] Edit Text: " + _value);
                 return false;
@@ -511,6 +498,24 @@ namespace KK_StudioTextPlugin {
             //Alignment
             panel.transform.Find("AlignmentText").GetComponent<Text>().gameObject.SetActive(active);
             panel.GetComponentsInChildren<Dropdown>(true).Last().gameObject.SetActive(active);
+        }
+
+        /// <summary>
+        /// 修改Font選單的所有demoText
+        /// </summary>
+        /// <param name="text">要顯示的demoText</param>
+        private static void EditDemoText(string text) {
+            if (text.IndexOf("\n")>0) {
+                text = text.Substring(0, text.IndexOf("\n"));
+            }
+            if (!TextPlugin.DisablePreview) {
+                foreach (var t in panelSelectFont.transform.GetComponentsInChildren<Text>()) {
+                    if (t.name == "demoText") {
+                        t.font.RequestCharactersInTexture(text);
+                        t.text = text;
+                    }
+                }
+            }
         }
     }
 }
