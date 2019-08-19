@@ -17,11 +17,6 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
 using BepInEx;
 using BepInEx.Logging;
 using ExtensibleSaveFormat;
@@ -29,6 +24,11 @@ using Extension;
 using Harmony;
 using MessagePack;
 using Studio;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using UILib;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -41,10 +41,11 @@ namespace KK_FBIOpenUp {
     public class KK_FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "19.07.29.1";
+        internal const string PLUGIN_VERSION = "19.08.18.0";
 
         internal static bool _isenabled = false;
         internal static bool _isABMXExist = false;
+        internal static GameMode nowGameMode;
         internal enum GameMode {
             Studio = 0,
             LOGO,
@@ -59,7 +60,9 @@ namespace KK_FBIOpenUp {
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
         }
 
-        public void Update() => Patches.Update();
+        public void Update() {
+            Patches.Update();
+        }
 
         public void Start() {
             bool IsPluginExist(string pluginName) {
@@ -70,7 +73,7 @@ namespace KK_FBIOpenUp {
 
             //讀取config
             BepInEx.Config.ReloadConfig();
-            _isenabled = String.Equals(BepInEx.Config.GetEntry("enabled", "False", PLUGIN_NAME), "True");
+            _isenabled = string.Equals(BepInEx.Config.GetEntry("enabled", "False", PLUGIN_NAME), "True");
             string path = BepInEx.Config.GetEntry("sample_chara", "", PLUGIN_NAME);
             if (float.TryParse(BepInEx.Config.GetEntry("change_rate", "0.77", PLUGIN_NAME), out float rate)) {
                 Patches.ChangeRate = rate;
@@ -93,6 +96,14 @@ namespace KK_FBIOpenUp {
                     Patches.LoadSampleChara(fileStream);
                 }
             }
+
+            if (Application.productName == "CharaStudio") {
+                nowGameMode = GameMode.Studio;
+            } else {
+                if (Manager.Game.Instance != null) {
+                    nowGameMode = GameMode.MainGame;
+                }
+            }
         }
 
         internal static void ToggleEnabled() {
@@ -102,11 +113,7 @@ namespace KK_FBIOpenUp {
         }
     }
     internal class Patches {
-        private static List<float> sampleShapeValueFace;
-        private static List<float> sampleShapeValueBody;
-        private static PluginData sampleABMXData;
         private static float keepRate;
-        private static GameObject redBagBtn;
 
         /// <summary>
         /// 要向sample改變的程度，範圍0(無替換)~1(全替換)
@@ -124,25 +131,32 @@ namespace KK_FBIOpenUp {
             }
         }
 
+        private static class SampleChara {
+            internal static List<float> shapeValueFace;
+            internal static List<float> shapeValueBody;
+            internal static PluginData ABMXData;
+            internal static ChaFileControl chaFile;
+        }
+
         /// <summary>
         /// 載入sample chara
         /// </summary>
         /// <param name="stream">角色圖片讀取為Stream</param>
         public static void LoadSampleChara(Stream stream) {
             blockChanging = true;
-            ChaFileControl chaFile = new ChaFileControl();
-            chaFile.Invoke("LoadCharaFile", new object[] { stream, true, true });
-            Logger.Log(LogLevel.Debug, "[KK_FBIOU] Loaded sample chara: " + chaFile.parameter.fullname);
+            SampleChara.chaFile = new ChaFileControl();
+            SampleChara.chaFile.Invoke("LoadCharaFile", new object[] { stream, true, true });
+            Logger.Log(LogLevel.Debug, "[KK_FBIOU] Loaded sample chara: " + SampleChara.chaFile.parameter.fullname);
             blockChanging = false;
-            var face = MessagePackSerializer.Deserialize<ChaFileFace>(MessagePackSerializer.Serialize<ChaFileFace>(chaFile.custom.face));
-            var body = MessagePackSerializer.Deserialize<ChaFileBody>(MessagePackSerializer.Serialize<ChaFileBody>(chaFile.custom.body));
+            var face = MessagePackSerializer.Deserialize<ChaFileFace>(MessagePackSerializer.Serialize<ChaFileFace>(SampleChara.chaFile.custom.face));
+            var body = MessagePackSerializer.Deserialize<ChaFileBody>(MessagePackSerializer.Serialize<ChaFileBody>(SampleChara.chaFile.custom.body));
             //Logger.Log(LogLevel.Message, "[KK_FBIOU] Length Face: " + face.shapeValueFace.Length);
             //Logger.Log(LogLevel.Message, "[KK_FBIOU] Length Body: " + body.shapeValueBody.Length);
-            sampleShapeValueFace = face.shapeValueFace.ToList();
-            sampleShapeValueBody = body.shapeValueBody.ToList();
+            SampleChara.shapeValueFace = face.shapeValueFace.ToList();
+            SampleChara.shapeValueBody = body.shapeValueBody.ToList();
 
-            sampleABMXData = ExtendedSave.GetExtendedDataById(chaFile, "KKABMPlugin.ABMData");
-            if (null != sampleABMXData) {
+            SampleChara.ABMXData = ExtendedSave.GetExtendedDataById(SampleChara.chaFile, "KKABMPlugin.ABMData");
+            if (null != SampleChara.ABMXData) {
                 Logger.Log(LogLevel.Debug, "[KK_FBIOU] Loaded sample chara ABMX");
             } else {
                 Logger.Log(LogLevel.Debug, "[KK_FBIOU] NO sample chara ABMX");
@@ -152,7 +166,7 @@ namespace KK_FBIOpenUp {
         /// <summary>
         /// 替換過的chara之原始數據 Dict(ChaFileCustom, List[]{shapeValueFace.toList, shapeValueBody.toList})
         /// </summary>
-        private static Dictionary<ChaFileCustom, List<float>[]> chaFileCustomDict = new Dictionary<ChaFileCustom, List<float>[]>();
+        private static readonly Dictionary<ChaFileCustom, List<float>[]> chaFileCustomDict = new Dictionary<ChaFileCustom, List<float>[]>();
 
         /// <summary>
         /// 替換角色
@@ -160,35 +174,35 @@ namespace KK_FBIOpenUp {
         /// <param name="chaCtrl">目標chara</param>
         /// <param name="changeFace">是否替換臉部</param>
         /// <param name="changeBody">是否替換身體</param>
-        public static void ChangeChara(ChaControl chaCtrl, bool changeFace = true, bool changeBody = true, bool forceChange = true) {
-            if (blockChanging || !KK_FBIOpenUp._isenabled) {
+        public static void ChangeChara(ChaControl chaCtrl, bool changeFace = true, bool changeBody = true, bool disableDoubleChange = true) {
+            if (blockChanging || null == chaCtrl || null == chaCtrl.chaFile) {
                 return;
             }
 
-            if (chaCtrl.chaFile.parameter.sex != 1) {
+            if (chaCtrl.chaFile.parameter.sex != SampleChara.chaFile.parameter.sex) {
                 Logger.Log(LogLevel.Info, "[KK_FBIOU] Skip changing because of wrong sex.");
                 return;
             }
 
-            int iii = 0;
-            Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++iii);
+            //int j = 0;
+            //Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++j);
             List<float> originalShapeValueFace;
             List<float> originalShapeValueBody;
             ChaFileCustom chaFileCustom = chaCtrl.chaFile.custom;
-            Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++iii);
+            //Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++j);
 
             //Logger.Log(LogLevel.Message, "[KK_FBIOU] Length Face: " + chaFileCustom.face.shapeValueFace.Length);
             //Logger.Log(LogLevel.Message, "[KK_FBIOU] Length Body: " + chaFileCustom.body.shapeValueBody.Length);
             originalShapeValueFace = chaFileCustom.face.shapeValueFace.ToList();
             originalShapeValueBody = chaFileCustom.body.shapeValueBody.ToList();
             List<float> result;
-            Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++iii);
+            //Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++j);
 
             //如果角色第一次替換，紀錄其原始數據至dict
             //如果在dict內有找到替換紀錄，以其原始數據來做替換
             //(不block掉是因為，即使在單次Loading Chara內，此function也會被trigger不止一次)
             if (chaFileCustomDict.TryGetValue(chaFileCustom, out var chaFileCustomStored)) {
-                if (forceChange) {
+                if (disableDoubleChange) {
                     chaFileCustomDict[chaFileCustom] = new List<float>[] { new List<float>(originalShapeValueFace), new List<float>(originalShapeValueBody) };
                 } else {
                     originalShapeValueFace = chaFileCustomStored[0].ToList();
@@ -198,25 +212,25 @@ namespace KK_FBIOpenUp {
                 chaFileCustomDict.Add(chaFileCustom, new List<float>[] { new List<float>(originalShapeValueFace), new List<float>(originalShapeValueBody) });
                 Logger.Log(LogLevel.Debug, "[KK_FBIOU] chaFileCustomDict.Count: " + chaFileCustomDict.Count);
             }
-            Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++iii);
+            //Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++j);
 
-            if (null != sampleShapeValueFace && changeFace) {
-                if (originalShapeValueFace.Count == sampleShapeValueFace.Count) {
+            if (null != SampleChara.shapeValueFace && changeFace) {
+                if (originalShapeValueFace.Count == SampleChara.shapeValueFace.Count) {
                     result = new List<float>();
                     for (int i = 0; i < originalShapeValueFace.Count; i++) {
-                        result.Add(sampleShapeValueFace[i] + ((originalShapeValueFace[i] - sampleShapeValueFace[i]) * keepRate));
+                        result.Add(SampleChara.shapeValueFace[i] + ((originalShapeValueFace[i] - SampleChara.shapeValueFace[i]) * keepRate));
                     }
                     chaFileCustom.face.shapeValueFace = result.ToArray();
                 } else { Logger.Log(LogLevel.Error, "[KK_FBIOU] Sample data is not match to target data!"); }
                 Logger.Log(LogLevel.Debug, "[KK_FBIOU] Changed face finish");
             }
-            Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++iii);
+            //Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++j);
 
-            if (null != sampleShapeValueBody && changeBody) {
-                if (originalShapeValueBody.Count == sampleShapeValueBody.Count) {
+            if (null != SampleChara.shapeValueBody && changeBody) {
+                if (originalShapeValueBody.Count == SampleChara.shapeValueBody.Count) {
                     result = new List<float>();
                     for (int i = 0; i < originalShapeValueBody.Count; i++) {
-                        result.Add(sampleShapeValueBody[i] + ((originalShapeValueBody[i] - sampleShapeValueBody[i]) * keepRate));
+                        result.Add(SampleChara.shapeValueBody[i] + ((originalShapeValueBody[i] - SampleChara.shapeValueBody[i]) * keepRate));
                     }
                     chaFileCustom.body.shapeValueBody = result.ToArray();
                     chaCtrl.Reload(true, false, true, false);
@@ -224,7 +238,7 @@ namespace KK_FBIOpenUp {
                 Logger.Log(LogLevel.Debug, "[KK_FBIOU] Changed body finish");
             }
 
-            Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++iii);
+            //Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++j);
             if (KK_FBIOpenUp._isABMXExist) {
                 //取得BoneController
                 object BoneController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
@@ -252,7 +266,7 @@ namespace KK_FBIOpenUp {
                 });
 
                 //將擴充資料由暫存複製到角色身上
-                ExtendedSave.SetExtendedDataById(chaCtrl.chaFile, "KKABMPlugin.ABMData", sampleABMXData);
+                ExtendedSave.SetExtendedDataById(chaCtrl.chaFile, "KKABMPlugin.ABMData", SampleChara.ABMXData);
 
                 //把擴充資料載入ABMX插件
                 BoneController.Invoke("OnReload", new object[] { 2, false });
@@ -277,7 +291,7 @@ namespace KK_FBIOpenUp {
                 i = 0;
                 foreach (var modifier in previousModifier) {
                     string bonename = (string)modifier.GetProperty("BoneName");
-                    if (!newModifiers.Any(x => String.Equals(bonename, (string)x.GetProperty("BoneName")))) {
+                    if (!newModifiers.Any(x => string.Equals(bonename, (string)x.GetProperty("BoneName")))) {
                         BoneController.Invoke("AddModifier", new object[] { modifier });
                         Logger.Log(LogLevel.Debug, "[KK_FBIOU] Rollback cooridnate ABMX BoneData: " + bonename);
                     } else {
@@ -311,55 +325,111 @@ namespace KK_FBIOpenUp {
         /// 將所有角色做替換
         /// </summary>
         public static void ChangeAllCharacters() {
-            List<OCIChar> charList = Studio.Studio.Instance.dicInfo.Values.OfType<Studio.OCIChar>().ToList();
-            charList.ForEach(new Action<OCIChar>(delegate (OCIChar ocichar) {
-                ChangeChara(ocichar.charInfo, true, true, false);
-                Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Changed {ocichar.charInfo.name}");
-            }));
+            List<ChaControl> charList = new List<ChaControl>();
+            Logger.Log(LogLevel.Debug, $"[KK_FBIOU] GameMode: {Enum.GetNames(typeof(KK_FBIOpenUp.GameMode))[(int)KK_FBIOpenUp.nowGameMode]}");
+            switch (KK_FBIOpenUp.nowGameMode) {
+                case KK_FBIOpenUp.GameMode.Studio:
+                    charList = Studio.Studio.Instance.dicInfo.Values.OfType<Studio.OCIChar>().Select(x => x.charInfo).ToList();
+                    break;
+                case KK_FBIOpenUp.GameMode.MainGame:
+                    charList = Singleton<Manager.Game>.Instance.HeroineList.Select(x => x.chaCtrl).ToList();
+                    break;
+            }
+            Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Get {charList.Count} charaters.");
+            if (null != charList) {
+                foreach (var chaCtrl in charList) {
+                    ChangeChara(chaCtrl, true, true, false);
+                    //Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Changed {chaCtrl.chaFile.na}");
+                }
+            }
         }
 
         #region Hooks
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(CustomScene), "Start")]
+        public static void CustomScene_Start() {
+            if (Singleton<ChaCustom.CustomBase>.Instance != null) {
+                KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.Maker;
+            }
+        }
+
+        //[HarmonyPrefix]
+        //[HarmonyPatch(typeof(CustomScene), "OnDestroy")]
+        //public static void CustomScene_Destroy() {
+        //    KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.LOGO;
+        //}
+
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "InitCharaList")]
         public static void InitCharaListPostfix(CharaList __instance) {
-            if (String.Equals(__instance.name, "00_Female")) {
+            bool flag = string.Equals(__instance.name, "00_Female");
+            if (SampleChara.chaFile.parameter.sex != 1) { flag = !flag; }
+            if (flag) {
+                KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.Studio;
                 DrawRedBagBtn(__instance, KK_FBIOpenUp.GameMode.Studio);
             }
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(ActionGame.NightMainMenu), "Start")]
-        public static void StartPostfix(ActionGame.NightMainMenu __instance) {
-            DrawRedBagBtn(__instance, KK_FBIOpenUp.GameMode.MyRoom);
-        }
-
-        //[HarmonyPostfix, HarmonyPatch(typeof(TitleScene), "Start")]
-        //public static void StartPostfix2(TitleScene __instance) {
-        //    DrawRedBagBtn(__instance, KK_FBIOpenUp.GameMode.LOGO);
+        //[HarmonyPostfix, HarmonyPatch(typeof(ActionGame.NightMainMenu), "Start")]
+        //public static void StartPostfix(ActionGame.NightMainMenu __instance) {
+        //    KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.MyRoom;
+        //    DrawRedBagBtn(__instance, KK_FBIOpenUp.GameMode.MyRoom);
         //}
+
+        [HarmonyPostfix, HarmonyPatch(typeof(TitleScene), "Start")]
+        public static void StartPostfix2(TitleScene __instance) {
+            KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.LOGO;
+            DrawRedBagBtn(__instance, KK_FBIOpenUp.GameMode.LOGO);
+        }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ActionScene), "Start")]
         public static void StartPostfix3(ActionScene __instance) {
+            KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.MainGame;
+            KK_FBIOpenUp._isenabled = false;
             DrawRedBagBtn(__instance, KK_FBIOpenUp.GameMode.MainGame);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(AddObjectFemale), "Add", new Type[] { typeof(ChaControl), typeof(OICharInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject), typeof(bool), typeof(int) })]
-        public static void AddPostfix(ChaControl _female, OICharInfo _info) => ChangeChara(_female);
+        public static void AddPostfix(ChaControl _female, OICharInfo _info) {
+            if (KK_FBIOpenUp._isenabled) {
+                ChangeChara(_female);
+            }
+        }
 
         [HarmonyPostfix, HarmonyPatch(typeof(OCIChar), "ChangeChara")]
-        public static void ChangeCharaPostfix(OCIChar __instance) => ChangeChara(__instance.charInfo);
+        public static void ChangeCharaPostfix(OCIChar __instance) {
+            if (KK_FBIOpenUp._isenabled) {
+                ChangeChara(__instance.charInfo);
+            }
+        }
 
-        //[HarmonyPostfix, HarmonyPatch(typeof(SaveData.CharaData), "Load")]
-        //public static void LoadPostfix(SaveData.CharaData __instance) => ChangeChara(__instance.chaCtrl);
+        //[HarmonyPostfix, HarmonyPatch(typeof(SaveData), nameof(SaveData.Load), new[] { typeof(string), typeof(string) })]
+        //public static void LoadPostfix() {
+        //    KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.MainGame;
+        //    if (KK_FBIOpenUp._isenabled) {
+        //        ChangeAllCharacters();
+        //    }
+        //}
 
         private static bool blockChanging = false;
         [HarmonyPrefix, HarmonyPatch(typeof(CharaList), "InitFemaleList")]
-        public static void InitFemaleListPrefix() => SetInitFlag(true);
+        public static void InitFemaleListPrefix() {
+            SetInitFlag(true);
+        }
+
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "InitFemaleList")]
-        public static void InitFemaleListPostfix() => SetInitFlag(false);
+        public static void InitFemaleListPostfix() {
+            SetInitFlag(false);
+        }
 
         [HarmonyPrefix, HarmonyPatch(typeof(SceneLoadScene), "Awake")]
-        public static void LoadPrefix() => SetInitFlag(true);
+        public static void AwakePrefix() {
+            SetInitFlag(true);
+        }
+
         [HarmonyPostfix, HarmonyPatch(typeof(SceneLoadScene), "OnClickClose")]
-        public static void LoadPostfix() => SetInitFlag(false);
+        public static void OnClickClosePostfix() {
+            SetInitFlag(false);
+        }
 
         public static void SetInitFlag(bool flag) {
             blockChanging = flag;
@@ -376,11 +446,11 @@ namespace KK_FBIOpenUp {
         /// 切換紅色書包圖標顯示
         /// </summary>
         /// <param name="showPic">是否顯示過場圖片</param>
-        private static void ChangeRedBagBtn(bool showPic = true,KK_FBIOpenUp.GameMode gameMode = KK_FBIOpenUp.GameMode.Studio) {
+        private static void ChangeRedBagBtn(GameObject redBagBtn, bool showPic, KK_FBIOpenUp.GameMode gameMode) {
             if (KK_FBIOpenUp._isenabled) {
                 redBagBtn.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
                 if (showPic) {
-                    DrawSlidePic(1,gameMode);
+                    DrawSlidePic(1, gameMode);
                 }
                 Logger.Log(LogLevel.Info, "[KK_FBIOU] Enable Plugin");
             } else {
@@ -394,6 +464,7 @@ namespace KK_FBIOpenUp {
         private static void DrawRedBagBtn(object __instance, KK_FBIOpenUp.GameMode gameMode) {
             GameObject original, parent;
             Vector2 offsetMin, offsetMax;
+            KK_FBIOpenUp.nowGameMode = gameMode;
             switch (gameMode) {
                 case KK_FBIOpenUp.GameMode.Studio:
                     CharaList charaList = __instance as CharaList;
@@ -402,19 +473,19 @@ namespace KK_FBIOpenUp {
                     offsetMin = new Vector2(-120, -270);
                     offsetMax = new Vector2(-40, -190);
                     break;
-                case KK_FBIOpenUp.GameMode.LOGO:
-                    original = GameObject.Find("TitleScene/Canvas/Panel/Buttons/FirstButtons/Button Start");
-                    parent = original.transform.parent.parent.parent.gameObject;
-                    offsetMin = new Vector2(0, -80);
-                    offsetMax = new Vector2(80, 0);
-                    break;
-                case KK_FBIOpenUp.GameMode.MyRoom:
-                    original = GameObject.Find("ActionScene/UI/ActionMenuCanvas/ModeAnimation/Status");
-                    parent = GameObject.Find("NightMenuScene/Canvas/Panel/base");
-                    //parent = original.transform.parent.gameObject;
-                    offsetMin = new Vector2(0, -80);
-                    offsetMax = new Vector2(80, 0);
-                    break;
+                //case KK_FBIOpenUp.GameMode.LOGO:
+                //    original = GameObject.Find("TitleScene/Canvas/Panel/Buttons/FirstButtons/Button Start");
+                //    parent = original.transform.parent.parent.parent.gameObject;
+                //    offsetMin = new Vector2(0, -80);
+                //    offsetMax = new Vector2(80, 0);
+                //    break;
+                //case KK_FBIOpenUp.GameMode.MyRoom:
+                //    original = GameObject.Find("ActionScene/UI/ActionMenuCanvas/ModeAnimation/Status");
+                //    parent = GameObject.Find("NightMenuScene/Canvas/Panel/base");
+                //    //parent = original.transform.parent.gameObject;
+                //    offsetMin = new Vector2(0, -80);
+                //    offsetMax = new Vector2(80, 0);
+                //    break;
                 case KK_FBIOpenUp.GameMode.MainGame:
                     original = GameObject.Find("ActionScene/UI/ActionMenuCanvas/ModeAnimation/Status");
                     parent = original.transform.parent.gameObject;
@@ -424,19 +495,20 @@ namespace KK_FBIOpenUp {
                 default:
                     return;
             }
-            redBagBtn = UnityEngine.Object.Instantiate(original, parent.transform);
+            GameObject redBagBtn = UnityEngine.Object.Instantiate(original, parent.transform);
             redBagBtn.name = "redBagBtn";
             redBagBtn.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), offsetMin, offsetMax);
 
             redBagBtn.GetComponent<Button>().spriteState = new SpriteState();
             redBagBtn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_FBIOpenUp.Resources.redBag.png", 100, 100);
             redBagBtn.GetComponent<Button>().onClick.RemoveAllListeners();
-            for(int i = 0;i < redBagBtn.GetComponent<Button>().onClick.GetPersistentEventCount(); i++) {
+            for (int i = 0; i < redBagBtn.GetComponent<Button>().onClick.GetPersistentEventCount(); i++) {
                 redBagBtn.GetComponent<Button>().onClick.SetPersistentListenerState(i, UnityEngine.Events.UnityEventCallState.Off);
             }
             redBagBtn.GetComponent<Button>().interactable = true;
 
             //因為要handle長按，改為監聽PointerDown、PointerUp Event
+            //在Update()裡面有對Timer累加
             redBagBtn.AddComponent<EventTrigger>();
             EventTrigger trigger = redBagBtn.gameObject.GetComponent<EventTrigger>();
 
@@ -444,7 +516,7 @@ namespace KK_FBIOpenUp {
                 eventID = EventTriggerType.PointerDown,
                 callback = new EventTrigger.TriggerEvent()
             };
-            pointerDown.callback.AddListener((baseEventData)=>{
+            pointerDown.callback.AddListener((baseEventData) => {
                 btnClickTimer = 0;
                 downState = true;
                 //baseEventData.selectedObject.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.65f);
@@ -455,27 +527,89 @@ namespace KK_FBIOpenUp {
                 eventID = EventTriggerType.PointerUp,
                 callback = new EventTrigger.TriggerEvent()
             };
-            pointerUp.callback.AddListener((baseEventData)=>{
+            pointerUp.callback.AddListener((baseEventData) => {
                 downState = false;
                 var clickDeltaTime = btnClickTimer;
                 btnClickTimer = 0;
                 //baseEventData.selectedObject.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
-                if (clickDeltaTime <= 1f || gameMode==KK_FBIOpenUp.GameMode.LOGO || gameMode==KK_FBIOpenUp.GameMode.MyRoom) {
-                    KK_FBIOpenUp.ToggleEnabled();
-                    ChangeRedBagBtn(true, gameMode);
-                } else {
-                    DrawSlidePic(10, gameMode);
+                switch (KK_FBIOpenUp.nowGameMode) {
+                    case KK_FBIOpenUp.GameMode.MainGame:
+                        if (KK_FBIOpenUp._isenabled) {
+                            DrawSlidePic(20, gameMode);
+                        } else {
+                            DrawSlidePic(10, gameMode);
+                        }
+                        KK_FBIOpenUp._isenabled = !KK_FBIOpenUp._isenabled;
+                        ChangeRedBagBtn(redBagBtn, false, gameMode);
+                        break;
+                    case KK_FBIOpenUp.GameMode.LOGO:
+                    case KK_FBIOpenUp.GameMode.MyRoom:
+                        KK_FBIOpenUp.ToggleEnabled();
+                        ChangeRedBagBtn(redBagBtn, true, gameMode);
+                        break;
+                    case KK_FBIOpenUp.GameMode.Studio:
+                        if (clickDeltaTime <= 1f) {
+                            KK_FBIOpenUp.ToggleEnabled();
+                            ChangeRedBagBtn(redBagBtn, true, gameMode);
+                        } else {
+                            DrawSlidePic(10, gameMode);
+                        }
+                        break;
                 }
             });
             trigger.triggers.Add(pointerUp);
 
-            ChangeRedBagBtn(false,gameMode);
+            ChangeRedBagBtn(redBagBtn, false, gameMode);
         }
 
-        public static float smoothTime = 0.5f;
-        private static Vector3 velocity = Vector3.zero;
-        private static Image image;
-        private static Vector3 targetPosition = Vector3.zero;
+        internal class ShiftPicture {
+            public enum Type {
+                picture,
+                movie
+            }
+
+            internal Type type;
+            internal float Width {
+                get {
+                    switch (type) {
+                        case Type.picture:
+                            return image.sprite.rect.width;
+                        case Type.movie:
+                            return movie.texture.width;
+                    }
+                    return 0;
+                }
+            }
+            internal float Height {
+                get {
+                    switch (type) {
+                        case Type.picture:
+                            return image.sprite.rect.height;
+                        case Type.movie:
+                            return movie.texture.height;
+                    }
+                    return 0;
+                }
+            }
+            internal Transform Transform {
+                get {
+                    switch (type) {
+                        case Type.picture:
+                            return image.transform;
+                        case Type.movie:
+                            return movie.transform;
+                    }
+                    return null;
+                }
+            }
+            internal Image image;
+            internal RawImage movie;
+            internal float smoothTime = 0.5f;
+            internal Vector3 velocity = Vector3.zero;
+            internal Vector3 targetPosition = Vector3.zero;
+        }
+        private static float videoTimer = 0;
+        private static ShiftPicture shiftPicture;
         /// <summary>
         /// 繪製轉場圖片
         /// </summary>
@@ -487,12 +621,12 @@ namespace KK_FBIOpenUp {
                 case KK_FBIOpenUp.GameMode.Studio:
                     parent = GameObject.Find("StudioScene/Canvas Main Menu");
                     break;
-                case KK_FBIOpenUp.GameMode.LOGO:
-                    parent = GameObject.Find("TitleScene/Canvas/Panel");
-                    break;
-                case KK_FBIOpenUp.GameMode.MyRoom:
-                    parent = GameObject.Find("NightMenuScene/Canvas/Panel/base");
-                    break;
+                //case KK_FBIOpenUp.GameMode.LOGO:
+                //    parent = GameObject.Find("TitleScene/Canvas/Panel");
+                //    break;
+                //case KK_FBIOpenUp.GameMode.MyRoom:
+                //    parent = GameObject.Find("NightMenuScene/Canvas/Panel/base");
+                //    break;
                 case KK_FBIOpenUp.GameMode.MainGame:
                     parent = GameObject.Find("ActionScene/UI/ActionMenuCanvas/ModeAnimation");
                     break;
@@ -501,91 +635,188 @@ namespace KK_FBIOpenUp {
             }
             GameObject gameObject = new GameObject();
             gameObject.transform.SetParent(parent.transform, false);
-            if (null == image) {
+            if (null == shiftPicture) {
+                shiftPicture = new ShiftPicture();
                 switch (_step) {
                     case 1:
-                        image = UIUtility.CreateImage("", gameObject.transform, Extension.Extension.LoadNewSprite("KK_FBIOpenUp.Resources.saikodaze.jpg", 800, 657));
-                        image.rectTransform.sizeDelta = new Vector2(Screen.height / 1.5f * 800 / 657, Screen.height / 1.5f);
-                        break;
+                        shiftPicture.type = ShiftPicture.Type.picture;
+                        shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, Extension.Extension.LoadNewSprite("KK_FBIOpenUp.Resources.saikodaze.jpg", 800, 657));
+                        shiftPicture.image.rectTransform.sizeDelta = new Vector2(Screen.height / 1.5f * 800 / 657, Screen.height / 1.5f);
+                        goto case -1;
                     case 10:
-                        image = UIUtility.CreateImage("", gameObject.transform, Extension.Extension.LoadNewSprite("KK_FBIOpenUp.Resources.beam.png", 700, 700));
-                        image.rectTransform.sizeDelta = new Vector2(Screen.height / 1.25f, Screen.height / 1.25f);
+                        shiftPicture.type = ShiftPicture.Type.picture;
+                        shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, Extension.Extension.LoadNewSprite("KK_FBIOpenUp.Resources.beam.png", 700, 700));
+                        shiftPicture.image.rectTransform.sizeDelta = new Vector2(Screen.height / 1.25f, Screen.height / 1.25f);
+                        goto case -1;
+                    case 20:
+                        shiftPicture.type = ShiftPicture.Type.movie;
+                        WWW www = new WWW("file://" + Application.dataPath + "/../UserData/audio/FBI.ogg");
+                        MovieTexture movieTexture = WWWAudioExtensions.GetMovieTexture(www);
+                        movieTexture.loop = true;
+                        shiftPicture.movie = UIUtility.CreateRawImage("", gameObject.transform, movieTexture);
+                        shiftPicture.movie.rectTransform.sizeDelta = new Vector2(Screen.height / 1.5f, Screen.height / 1.5f);
+                        AudioSource audio = shiftPicture.movie.gameObject.AddComponent<AudioSource>();
+                        audio.clip = movieTexture.audioClip;
+                        audio.loop = true;
+                        movieTexture.Play();
+                        audio.Play();
+                        videoTimer = 2;
+                        goto case -2;
+                    case -1:
+                        //Right To Center
+                        shiftPicture.Transform.position = new Vector3(Screen.width + shiftPicture.Width / 2, Screen.height / 2);
+                        shiftPicture.targetPosition = new Vector3(Screen.width / 2, Screen.height / 2);
+                        break;
+                    case -2:
+                        //Left To Center
+                        shiftPicture.Transform.position = new Vector3(-1 * (Screen.width + shiftPicture.Width / 2), Screen.height / 2);
+                        shiftPicture.targetPosition = new Vector3(Screen.width / 2, Screen.height / 2);
                         break;
                 }
             }
-            image.transform.position = new Vector3(Screen.width + image.sprite.rect.width / 2, Screen.height / 2);
-            targetPosition = new Vector3(Screen.width / 2, Screen.height / 2);
             step = _step;
 
-            Logger.Log(LogLevel.Info, "[KK_FBIOU] Draw Pic Finish");
+            //Logger.Log(LogLevel.Info, "[KK_FBIOU] Draw Pic Finish");
         }
 
         private static float intensityBackup = 1f;
         private static float intensityTo = 5f;
         private static bool intensityState = false;
-        private static CameraLightCtrl.LightInfo lightInfo;
-        private static object lightCalc;
+        private static CameraLightCtrl.LightInfo studioLightInfo;
+        private static Vector3 sunlightInfoAngleBackup;
+        private static SunLightInfo sunlight;
+        private static SunLightInfo.Info sunlightInfo;
+        private static SunLightInfo.Info.Type sunlightInfoType;
+        private static object studioLightCalc;
         /// <summary>
         /// 調整角色燈光，製造爆亮轉場
         /// </summary>
         /// <param name="goLighter">True轉亮；False轉暗</param>
-        private static void ToggleCharaLight(bool goLighter) {
-            if (null == lightInfo || null == lightCalc) {
-                lightCalc = Singleton<Studio.Studio>.Instance.cameraLightCtrl.GetField("lightChara");
-                lightInfo = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
+        private static void ToggleFlashLight(bool goLighter) {
+            switch (KK_FBIOpenUp.nowGameMode) {
+                case KK_FBIOpenUp.GameMode.Studio:
+                    if (null == studioLightInfo || null == studioLightCalc) {
+                        studioLightCalc = Singleton<Studio.Studio>.Instance.cameraLightCtrl.GetField("lightChara");
+                        studioLightInfo = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
+                    }
+                    if (goLighter) {
+                        intensityBackup = studioLightInfo.intensity;
+                        intensityTo = 5f;
+                    } else {
+                        intensityTo = intensityBackup;
+                        intensityBackup = studioLightInfo.intensity;
+                    }
+                    break;
+                case KK_FBIOpenUp.GameMode.MainGame:
+                    //ActionGame.ActionMap.sunLightInfo : SunLightInfo
+                    var actionMap = Singleton<Manager.Game>.Instance.actScene.Map;
+                    sunlight = actionMap.sunLightInfo;
+                    sunlightInfoType = ActionGame.ActionMap.CycleToType(actionMap.nowCycle);
+                    sunlightInfo = sunlight.infos.FirstOrDefault((SunLightInfo.Info p) => p.type == sunlightInfoType);
+                    if (goLighter) {
+                        sunlightInfoAngleBackup = sunlightInfo.angle;
+                        sunlightInfo.angle = new Vector3(90, 90, 0);
+                        intensityBackup = sunlightInfo.intensity;
+                        intensityTo = 5f;
+                    } else {
+                        intensityTo = intensityBackup;
+                        intensityBackup = sunlightInfo.intensity;
+                    }
+                    break;
             }
-            if (goLighter) {
-                intensityBackup = lightInfo.intensity;
-                intensityTo = 5f;
-                intensityState = true;
-            } else {
-                intensityTo = intensityBackup;
-                intensityBackup = lightInfo.intensity;
-                intensityState = true;
-            }
+            intensityState = true;
         }
 
         private static int step = 0;
         private static int reflectCount = 0;
         internal static void Update() {
+            if (videoTimer > 0) {
+                videoTimer -= Time.deltaTime;
+                return;
+            }
+
             //過場圖片腳本邏輯
-            if (null != image) {
-                image.transform.position = Vector3.SmoothDamp(image.transform.position, targetPosition, ref velocity, smoothTime);
-                //Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Velocity:{velocity} ; Image.position:{image.transform.position}");
-                if ((image.transform.position - targetPosition).sqrMagnitude < 1f) {
-                    Logger.Log(LogLevel.Debug, $"[KK_FBIOU] At Step: {step}");
-                    if (intensityState && null != lightInfo && reflectCount < 60) {
-                        lightInfo.intensity += (intensityTo - intensityBackup) / 60;
-                        lightCalc.Invoke("Reflect");
+            if (null != shiftPicture && null != shiftPicture.Transform) {
+                shiftPicture.Transform.position = Vector3.SmoothDamp(shiftPicture.Transform.position, shiftPicture.targetPosition, ref shiftPicture.velocity, shiftPicture.smoothTime);
+                //Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Velocity:{velocity} ; Image.position:{shiftPicture.Transform.position}");
+                if ((shiftPicture.Transform.position - shiftPicture.targetPosition).sqrMagnitude < 1f) {
+                    if (intensityState && reflectCount < 60) {
+                        switch (KK_FBIOpenUp.nowGameMode) {
+                            case KK_FBIOpenUp.GameMode.Studio:
+                                studioLightInfo.intensity += (intensityTo - intensityBackup) / 60;
+                                studioLightCalc.Invoke("Reflect");
+                                break;
+                            case KK_FBIOpenUp.GameMode.MainGame:
+                                Logger.Log(LogLevel.Debug, $"[KK_FBIOU] intensity: {sunlightInfo.intensity}");
+                                sunlightInfo.intensity += (intensityTo - intensityBackup) / 60;
+                                sunlight.Set(sunlightInfoType, Camera.main);
+                                break;
+                        }
                         reflectCount++;
                     } else {
+                        Logger.Log(LogLevel.Debug, $"[KK_FBIOU] At Step: {step}");
                         switch (step) {
                             case 1:
                                 //由中間移動到左邊
-                                targetPosition = new Vector3(0 - (image.sprite.rect.width / 2), Screen.height / 2);
-                                stepAdd();
+                                shiftPicture.targetPosition = new Vector3(0 - (shiftPicture.Width / 2), Screen.height / 2);
+                                stepSet(3);
                                 break;
                             case 2:
+                                //由中間移動到右邊
+                                shiftPicture.targetPosition = new Vector3(Screen.width + shiftPicture.Width / 2, Screen.height / 2);
+                                stepSet(3);
+                                break;
+                            case 3:
                                 //消滅圖片
-                                GameObject.Destroy(image.transform.parent.gameObject);
+                                GameObject.Destroy(shiftPicture.Transform.parent.gameObject);
+                                shiftPicture.image = null;
+                                shiftPicture.movie = null;
+                                shiftPicture = null;
                                 stepSet(0);
                                 break;
                             case 10:
+                                //將角色全部替換
                                 //加亮角色光
                                 reflectCount = 0;
-                                ToggleCharaLight(true);
+                                ToggleFlashLight(true);
                                 stepAdd();
                                 break;
                             case 11:
                                 intensityState = false;
                                 ChangeAllCharacters();
                                 reflectCount = 0;
-                                ToggleCharaLight(false);
+                                ToggleFlashLight(false);
                                 stepAdd();
                                 break;
                             case 12:
                                 intensityState = false;
+                                if (KK_FBIOpenUp.nowGameMode == KK_FBIOpenUp.GameMode.MainGame) {
+                                    sunlightInfo.angle = sunlightInfoAngleBackup;
+                                    sunlight.Set(sunlightInfoType, Camera.main);
+                                }
                                 stepSet(1);
+                                break;
+                            case 20:
+                                //將角色換回
+                                //加亮角色光
+                                reflectCount = 0;
+                                ToggleFlashLight(true);
+                                stepAdd();
+                                break;
+                            case 21:
+                                intensityState = false;
+                                //ChangeAllCharacters();
+                                reflectCount = 0;
+                                ToggleFlashLight(false);
+                                stepAdd();
+                                break;
+                            case 22:
+                                intensityState = false;
+                                if (KK_FBIOpenUp.nowGameMode == KK_FBIOpenUp.GameMode.MainGame) {
+                                    sunlightInfo.angle = sunlightInfoAngleBackup;
+                                    sunlight.Set(sunlightInfoType, Camera.main);
+                                }
+                                stepSet(2);
                                 break;
                         }
                     }
