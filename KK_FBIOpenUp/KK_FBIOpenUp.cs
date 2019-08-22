@@ -41,7 +41,7 @@ namespace KK_FBIOpenUp {
     public class KK_FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "19.08.18.0";
+        internal const string PLUGIN_VERSION = "19.08.23.0";
 
         internal static bool _isenabled = false;
         internal static bool _isABMXExist = false;
@@ -239,92 +239,93 @@ namespace KK_FBIOpenUp {
             }
 
             //Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++j);
-            if (KK_FBIOpenUp._isABMXExist) {
-                //取得BoneController
-                object BoneController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
-                if (null == BoneController) {
-                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] No ABMX BoneController found");
-                    return;
-                }
+            //if (KK_FBIOpenUp._isABMXExist) {
+            //    //取得BoneController
+            //    object BoneController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
+            //    if (null == BoneController) {
+            //        Logger.Log(LogLevel.Debug, "[KK_FBIOU] No ABMX BoneController found");
+            //        return;
+            //    }
 
-                //建立重用function
-                void GetModifiers(Action<object> action) {
-                    foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames")) {
-                        var modifier = BoneController.Invoke("GetModifier", new object[] { boneName });
-                        if (null != modifier) {
-                            action(modifier);
-                        }
-                    }
-                }
+            //    //建立重用function
+            //    void GetModifiers(Action<object> action) {
+            //        foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames")) {
+            //            var modifier = BoneController.Invoke("GetModifier", new object[] { boneName });
+            //            if (null != modifier) {
+            //                action(modifier);
+            //            }
+            //        }
+            //    }
 
-                //取得舊角色衣服ABMX數據
-                List<object> previousModifier = new List<object>();
-                GetModifiers(x => {
-                    if ((bool)x.Invoke("IsCoordinateSpecific")) {
-                        previousModifier.Add(x);
-                    }
-                });
+            //    //取得舊角色衣服ABMX數據
+            //    List<object> previousModifier = new List<object>();
+            //    GetModifiers(x => {
+            //        if ((bool)x.Invoke("IsCoordinateSpecific")) {
+            //            previousModifier.Add(x);
+            //        }
+            //    });
 
-                //將擴充資料由暫存複製到角色身上
-                ExtendedSave.SetExtendedDataById(chaCtrl.chaFile, "KKABMPlugin.ABMData", SampleChara.ABMXData);
+            //    //將擴充資料由暫存複製到角色身上
+            //    ExtendedSave.SetExtendedDataById(chaCtrl.chaFile, "KKABMPlugin.ABMData", SampleChara.ABMXData);
 
-                //把擴充資料載入ABMX插件
-                BoneController.Invoke("OnReload", new object[] { 2, false });
+            //    //把擴充資料載入ABMX插件
+            //    BoneController.Invoke("OnReload", new object[] { 2, false });
 
-                //清理新角色數據，將衣服數據刪除
-                List<object> newModifiers = new List<object>();
-                int i = 0;
-                GetModifiers(x => {
-                    if ((bool)x.Invoke("IsCoordinateSpecific")) {
-                        Logger.Log(LogLevel.Debug, "[KK_FBIOU] Clean new coordinate ABMX BoneData: " + (string)x.GetProperty("BoneName"));
-                        x.Invoke("MakeNonCoordinateSpecific");
-                        var y = x.Invoke("GetModifier", new object[] { (ChaFileDefine.CoordinateType)0 });
-                        y.Invoke("Clear");
-                        x.Invoke("MakeCoordinateSpecific");    //保險起見以免後面沒有成功清除
-                        i++;
-                    } else {
-                        newModifiers.Add(x);
-                    }
-                });
+            //    //清理新角色數據，將衣服數據刪除
+            //    List<object> newModifiers = new List<object>();
+            //    int i = 0;
+            //    GetModifiers(x => {
+            //        if ((bool)x.Invoke("IsCoordinateSpecific")) {
+            //            Logger.Log(LogLevel.Debug, "[KK_FBIOU] Clean new coordinate ABMX BoneData: " + (string)x.GetProperty("BoneName"));
+            //            x.Invoke("MakeNonCoordinateSpecific");
+            //            var y = x.Invoke("GetModifier", new object[] { (ChaFileDefine.CoordinateType)0 });
+            //            y.Invoke("Clear");
+            //            x.Invoke("MakeCoordinateSpecific");    //保險起見以免後面沒有成功清除
+            //            i++;
+            //        } else {
+            //            newModifiers.Add(x);
+            //        }
+            //    });
 
-                //將舊的衣服數據合併回到角色身上
-                i = 0;
-                foreach (var modifier in previousModifier) {
-                    string bonename = (string)modifier.GetProperty("BoneName");
-                    if (!newModifiers.Any(x => string.Equals(bonename, (string)x.GetProperty("BoneName")))) {
-                        BoneController.Invoke("AddModifier", new object[] { modifier });
-                        Logger.Log(LogLevel.Debug, "[KK_FBIOU] Rollback cooridnate ABMX BoneData: " + bonename);
-                    } else {
-                        Logger.Log(LogLevel.Error, "[KK_FBIOU] Duplicate coordinate ABMX BoneData: " + bonename);
-                    }
-                    i++;
-                }
-                Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Merge {i} previous ABMX Bone Modifiers");
+            //    //將舊的衣服數據合併回到角色身上
+            //    i = 0;
+            //    foreach (var modifier in previousModifier) {
+            //        string bonename = (string)modifier.GetProperty("BoneName");
+            //        if (!newModifiers.Any(x => string.Equals(bonename, (string)x.GetProperty("BoneName")))) {
+            //            BoneController.Invoke("AddModifier", new object[] { modifier });
+            //            Logger.Log(LogLevel.Debug, "[KK_FBIOU] Rollback cooridnate ABMX BoneData: " + bonename);
+            //        } else {
+            //            Logger.Log(LogLevel.Error, "[KK_FBIOU] Duplicate coordinate ABMX BoneData: " + bonename);
+            //        }
+            //        i++;
+            //    }
+            //    Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Merge {i} previous ABMX Bone Modifiers");
 
-                //重整
-                BoneController.SetProperty("NeedsFullRefresh", true);
-                BoneController.SetProperty("NeedsBaselineUpdate", true);
-                BoneController.Invoke("LateUpdate");
+            //    //重整
+            //    BoneController.SetProperty("NeedsFullRefresh", true);
+            //    BoneController.SetProperty("NeedsBaselineUpdate", true);
+            //    BoneController.Invoke("LateUpdate");
 
-                //把ABMX的數據存進擴充資料
-                BoneController.Invoke("OnCardBeingSaved", new object[] { 1 });
-                BoneController.Invoke("OnReload", new object[] { 2, false });
+            //    //把ABMX的數據存進擴充資料
+            //    BoneController.Invoke("OnCardBeingSaved", new object[] { 1 });
+            //    BoneController.Invoke("OnReload", new object[] { 2, false });
 
-                //列出角色身上所有ABMX數據
-                Logger.Log(LogLevel.Debug, "[KK_FBIOU] --List all exist ABMX BoneData--");
-                foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames", null)) {
-                    var modifier = BoneController.Invoke("GetModifier", new object[] { boneName });
-                    if (null != modifier) {
-                        Logger.Log(LogLevel.Debug, "[KK_FBIOU] " + boneName);
-                    }
-                }
-            }
+            //    //列出角色身上所有ABMX數據
+            //    Logger.Log(LogLevel.Debug, "[KK_FBIOU] --List all exist ABMX BoneData--");
+            //    foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames", null)) {
+            //        var modifier = BoneController.Invoke("GetModifier", new object[] { boneName });
+            //        if (null != modifier) {
+            //            Logger.Log(LogLevel.Debug, "[KK_FBIOU] " + boneName);
+            //        }
+            //    }
+            //}
+            Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Changed.");
         }
 
         /// <summary>
         /// 將所有角色做替換
         /// </summary>
-        public static void ChangeAllCharacters() {
+        public static void ChangeAllCharacters(bool rollback = false) {
             List<ChaControl> charList = new List<ChaControl>();
             Logger.Log(LogLevel.Debug, $"[KK_FBIOU] GameMode: {Enum.GetNames(typeof(KK_FBIOpenUp.GameMode))[(int)KK_FBIOpenUp.nowGameMode]}");
             switch (KK_FBIOpenUp.nowGameMode) {
@@ -335,11 +336,46 @@ namespace KK_FBIOpenUp {
                     charList = Singleton<Manager.Game>.Instance.HeroineList.Select(x => x.chaCtrl).ToList();
                     break;
             }
-            Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Get {charList.Count} charaters.");
             if (null != charList) {
+                Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Get {charList.Count} charaters.");
                 foreach (var chaCtrl in charList) {
-                    ChangeChara(chaCtrl, true, true, false);
-                    //Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Changed {chaCtrl.chaFile.na}");
+                    if (rollback) {
+                        RollbackChara(chaCtrl);
+                    } else {
+                        ChangeChara(chaCtrl, true, true, false);
+                    }
+                }
+            } else { Logger.Log(LogLevel.Error, "[KK_FBIOU] Get CharaList FAILED! This should not happen!"); }
+        }
+
+        public static void RollbackChara(ChaControl chaCtrl) {
+            if (blockChanging || null == chaCtrl || null == chaCtrl.chaFile) {
+                return;
+            }
+
+            if (chaCtrl.chaFile.parameter.sex != SampleChara.chaFile.parameter.sex) {
+                Logger.Log(LogLevel.Info, "[KK_FBIOU] Skip changing because of wrong sex.");
+                return;
+            }
+
+            if (chaCtrl.chaFile.custom is ChaFileCustom chaFileCustom) {
+                if (chaFileCustomDict.TryGetValue(chaFileCustom, out var chaFileCustomStored)) {
+                    bool[] done = { false, false };
+                    if (chaFileCustomStored[0].Count == chaFileCustom.face.shapeValueFace.Length) {
+                        chaFileCustom.face.shapeValueFace = chaFileCustomStored[0].ToArray();
+                        done[0] = true;
+                    } else { Logger.Log(LogLevel.Error, "[KK_FBIOU] Backup face data is not match to target data!"); }
+
+                    if (chaFileCustomStored[1].Count == chaFileCustom.body.shapeValueBody.Length) {
+                        chaFileCustom.body.shapeValueBody = chaFileCustomStored[1].ToArray();
+                        done[1] = true;
+                    } else { Logger.Log(LogLevel.Error, "[KK_FBIOU] Backup body data is not match to target data!"); }
+
+                    if (done[0] & done[1]) {
+                        chaFileCustomDict.Remove(chaFileCustom);
+                    }
+                    chaCtrl.Reload(true, false, true, false);
+                    Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Rollbacked.");
                 }
             }
         }
@@ -565,7 +601,7 @@ namespace KK_FBIOpenUp {
         internal class ShiftPicture {
             public enum Type {
                 picture,
-                movie
+                video
             }
 
             internal Type type;
@@ -574,8 +610,8 @@ namespace KK_FBIOpenUp {
                     switch (type) {
                         case Type.picture:
                             return image.sprite.rect.width;
-                        case Type.movie:
-                            return movie.texture.width;
+                        case Type.video:
+                            return video.texture.width;
                     }
                     return 0;
                 }
@@ -585,8 +621,8 @@ namespace KK_FBIOpenUp {
                     switch (type) {
                         case Type.picture:
                             return image.sprite.rect.height;
-                        case Type.movie:
-                            return movie.texture.height;
+                        case Type.video:
+                            return video.texture.height;
                     }
                     return 0;
                 }
@@ -596,14 +632,14 @@ namespace KK_FBIOpenUp {
                     switch (type) {
                         case Type.picture:
                             return image.transform;
-                        case Type.movie:
-                            return movie.transform;
+                        case Type.video:
+                            return video.transform;
                     }
                     return null;
                 }
             }
             internal Image image;
-            internal RawImage movie;
+            internal RawImage video;
             internal float smoothTime = 0.5f;
             internal Vector3 velocity = Vector3.zero;
             internal Vector3 targetPosition = Vector3.zero;
@@ -635,51 +671,87 @@ namespace KK_FBIOpenUp {
             }
             GameObject gameObject = new GameObject();
             gameObject.transform.SetParent(parent.transform, false);
-            if (null == shiftPicture) {
-                shiftPicture = new ShiftPicture();
-                switch (_step) {
-                    case 1:
-                        shiftPicture.type = ShiftPicture.Type.picture;
-                        shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, Extension.Extension.LoadNewSprite("KK_FBIOpenUp.Resources.saikodaze.jpg", 800, 657));
-                        shiftPicture.image.rectTransform.sizeDelta = new Vector2(Screen.height / 1.5f * 800 / 657, Screen.height / 1.5f);
-                        goto case -1;
-                    case 10:
-                        shiftPicture.type = ShiftPicture.Type.picture;
-                        shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, Extension.Extension.LoadNewSprite("KK_FBIOpenUp.Resources.beam.png", 700, 700));
-                        shiftPicture.image.rectTransform.sizeDelta = new Vector2(Screen.height / 1.25f, Screen.height / 1.25f);
-                        goto case -1;
-                    case 20:
-                        shiftPicture.type = ShiftPicture.Type.movie;
-                        WWW www = new WWW("file://" + Application.dataPath + "/../UserData/audio/FBI.ogg");
-                        MovieTexture movieTexture = WWWAudioExtensions.GetMovieTexture(www);
-                        movieTexture.loop = true;
-                        shiftPicture.movie = UIUtility.CreateRawImage("", gameObject.transform, movieTexture);
-                        shiftPicture.movie.rectTransform.sizeDelta = new Vector2(Screen.height / 1.5f, Screen.height / 1.5f);
-                        AudioSource audio = shiftPicture.movie.gameObject.AddComponent<AudioSource>();
-                        audio.clip = movieTexture.audioClip;
-                        audio.loop = true;
-                        movieTexture.Play();
-                        audio.Play();
-                        videoTimer = 2;
-                        goto case -2;
-                    case -1:
-                        //Right To Center
-                        shiftPicture.Transform.position = new Vector3(Screen.width + shiftPicture.Width / 2, Screen.height / 2);
-                        shiftPicture.targetPosition = new Vector3(Screen.width / 2, Screen.height / 2);
-                        break;
-                    case -2:
-                        //Left To Center
-                        shiftPicture.Transform.position = new Vector3(-1 * (Screen.width + shiftPicture.Width / 2), Screen.height / 2);
-                        shiftPicture.targetPosition = new Vector3(Screen.width / 2, Screen.height / 2);
-                        break;
-                }
+            if (null != shiftPicture) {
+                GameObject.Destroy(shiftPicture.Transform.parent.gameObject);
+                shiftPicture.image = null;
+                shiftPicture.video = null;
+                shiftPicture = null;
             }
+            shiftPicture = new ShiftPicture();
             step = _step;
+            switch (_step) {
+                case 1:
+                    shiftPicture.type = ShiftPicture.Type.picture;
+                    shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, Extension.Extension.LoadNewSprite("KK_FBIOpenUp.Resources.saikodaze.jpg", 800, 657));
+                    shiftPicture.image.rectTransform.sizeDelta = new Vector2(Screen.height / 1.5f * 800 / 657, Screen.height / 1.5f);
+                    Right2Center();
+                    break;
+                case 10:
+                    shiftPicture.type = ShiftPicture.Type.picture;
+                    shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, Extension.Extension.LoadNewSprite("KK_FBIOpenUp.Resources.beam.png", 700, 700));
+                    shiftPicture.image.rectTransform.sizeDelta = new Vector2(Screen.height / 1.25f, Screen.height / 1.25f);
+                    Right2Center();
+                    break;
+                case 20:
+                    shiftPicture.type = ShiftPicture.Type.video;
 
-            //Logger.Log(LogLevel.Info, "[KK_FBIOU] Draw Pic Finish");
+                    //GameObject camera = Singleton<Manager.Game>.Instance.nowCamera.gameObject;
+
+                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] 2");
+                    shiftPicture.video = UIUtility.CreateRawImage("", gameObject.transform);
+                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] 3");
+                    shiftPicture.video.rectTransform.sizeDelta = new Vector2(Screen.height / 1.5f, Screen.height / 1.5f);
+
+                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] 1");
+                    var videoPlayer = gameObject.AddComponent<UnityEngine.Video.VideoPlayer>();
+                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] 9");
+                    videoPlayer.playOnAwake = false;
+                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] 7");
+                    videoPlayer.renderMode = UnityEngine.Video.VideoRenderMode.APIOnly;
+
+                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] 4");
+                    //videoPlayer.url= "../UserData/audio/FBI.mp4";
+                    videoPlayer.url = "file://" + Application.dataPath + "/../UserData/audio/FBI.mp4";
+                    Logger.Log(LogLevel.Debug, $"[KK_FBIOU] {videoPlayer.url}");
+                    videoPlayer.isLooping = true;
+                    videoPlayer.Prepare();
+
+                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] 5");
+                    //if (videoPlayer.texture == null) {
+                    //    Logger.Log(LogLevel.Error, "[KK_FBIOU] video not found");
+                    //    GameObject.Destroy(shiftPicture.Transform.parent.gameObject);
+                    //    shiftPicture.video = null;
+                    //    shiftPicture = null;
+                    //    _step = 0;
+                    //    break;
+                    //}
+                    videoPlayer.prepareCompleted += (source) => {
+                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] 6");
+                    shiftPicture.video.texture = videoPlayer.texture;
+                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] 8");
+                        videoTimer = 2;
+                        videoPlayer.Play();
+                        Left2Center();
+                    };
+                    break;
+            }
+
+
+            Logger.Log(LogLevel.Debug, "[KK_FBIOU] Draw Slide Pic");
+
+            void Right2Center() {
+                    //Right To Center
+                    shiftPicture.Transform.position = new Vector3(Screen.width + shiftPicture.Width / 2, Screen.height / 2);
+                    shiftPicture.targetPosition = new Vector3(Screen.width / 2, Screen.height / 2);
+            }
+            void Left2Center() {
+                    //Left To Center
+                    shiftPicture.Transform.position = new Vector3(-1 * (Screen.width + shiftPicture.Width / 2), Screen.height / 2);
+                    shiftPicture.targetPosition = new Vector3(Screen.width / 2, Screen.height / 2);
+            }
         }
 
-        private static float intensityBackup = 1f;
+        private static float intensityFrom = 1f;
         private static float intensityTo = 5f;
         private static bool intensityState = false;
         private static CameraLightCtrl.LightInfo studioLightInfo;
@@ -700,11 +772,11 @@ namespace KK_FBIOpenUp {
                         studioLightInfo = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
                     }
                     if (goLighter) {
-                        intensityBackup = studioLightInfo.intensity;
+                        intensityFrom = studioLightInfo.intensity;
                         intensityTo = 5f;
                     } else {
-                        intensityTo = intensityBackup;
-                        intensityBackup = studioLightInfo.intensity;
+                        intensityTo = intensityFrom;
+                        intensityFrom = studioLightInfo.intensity;
                     }
                     break;
                 case KK_FBIOpenUp.GameMode.MainGame:
@@ -716,11 +788,11 @@ namespace KK_FBIOpenUp {
                     if (goLighter) {
                         sunlightInfoAngleBackup = sunlightInfo.angle;
                         sunlightInfo.angle = new Vector3(90, 90, 0);
-                        intensityBackup = sunlightInfo.intensity;
+                        intensityFrom = sunlightInfo.intensity;
                         intensityTo = 5f;
                     } else {
-                        intensityTo = intensityBackup;
-                        intensityBackup = sunlightInfo.intensity;
+                        intensityTo = intensityFrom;
+                        intensityFrom = sunlightInfo.intensity;
                     }
                     break;
             }
@@ -743,12 +815,12 @@ namespace KK_FBIOpenUp {
                     if (intensityState && reflectCount < 60) {
                         switch (KK_FBIOpenUp.nowGameMode) {
                             case KK_FBIOpenUp.GameMode.Studio:
-                                studioLightInfo.intensity += (intensityTo - intensityBackup) / 60;
+                                studioLightInfo.intensity += (intensityTo - intensityFrom) / 60;
                                 studioLightCalc.Invoke("Reflect");
                                 break;
                             case KK_FBIOpenUp.GameMode.MainGame:
                                 Logger.Log(LogLevel.Debug, $"[KK_FBIOU] intensity: {sunlightInfo.intensity}");
-                                sunlightInfo.intensity += (intensityTo - intensityBackup) / 60;
+                                sunlightInfo.intensity += (intensityTo - intensityFrom) / 60;
                                 sunlight.Set(sunlightInfoType, Camera.main);
                                 break;
                         }
@@ -770,7 +842,7 @@ namespace KK_FBIOpenUp {
                                 //消滅圖片
                                 GameObject.Destroy(shiftPicture.Transform.parent.gameObject);
                                 shiftPicture.image = null;
-                                shiftPicture.movie = null;
+                                shiftPicture.video = null;
                                 shiftPicture = null;
                                 stepSet(0);
                                 break;
@@ -783,7 +855,7 @@ namespace KK_FBIOpenUp {
                                 break;
                             case 11:
                                 intensityState = false;
-                                ChangeAllCharacters();
+                                ChangeAllCharacters(false);
                                 reflectCount = 0;
                                 ToggleFlashLight(false);
                                 stepAdd();
@@ -805,7 +877,7 @@ namespace KK_FBIOpenUp {
                                 break;
                             case 21:
                                 intensityState = false;
-                                //ChangeAllCharacters();
+                                ChangeAllCharacters(true);
                                 reflectCount = 0;
                                 ToggleFlashLight(false);
                                 stepAdd();
