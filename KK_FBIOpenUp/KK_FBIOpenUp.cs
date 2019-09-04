@@ -41,7 +41,7 @@ namespace KK_FBIOpenUp {
     public class KK_FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "19.08.23.0";
+        internal const string PLUGIN_VERSION = "19.09.05.0";
 
         internal static bool _isenabled = false;
         internal static bool _isABMXExist = false;
@@ -55,6 +55,8 @@ namespace KK_FBIOpenUp {
             FreeHMenu,
             FreeH
         }
+        internal static string videoPath;
+
         public void Awake() {
             UIUtility.Init();
             HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
@@ -74,7 +76,7 @@ namespace KK_FBIOpenUp {
             //讀取config
             BepInEx.Config.ReloadConfig();
             _isenabled = string.Equals(BepInEx.Config.GetEntry("enabled", "False", PLUGIN_NAME), "True");
-            string path = BepInEx.Config.GetEntry("sample_chara", "", PLUGIN_NAME);
+            string sampleCharaPath = BepInEx.Config.GetEntry("sample_chara", "", PLUGIN_NAME);
             if (float.TryParse(BepInEx.Config.GetEntry("change_rate", "0.77", PLUGIN_NAME), out float rate)) {
                 Patches.ChangeRate = rate;
                 Logger.Log(LogLevel.Debug, "[KK_FBIOU] Change Rate: " + rate);
@@ -83,7 +85,7 @@ namespace KK_FBIOpenUp {
                 Logger.Log(LogLevel.Debug, "[KK_FBIOU] Read Change Rate FAILD. Set to default: 0.77");
                 BepInEx.Config.SetEntry("change_rate", "0.77", PLUGIN_NAME);
             }
-            if (path.Length == 0) {
+            if (sampleCharaPath.Length == 0) {
                 Logger.Log(LogLevel.Debug, "[KK_FBIOU] Use default chara");
                 //Logger.Log(LogLevel.Debug, "[KK_FBIOU] FBI! Open Up!");
                 Assembly ass = Assembly.GetExecutingAssembly();
@@ -91,10 +93,16 @@ namespace KK_FBIOpenUp {
                     Patches.LoadSampleChara(stream);
                 }
             } else {
-                Logger.Log(LogLevel.Debug, "[KK_FBIOU] Load path: " + path);
-                using (FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read)) {
+                Logger.Log(LogLevel.Debug, "[KK_FBIOU] Load path: " + sampleCharaPath);
+                using (FileStream fileStream = new FileStream(sampleCharaPath, FileMode.Open, FileAccess.Read)) {
                     Patches.LoadSampleChara(fileStream);
                 }
+            }
+            var tempVideoPath = BepInEx.Config.GetEntry("video_related_path", "UserData/audio/FBI.mp4", PLUGIN_NAME);
+            if (!File.Exists(tempVideoPath)) {
+                Logger.Log(LogLevel.Error, "[KK_FBIOU] Video Not Found: " + tempVideoPath);
+            } else {
+                videoPath = $"file://{Application.dataPath}/../{tempVideoPath}";
             }
 
             if (Application.productName == "CharaStudio") {
@@ -482,12 +490,9 @@ namespace KK_FBIOpenUp {
         /// 切換紅色書包圖標顯示
         /// </summary>
         /// <param name="showPic">是否顯示過場圖片</param>
-        private static void ChangeRedBagBtn(GameObject redBagBtn, bool showPic, KK_FBIOpenUp.GameMode gameMode) {
+        private static void ChangeRedBagBtn(GameObject redBagBtn, KK_FBIOpenUp.GameMode gameMode) {
             if (KK_FBIOpenUp._isenabled) {
                 redBagBtn.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
-                if (showPic) {
-                    DrawSlidePic(1, gameMode);
-                }
                 Logger.Log(LogLevel.Info, "[KK_FBIOU] Enable Plugin");
             } else {
                 redBagBtn.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.3f);
@@ -570,32 +575,42 @@ namespace KK_FBIOpenUp {
                 //baseEventData.selectedObject.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
                 switch (KK_FBIOpenUp.nowGameMode) {
                     case KK_FBIOpenUp.GameMode.MainGame:
-                        if (KK_FBIOpenUp._isenabled) {
-                            DrawSlidePic(20, gameMode);
-                        } else {
-                            DrawSlidePic(10, gameMode);
-                        }
-                        KK_FBIOpenUp._isenabled = !KK_FBIOpenUp._isenabled;
-                        ChangeRedBagBtn(redBagBtn, false, gameMode);
-                        break;
-                    case KK_FBIOpenUp.GameMode.LOGO:
-                    case KK_FBIOpenUp.GameMode.MyRoom:
                         KK_FBIOpenUp.ToggleEnabled();
-                        ChangeRedBagBtn(redBagBtn, true, gameMode);
-                        break;
-                    case KK_FBIOpenUp.GameMode.Studio:
-                        if (clickDeltaTime <= 1f) {
-                            KK_FBIOpenUp.ToggleEnabled();
-                            ChangeRedBagBtn(redBagBtn, true, gameMode);
-                        } else {
+                        if (KK_FBIOpenUp._isenabled) {
                             DrawSlidePic(10, gameMode);
+                        } else {
+                            DrawSlidePic(20, gameMode);
+                        }
+                        ChangeRedBagBtn(redBagBtn, gameMode);
+                        break;
+                    //case KK_FBIOpenUp.GameMode.LOGO:
+                    //case KK_FBIOpenUp.GameMode.MyRoom:
+                    //    KK_FBIOpenUp.ToggleEnabled();
+                    //    ChangeRedBagBtn(redBagBtn, true, gameMode);
+                    //    break;
+                    case KK_FBIOpenUp.GameMode.Studio:
+                        KK_FBIOpenUp.ToggleEnabled();
+                        if (clickDeltaTime <= 1f) {
+                            if (KK_FBIOpenUp._isenabled) {
+                                DrawSlidePic(1, gameMode);
+                            } else {
+                                DrawSlidePic(2, gameMode);
+                            }
+                            ChangeRedBagBtn(redBagBtn, gameMode);
+                        } else {
+                            if (KK_FBIOpenUp._isenabled) {
+                                DrawSlidePic(10, gameMode);
+                            } else {
+                                DrawSlidePic(20, gameMode);
+                            }
+                            ChangeRedBagBtn(redBagBtn, gameMode);
                         }
                         break;
                 }
             });
             trigger.triggers.Add(pointerUp);
 
-            ChangeRedBagBtn(redBagBtn, false, gameMode);
+            ChangeRedBagBtn(redBagBtn, gameMode);
         }
 
         internal class ShiftPicture {
@@ -671,6 +686,7 @@ namespace KK_FBIOpenUp {
             }
             GameObject gameObject = new GameObject();
             gameObject.transform.SetParent(parent.transform, false);
+            gameObject.SetActive(false);
             if (null != shiftPicture) {
                 GameObject.Destroy(shiftPicture.Transform.parent.gameObject);
                 shiftPicture.image = null;
@@ -681,56 +697,72 @@ namespace KK_FBIOpenUp {
             step = _step;
             switch (_step) {
                 case 1:
+                    //小學生真是太棒了
                     shiftPicture.type = ShiftPicture.Type.picture;
                     shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, Extension.Extension.LoadNewSprite("KK_FBIOpenUp.Resources.saikodaze.jpg", 800, 657));
                     shiftPicture.image.rectTransform.sizeDelta = new Vector2(Screen.height / 1.5f * 800 / 657, Screen.height / 1.5f);
                     Right2Center();
                     break;
+                case 2:
+                    //熊吉逮捕
+                    shiftPicture.type = ShiftPicture.Type.picture;
+                    shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, Extension.Extension.LoadNewSprite("KK_FBIOpenUp.Resources.Kumakichi.jpg", 640, 480));
+                    shiftPicture.image.rectTransform.sizeDelta = new Vector2(Screen.height / 1.5f * 640 / 480, Screen.height / 1.5f);
+                    Left2Center();
+                    break;
                 case 10:
+                    //幼女退光線
                     shiftPicture.type = ShiftPicture.Type.picture;
                     shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, Extension.Extension.LoadNewSprite("KK_FBIOpenUp.Resources.beam.png", 700, 700));
                     shiftPicture.image.rectTransform.sizeDelta = new Vector2(Screen.height / 1.25f, Screen.height / 1.25f);
                     Right2Center();
                     break;
                 case 20:
+                    //FBI Open Up影片
+                    if(null == KK_FBIOpenUp.videoPath) {
+                        break;
+                    }
+
                     shiftPicture.type = ShiftPicture.Type.video;
 
                     //GameObject camera = Singleton<Manager.Game>.Instance.nowCamera.gameObject;
 
-                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] 2");
                     shiftPicture.video = UIUtility.CreateRawImage("", gameObject.transform);
-                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] 3");
                     shiftPicture.video.rectTransform.sizeDelta = new Vector2(Screen.height / 1.5f, Screen.height / 1.5f);
 
-                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] 1");
-                    var videoPlayer = gameObject.AddComponent<UnityEngine.Video.VideoPlayer>();
-                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] 9");
+                    UnityEngine.Video.VideoPlayer videoPlayer = gameObject.AddComponent<UnityEngine.Video.VideoPlayer>();
+                    AudioSource audioSource = gameObject.AddComponent<AudioSource>();
                     videoPlayer.playOnAwake = false;
-                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] 7");
+                    audioSource.playOnAwake = false;
                     videoPlayer.renderMode = UnityEngine.Video.VideoRenderMode.APIOnly;
 
-                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] 4");
                     //videoPlayer.url= "../UserData/audio/FBI.mp4";
-                    videoPlayer.url = "file://" + Application.dataPath + "/../UserData/audio/FBI.mp4";
+                    videoPlayer.url = KK_FBIOpenUp.videoPath;
+
+                    //Set Audio Output to AudioSource
+                    videoPlayer.audioOutputMode = UnityEngine.Video.VideoAudioOutputMode.AudioSource;
+
+                    //Assign the Audio from Video to AudioSource to be played
+                    videoPlayer.EnableAudioTrack(0, true);
+                    videoPlayer.SetTargetAudioSource(0, audioSource);
+
                     Logger.Log(LogLevel.Debug, $"[KK_FBIOU] {videoPlayer.url}");
                     videoPlayer.isLooping = true;
                     videoPlayer.Prepare();
-
-                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] 5");
-                    //if (videoPlayer.texture == null) {
-                    //    Logger.Log(LogLevel.Error, "[KK_FBIOU] video not found");
-                    //    GameObject.Destroy(shiftPicture.Transform.parent.gameObject);
-                    //    shiftPicture.video = null;
-                    //    shiftPicture = null;
-                    //    _step = 0;
-                    //    break;
-                    //}
                     videoPlayer.prepareCompleted += (source) => {
-                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] 6");
-                    shiftPicture.video.texture = videoPlayer.texture;
-                    Logger.Log(LogLevel.Debug, "[KK_FBIOU] 8");
+                        if (videoPlayer.texture == null) {
+                            Logger.Log(LogLevel.Error, "[KK_FBIOU] Video not found");
+                            GameObject.Destroy(shiftPicture.Transform.parent.gameObject);
+                            shiftPicture.video = null;
+                            shiftPicture = null;
+                            _step = 0;
+                            return;
+                        }
+
+                        shiftPicture.video.texture = videoPlayer.texture;
                         videoTimer = 2;
                         videoPlayer.Play();
+                        audioSource.Play();
                         Left2Center();
                     };
                     break;
@@ -740,14 +772,16 @@ namespace KK_FBIOpenUp {
             Logger.Log(LogLevel.Debug, "[KK_FBIOU] Draw Slide Pic");
 
             void Right2Center() {
-                    //Right To Center
-                    shiftPicture.Transform.position = new Vector3(Screen.width + shiftPicture.Width / 2, Screen.height / 2);
-                    shiftPicture.targetPosition = new Vector3(Screen.width / 2, Screen.height / 2);
+                //Right To Center
+                shiftPicture.Transform.position = new Vector3(Screen.width + shiftPicture.Width / 2, Screen.height / 2);
+                shiftPicture.targetPosition = new Vector3(Screen.width / 2, Screen.height / 2);
+                gameObject.SetActive(true);
             }
             void Left2Center() {
-                    //Left To Center
-                    shiftPicture.Transform.position = new Vector3(-1 * (Screen.width + shiftPicture.Width / 2), Screen.height / 2);
-                    shiftPicture.targetPosition = new Vector3(Screen.width / 2, Screen.height / 2);
+                //Left To Center
+                shiftPicture.Transform.position = new Vector3(-1 * (Screen.width + shiftPicture.Width / 2), Screen.height / 2);
+                shiftPicture.targetPosition = new Vector3(Screen.width / 2, Screen.height / 2);
+                gameObject.SetActive(true);
             }
         }
 

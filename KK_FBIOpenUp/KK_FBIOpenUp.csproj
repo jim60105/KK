@@ -102,7 +102,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="ILMergeOrder.txt" />
-    <None Include="Resources\FBI.ogg" />
+    <Content Include="Resources\D0KmKMMUUAEigFR.jpg" />
+    <Content Include="Resources\FBI.mp4" />
+    <Content Include="Resources\istockphoto-941388108-1024x1024.jpg" />
+    <EmbeddedResource Include="Resources\Kumakichi.jpg" />
     <EmbeddedResource Include="Resources\beam.png" />
     <EmbeddedResource Include="Resources\saikodaze.jpg" />
     <EmbeddedResource Include="Resources\redBag.png" />
