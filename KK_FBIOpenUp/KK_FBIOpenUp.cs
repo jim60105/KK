@@ -41,7 +41,7 @@ namespace KK_FBIOpenUp {
     public class KK_FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "19.09.05.0";
+        internal const string PLUGIN_VERSION = "19.09.05.1";
 
         internal static bool _isenabled = false;
         internal static bool _isABMXExist = false;
@@ -56,6 +56,7 @@ namespace KK_FBIOpenUp {
             FreeH
         }
         internal static string videoPath;
+        internal static float videoVolume = 0.1f;
 
         public void Awake() {
             UIUtility.Init();
@@ -98,12 +99,16 @@ namespace KK_FBIOpenUp {
                     Patches.LoadSampleChara(fileStream);
                 }
             }
+
             var tempVideoPath = BepInEx.Config.GetEntry("video_related_path", "UserData/audio/FBI.mp4", PLUGIN_NAME);
             if (!File.Exists(tempVideoPath)) {
                 Logger.Log(LogLevel.Error, "[KK_FBIOU] Video Not Found: " + tempVideoPath);
             } else {
                 videoPath = $"file://{Application.dataPath}/../{tempVideoPath}";
             }
+
+            videoVolume = float.Parse(BepInEx.Config.GetEntry("video_volume", "0.06", PLUGIN_NAME));
+            Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Set video volume to {videoVolume}");
 
             if (Application.productName == "CharaStudio") {
                 nowGameMode = GameMode.Studio;
@@ -419,11 +424,11 @@ namespace KK_FBIOpenUp {
         //    DrawRedBagBtn(__instance, KK_FBIOpenUp.GameMode.MyRoom);
         //}
 
-        [HarmonyPostfix, HarmonyPatch(typeof(TitleScene), "Start")]
-        public static void StartPostfix2(TitleScene __instance) {
-            KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.LOGO;
-            DrawRedBagBtn(__instance, KK_FBIOpenUp.GameMode.LOGO);
-        }
+        //[HarmonyPostfix, HarmonyPatch(typeof(TitleScene), "Start")]
+        //public static void StartPostfix2(TitleScene __instance) {
+        //    KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.LOGO;
+        //    DrawRedBagBtn(__instance, KK_FBIOpenUp.GameMode.LOGO);
+        //}
 
         [HarmonyPostfix, HarmonyPatch(typeof(ActionScene), "Start")]
         public static void StartPostfix3(ActionScene __instance) {
@@ -694,7 +699,6 @@ namespace KK_FBIOpenUp {
                 shiftPicture = null;
             }
             shiftPicture = new ShiftPicture();
-            step = _step;
             switch (_step) {
                 case 1:
                     //小學生真是太棒了
@@ -719,13 +723,11 @@ namespace KK_FBIOpenUp {
                     break;
                 case 20:
                     //FBI Open Up影片
-                    if(null == KK_FBIOpenUp.videoPath) {
-                        break;
+                    if (null == KK_FBIOpenUp.videoPath) {
+                        return;
                     }
 
                     shiftPicture.type = ShiftPicture.Type.video;
-
-                    //GameObject camera = Singleton<Manager.Game>.Instance.nowCamera.gameObject;
 
                     shiftPicture.video = UIUtility.CreateRawImage("", gameObject.transform);
                     shiftPicture.video.rectTransform.sizeDelta = new Vector2(Screen.height / 1.5f, Screen.height / 1.5f);
@@ -748,6 +750,11 @@ namespace KK_FBIOpenUp {
 
                     Logger.Log(LogLevel.Debug, $"[KK_FBIOU] {videoPlayer.url}");
                     videoPlayer.isLooping = true;
+
+                    //先把他移到螢幕外啟用，否則未啟用無法Prepare，而直接啟用會出現白色畫面
+                    shiftPicture.Transform.position = new Vector3(-2 * Screen.width, Screen.height / 2);
+                    gameObject.SetActive(true);
+
                     videoPlayer.Prepare();
                     videoPlayer.prepareCompleted += (source) => {
                         if (videoPlayer.texture == null) {
@@ -763,11 +770,14 @@ namespace KK_FBIOpenUp {
                         videoTimer = 2;
                         videoPlayer.Play();
                         audioSource.Play();
+
+                        //影片太大聲QQ
+                        audioSource.volume = KK_FBIOpenUp.videoVolume;
+
                         Left2Center();
                     };
                     break;
             }
-
 
             Logger.Log(LogLevel.Debug, "[KK_FBIOU] Draw Slide Pic");
 
@@ -776,12 +786,14 @@ namespace KK_FBIOpenUp {
                 shiftPicture.Transform.position = new Vector3(Screen.width + shiftPicture.Width / 2, Screen.height / 2);
                 shiftPicture.targetPosition = new Vector3(Screen.width / 2, Screen.height / 2);
                 gameObject.SetActive(true);
+                step = _step;
             }
             void Left2Center() {
                 //Left To Center
                 shiftPicture.Transform.position = new Vector3(-1 * (Screen.width + shiftPicture.Width / 2), Screen.height / 2);
                 shiftPicture.targetPosition = new Vector3(Screen.width / 2, Screen.height / 2);
                 gameObject.SetActive(true);
+                step = _step;
             }
         }
 
@@ -862,22 +874,23 @@ namespace KK_FBIOpenUp {
                     } else {
                         Logger.Log(LogLevel.Debug, $"[KK_FBIOU] At Step: {step}");
                         switch (step) {
+                            case 0:
+                                //消滅圖片
+                                if (null != shiftPicture.Transform.parent.gameObject) {
+                                    GameObject.Destroy(shiftPicture.Transform.parent.gameObject);
+                                    shiftPicture.image = null;
+                                    shiftPicture.video = null;
+                                    shiftPicture = null;
+                                }
+                                break;
                             case 1:
                                 //由中間移動到左邊
                                 shiftPicture.targetPosition = new Vector3(0 - (shiftPicture.Width / 2), Screen.height / 2);
-                                stepSet(3);
+                                stepSet(0);
                                 break;
                             case 2:
                                 //由中間移動到右邊
                                 shiftPicture.targetPosition = new Vector3(Screen.width + shiftPicture.Width / 2, Screen.height / 2);
-                                stepSet(3);
-                                break;
-                            case 3:
-                                //消滅圖片
-                                GameObject.Destroy(shiftPicture.Transform.parent.gameObject);
-                                shiftPicture.image = null;
-                                shiftPicture.video = null;
-                                shiftPicture = null;
                                 stepSet(0);
                                 break;
                             case 10:
