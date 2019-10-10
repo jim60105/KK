@@ -40,7 +40,7 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "19.08.15.0";
+        internal const string PLUGIN_VERSION = "19.10.09.0";
 
         public void Awake() {
             UIUtility.Init();
@@ -381,7 +381,7 @@ namespace KK_StudioCoordinateLoadOption {
                                select Studio.Studio.GetCtrlInfo(v) as OCIChar into v
                                where v != null
                                select v).ToArray();
-            if (isAllTrueFlag && !excludeHairAcc) {
+            if (isAllTrueFlag && !excludeHairAcc && !addAccModeFlag) {
                 Logger.Log(LogLevel.Info, "[KK_SCLO] Toggle all true, use original game function");
                 foreach (var ocichar in array) {
                     ocichar.LoadClothesFile(charaFileSort.selectPath);
