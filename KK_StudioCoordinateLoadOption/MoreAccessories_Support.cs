@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Xml;
 using UnityEngine;
 using Logger = BepInEx.Logger;
+using ResolveInfo = Sideloader.AutoResolver.ResolveInfo;
 
 namespace KK_StudioCoordinateLoadOption {
     class MoreAccessories_Support {
@@ -66,8 +67,8 @@ namespace KK_StudioCoordinateLoadOption {
             object MoreAccObj = MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null);
             Dictionary<ChaFile, object> _accessoriesByChar = MoreAccObj.GetField("_accessoriesByChar").ToDictionary<ChaFile, object>();
             _accessoriesByChar.TryGetValue(chaCtrl.chaFile, out var charAdditionalData);
-            charAdditionalData.GetField("rawAccessoriesInfos").ToDictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>>().TryGetValue((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType,out List<ChaFileAccessory.PartsInfo> parts);
-            for(int i=0;i<parts.Count;i++) {
+            charAdditionalData.GetField("rawAccessoriesInfos").ToDictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>>().TryGetValue((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, out List<ChaFileAccessory.PartsInfo> parts);
+            for (int i = 0; i < parts.Count; i++) {
                 if (!Patches.IsHairAccessory(chaCtrl, i)) {
                     parts[i] = new ChaFileAccessory.PartsInfo();
                 }
@@ -109,14 +110,39 @@ namespace KK_StudioCoordinateLoadOption {
             Logger.Log(LogLevel.Debug, $"[KK_SCLO] MoreAcc TempLoadedAcc Count : {tempLoadedAccessories.Count}");
             Logger.Log(LogLevel.Debug, $"[KK_SCLO] MoreAcc OriginalParts Count : {parts.Count}");
 
+            //讀取Sideloader extData
+            List<ResolveInfo> extInfoList;
+            if (sideLoaderExtData == null || !sideLoaderExtData.data.ContainsKey("info")) {
+                Logger.Log(LogLevel.Debug, "[KK_SCLO] No sideloader extInfo found");
+                extInfoList = null;
+            } else {
+                var tmpExtInfo = (object[])sideLoaderExtData.data["info"];
+                extInfoList = tmpExtInfo.Select(x => MessagePackSerializer.Deserialize<ResolveInfo>((byte[])x)).ToList();
+            }
+
+            //本地Info
+            var LoadedResolutionInfoList = Sideloader.AutoResolver.UniversalAutoResolver.LoadedResolutionInfo?.ToList();
             for (int i = 0; i < tempLoadedAccessories.Count; i++) {
-                var tempSerlz = MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(tempLoadedAccessories.ElementAtOrDefault(i) ?? new ChaFileAccessory.PartsInfo());
+                ChaFileAccessory.PartsInfo tempLoadedAccessory = tempLoadedAccessories.ElementAtOrDefault(i);
+                //處理Sideloader mod
+                if (null != extInfoList && null != LoadedResolutionInfoList && default(ChaFileAccessory.PartsInfo)!=tempLoadedAccessory) {
+                    ResolveInfo tmpExtInfo = extInfoList.FirstOrDefault(x => x.CategoryNo == (ChaListDefine.CategoryNo)tempLoadedAccessory.type && x.Slot == tempLoadedAccessory.id);
+                    if (default(ResolveInfo) != tmpExtInfo) {
+                        ResolveInfo localExtInfo = LoadedResolutionInfoList.FirstOrDefault(x => x.GUID == tmpExtInfo.GUID && x.CategoryNo ==tmpExtInfo.CategoryNo && x.Slot ==tmpExtInfo.Slot);
+                        if (default(ResolveInfo) != localExtInfo) {
+                            Logger.Log(LogLevel.Debug, $"[KK_SCLO] Resolve {localExtInfo.GUID}: {localExtInfo.Slot} -> {localExtInfo.LocalSlot}");
+                            tempLoadedAccessory.id = localExtInfo.LocalSlot;
+                        }
+                    }
+                }
+
+                var tempSerlz = MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(tempLoadedAccessory ?? new ChaFileAccessory.PartsInfo());
                 //如果該位置為髮飾品、增加模式，且在舊飾品數量內，則Enqueue
                 if (i < parts.Count && (Patches.IsHairAccessory(chaCtrl, i + 20) || Patches.addAccModeFlag)) {
                     accQueue.Enqueue(tempSerlz);
                     //parts[i] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(ori);
                     Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Lock: MoreAcc{i} / ID: {parts.ElementAtOrDefault(i)?.id ?? 0}");
-                    Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->EnQueue: MoreAcc{i} / ID: {tempLoadedAccessories[i].id}");
+                    Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->EnQueue: MoreAcc{i} / ID: {tempLoadedAccessory.id}");
                 } else if (i > parts.Count - 1) {
                     //超過原本數量，就改用Add
                     parts.Add(MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tempSerlz));
@@ -181,13 +207,15 @@ namespace KK_StudioCoordinateLoadOption {
         }
 
         private static readonly List<ChaFileAccessory.PartsInfo> tempLoadedAccessories = new List<ChaFileAccessory.PartsInfo>();
+        private static PluginData sideLoaderExtData;
         /// <summary>
-        /// 讀取MoreAccessories的名稱
+        /// 讀取MoreAccessories
         /// </summary>
         /// <param name="chaFileCoordinate">讀取的衣裝對象</param>
         /// <returns></returns>
         public static string[] LoadMoreAcc(ChaFileCoordinate chaFileCoordinate) {
             tempLoadedAccessories.Clear();
+            sideLoaderExtData = ExtendedSave.GetExtendedDataById(chaFileCoordinate, "com.bepis.sideloader.universalautoresolver");
 
             XmlNode node = null;
             PluginData pluginData = ExtendedSave.GetExtendedDataById(chaFileCoordinate, "moreAccessories");
@@ -224,14 +252,7 @@ namespace KK_StudioCoordinateLoadOption {
                             };
                         }
                         part.hideCategory = XmlConvert.ToInt32(accessoryNode.Attributes["hideCategory"].Value);
-                    }
-
-                    //處理Sideloader mod
-                    if (null == Singleton<Manager.Character>.Instance.chaListCtrl.GetListInfo((ChaListDefine.CategoryNo)part.type, part.id)) {
-                        var resolveInfo = Sideloader.AutoResolver.UniversalAutoResolver.LoadedResolutionInfo?.ToList()?.FirstOrDefault(x => x.CategoryNo == (ChaListDefine.CategoryNo)part.type && x.Slot == part.id);
-                        if (null != resolveInfo) {
-                            part.id = resolveInfo.LocalSlot;
-                        }
+                        part.noShake = (accessoryNode.Attributes["noShake"] != null && XmlConvert.ToBoolean(accessoryNode.Attributes["noShake"].Value));
                     }
                     tempLoadedAccessories.Add(part);
                 }
@@ -268,7 +289,7 @@ namespace KK_StudioCoordinateLoadOption {
             .GetField("_accessoriesByChar")
             .ToDictionary<ChaFile, object>()
             .TryGetValue(chaFile, out var charAdditionalData);
-            return charAdditionalData?.GetField("nowAccessories").ToList<ChaFileAccessory.PartsInfo>().Count+20 ?? 20;
+            return charAdditionalData?.GetField("nowAccessories").ToList<ChaFileAccessory.PartsInfo>().Count + 20 ?? 20;
         }
     }
 }

@@ -40,7 +40,7 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "19.10.09.0";
+        internal const string PLUGIN_VERSION = "19.10.11.0";
 
         public void Awake() {
             UIUtility.Init();
