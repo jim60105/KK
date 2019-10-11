@@ -40,7 +40,7 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "19.10.11.1";
+        internal const string PLUGIN_VERSION = "19.10.11.2";
 
         public void Awake() {
             UIUtility.Init();
@@ -119,7 +119,7 @@ namespace KK_StudioCoordinateLoadOption {
         private static Toggle[] tgls;
         private static Image panel2;
         private static RectTransform toggleGroup;
-        internal static bool excludeHairAcc = true;
+        internal static bool lockHairAcc = true;
         internal static bool addAccModeFlag = true;
 
         public static void InitPostfix(object __instance) {
@@ -181,14 +181,14 @@ namespace KK_StudioCoordinateLoadOption {
             line.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -287.5f), new Vector2(140f, -286f));
 
             //排除頭髮飾品toggle
-            Toggle tglHair = UIUtility.CreateToggle("excludeHairAcc", panel.transform, StringResources.StringResourcesManager.GetString("lockHairAcc"));
+            Toggle tglHair = UIUtility.CreateToggle("lockHairAcc", panel.transform, StringResources.StringResourcesManager.GetString("lockHairAcc"));
             tglHair.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
             tglHair.GetComponentInChildren<Text>(true).color = Color.yellow;
             tglHair.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -317.5f), new Vector2(-5f, -292.5f));
             tglHair.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
-            tglHair.isOn = excludeHairAcc;
+            tglHair.isOn = lockHairAcc;
             tglHair.onValueChanged.AddListener((x) => {
-                excludeHairAcc = x;
+                lockHairAcc = x;
             });
 
             //飾品載入模式btn
@@ -381,7 +381,7 @@ namespace KK_StudioCoordinateLoadOption {
                                select Studio.Studio.GetCtrlInfo(v) as OCIChar into v
                                where v != null
                                select v).ToArray();
-            if (isAllTrueFlag && !excludeHairAcc && !addAccModeFlag) {
+            if (isAllTrueFlag && !lockHairAcc && !addAccModeFlag) {
                 Logger.Log(LogLevel.Info, "[KK_SCLO] Toggle all true, use original game function");
                 foreach (var ocichar in array) {
                     ocichar.LoadClothesFile(charaFileSort.selectPath);
@@ -407,7 +407,7 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="index">飾品欄位index</param>
         /// <returns></returns>
         public static bool IsHairAccessory(ChaControl chaCtrl, int index) {
-            if (!excludeHairAcc) { return false; }
+            if (!lockHairAcc) { return false; }
             return GetChaAccessoryComponent(chaCtrl, index)?.gameObject.GetComponent<ChaCustomHairComponent>() != null;
         }
 
