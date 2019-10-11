@@ -40,7 +40,7 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "19.10.11.2";
+        internal const string PLUGIN_VERSION = "19.10.11.3";
 
         public void Awake() {
             UIUtility.Init();
@@ -73,7 +73,7 @@ namespace KK_StudioCoordinateLoadOption {
             _isKCOXExist = IsPluginExist("KCOX", new Version(5, 0)) && KCOX_Support.LoadAssembly();
             _isABMXExist = IsPluginExist("KKABMX.Core", null) && ABMX_Support.LoadAssembly();
             _isMoreAccessoriesExist = IsPluginExist("com.joan6694.illusionplugins.moreaccessories", null) && MoreAccessories_Support.LoadAssembly();
-            _isMaterialEditorExist = IsPluginExist("com.deathweasel.bepinex.materialeditor",new Version(1,4)) && MaterialEditor_Support.LoadAssembly();
+            _isMaterialEditorExist = IsPluginExist("com.deathweasel.bepinex.materialeditor", new Version(1, 4)) && MaterialEditor_Support.LoadAssembly();
 
             StringResources.StringResourcesManager.SetUICulture();
         }
@@ -279,10 +279,13 @@ namespace KK_StudioCoordinateLoadOption {
                         }
                     }
                     if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
-                        ocichar.charInfo.chaFile.coordinate[ocichar.charInfo.fileStatus.coordinateType] = ocichar.charInfo.nowCoordinate;
+                        //以下這行造成後續換衣不正常運作的問題，未勾選項也會被載入
+                        //ocichar.charInfo.chaFile.coordinate[ocichar.charInfo.fileStatus.coordinateType] = ocichar.charInfo.nowCoordinate;
                         MoreAccessories_Support.ClearMoreAccessoriesData(ocichar.charInfo);
                     }
-                    ocichar.charInfo.ChangeAccessory(true);
+                    //ocichar.charInfo.ChangeAccessory(true);
+                    ocichar.charInfo.Reload(false, true, true, true);
+                    ocichar.charInfo.AssignCoordinate((ChaFileDefine.CoordinateType)ocichar.charInfo.fileStatus.coordinateType);
                 }
 
                 Logger.Log(LogLevel.Debug, "[KK_SCLO] Clear accessories Finish");
@@ -443,20 +446,22 @@ namespace KK_StudioCoordinateLoadOption {
                         //Copy accessories
                         Queue<byte[]> accQueue = new Queue<byte[]>();
                         for (int i = 0; i < tmpChaFileCoordinate.accessory.parts.Length; i++) {
-                            if ((bool)tgls2[i]?.isOn) {
-                                var tmp = MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(tmpChaFileCoordinate.accessory.parts[i]);
-                                if (IsHairAccessory(chaCtrl, i) || addAccModeFlag) {
-                                    //如果要替入的不是空格，就放進accQueue
-                                    if (tmpChaFileCoordinate.accessory.parts[i].type != 120) {
-                                        accQueue.Enqueue(tmp);
-                                        Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Lock: Acc{i} / ID: {chaCtrl.nowCoordinate.accessory.parts[i].id}");
-                                        Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->EnQueue: Acc{i} / ID: {tmpChaFileCoordinate.accessory.parts[i].id}");
-                                    }
-                                } else {
-                                    chaCtrl.nowCoordinate.accessory.parts[i] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tmp);
-                                    //chaCtrl.ChangeAccessory(i, chaCtrl.nowCoordinate.accessory.parts[i].type, chaCtrl.nowCoordinate.accessory.parts[i].id, chaCtrl.nowCoordinate.accessory.parts[i].parentKey, true);
-                                    Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Changed: Acc{i} / ID: {tmpChaFileCoordinate.accessory.parts[i].id}");
+                            if (!(bool)tgls2[i]?.isOn) {
+                                continue;
+                            }
+
+                            var tmp = MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(tmpChaFileCoordinate.accessory.parts[i]);
+                            if (IsHairAccessory(chaCtrl, i) || addAccModeFlag) {
+                                //如果要替入的不是空格，就放進accQueue
+                                if (tmpChaFileCoordinate.accessory.parts[i].type != 120) {
+                                    accQueue.Enqueue(tmp);
+                                    Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Lock: Acc{i} / ID: {chaCtrl.nowCoordinate.accessory.parts[i].id}");
+                                    Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->EnQueue: Acc{i} / ID: {tmpChaFileCoordinate.accessory.parts[i].id}");
                                 }
+                            } else {
+                                chaCtrl.nowCoordinate.accessory.parts[i] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tmp);
+                                //chaCtrl.ChangeAccessory(i, chaCtrl.nowCoordinate.accessory.parts[i].type, chaCtrl.nowCoordinate.accessory.parts[i].id, chaCtrl.nowCoordinate.accessory.parts[i].parentKey, true);
+                                Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Changed: Acc{i} / ID: {tmpChaFileCoordinate.accessory.parts[i].id}");
                             }
                         }
                         chaCtrl.ChangeAccessory(true);

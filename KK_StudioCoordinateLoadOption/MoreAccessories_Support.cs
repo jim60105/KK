@@ -110,6 +110,10 @@ namespace KK_StudioCoordinateLoadOption {
             Logger.Log(LogLevel.Debug, $"[KK_SCLO] MoreAcc TempLoadedAcc Count : {tempLoadedAccessories.Count}");
             Logger.Log(LogLevel.Debug, $"[KK_SCLO] MoreAcc OriginalParts Count : {parts.Count}");
             for (int i = 0; i < tempLoadedAccessories.Count; i++) {
+                if (!bools[i]) {
+                    continue;
+                }
+
                 ChaFileAccessory.PartsInfo tempLoadedAccessory = tempLoadedAccessories.ElementAtOrDefault(i);
 
                 var tempSerlz = MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(tempLoadedAccessory ?? new ChaFileAccessory.PartsInfo());
@@ -119,13 +123,15 @@ namespace KK_StudioCoordinateLoadOption {
                     //parts[i] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(ori);
                     Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Lock: MoreAcc{i} / ID: {parts.ElementAtOrDefault(i)?.id ?? 0}");
                     Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->EnQueue: MoreAcc{i} / ID: {tempLoadedAccessory.id}");
-                } else if (i > parts.Count - 1) {
+                    Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Changed: MoreAcc{i} / ID: {parts[i].id}");
+                } else if (i >= parts.Count) {
                     //超過原本數量，就改用Add
                     parts.Add(MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tempSerlz));
-                } else if (bools[i]) {
+                    Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Changed: MoreAcc{i} / ID: {parts.Last().id}");
+                } else {
                     parts[i] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tempSerlz);
+                    Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Changed: MoreAcc{i} / ID: {parts[i].id}");
                 }
-                Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Changed: MoreAcc{i} / ID: {parts[i].id}");
             }
             //遍歷空欄，寫入暫存在accQueue的飾品
             for (int j = 0; accQueue.Count > 0; j++) {
