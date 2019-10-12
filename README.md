@@ -5,7 +5,7 @@
 飾品可選擇「取代模式」和「增加模式」<br>
 取代模式會複寫同欄位的飾品，而增加模式會往空欄位一直附加上去<br>
 「鎖定頭髮飾品」可將頭髮飾品鎖定，使之不會受到清除和複寫<br>
-**將「鎖定頭髮飾品」以外的選項全勾即會調用遊戲原始程式碼**<br>
+**將「鎖定頭髮飾品」以外的選項全勾，並使用飾品「取代模式」即會調用遊戲原始程式碼**<br>
 目前確定支援Plugin:<br>
 - Koikatu Overlay Mods **v5.0以上** (v4.2版用戶請下載[舊版v2.0.2](https://github.com/jim60105/KK/releases/download/v19.07.22.0/KK_StudioCoordinateLoadOption2.0.2.rar)版)<br>
 - Koikatu ABMX V3.3
@@ -73,8 +73,8 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 可以使用Configuration Manager個別設定Import/Load是否啟用 (預設皆啟用)<br>
 
 # 需求依賴
-BepInEx v4.1.1<br>
-BepisPlugins r11.1
+BepInEx v4.1.2<br>
+BepisPlugins r11.2.1
 
 # 安裝方式
 - 將所有的「*.dll」檔案放進BepInEx資料夾<br>
