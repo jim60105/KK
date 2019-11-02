@@ -17,13 +17,13 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
-using System.ComponentModel;
 using BepInEx;
+using BepInEx.Configuration;
+using BepInEx.Harmony;
 using BepInEx.Logging;
 using Extension;
-using Harmony;
+using HarmonyLib;
 using Studio;
-using Logger = BepInEx.Logger;
 
 namespace KK_StudioAutoCloseLoadingSceneWindow {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
@@ -31,17 +31,19 @@ namespace KK_StudioAutoCloseLoadingSceneWindow {
     public class KK_StudioAutoCloseLoadingSceneWindow : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Auto Close Loading Scene Window";
         internal const string GUID = "com.jim60105.kk.studioautocloseloadingscenewindow";
-        internal const string PLUGIN_VERSION = "19.07.15.2";
+        internal const string PLUGIN_VERSION = "19.11.02.0";
 
+        public static ConfigEntry<bool> EnableOnLoad { get; private set; }
+        public static ConfigEntry<bool> EnableOnImport { get; private set; }
+
+        internal static new ManualLogSource Logger;
         public void Awake() {
-            HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
+            Logger = base.Logger;
+            HarmonyWrapper.PatchAll(typeof(Patches));
+
+            EnableOnLoad = Config.AddSetting("Config", "EnableOnLoad", true, "Auto close after scene Loaded.");
+            EnableOnImport = Config.AddSetting("Config", "EnableOnImport", true, "Auto close after scene Imported.");
         }
-
-        [DisplayName("Auto close after scene \"Load\"")]
-        public static ConfigWrapper<bool> EnableOnLoad { get; } = new ConfigWrapper<bool>(nameof(EnableOnLoad), PLUGIN_NAME, true);
-
-        [DisplayName("Auto close after scene \"Import\"")]
-        public static ConfigWrapper<bool> EnableOnImport { get; } = new ConfigWrapper<bool>(nameof(EnableOnImport), PLUGIN_NAME, true);
     }
 
     class Patches {
@@ -70,7 +72,7 @@ namespace KK_StudioAutoCloseLoadingSceneWindow {
             if (isLoading && data.levelName == "StudioNotification") {
                 isLoading = false;
                 sceneLoadScene.Invoke("OnClickClose");
-                Logger.Log(LogLevel.Debug, "[KK_SACLS] Auto close load scene window");
+                KK_StudioAutoCloseLoadingSceneWindow.Logger.LogDebug("Auto close load scene window");
             }
         }
     }

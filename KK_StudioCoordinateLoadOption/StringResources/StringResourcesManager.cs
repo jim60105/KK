@@ -6,9 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Resources;
 using System.Threading;
-using BepInEx.Logging;
 using UnityEngine;
-using Logger = BepInEx.Logger;
 
 namespace KK_StudioCoordinateLoadOption.StringResources {
     internal static class StringResourcesManager {
@@ -25,7 +23,7 @@ namespace KK_StudioCoordinateLoadOption.StringResources {
                     ? (UICulture = Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultures(CultureTypes.AllCultures).FirstOrDefault(x => x.EnglishName.Equals(Application.systemLanguage.ToString())))
                     : (UICulture = Thread.CurrentThread.CurrentUICulture = CultureInfo.CreateSpecificCulture(culture));
             } catch (Exception) {
-                Logger.Log(LogLevel.Info, $"[KK_SCLO] Language not found. Keep {UICulture.Name}");
+                KK_StudioCoordinateLoadOption.Logger.LogInfo($"Language not found. Keep {UICulture.Name}");
                 return Thread.CurrentThread.CurrentUICulture = UICulture;
             }
         }
@@ -45,13 +43,13 @@ namespace KK_StudioCoordinateLoadOption.StringResources {
             }
 
             if (string.IsNullOrEmpty(str))
-                Logger.Log(LogLevel.Info, "[KK_SCLO] Empty language query string");
+                KK_StudioCoordinateLoadOption.Logger.LogInfo("Empty language query string");
 
             Assembly asm = Assembly.GetExecutingAssembly();
             Stream stream;
             stream = asm.GetManifestResourceStream($"{asm.GetName().Name}.StringResources.StringResources.{lang}.resources");
 
-            if(null==stream && lang.IndexOf("-") > 0) {
+            if (null == stream && lang.IndexOf("-") > 0) {
                 lang = lang.Substring(0, lang.IndexOf("-"));
                 stream = asm.GetManifestResourceStream($"{asm.GetName().Name}.StringResources.StringResources.{lang}.resources");
             }
@@ -59,7 +57,9 @@ namespace KK_StudioCoordinateLoadOption.StringResources {
             // resource not found, revert to default resource
             if (null == stream) {
                 stream = asm.GetManifestResourceStream($"{asm.GetName().Name}.StringResources.StringResources.resources");
-                Logger.Log(LogLevel.Debug, $"[KK_SCLO] Language {lang} not found! Load English for default.");
+                if (lang != "en") {
+                    KK_StudioCoordinateLoadOption.Logger.LogDebug($"Language {lang} not found! Load English for default.");
+                }
             }
 
             if (null != stream) {

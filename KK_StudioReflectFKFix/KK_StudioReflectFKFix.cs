@@ -17,16 +17,15 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
-using System.Reflection;
 using BepInEx;
+using BepInEx.Harmony;
 using BepInEx.Logging;
 using Extension;
-using Harmony;
+using HarmonyLib;
 using Studio;
 using UILib;
 using UnityEngine;
 using UnityEngine.UI;
-using Logger = BepInEx.Logger;
 
 namespace KK_StudioReflectFKFix {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
@@ -34,9 +33,13 @@ namespace KK_StudioReflectFKFix {
     public class KK_StudioReflectFKFix : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Reflect FK Fix";
         internal const string GUID = "com.jim60105.kk.studioreflectfkfix";
-        internal const string PLUGIN_VERSION = "19.06.06.0";
+        internal const string PLUGIN_VERSION = "19.11.01.0";
 
-        public void Awake() => HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
+        internal static new ManualLogSource Logger;
+        public void Awake() {
+            Logger = base.Logger;
+            HarmonyWrapper.PatchAll(typeof(Patches));
+        }
     }
 
     class Patches {
@@ -60,13 +63,13 @@ namespace KK_StudioReflectFKFix {
             ((Button)__instance.GetField("ikInfo").GetField("buttonReflectFK")).onClick.RemoveAllListeners();
             ((Button)__instance.GetField("ikInfo").GetField("buttonReflectFK")).onClick.AddListener(delegate () {
                 //__instance.CopyBoneFK((OIBoneInfo.BoneGroup)353);
-                typeof(MPCharCtrl).InvokeMember("CopyBoneFK", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod, null, __instance, new object[] { OIBoneInfo.BoneGroup.Body });
+                __instance.Invoke("CopyBoneFK", new object[] { OIBoneInfo.BoneGroup.Body });
             });
             ((Button[])__instance.GetField("fkInfo").GetField("buttonAnimeSingle"))[1].onClick.RemoveAllListeners();
             ((Button[])__instance.GetField("fkInfo").GetField("buttonAnimeSingle"))[1].onClick.AddListener(delegate () {
-                typeof(MPCharCtrl).InvokeMember("CopyBoneFK", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod, null, __instance, new object[] { OIBoneInfo.BoneGroup.Neck });
+                __instance.Invoke("CopyBoneFK", new object[] { OIBoneInfo.BoneGroup.Neck });
             });
-            Logger.Log(LogLevel.Debug, "[KK_SRFF] FK Fix Finish");
+            KK_StudioReflectFKFix.Logger.LogDebug("FK Fix Finish");
             InitBtn(__instance);
         }
 
@@ -84,10 +87,10 @@ namespace KK_StudioReflectFKFix {
             btn.GetComponent<Button>().interactable = true;
 
             btn.GetComponent<Button>().onClick.AddListener(() => {
-                typeof(MPCharCtrl).InvokeMember("CopyBoneFK", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.InvokeMethod, null, __instance, new object[] { OIBoneInfo.BoneGroup.Neck });
+                __instance.Invoke("CopyBoneFK", new object[] { OIBoneInfo.BoneGroup.Neck });
             });
 
-            Logger.Log(LogLevel.Debug, "[KK_SRFF] Draw Button Finish");
+            KK_StudioReflectFKFix.Logger.LogDebug("Draw Button Finish");
         }
     }
 }

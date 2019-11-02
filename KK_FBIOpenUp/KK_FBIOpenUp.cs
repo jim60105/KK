@@ -18,10 +18,12 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
 using BepInEx;
+using BepInEx.Configuration;
+using BepInEx.Harmony;
 using BepInEx.Logging;
 using ExtensibleSaveFormat;
 using Extension;
-using Harmony;
+using HarmonyLib;
 using MessagePack;
 using Studio;
 using System;
@@ -33,15 +35,14 @@ using UILib;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using Logger = BepInEx.Logger;
 
 namespace KK_FBIOpenUp {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
-    //[BepInProcess("CharaStudio")]
+    [BepInDependency("KKABMX.Core", BepInDependency.DependencyFlags.SoftDependency)]
     public class KK_FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "19.09.05.1";
+        internal const string PLUGIN_VERSION = "19.11.02.1";
 
         internal static bool _isenabled = false;
         internal static bool _isABMXExist = false;
@@ -58,9 +59,17 @@ namespace KK_FBIOpenUp {
         internal static string videoPath;
         internal static float videoVolume = 0.1f;
 
+        public static ConfigEntry<bool> Enable { get; private set; }
+        public static ConfigEntry<string> Sample_chara { get; private set; }
+        public static ConfigEntry<float> Change_rate { get; private set; }
+        public static ConfigEntry<string> Video_related_path { get; private set; }
+        public static ConfigEntry<float> Video_volume { get; private set; }
+
+        internal static new ManualLogSource Logger;
         public void Awake() {
+            Logger = base.Logger;
             UIUtility.Init();
-            HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
+            HarmonyWrapper.PatchAll(typeof(Patches));
         }
 
         public void Update() {
@@ -68,47 +77,56 @@ namespace KK_FBIOpenUp {
         }
 
         public void Start() {
-            bool IsPluginExist(string pluginName) {
-                return null != BepInEx.Bootstrap.Chainloader.Plugins.Select(MetadataHelper.GetMetadata).FirstOrDefault(x => x.GUID == pluginName);
+            BaseUnityPlugin TryGetPluginInstance(string pluginName, Version minimumVersion = null) {
+                BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue(pluginName, out var target);
+                if (null != target) {
+                    if (target.Metadata.Version >= minimumVersion) {
+                        return target.Instance;
+                    }
+                    Logger.LogMessage($" {pluginName} v{target.Metadata.Version.ToString()} is detacted OUTDATED.");
+                    Logger.LogMessage($"Please update {pluginName} to at least v{minimumVersion.ToString()} to enable related feature.");
+                }
+                return null;
             }
 
-            _isABMXExist = IsPluginExist("KKABMX.Core");// && ABMX_Support.LoadAssembly();
+            _isABMXExist = null != TryGetPluginInstance("KKABMX.Core", new Version(3, 3));
 
             //讀取config
-            BepInEx.Config.ReloadConfig();
-            _isenabled = string.Equals(BepInEx.Config.GetEntry("enabled", "False", PLUGIN_NAME), "True");
-            string sampleCharaPath = BepInEx.Config.GetEntry("sample_chara", "", PLUGIN_NAME);
-            if (float.TryParse(BepInEx.Config.GetEntry("change_rate", "0.77", PLUGIN_NAME), out float rate)) {
-                Patches.ChangeRate = rate;
-                Logger.Log(LogLevel.Debug, "[KK_FBIOU] Change Rate: " + rate);
-            } else {
-                Patches.ChangeRate = 0.77f;
-                Logger.Log(LogLevel.Debug, "[KK_FBIOU] Read Change Rate FAILD. Set to default: 0.77");
-                BepInEx.Config.SetEntry("change_rate", "0.77", PLUGIN_NAME);
-            }
+            Enable = Config.AddSetting("Config", "Enable", false);
+            _isenabled = Enable.Value;
+
+            Sample_chara = Config.AddSetting("Config", "Sample_chara", "");
+            string sampleCharaPath = Sample_chara.Value;
             if (sampleCharaPath.Length == 0) {
-                Logger.Log(LogLevel.Debug, "[KK_FBIOU] Use default chara");
-                //Logger.Log(LogLevel.Debug, "[KK_FBIOU] FBI! Open Up!");
+                KK_FBIOpenUp.Logger.LogDebug("Use default chara");
+                //KK_FBIOpenUp.Logger.LogDebug("FBI! Open Up!");
                 Assembly ass = Assembly.GetExecutingAssembly();
                 using (Stream stream = ass.GetManifestResourceStream("KK_FBIOpenUp.Resources.sample_chara.png")) {
                     Patches.LoadSampleChara(stream);
                 }
             } else {
-                Logger.Log(LogLevel.Debug, "[KK_FBIOU] Load path: " + sampleCharaPath);
+                KK_FBIOpenUp.Logger.LogDebug("Load path: " + sampleCharaPath);
                 using (FileStream fileStream = new FileStream(sampleCharaPath, FileMode.Open, FileAccess.Read)) {
                     Patches.LoadSampleChara(fileStream);
                 }
             }
 
-            var tempVideoPath = BepInEx.Config.GetEntry("video_related_path", "UserData/audio/FBI.mp4", PLUGIN_NAME);
+            Change_rate = Config.AddSetting("Config", "change_rate", 0.77f);
+            float rate = Change_rate.Value;
+            Patches.ChangeRate = rate;
+            KK_FBIOpenUp.Logger.LogDebug("Change Rate: " + rate);
+
+            Video_related_path = Config.AddSetting("Config", "Video_related_path", "UserData/audio/FBI.mp4");
+            var tempVideoPath = Video_related_path.Value;
             if (!File.Exists(tempVideoPath)) {
-                Logger.Log(LogLevel.Error, "[KK_FBIOU] Video Not Found: " + tempVideoPath);
+                KK_FBIOpenUp.Logger.LogError("Video Not Found: " + tempVideoPath);
             } else {
                 videoPath = $"file://{Application.dataPath}/../{tempVideoPath}";
             }
 
-            videoVolume = float.Parse(BepInEx.Config.GetEntry("video_volume", "0.06", PLUGIN_NAME));
-            Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Set video volume to {videoVolume}");
+            Video_volume = Config.AddSetting("Config", "Video_volume", 0.06f);
+            videoVolume = Video_volume.Value;
+            KK_FBIOpenUp.Logger.LogDebug($"Set video volume to {videoVolume}");
 
             if (Application.productName == "CharaStudio") {
                 nowGameMode = GameMode.Studio;
@@ -121,8 +139,8 @@ namespace KK_FBIOpenUp {
 
         internal static void ToggleEnabled() {
             _isenabled = !_isenabled;
-            BepInEx.Config.SetEntry("enabled", _isenabled ? "True" : "False", PLUGIN_NAME);
-            BepInEx.Config.ReloadConfig();
+
+            Enable.Value = _isenabled;
         }
     }
     internal class Patches {
@@ -159,20 +177,20 @@ namespace KK_FBIOpenUp {
             blockChanging = true;
             SampleChara.chaFile = new ChaFileControl();
             SampleChara.chaFile.Invoke("LoadCharaFile", new object[] { stream, true, true });
-            Logger.Log(LogLevel.Debug, "[KK_FBIOU] Loaded sample chara: " + SampleChara.chaFile.parameter.fullname);
+            KK_FBIOpenUp.Logger.LogDebug("Loaded sample chara: " + SampleChara.chaFile.parameter.fullname);
             blockChanging = false;
             var face = MessagePackSerializer.Deserialize<ChaFileFace>(MessagePackSerializer.Serialize<ChaFileFace>(SampleChara.chaFile.custom.face));
             var body = MessagePackSerializer.Deserialize<ChaFileBody>(MessagePackSerializer.Serialize<ChaFileBody>(SampleChara.chaFile.custom.body));
-            //Logger.Log(LogLevel.Message, "[KK_FBIOU] Length Face: " + face.shapeValueFace.Length);
-            //Logger.Log(LogLevel.Message, "[KK_FBIOU] Length Body: " + body.shapeValueBody.Length);
+            //KK_FBIOpenUp.Logger.LogMessage("Length Face: " + face.shapeValueFace.Length);
+            //KK_FBIOpenUp.Logger.LogMessage("Length Body: " + body.shapeValueBody.Length);
             SampleChara.shapeValueFace = face.shapeValueFace.ToList();
             SampleChara.shapeValueBody = body.shapeValueBody.ToList();
 
             SampleChara.ABMXData = ExtendedSave.GetExtendedDataById(SampleChara.chaFile, "KKABMPlugin.ABMData");
             if (null != SampleChara.ABMXData) {
-                Logger.Log(LogLevel.Debug, "[KK_FBIOU] Loaded sample chara ABMX");
+                KK_FBIOpenUp.Logger.LogDebug("Loaded sample chara ABMX");
             } else {
-                Logger.Log(LogLevel.Debug, "[KK_FBIOU] NO sample chara ABMX");
+                KK_FBIOpenUp.Logger.LogDebug("NO sample chara ABMX");
             }
         }
 
@@ -193,23 +211,23 @@ namespace KK_FBIOpenUp {
             }
 
             if (chaCtrl.chaFile.parameter.sex != SampleChara.chaFile.parameter.sex) {
-                Logger.Log(LogLevel.Info, "[KK_FBIOU] Skip changing because of wrong sex.");
+                KK_FBIOpenUp.Logger.LogInfo("Skip changing because of wrong sex.");
                 return;
             }
 
             //int j = 0;
-            //Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++j);
+            //KK_FBIOpenUp.Logger.LogInfo("" + ++j);
             List<float> originalShapeValueFace;
             List<float> originalShapeValueBody;
             ChaFileCustom chaFileCustom = chaCtrl.chaFile.custom;
-            //Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++j);
+            //KK_FBIOpenUp.Logger.LogInfo("" + ++j);
 
-            //Logger.Log(LogLevel.Message, "[KK_FBIOU] Length Face: " + chaFileCustom.face.shapeValueFace.Length);
-            //Logger.Log(LogLevel.Message, "[KK_FBIOU] Length Body: " + chaFileCustom.body.shapeValueBody.Length);
+            //KK_FBIOpenUp.Logger.LogMessage("Length Face: " + chaFileCustom.face.shapeValueFace.Length);
+            //KK_FBIOpenUp.Logger.LogMessage("Length Body: " + chaFileCustom.body.shapeValueBody.Length);
             originalShapeValueFace = chaFileCustom.face.shapeValueFace.ToList();
             originalShapeValueBody = chaFileCustom.body.shapeValueBody.ToList();
             List<float> result;
-            //Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++j);
+            //KK_FBIOpenUp.Logger.LogInfo("" + ++j);
 
             //如果角色第一次替換，紀錄其原始數據至dict
             //如果在dict內有找到替換紀錄，以其原始數據來做替換
@@ -223,9 +241,9 @@ namespace KK_FBIOpenUp {
                 }
             } else {
                 chaFileCustomDict.Add(chaFileCustom, new List<float>[] { new List<float>(originalShapeValueFace), new List<float>(originalShapeValueBody) });
-                Logger.Log(LogLevel.Debug, "[KK_FBIOU] chaFileCustomDict.Count: " + chaFileCustomDict.Count);
+                KK_FBIOpenUp.Logger.LogDebug("chaFileCustomDict.Count: " + chaFileCustomDict.Count);
             }
-            //Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++j);
+            //KK_FBIOpenUp.Logger.LogInfo("" + ++j);
 
             if (null != SampleChara.shapeValueFace && changeFace) {
                 if (originalShapeValueFace.Count == SampleChara.shapeValueFace.Count) {
@@ -234,10 +252,10 @@ namespace KK_FBIOpenUp {
                         result.Add(SampleChara.shapeValueFace[i] + ((originalShapeValueFace[i] - SampleChara.shapeValueFace[i]) * keepRate));
                     }
                     chaFileCustom.face.shapeValueFace = result.ToArray();
-                } else { Logger.Log(LogLevel.Error, "[KK_FBIOU] Sample data is not match to target data!"); }
-                Logger.Log(LogLevel.Debug, "[KK_FBIOU] Changed face finish");
+                } else { KK_FBIOpenUp.Logger.LogError("Sample data is not match to target data!"); }
+                KK_FBIOpenUp.Logger.LogDebug("Changed face finish");
             }
-            //Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++j);
+            //KK_FBIOpenUp.Logger.LogInfo("" + ++j);
 
             if (null != SampleChara.shapeValueBody && changeBody) {
                 if (originalShapeValueBody.Count == SampleChara.shapeValueBody.Count) {
@@ -247,16 +265,16 @@ namespace KK_FBIOpenUp {
                     }
                     chaFileCustom.body.shapeValueBody = result.ToArray();
                     chaCtrl.Reload(true, false, true, false);
-                } else { Logger.Log(LogLevel.Error, "[KK_FBIOU] Sample data is not match to target data!"); }
-                Logger.Log(LogLevel.Debug, "[KK_FBIOU] Changed body finish");
+                } else { KK_FBIOpenUp.Logger.LogError("Sample data is not match to target data!"); }
+                KK_FBIOpenUp.Logger.LogDebug("Changed body finish");
             }
 
-            //Logger.Log(LogLevel.Info, "[KK_FBIOU] " + ++j);
+            //KK_FBIOpenUp.Logger.LogInfo("" + ++j);
             //if (KK_FBIOpenUp._isABMXExist) {
             //    //取得BoneController
             //    object BoneController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
             //    if (null == BoneController) {
-            //        Logger.Log(LogLevel.Debug, "[KK_FBIOU] No ABMX BoneController found");
+            //        KK_FBIOpenUp.Logger.LogDebug("No ABMX BoneController found");
             //        return;
             //    }
 
@@ -289,7 +307,7 @@ namespace KK_FBIOpenUp {
             //    int i = 0;
             //    GetModifiers(x => {
             //        if ((bool)x.Invoke("IsCoordinateSpecific")) {
-            //            Logger.Log(LogLevel.Debug, "[KK_FBIOU] Clean new coordinate ABMX BoneData: " + (string)x.GetProperty("BoneName"));
+            //            KK_FBIOpenUp.Logger.LogDebug("Clean new coordinate ABMX BoneData: " + (string)x.GetProperty("BoneName"));
             //            x.Invoke("MakeNonCoordinateSpecific");
             //            var y = x.Invoke("GetModifier", new object[] { (ChaFileDefine.CoordinateType)0 });
             //            y.Invoke("Clear");
@@ -306,13 +324,13 @@ namespace KK_FBIOpenUp {
             //        string bonename = (string)modifier.GetProperty("BoneName");
             //        if (!newModifiers.Any(x => string.Equals(bonename, (string)x.GetProperty("BoneName")))) {
             //            BoneController.Invoke("AddModifier", new object[] { modifier });
-            //            Logger.Log(LogLevel.Debug, "[KK_FBIOU] Rollback cooridnate ABMX BoneData: " + bonename);
+            //            KK_FBIOpenUp.Logger.LogDebug("Rollback cooridnate ABMX BoneData: " + bonename);
             //        } else {
-            //            Logger.Log(LogLevel.Error, "[KK_FBIOU] Duplicate coordinate ABMX BoneData: " + bonename);
+            //            KK_FBIOpenUp.Logger.LogError("Duplicate coordinate ABMX BoneData: " + bonename);
             //        }
             //        i++;
             //    }
-            //    Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Merge {i} previous ABMX Bone Modifiers");
+            //    KK_FBIOpenUp.Logger.LogDebug($"Merge {i} previous ABMX Bone Modifiers");
 
             //    //重整
             //    BoneController.SetProperty("NeedsFullRefresh", true);
@@ -324,15 +342,15 @@ namespace KK_FBIOpenUp {
             //    BoneController.Invoke("OnReload", new object[] { 2, false });
 
             //    //列出角色身上所有ABMX數據
-            //    Logger.Log(LogLevel.Debug, "[KK_FBIOU] --List all exist ABMX BoneData--");
+            //    KK_FBIOpenUp.Logger.LogDebug("--List all exist ABMX BoneData--");
             //    foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames", null)) {
             //        var modifier = BoneController.Invoke("GetModifier", new object[] { boneName });
             //        if (null != modifier) {
-            //            Logger.Log(LogLevel.Debug, "[KK_FBIOU] " + boneName);
+            //            KK_FBIOpenUp.Logger.LogDebug("" + boneName);
             //        }
             //    }
             //}
-            Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Changed.");
+            KK_FBIOpenUp.Logger.LogDebug($"Changed.");
         }
 
         /// <summary>
@@ -340,7 +358,7 @@ namespace KK_FBIOpenUp {
         /// </summary>
         public static void ChangeAllCharacters(bool rollback = false) {
             List<ChaControl> charList = new List<ChaControl>();
-            Logger.Log(LogLevel.Debug, $"[KK_FBIOU] GameMode: {Enum.GetNames(typeof(KK_FBIOpenUp.GameMode))[(int)KK_FBIOpenUp.nowGameMode]}");
+            KK_FBIOpenUp.Logger.LogDebug($"GameMode: {Enum.GetNames(typeof(KK_FBIOpenUp.GameMode))[(int)KK_FBIOpenUp.nowGameMode]}");
             switch (KK_FBIOpenUp.nowGameMode) {
                 case KK_FBIOpenUp.GameMode.Studio:
                     charList = Studio.Studio.Instance.dicInfo.Values.OfType<Studio.OCIChar>().Select(x => x.charInfo).ToList();
@@ -350,7 +368,7 @@ namespace KK_FBIOpenUp {
                     break;
             }
             if (null != charList) {
-                Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Get {charList.Count} charaters.");
+                KK_FBIOpenUp.Logger.LogDebug($"Get {charList.Count} charaters.");
                 foreach (var chaCtrl in charList) {
                     if (rollback) {
                         RollbackChara(chaCtrl);
@@ -358,7 +376,7 @@ namespace KK_FBIOpenUp {
                         ChangeChara(chaCtrl, true, true, false);
                     }
                 }
-            } else { Logger.Log(LogLevel.Error, "[KK_FBIOU] Get CharaList FAILED! This should not happen!"); }
+            } else { KK_FBIOpenUp.Logger.LogError("Get CharaList FAILED! This should not happen!"); }
         }
 
         public static void RollbackChara(ChaControl chaCtrl) {
@@ -367,7 +385,7 @@ namespace KK_FBIOpenUp {
             }
 
             if (chaCtrl.chaFile.parameter.sex != SampleChara.chaFile.parameter.sex) {
-                Logger.Log(LogLevel.Info, "[KK_FBIOU] Skip changing because of wrong sex.");
+                KK_FBIOpenUp.Logger.LogInfo("Skip changing because of wrong sex.");
                 return;
             }
 
@@ -377,18 +395,18 @@ namespace KK_FBIOpenUp {
                     if (chaFileCustomStored[0].Count == chaFileCustom.face.shapeValueFace.Length) {
                         chaFileCustom.face.shapeValueFace = chaFileCustomStored[0].ToArray();
                         done[0] = true;
-                    } else { Logger.Log(LogLevel.Error, "[KK_FBIOU] Backup face data is not match to target data!"); }
+                    } else { KK_FBIOpenUp.Logger.LogError("Backup face data is not match to target data!"); }
 
                     if (chaFileCustomStored[1].Count == chaFileCustom.body.shapeValueBody.Length) {
                         chaFileCustom.body.shapeValueBody = chaFileCustomStored[1].ToArray();
                         done[1] = true;
-                    } else { Logger.Log(LogLevel.Error, "[KK_FBIOU] Backup body data is not match to target data!"); }
+                    } else { KK_FBIOpenUp.Logger.LogError("Backup body data is not match to target data!"); }
 
                     if (done[0] & done[1]) {
                         chaFileCustomDict.Remove(chaFileCustom);
                     }
                     chaCtrl.Reload(true, false, true, false);
-                    Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Rollbacked.");
+                    KK_FBIOpenUp.Logger.LogDebug($"Rollbacked.");
                 }
             }
         }
@@ -485,7 +503,7 @@ namespace KK_FBIOpenUp {
             if (flag) {
                 chaFileCustomDict.Clear();
             }
-            Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Set Init: {flag}");
+            KK_FBIOpenUp.Logger.LogDebug($"Set Init: {flag}");
         }
 
         #endregion Hooks
@@ -498,10 +516,10 @@ namespace KK_FBIOpenUp {
         private static void ChangeRedBagBtn(GameObject redBagBtn, KK_FBIOpenUp.GameMode gameMode) {
             if (KK_FBIOpenUp._isenabled) {
                 redBagBtn.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
-                Logger.Log(LogLevel.Info, "[KK_FBIOU] Enable Plugin");
+                KK_FBIOpenUp.Logger.LogInfo("Enable Plugin");
             } else {
                 redBagBtn.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.3f);
-                Logger.Log(LogLevel.Info, "[KK_FBIOU] Disable Plugin");
+                KK_FBIOpenUp.Logger.LogInfo("Disable Plugin");
             }
         }
 
@@ -748,7 +766,7 @@ namespace KK_FBIOpenUp {
                     videoPlayer.EnableAudioTrack(0, true);
                     videoPlayer.SetTargetAudioSource(0, audioSource);
 
-                    Logger.Log(LogLevel.Debug, $"[KK_FBIOU] {videoPlayer.url}");
+                    KK_FBIOpenUp.Logger.LogDebug($"{videoPlayer.url}");
                     videoPlayer.isLooping = true;
 
                     //先把他移到螢幕外啟用，否則未啟用無法Prepare，而直接啟用會出現白色畫面
@@ -758,7 +776,7 @@ namespace KK_FBIOpenUp {
                     videoPlayer.Prepare();
                     videoPlayer.prepareCompleted += (source) => {
                         if (videoPlayer.texture == null) {
-                            Logger.Log(LogLevel.Error, "[KK_FBIOU] Video not found");
+                            KK_FBIOpenUp.Logger.LogError("Video not found");
                             GameObject.Destroy(shiftPicture.Transform.parent.gameObject);
                             shiftPicture.video = null;
                             shiftPicture = null;
@@ -779,7 +797,7 @@ namespace KK_FBIOpenUp {
                     break;
             }
 
-            Logger.Log(LogLevel.Debug, "[KK_FBIOU] Draw Slide Pic");
+            KK_FBIOpenUp.Logger.LogDebug("Draw Slide Pic");
 
             void Right2Center() {
                 //Right To Center
@@ -856,7 +874,7 @@ namespace KK_FBIOpenUp {
             //過場圖片腳本邏輯
             if (null != shiftPicture && null != shiftPicture.Transform) {
                 shiftPicture.Transform.position = Vector3.SmoothDamp(shiftPicture.Transform.position, shiftPicture.targetPosition, ref shiftPicture.velocity, shiftPicture.smoothTime);
-                //Logger.Log(LogLevel.Debug, $"[KK_FBIOU] Velocity:{velocity} ; Image.position:{shiftPicture.Transform.position}");
+                //KK_FBIOpenUp.Logger.LogDebug($"Velocity:{velocity} ; Image.position:{shiftPicture.Transform.position}");
                 if ((shiftPicture.Transform.position - shiftPicture.targetPosition).sqrMagnitude < 1f) {
                     if (intensityState && reflectCount < 60) {
                         switch (KK_FBIOpenUp.nowGameMode) {
@@ -865,14 +883,14 @@ namespace KK_FBIOpenUp {
                                 studioLightCalc.Invoke("Reflect");
                                 break;
                             case KK_FBIOpenUp.GameMode.MainGame:
-                                Logger.Log(LogLevel.Debug, $"[KK_FBIOU] intensity: {sunlightInfo.intensity}");
+                                KK_FBIOpenUp.Logger.LogDebug($"intensity: {sunlightInfo.intensity}");
                                 sunlightInfo.intensity += (intensityTo - intensityFrom) / 60;
                                 sunlight.Set(sunlightInfoType, Camera.main);
                                 break;
                         }
                         reflectCount++;
                     } else {
-                        Logger.Log(LogLevel.Debug, $"[KK_FBIOU] At Step: {step}");
+                        KK_FBIOpenUp.Logger.LogDebug($"At Step: {step}");
                         switch (step) {
                             case 0:
                                 //消滅圖片

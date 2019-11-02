@@ -24,12 +24,12 @@ using System.Reflection;
 using BepInEx;
 using BepInEx.Logging;
 using Extension;
-using Harmony;
+using BepInEx.Harmony;
 using Manager;
 using Studio;
 using UniRx;
 using UnityEngine;
-using Logger = BepInEx.Logger;
+using HarmonyLib;
 
 namespace KK_StudioSimpleColorOnGirls {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
@@ -37,19 +37,19 @@ namespace KK_StudioSimpleColorOnGirls {
     public class KK_StudioSimpleColorOnGirls : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Simple Color On Girls";
         internal const string GUID = "com.jim60105.kk.studiosimplecolorongirls";
-        internal const string PLUGIN_VERSION = "19.06.07.0";
+        internal const string PLUGIN_VERSION = "19.11.02.1";
 
+        internal static new ManualLogSource Logger;
         public void Awake() {
-            HarmonyInstance harmonyInstance = HarmonyInstance.Create(GUID);
-            harmonyInstance.PatchAll(typeof(Patches));
+            Logger = base.Logger;
+            var harmonyInstance = HarmonyWrapper.PatchAll(typeof(Patches));
             harmonyInstance.Patch(typeof(MPCharCtrl).GetNestedType("StateInfo", BindingFlags.NonPublic).GetMethod("OnValueChangedSimple", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(Patches.OnValueChangedSimplePostfix), null), null);
             harmonyInstance.Patch(typeof(MPCharCtrl).GetNestedType("StateInfo", BindingFlags.NonPublic).GetMethod("OnValueChangeSimpleColor", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(Patches.OnValueChangeSimpleColorPostfix), null), null);
             harmonyInstance.Patch(typeof(MPCharCtrl).GetNestedType("OtherInfo", BindingFlags.Public).GetMethod("UpdateInfo", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(Patches.UpdateInfoPostfix), null), null);
 
             //Workaround for EC Yoyaku Build
             if (null == typeof(ChaFileParameter).GetProperty("exType")) {
-                Logger.Log(LogLevel.Message, "[KK_StudioSimpleColorOnGirls] This Plugin is not working without EC yoyaku tokuten, which released at 2019/04/26.");
-                Logger.Log(LogLevel.Message, "[KK_StudioSimpleColorOnGirls] Please use v1.0.1 of this plugin.");
+                Logger.LogMessage("This Plugin is not working without EC yoyaku tokuten, which released at 2019/04/26.");
                 return;
             }
         }
@@ -62,8 +62,8 @@ namespace KK_StudioSimpleColorOnGirls {
         public static void UpdateInfoPostfix(MPCharCtrl.OtherInfo __instance, OCIChar _char) {
             FieldInfo[] fieldInfo = __instance.GetType().GetFields();
             foreach (var fi in fieldInfo) {
-                //Logger.Log(LogLevel.Debug, "[KK_SSCOG] Name: " + fi.Name);
-                //Logger.Log(LogLevel.Debug, "[KK_SSCOG] FieldType: " + fi.FieldType);
+                //KK_StudioSimpleColorOnGirls.Logger.LogDebug("Name: " + fi.Name);
+                //KK_StudioSimpleColorOnGirls.Logger.LogDebug("FieldType: " + fi.FieldType);
                 try {
                     if (fi.Name == "single") {
                         var o = (MPCharCtrl.StateToggleInfo)fi.GetValue(__instance);
@@ -76,14 +76,14 @@ namespace KK_StudioSimpleColorOnGirls {
                         colorBtn = o2;
                     }
                 } catch (Exception e) {
-                    Logger.Log(LogLevel.Error, "[KK_SSCOG] Exception: " + e);
-                    Logger.Log(LogLevel.Error, "[KK_SSCOG] Exception: " + e.Message);
+                    KK_StudioSimpleColorOnGirls.Logger.LogError("Exception: " + e);
+                    KK_StudioSimpleColorOnGirls.Logger.LogError("Exception: " + e.Message);
                 }
             }
             MethodInfo methodInfo = __instance.GetType().GetMethod("SetSimpleColor");
             methodInfo.Invoke(__instance, new object[] { _char.oiCharInfo.simpleColor });
             ociChar = _char;
-            Logger.Log(LogLevel.Debug, "[KK_SSCOG] Chara Status Info Updated");
+            KK_StudioSimpleColorOnGirls.Logger.LogDebug("Chara Status Info Updated");
         }
 
         public static void OnValueChangedSimplePostfix(object __instance, bool _value) {
@@ -92,14 +92,14 @@ namespace KK_StudioSimpleColorOnGirls {
             }
             ociChar.oiCharInfo.visibleSimple = _value;
             ociChar.charInfo.fileStatus.visibleSimple = _value;
-            Logger.Log(LogLevel.Debug, "[KK_SSCOG] Set Visible Simple:" + ociChar.oiCharInfo.visibleSimple);
+            KK_StudioSimpleColorOnGirls.Logger.LogDebug("Set Visible Simple:" + ociChar.oiCharInfo.visibleSimple);
         }
 
         public static void OnValueChangeSimpleColorPostfix(MPCharCtrl __instance, Color _color) {
             //base.ociChar.SetSimpleColor(_color);
             ociChar.charInfo.ChangeSimpleBodyColor(_color);
             //ChangeSimpleBodyColorPrefix(_color);  //Debug logging
-            Logger.Log(LogLevel.Debug, "[KK_SSCOG] Set Simple Color:" + ociChar.oiCharInfo.simpleColor.ToString());
+            KK_StudioSimpleColorOnGirls.Logger.LogDebug("Set Simple Color:" + ociChar.oiCharInfo.simpleColor.ToString());
 
             //this.otherInfo.SetSimpleColor(_color);
             if (null != colorBtn) {
@@ -118,12 +118,12 @@ namespace KK_StudioSimpleColorOnGirls {
         //        if (material)
         //        {
         //            material.SetColor(ChaShader._Color, color);
-        //            Logger.Log(LogLevel.Debug, "[KK_SSCOG] Set Body Simple Color:" + color);
+        //            KK_StudioSimpleColorOnGirls.Logger.LogDebug("Set Body Simple Color:" + color);
         //        }
         //    }
         //    else
         //    {
-        //        Logger.Log(LogLevel.Debug, "[KK_SSCOG] No Simple Body Rendered");
+        //        KK_StudioSimpleColorOnGirls.Logger.LogDebug("No Simple Body Rendered");
         //    }
         //    if (ociChar.charInfo.rendSimpleTongue)
         //    {
@@ -131,7 +131,7 @@ namespace KK_StudioSimpleColorOnGirls {
         //        if (material2)
         //        {
         //            material2.SetColor(ChaShader._Color, color);
-        //            Logger.Log(LogLevel.Debug, "[KK_SSCOG] Set Tongue Simple Color:" + color);
+        //            KK_StudioSimpleColorOnGirls.Logger.LogDebug("Set Tongue Simple Color:" + color);
         //        }
         //    }
         //    return false;
@@ -139,11 +139,11 @@ namespace KK_StudioSimpleColorOnGirls {
         //[HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "ChangeSimpleBodyDraw")]
         //public static void ChangeSimpleBodyDrawPostfix(bool drawSimple)
         //{
-        //    Logger.Log(LogLevel.Debug, "[KK_SSCOG] Change Simple visible:" + drawSimple);
+        //    KK_StudioSimpleColorOnGirls.Logger.LogDebug("Change Simple visible:" + drawSimple);
         //}
         //public static void ChangeSimpleBodyColorPostfix(Color color)
         //{
-        //    Logger.Log(LogLevel.Debug, "[KK_SSCOG] Change Simple Color:" + color);
+        //    KK_StudioSimpleColorOnGirls.Logger.LogDebug("Change Simple Color:" + color);
         //}
 
 
@@ -197,7 +197,7 @@ namespace KK_StudioSimpleColorOnGirls {
             FindAll(go.transform);
             foreach (string st in mrNameList) {
                 if (goList.ContainsKey(st)) {
-                    //Logger.Log(LogLevel.Debug, "[KK_SSCOG] Hide GameObj Name: " + st);
+                    //KK_StudioSimpleColorOnGirls.Logger.LogDebug("Hide GameObj Name: " + st);
                     GameObject g = null;
                     if (goList.TryGetValue(st, out g)) {
                         g.SetActive(false);
@@ -228,9 +228,9 @@ namespace KK_StudioSimpleColorOnGirls {
             __result.charInfo.ChangeSimpleBodyColor(_info.simpleColor);
             if (null != tempStatus) {
                 AddObjectAssist.UpdateState(__result, tempStatus);
-                Logger.Log(LogLevel.Debug, "[KK_SSCOG] Simple Color Patch Finish");
+                KK_StudioSimpleColorOnGirls.Logger.LogDebug("Simple Color Patch Finish");
             } else {
-                Logger.Log(LogLevel.Error, "[KK_SSCOG] Update State FAILD: Can't get charFileStatus!");
+                KK_StudioSimpleColorOnGirls.Logger.LogError("Update State FAILD: Can't get charFileStatus!");
             }
             return;
         }

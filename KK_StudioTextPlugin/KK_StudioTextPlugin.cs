@@ -18,9 +18,10 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
 using BepInEx;
+using BepInEx.Harmony;
 using BepInEx.Logging;
 using Extension;
-using Harmony;
+using HarmonyLib;
 using Studio;
 using System;
 using System.Collections.Generic;
@@ -29,7 +30,6 @@ using UILib;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using Logger = BepInEx.Logger;
 
 namespace KK_StudioTextPlugin {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
@@ -37,10 +37,12 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "19.08.18.0";
+        internal const string PLUGIN_VERSION = "19.11.02.0";
 
+        internal static new ManualLogSource Logger;
         public void Awake() {
-            HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
+            Logger = base.Logger;
+            HarmonyWrapper.PatchAll(typeof(Patches));
             UIUtility.Init();
             Patches.Start();
         }
@@ -158,14 +160,14 @@ namespace KK_StudioTextPlugin {
             //Config2: FontSize (CharacterSize)
             var text2 = UIUtility.CreateText("FontSize", panel.transform, "FontSize");
             text2.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -115f), new Vector2(155f, -90f));
-            var input = UIUtility.CreateInputField("fontSizeInput", panel.transform);
+            var input = UIUtility.CreateInputField("fontSizeInput", panel.transform,"1");
             input.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -155f), new Vector2(155f, -120f));
             input.text = "1";
             input.onEndEdit.AddListener(delegate {
                 if (!onUpdating) {
                     if (!float.TryParse(input.text, out float f)) {
-                        Logger.Log(LogLevel.Error, "[KK_STP] FormatException: Please input only numbers into FontSize.");
-                        Logger.Log(LogLevel.Message, "[KK_STP] FormatException: Please input only numbers into FontSize.");
+                        KK_StudioTextPlugin.Logger.LogError("FormatException: Please input only numbers into FontSize.");
+                        KK_StudioTextPlugin.Logger.LogMessage("FormatException: Please input only numbers into FontSize.");
                         input.text = TextPlugin.GetConfig(null, TextPlugin.Config.FontSize);
                     } else {
                         TextPlugin.ChangeCharacterSize(f);
@@ -264,7 +266,7 @@ namespace KK_StudioTextPlugin {
 
             panel.gameObject.SetActive(true);
             CheckAlignSettingActive();
-            Logger.Log(LogLevel.Debug, "[KK_STP] Draw ConfigPanel Finish");
+            KK_StudioTextPlugin.Logger.LogDebug("Draw ConfigPanel Finish");
             isConfigPanelCreated = true;
         }
 
@@ -369,11 +371,11 @@ namespace KK_StudioTextPlugin {
                 }
                 //套用座標、旋轉、縮放
                 _info.changeAmount.OnChange();
-                Logger.Log(LogLevel.Debug, $"[KK_STP] Pos:{_info.changeAmount.pos.ToString()}");
-                Logger.Log(LogLevel.Debug, $"[KK_STP] Rot:{_info.changeAmount.rot.ToString()}");
-                Logger.Log(LogLevel.Debug, $"[KK_STP] Scale:{_info.changeAmount.scale.ToString()}");
+                KK_StudioTextPlugin.Logger.LogDebug($"Pos:{_info.changeAmount.pos.ToString()}");
+                KK_StudioTextPlugin.Logger.LogDebug($"Rot:{_info.changeAmount.rot.ToString()}");
+                KK_StudioTextPlugin.Logger.LogDebug($"Scale:{_info.changeAmount.scale.ToString()}");
 
-                Logger.Log(LogLevel.Info, "[KK_STP] Load Text:" + t.text);
+                KK_StudioTextPlugin.Logger.LogInfo("Load Text:" + t.text);
             }
 
             //處理Folder未定義OnVisible造成的不隱藏
@@ -405,7 +407,7 @@ namespace KK_StudioTextPlugin {
                 __instance.ociFolder.objectItem.GetComponentInChildren<TextMesh>(true).text = _value;
                 EditDemoText(_value);
                 CheckAlignSettingActive();
-                Logger.Log(LogLevel.Info, "[KK_STP] Edit Text: " + _value);
+                KK_StudioTextPlugin.Logger.LogInfo("Edit Text: " + _value);
                 return false;
             }
             return true;
@@ -505,7 +507,7 @@ namespace KK_StudioTextPlugin {
         /// </summary>
         /// <param name="text">要顯示的demoText</param>
         private static void EditDemoText(string text) {
-            if (text.IndexOf("\n")>0) {
+            if (text.IndexOf("\n") > 0) {
                 text = text.Substring(0, text.IndexOf("\n"));
             }
             if (!TextPlugin.DisablePreview) {

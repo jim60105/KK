@@ -18,10 +18,12 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
 using BepInEx;
+using BepInEx.Configuration;
+using BepInEx.Harmony;
 using BepInEx.Logging;
 using ExtensibleSaveFormat;
 using Extension;
-using Harmony;
+using HarmonyLib;
 using Illusion.Extensions;
 using Sideloader.AutoResolver;
 using Studio;
@@ -32,7 +34,6 @@ using System.Reflection;
 using UILib;
 using UnityEngine;
 using UnityEngine.UI;
-using Logger = BepInEx.Logger;
 
 namespace KK_StudioCharaOnlyLoadBody {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
@@ -40,23 +41,29 @@ namespace KK_StudioCharaOnlyLoadBody {
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "19.08.11.0";
+        internal const string PLUGIN_VERSION = "19.11.02.0";
 
+        public static ConfigEntry<string> ExtendedDataToCopySetting { get; private set; }
+        public static string[] ExtendedDataToCopy;
+
+        internal static new ManualLogSource Logger;
         public void Awake() {
-            HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
+            Logger = base.Logger;
+            HarmonyWrapper.PatchAll(typeof(Patches));
+
+            string[] SampleArray = {
+                "KSOX",
+                "com.deathweasel.bepinex.uncensorselector",
+                "KKABMPlugin.ABMData",
+                "com.bepis.sideloader.universalautoresolver"
+            };
 
             //config.ini設定
-            BepInEx.Config.ReloadConfig();
-            ExtendedDataToCopy = BepInEx.Config.GetEntry("ExtendedDataToCopy", string.Join(";", ExtendedDataToCopy), GUID).Split(';');
+            ExtendedDataToCopySetting = Config.AddSetting("Config", "ExtendedDataToCopy", string.Join(";", SampleArray), "If you want to load the ExtendedData when you load the body, add the ExtendedData ID.");
+
+            ExtendedDataToCopy = ExtendedDataToCopySetting.Value.Split(';');
         }
 
-        public static string[] ExtendedDataToCopy = {
-            "KSOX",
-            "com.deathweasel.bepinex.bodyshaders",
-            "com.deathweasel.bepinex.uncensorselector",
-            "KKABMPlugin.ABMData",
-            "com.bepis.sideloader.universalautoresolver"
-        };
     }
 
     class Patches {
@@ -126,7 +133,7 @@ namespace KK_StudioCharaOnlyLoadBody {
 
                 //Main Load Control
                 if (chaCtrl.chaFile.LoadFileLimited(fullPath, (byte)sex, true, true, true, true, false) || !LoadExtendedData(ocichar, charaFileSort.selectPath, (byte)sex) || !UpdateTreeNodeObjectName(ocichar)) {
-                    Logger.Log(LogLevel.Error, "[KK_SCOLB] Load Body FAILED");
+                    KK_StudioCharaOnlyLoadBody.Logger.LogError("Load Body FAILED");
                 }
                 ocichar.charInfo.AssignCoordinate((ChaFileDefine.CoordinateType)ocichar.charInfo.fileStatus.coordinateType);
                 chaCtrl.Reload(false, false, false, false);
@@ -151,7 +158,7 @@ namespace KK_StudioCharaOnlyLoadBody {
                 ocichar.ChangeChara(charaFileSort.selectPath);
                 fakeChangeCharaFlag = false;
 
-                Logger.Log(LogLevel.Info, $"[KK_SCOLB] Load Body: {oldName} -> {ocichar.charInfo.chaFile.parameter.fullname}");
+                KK_StudioCharaOnlyLoadBody.Logger.LogInfo($"Load Body: {oldName} -> {ocichar.charInfo.chaFile.parameter.fullname}");
             }
 
         }
@@ -202,7 +209,7 @@ namespace KK_StudioCharaOnlyLoadBody {
                         //取得BoneController
                         object BoneController = ocichar.charInfo.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
                         if (null == BoneController) {
-                            Logger.Log(LogLevel.Debug, "[KK_SCOLB] No ABMX BoneController found");
+                            KK_StudioCharaOnlyLoadBody.Logger.LogDebug("No ABMX BoneController found");
                             break;
                         }
 
@@ -235,7 +242,7 @@ namespace KK_StudioCharaOnlyLoadBody {
                         int i = 0;
                         GetModifiers(x => {
                             if ((bool)x.Invoke("IsCoordinateSpecific")) {
-                                Logger.Log(LogLevel.Debug, "[KK_SCOLB] Clean new coordinate ABMX BoneData: " + (string)x.GetProperty("BoneName"));
+                                KK_StudioCharaOnlyLoadBody.Logger.LogDebug("Clean new coordinate ABMX BoneData: " + (string)x.GetProperty("BoneName"));
                                 x.Invoke("MakeNonCoordinateSpecific");
                                 var y = x.Invoke("GetModifier", new object[] { (ChaFileDefine.CoordinateType)0 });
                                 y.Invoke("Clear");
@@ -252,13 +259,13 @@ namespace KK_StudioCharaOnlyLoadBody {
                             string bonename = (string)modifier.GetProperty("BoneName");
                             if (!newModifiers.Any(x => string.Equals(bonename, (string)x.GetProperty("BoneName")))) {
                                 BoneController.Invoke("AddModifier", new object[] { modifier });
-                                Logger.Log(LogLevel.Debug, "[KK_SCOLB] Rollback cooridnate ABMX BoneData: " + bonename);
+                                KK_StudioCharaOnlyLoadBody.Logger.LogDebug("Rollback cooridnate ABMX BoneData: " + bonename);
                             } else {
-                                Logger.Log(LogLevel.Error, "[KK_SCOLB] Duplicate coordinate ABMX BoneData: " + bonename);
+                                KK_StudioCharaOnlyLoadBody.Logger.LogError("Duplicate coordinate ABMX BoneData: " + bonename);
                             }
                             i++;
                         }
-                        Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Merge {i} previous ABMX Bone Modifiers");
+                        KK_StudioCharaOnlyLoadBody.Logger.LogDebug($"Merge {i} previous ABMX Bone Modifiers");
 
                         //重整
                         BoneController.SetProperty("NeedsFullRefresh", true);
@@ -270,22 +277,23 @@ namespace KK_StudioCharaOnlyLoadBody {
                         BoneController.Invoke("OnReload", new object[] { 2, false });
 
                         //列出角色身上所有ABMX數據
-                        Logger.Log(LogLevel.Debug, "[KK_SCOLB] --List all exist ABMX BoneData--");
+                        KK_StudioCharaOnlyLoadBody.Logger.LogDebug("--List all exist ABMX BoneData--");
                         foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames", null)) {
                             var modifier = BoneController.Invoke("GetModifier", new object[] { boneName });
                             if (null != modifier) {
-                                Logger.Log(LogLevel.Debug, "[KK_SCOLB] " + boneName);
+                                KK_StudioCharaOnlyLoadBody.Logger.LogDebug(boneName);
                             }
                         }
-                        Logger.Log(LogLevel.Debug, "[KK_SCOLB] --List End--");
+                        KK_StudioCharaOnlyLoadBody.Logger.LogDebug("--List End--");
                         break;
                     case "com.bepis.sideloader.universalautoresolver":
                         //判斷CategoryNo分類function
                         bool isBelongsToCharaBody(ChaListDefine.CategoryNo categoryNo) {
-                            return StructReference.ChaFileFaceProperties.Keys.Any(x => x.Category == categoryNo) ||
-                                    StructReference.ChaFileBodyProperties.Keys.Any(x => x.Category == categoryNo) ||
-                                    StructReference.ChaFileHairProperties.Keys.Any(x => x.Category == categoryNo) ||
-                                    StructReference.ChaFileMakeupProperties.Keys.Any(x => x.Category == categoryNo);
+                            var StructReference = typeof(UniversalAutoResolver).Assembly.GetType("Sideloader.AutoResolver.StructReference");
+                            return StructReference.GetProperty("ChaFileFaceProperties", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy).GetValue(StructReference, null).ToDictionary<object, object>().Keys.Any(x => (ChaListDefine.CategoryNo)x.GetField("Category") == categoryNo) ||
+                                StructReference.GetProperty("ChaFileBodyProperties", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy).GetValue(StructReference, null).ToDictionary<object, object>().Keys.Any(x => (ChaListDefine.CategoryNo)x.GetField("Category") == categoryNo) ||
+                                StructReference.GetProperty("ChaFileHairProperties", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy).GetValue(StructReference, null).ToDictionary<object, object>().Keys.Any(x => (ChaListDefine.CategoryNo)x.GetField("Category") == categoryNo) ||
+                                StructReference.GetProperty("ChaFileMakeupProperties", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy).GetValue(StructReference, null).ToDictionary<object, object>().Keys.Any(x => (ChaListDefine.CategoryNo)x.GetField("Category") == categoryNo);
                         }
 
                         //extInfo整理
@@ -295,15 +303,15 @@ namespace KK_StudioCharaOnlyLoadBody {
                                 if (tmpExtData.data.TryGetValue("info", out object tmpExtInfo)) {
                                     if (null != tmpExtInfo as object[]) {
                                         List<object> tmpExtList = new List<object>(tmpExtInfo as object[]);
-                                        Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Sideloader count: {tmpExtList.Count}");
+                                        KK_StudioCharaOnlyLoadBody.Logger.LogDebug($"Sideloader count: {tmpExtList.Count}");
                                         ResolveInfo tmpResolveInfo;
                                         for (int j = 0; j < tmpExtList.Count;) {
-                                            tmpResolveInfo = ResolveInfo.Unserialize((byte[])tmpExtList[j]);
+                                            tmpResolveInfo = (ResolveInfo)typeof(ResolveInfo).InvokeMember("Deserialize", BindingFlags.Default | BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod, null, null, new object[] { (byte[])tmpExtList[j] });
                                             if (keepBodyData == isBelongsToCharaBody(tmpResolveInfo.CategoryNo)) {
-                                                Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Add Sideloader info: {tmpResolveInfo.GUID} : {tmpResolveInfo.Property} : {tmpResolveInfo.Slot}");
+                                                KK_StudioCharaOnlyLoadBody.Logger.LogDebug($"Add Sideloader info: {tmpResolveInfo.GUID} : {tmpResolveInfo.Property} : {tmpResolveInfo.Slot}");
                                                 j++;
                                             } else {
-                                                Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Remove Sideloader info: {tmpResolveInfo.GUID} : {tmpResolveInfo.Property} : {tmpResolveInfo.Slot}");
+                                                KK_StudioCharaOnlyLoadBody.Logger.LogDebug($"Remove Sideloader info: {tmpResolveInfo.GUID} : {tmpResolveInfo.Property} : {tmpResolveInfo.Slot}");
                                                 tmpExtList.RemoveAt(j);
                                             }
                                         }
@@ -317,18 +325,18 @@ namespace KK_StudioCharaOnlyLoadBody {
 
                         //提出角色身上原始的Sideloader extData
                         PluginData oldExtData = ExtendedSave.GetExtendedDataById(ocichar.charInfo.chaFile, ext);
-                        Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Get Old Sideloader Start");
+                        KK_StudioCharaOnlyLoadBody.Logger.LogDebug($"Get Old Sideloader Start");
                         int L1 = cleanExtData(ref oldExtData, false);
-                        Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Get Old Sideloader: {L1}");
+                        KK_StudioCharaOnlyLoadBody.Logger.LogDebug($"Get Old Sideloader: {L1}");
 
                         //將擴充資料由暫存複製到角色身上
                         ExtendedSave.SetExtendedDataById(ocichar.charInfo.chaFile, ext, ExtendedSave.GetExtendedDataById(tmpChaFile, ext));
 
                         //清理新角色數據
                         PluginData newExtData = ExtendedSave.GetExtendedDataById(ocichar.charInfo.chaFile, ext);
-                        Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Get New Sideloader Start");
+                        KK_StudioCharaOnlyLoadBody.Logger.LogDebug($"Get New Sideloader Start");
                         int L2 = cleanExtData(ref newExtData, true);
-                        Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Get New Sideloader: {L2}");
+                        KK_StudioCharaOnlyLoadBody.Logger.LogDebug($"Get New Sideloader: {L2}");
 
                         //合併新舊數據
                         object[] tmpObj = new object[L1 + L2];
@@ -345,16 +353,18 @@ namespace KK_StudioCharaOnlyLoadBody {
 
                         //儲存
                         ExtendedSave.SetExtendedDataById(ocichar.charInfo.chaFile, ext, extData);
-                        Logger.Log(LogLevel.Debug, $"[KK_SCOLB] Merge and Save Sideloader: {tmpObj.Length}");
+                        KK_StudioCharaOnlyLoadBody.Logger.LogDebug($"Merge and Save Sideloader: {tmpObj.Length}");
 
                         //調用原始sideloader載入hook function
-                        typeof(Sideloader.AutoResolver.Hooks).InvokeMember("ExtendedCardLoad", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance | BindingFlags.InvokeMethod, null, null, new[] { (ChaFile)ocichar.charInfo.chaFile });
+                        typeof(UniversalAutoResolver).GetNestedType("Hooks", BindingFlags.NonPublic)
+                            .InvokeMember("ExtendedCardLoad", BindingFlags.Default | BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod, null, null,
+                                new object[] { ocichar.charInfo.chaFile });
 
-                        Logger.Log(LogLevel.Debug, "[KK_SCOLB] Sideloader Data Loaded");
+                        KK_StudioCharaOnlyLoadBody.Logger.LogDebug("Sideloader Data Loaded");
                         break;
                     default:
                         ExtendedSave.SetExtendedDataById(ocichar.charInfo.chaFile, ext, ExtendedSave.GetExtendedDataById(tmpChaFile, ext));
-                        Logger.Log(LogLevel.Debug, "[KK_SCOLB] Change Extended Data: " + ext);
+                        KK_StudioCharaOnlyLoadBody.Logger.LogDebug("Change Extended Data: " + ext);
                         break;
                 }
                 var KCOXController = ocichar.charInfo.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KoiClothesOverlayX"));
@@ -368,7 +378,7 @@ namespace KK_StudioCharaOnlyLoadBody {
             oCIChar.charInfo.name = oCIChar.charInfo.chaFile.parameter.fullname;
             oCIChar.charInfo.chaFile.SetProperty("charaFileName", oCIChar.charInfo.chaFile.parameter.fullname);
             oCIChar.treeNodeObject.textName = oCIChar.charInfo.chaFile.parameter.fullname;
-            Logger.Log(LogLevel.Debug, "[KK_SCOLB] Set Name to: " + oCIChar.charInfo.chaFile.parameter.fullname);
+            KK_StudioCharaOnlyLoadBody.Logger.LogDebug("Set Name to: " + oCIChar.charInfo.chaFile.parameter.fullname);
 
             return true;
         }
@@ -376,6 +386,8 @@ namespace KK_StudioCharaOnlyLoadBody {
         //Some plugins hook on this function, so call it to trigger them. (Example: KKAPI.Chara.OnReload)
         private static bool fakeChangeCharaFlag = false;
         [HarmonyPrefix, HarmonyPatch(typeof(OCIChar), "ChangeChara")]
-        public static bool ChangeCharaPrefix(OCIChar __instance) => !fakeChangeCharaFlag;
+        public static bool ChangeCharaPrefix(OCIChar __instance) {
+            return !fakeChangeCharaFlag;
+        }
     }
 }

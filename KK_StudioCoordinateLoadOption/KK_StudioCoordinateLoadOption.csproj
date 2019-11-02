@@ -92,12 +92,19 @@
       <HintPath>C:\illusion\Koikatu\BepInEx\core\BepInEx.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="BepInEx.Harmony">
+      <HintPath>C:\illusion\Koikatu\BepInEx\core\BepInEx.Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="ExIni">
+      <HintPath>C:\illusion\Koikatu\BepInEx\plugins\XUnity.AutoTranslator\ExIni.dll</HintPath>
+    </Reference>
     <Reference Include="ExtensibleSaveFormat">
-      <HintPath>C:\illusion\Koikatu\BepInEx\ExtensibleSaveFormat.dll</HintPath>
+      <HintPath>C:\illusion\Koikatu\BepInEx\plugins\KK_BepisPlugins\ExtensibleSaveFormat.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Sideloader">
-      <HintPath>C:\illusion\Koikatu\BepInEx\Sideloader.dll</HintPath>
+      <HintPath>C:\illusion\Koikatu\BepInEx\plugins\KK_BepisPlugins\Sideloader.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />

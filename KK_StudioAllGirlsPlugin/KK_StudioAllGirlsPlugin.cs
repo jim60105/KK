@@ -17,20 +17,20 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
+using BepInEx;
+using BepInEx.Configuration;
+using BepInEx.Harmony;
+using BepInEx.Logging;
+using Extension;
+using HarmonyLib;
+using MessagePack;
+using Studio;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
-using BepInEx;
-using BepInEx.Logging;
-using Extension;
-using Harmony;
-using MessagePack;
-using Studio;
 using UniRx;
 using UnityEngine.UI;
-using Logger = BepInEx.Logger;
-using System.ComponentModel;
 
 namespace KK_StudioAllGirlsPlugin {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
@@ -38,16 +38,19 @@ namespace KK_StudioAllGirlsPlugin {
     public class KK_StudioAllGirlsPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio All Girls Plugin";
         internal const string GUID = "com.jim60105.kk.studioallgirlsplugin";
-        internal const string PLUGIN_VERSION = "19.08.11.0";
+        internal const string PLUGIN_VERSION = "19.11.02.0";
 
-        public void Awake(){
+        public static ConfigEntry<bool> Enable { get; private set; }
+
+        internal static new ManualLogSource Logger;
+        public void Awake() {
+            Logger = base.Logger;
+            Enable = Config.AddSetting("Config", "Enable", true, "Load all boys as girls.\n(Restart the game to make this effect)");
             if (Enable.Value) {
-                HarmonyInstance.Create(GUID).PatchAll(typeof(Patches));
+                HarmonyWrapper.PatchAll(typeof(Patches));
             }
         }
 
-        [DisplayName("Load all boys as girls.\n(Restart the game to make this effect)")]
-        public static ConfigWrapper<bool> Enable { get; } = new ConfigWrapper<bool>(nameof(Enable), PLUGIN_NAME, true);
     }
 
     class Patches {
@@ -112,7 +115,7 @@ namespace KK_StudioAllGirlsPlugin {
             for (int i = 0; i < num; i++) {
                 array[i].ChangeChara((__instance.GetField("charaFileSort") as CharaFileSort).selectPath);
                 if ((int)((CharaList)__instance).GetField("sex") == 0) {
-                    Logger.Log(LogLevel.Info, $"[KK_SAGP] {array[i].charInfo.name} is a girl now!");
+                    KK_StudioAllGirlsPlugin.Logger.LogInfo($"{array[i].charInfo.name} is a girl now!");
                 }
             }
             return false;
@@ -189,7 +192,7 @@ namespace KK_StudioAllGirlsPlugin {
         [HarmonyPrefix, HarmonyPatch(typeof(Studio.Studio), "AddMale")]
         public static bool AddMalePrefix(string _path) {
             Singleton<Studio.Studio>.Instance.AddFemale(_path);
-            Logger.Log(LogLevel.Info, $"[KK_SAGP] {_path} is a girl now!");
+            KK_StudioAllGirlsPlugin.Logger.LogInfo($"{_path} is a girl now!");
             return false;
         }
 
@@ -201,7 +204,7 @@ namespace KK_StudioAllGirlsPlugin {
                 var female = AddObjectFemale.Load(oicharInfo, _parent, _parentNode);
 
                 if (oicharInfo.sex == 0) {
-                    Logger.Log(LogLevel.Info, $"[KK_SAGP] {female.charInfo.name} is a girl now!");
+                    KK_StudioAllGirlsPlugin.Logger.LogInfo($"{female.charInfo.name} is a girl now!");
                     oicharInfo.SetProperty("sex", 1);
                 }
                 return false;

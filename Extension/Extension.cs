@@ -1,5 +1,4 @@
-﻿using BepInEx.Logging;
-using Harmony;
+﻿using HarmonyLib;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -7,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
-using Logger = BepInEx.Logger;
 
 namespace Extension {
     public static class Extension {
@@ -30,7 +28,7 @@ namespace Extension {
         private static readonly Dictionary<FieldKey, FieldInfo> _fieldCache = new Dictionary<FieldKey, FieldInfo>();
         public static object GetField(this object self, string name) {
             if (!self.SearchForFields(name)) {
-                Logger.Log(LogLevel.Error, "[KK_Extension] Field Not Found: " + name);
+                Console.WriteLine("[KK_Extension] Field Not Found: " + name);
                 return false;
             }
             FieldKey key = new FieldKey(self.GetType(), name);
@@ -42,7 +40,7 @@ namespace Extension {
         }
         public static bool SetField(this object self, string name, object value) {
             if (!self.SearchForFields(name)) {
-                Logger.Log(LogLevel.Error, "[KK_Extension] Field Not Found: " + name);
+                Console.WriteLine("[KK_Extension] Field Not Found: " + name);
                 return false;
             }
             FieldKey fieldKey = new FieldKey(self.GetType(), name);
@@ -53,14 +51,14 @@ namespace Extension {
                     field.SetValue(self, value);
                     return true;
                 } else {
-                    Logger.Log(LogLevel.Error, "[KK_Extension] Set Field Not Found: " + name);
+                    Console.WriteLine("[KK_Extension] Set Field Not Found: " + name);
                 }
             }
             return false;
         }
         public static bool SetProperty(this object self, string name, object value) {
             if (!self.SearchForProperties(name)) {
-                Logger.Log(LogLevel.Error, "[KK_Extension] Field Not Found: " + name);
+                Console.WriteLine("[KK_Extension] Field Not Found: " + name);
                 return false;
             }
             PropertyInfo propertyInfo;
@@ -69,13 +67,13 @@ namespace Extension {
                 propertyInfo.SetValue(self, value, null);
                 return true;
             } else {
-                Logger.Log(LogLevel.Error, "[KK_Extension] Set Property Not Found: " + name);
+                Console.WriteLine("[KK_Extension] Set Property Not Found: " + name);
                 return false;
             }
         }
         public static object GetProperty(this object self, string name) {
             if (!self.SearchForProperties(name)) {
-                Logger.Log(LogLevel.Error, "[KK_Extension] Property Not Found: " + name);
+                Console.WriteLine("[KK_Extension] Property Not Found: " + name);
                 return false;
             }
             PropertyInfo propertyInfo;
@@ -83,7 +81,25 @@ namespace Extension {
             return propertyInfo.GetValue(self, null);
         }
         public static object Invoke(this object self, string name, object[] p = null) {
-            return self?.GetType().InvokeMember(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod, null, self, p);
+            try {
+                return self?.GetType().InvokeMember(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod, null, self, p);
+            } catch (MissingMethodException e) {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.InnerException);
+                var members = self?.GetType().GetMembers(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod);
+                List<string> printArray = new List<string>();
+                foreach (var me in members) {
+                    if (me.Name == name) {
+                        return true;
+                    }
+                    printArray.Add("[KK_Extension] Member Name/Type: " + me.Name + " / " + me.MemberType);
+                }
+                foreach (string st in printArray) {
+                    Console.WriteLine(st);
+                }
+                Console.WriteLine("[KK_Extension] Get " + members.Length + " Members.");
+                return false;
+            }
         }
 
         //List all the fields inside the object if name not found.
@@ -96,10 +112,10 @@ namespace Extension {
                 }
                 printArray.Add("[KK_Extension] Field Name/Type: " + fi.Name + " / " + fi.FieldType);
             }
-            Logger.Log(LogLevel.Debug, "[KK_Extension] Get " + fieldInfos.Length + " Fields.");
+            Console.WriteLine("[KK_Extension] Get " + fieldInfos.Length + " Fields.");
 
             foreach (string st in printArray) {
-                Logger.Log(LogLevel.Debug, st);
+                Console.WriteLine(st);
             }
             return false;
         }
@@ -114,10 +130,10 @@ namespace Extension {
                 }
                 printArray.Add("[KK_Extension] Property Name/Type: " + pi.Name + " / " + pi.PropertyType);
             }
-            Logger.Log(LogLevel.Debug, "[KK_Extension] Get " + propertyInfos.Length + " Properties.");
+            Console.WriteLine("[KK_Extension] Get " + propertyInfos.Length + " Properties.");
 
             foreach (string st in printArray) {
-                Logger.Log(LogLevel.Debug, st);
+                Console.WriteLine(st);
             }
             return false;
         }
@@ -155,7 +171,7 @@ namespace Extension {
             texture.LoadImage(ReadToEnd(myStream));
 
             if (texture == null) {
-                Logger.Log(LogLevel.Error, "Missing Dll resource: " + FilePath);
+                Console.WriteLine("Missing Dll resource: " + FilePath);
             }
 
             return texture;
@@ -199,7 +215,7 @@ namespace Extension {
 
         public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this object self) {
             if (!(self is IDictionary dictionary)) {
-                Logger.Log(LogLevel.Error, "[KK_Extension] Faild to cast to Dictionary!");
+                Console.WriteLine("[KK_Extension] Faild to cast to Dictionary!");
                 return null;
             }
             Dictionary<TKey, TValue> newDictionary =
@@ -217,7 +233,7 @@ namespace Extension {
 
         public static List<T> ToList<T>(this object self) {
             if (!(self is IEnumerable<T> iEnumerable)) {
-                Logger.Log(LogLevel.Error, "[KK_Extension] Faild to cast to List!");
+                Console.WriteLine("[KK_Extension] Faild to cast to List!");
                 return null;
             }
             List<T> newList = new List<T>(iEnumerable);
@@ -239,24 +255,24 @@ namespace Extension {
                     return method.Invoke(null, new object[] { self });
                 }
             }
-            Logger.Log(LogLevel.Error, "[KK_Extension] Faild to cast to List<unknown>!");
+            Console.WriteLine("[KK_Extension] Faild to cast to List<unknown>!");
             return null;
         }
 
         public static int RemoveAll(this object self, Predicate<object> match) {
-                int amount = 0;
+            int amount = 0;
             if (self is IList list) {
                 for (int i = 0; i < list.Count; i++) {
                     if (match(list[i])) {
                         list.RemoveAt(i);
                         amount++;
                         i--;
-                        //Logger.Log(LogLevel.Debug, $"[KK_Extension] Remove at {i}/{list.Count}");
+                        //Console.WriteLine($"[KK_Extension] Remove at {i}/{list.Count}");
                     }
                 }
-                //Logger.Log(LogLevel.Debug, $"[KK_Extension] RemoveAll: Output Obj Count {list.Count}");
+                //Console.WriteLine($"[KK_Extension] RemoveAll: Output Obj Count {list.Count}");
             } else {
-                Logger.Log(LogLevel.Error, $"[KK_Extension] RemoveAll: Input Object is not type of List<unknown>!");
+                Console.WriteLine($"[KK_Extension] RemoveAll: Input Object is not type of List<unknown>!");
             }
             return amount;
         }
@@ -265,7 +281,7 @@ namespace Extension {
             if (self is IList list) {
                 return list.Count;
             } else {
-                Logger.Log(LogLevel.Error, $"[KK_Extension] Count: Input Object is not type of List<unknown>!");
+                Console.WriteLine($"[KK_Extension] Count: Input Object is not type of List<unknown>!");
                 return -1;
             }
         }
@@ -290,7 +306,7 @@ namespace Extension {
                 result.RemoveAll(x => !match(x));
                 return result;
             } else {
-                Logger.Log(LogLevel.Error, $"[KK_Extension] Where: Input Object is not type of List<unknown>!");
+                Console.WriteLine($"[KK_Extension] Where: Input Object is not type of List<unknown>!");
             }
             return null;
         }
@@ -306,9 +322,9 @@ namespace Extension {
                 }
                 if (null != selfItemType && obj2Add.GetType() == selfItemType) {
                     oriList.Add(obj2Add);
-                    //Logger.Log(LogLevel.Debug, $"[KK_Extension] AddRange: Add {listToAdd.Count} item.");
+                    //Console.WriteLine($"[KK_Extension] AddRange: Add {listToAdd.Count} item.");
                 } else {
-                    Logger.Log(LogLevel.Error, $"[KK_Extension] Type not Match! Cannot Add {obj2Add.GetType().FullName} into {selfItemType.FullName}");
+                    Console.WriteLine($"[KK_Extension] Type not Match! Cannot Add {obj2Add.GetType().FullName} into {selfItemType.FullName}");
                 }
             }
         }
@@ -333,9 +349,9 @@ namespace Extension {
                     foreach (var o in listToAdd) {
                         oriList.Add(o);
                     }
-                    //Logger.Log(LogLevel.Debug, $"[KK_Extension] AddRange: Add {listToAdd.Count} item.");
+                    //Console.WriteLine($"[KK_Extension] AddRange: Add {listToAdd.Count} item.");
                 } else {
-                    Logger.Log(LogLevel.Error, $"[KK_Extension] Type not Match! Cannot Add {addItemType.FullName} into {selfItemType.FullName}");
+                    Console.WriteLine($"[KK_Extension] Type not Match! Cannot Add {addItemType.FullName} into {selfItemType.FullName}");
                 }
             }
         }

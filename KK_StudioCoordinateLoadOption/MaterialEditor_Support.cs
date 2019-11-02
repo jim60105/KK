@@ -1,11 +1,8 @@
-﻿using BepInEx.Logging;
-using Extension;
+﻿using Extension;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using UnityEngine;
-using Logger = BepInEx.Logger;
 
 namespace KK_StudioCoordinateLoadOption {
     class MaterialEditor_Support {
@@ -14,13 +11,13 @@ namespace KK_StudioCoordinateLoadOption {
         private static Dictionary<int, byte[]> TextureDictionaryBackup = null;
 
         public static bool LoadAssembly() {
-            if (File.Exists("BepInEx/KK_MaterialEditor.dll")) {
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] MaterialEditor found");
+            if (null != KK_StudioCoordinateLoadOption.TryGetPluginInstance("com.deathweasel.bepinex.materialeditor", new Version(1, 7))) {
+                KK_StudioCoordinateLoadOption.Logger.LogDebug("MaterialEditor found");
+                return true;
             } else {
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] Load assembly FAILED: MaterialEditor");
+                KK_StudioCoordinateLoadOption.Logger.LogDebug("Load assembly FAILED: MaterialEditor");
                 return false;
             }
-            return true;
         }
 
         public class StoredValueInfo {
@@ -51,17 +48,17 @@ namespace KK_StudioCoordinateLoadOption {
         public static void BackupMaterialData(ChaControl chaCtrl) {
             MaterialEditorController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KK_MaterialEditor"));
             if (null == MaterialEditorController) {
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] No MaterialEditor Controller found");
+                KK_StudioCoordinateLoadOption.Logger.LogDebug("No MaterialEditor Controller found");
             } else {
                 TextureDictionaryBackup = MaterialEditorController.GetField("TextureDictionary").ToDictionary<int, byte[]>();
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] TextureDictionaryBackup Count: " + TextureDictionaryBackup.Count);
+                KK_StudioCoordinateLoadOption.Logger.LogDebug("TextureDictionaryBackup Count: " + TextureDictionaryBackup.Count);
 
                 MaterialBackup = new Dictionary<string, object>();
 
                 foreach (var storedValue in storedValueInfos) {
                     MaterialBackup.Add(storedValue.listName, MaterialEditorController.GetField(storedValue.listName).ToListWithoutType());
                 }
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] Get Original Material Finish");
+                KK_StudioCoordinateLoadOption.Logger.LogDebug("Get Original Material Finish");
             }
         }
 
@@ -85,16 +82,16 @@ namespace KK_StudioCoordinateLoadOption {
                     if (obj2Add.Count() > 0) {
                         doFlag = true;
                         target.AddRange(obj2Add);
-                        Logger.Log(LogLevel.Debug, $"[KK_SCLO] Rollback {obj2Add.Count()} {storedValue.className} Object");
+                        KK_StudioCoordinateLoadOption.Logger.LogDebug($"Rollback {obj2Add.Count()} {storedValue.className} Object");
                     }
                     if (doFlag)
                         MaterialEditorController.SetField(storedValue.listName, target);
                 }
                 if (!doFlag) {
                 } else if (objectType == (int)ObjectType.Clothing) {
-                    Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Material Rollback: {Patches.ClothesKindName[Slot]}");
+                    KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Material Rollback: {Patches.ClothesKindName[Slot]}");
                 } else if (objectType == (int)ObjectType.Accessory) {
-                    Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Material Rollback: Accessory, Slot {Slot}");
+                    KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Material Rollback: Accessory, Slot {Slot}");
                 }
             }
         }
@@ -102,7 +99,7 @@ namespace KK_StudioCoordinateLoadOption {
         public static void CleanMaterialBackup() {
             if (null != MaterialEditorController) {
                 MaterialEditorController.Invoke("OnCardBeingSaved", new object[] { 1 });
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] TextureDictionary Count: " + MaterialEditorController.GetField("TextureDictionary").ToDictionary<int, byte[]>().Count);
+                KK_StudioCoordinateLoadOption.Logger.LogDebug("TextureDictionary Count: " + MaterialEditorController.GetField("TextureDictionary").ToDictionary<int, byte[]>().Count);
             }
             MaterialBackup = null;
             TextureDictionaryBackup = null;

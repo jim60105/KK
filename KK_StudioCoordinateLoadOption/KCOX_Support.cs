@@ -1,10 +1,7 @@
-﻿using BepInEx.Logging;
-using Extension;
+﻿using Extension;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using UnityEngine;
-using Logger = BepInEx.Logger;
 
 namespace KK_StudioCoordinateLoadOption {
     class KCOX_Support {
@@ -13,19 +10,19 @@ namespace KK_StudioCoordinateLoadOption {
 
         internal static string[] MaskKind = { "BodyMask", "InnerMask", "InnerMask" };
         public static bool LoadAssembly() {
-            if (File.Exists("BepInEx/KoiClothesOverlay.dll") || File.Exists("BepInEx/KK.OverlayMods.dll")) {
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] KCOX found");
+            if(null != KK_StudioCoordinateLoadOption.TryGetPluginInstance("KCOX", new System.Version(5, 0))) {
+                KK_StudioCoordinateLoadOption.Logger.LogDebug("KCOX found");
+                return true;
             } else {
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] Load assembly FAILED: KCOX");
+                KK_StudioCoordinateLoadOption.Logger.LogDebug("Load assembly FAILED: KCOX");
                 return false;
             }
-            return true;
         }
 
         public static void BackupKCOXData(ChaControl chaCtrl, ChaFileClothes clothes) {
             KCOXController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KoiClothesOverlayX"));
             if (null == KCOXController) {
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] No KCOX Controller found");
+                KK_StudioCoordinateLoadOption.Logger.LogDebug("No KCOX Controller found");
             } else {
                 KCOXTexDataBackup = new Dictionary<string, object>();
                 int cnt = 0;
@@ -38,7 +35,7 @@ namespace KK_StudioCoordinateLoadOption {
                 foreach (var maskKind in MaskKind) {
                     cnt += GetOverlay(maskKind) ? 1 : 0;
                 }
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] Get Original Overlay/Mask Total: " + cnt);
+                KK_StudioCoordinateLoadOption.Logger.LogDebug("Get Original Overlay/Mask Total: " + cnt);
             }
             return;
         }
@@ -47,10 +44,10 @@ namespace KK_StudioCoordinateLoadOption {
             KCOXTexDataBackup[name] = KCOXController.Invoke("GetOverlayTex", new object[] { name, false });
 
             if (null == KCOXTexDataBackup[name]) {
-                //Logger.Log(LogLevel.Debug, "[KK_SCLO] " + name + " not found");
+                //KK_StudioCoordinateLoadOption.Logger.LogDebug(name + " not found");
                 return false;
             } else {
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Get Original Overlay/Mask: " + name);
+                KK_StudioCoordinateLoadOption.Logger.LogDebug("->Get Original Overlay/Mask: " + name);
                 return true;
             }
         }
@@ -71,18 +68,18 @@ namespace KK_StudioCoordinateLoadOption {
                     clothesTexData.SetField("Override", false);
                     if (!exist || tex == null || (bool)tex.Invoke("IsEmpty")) {
                         _allOverlayTextures[coordinateType].Invoke("Remove", new object[] { name });
-                        Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Clear Overlay/Mask: {name}");
+                        KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Clear Overlay/Mask: {name}");
                     } else {
                         clothesTexData.SetProperty("Texture", tex.GetProperty("Texture"));
                         if (null != tex.GetField("Override")) {
                             clothesTexData.SetField("Override", tex.GetField("Override"));
                         }
-                        Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Overlay/Mask Rollback: {name} (Replace)");
+                        KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Overlay/Mask Rollback: {name} (Replace)");
                     }
                 } else {
                     if (exist && tex != null && !(bool)tex.Invoke("IsEmpty")) {
                         _allOverlayTextures[coordinateType].Invoke("Add", new object[] { name, tex });
-                        Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Overlay/Mask Rollback: {name} (Add)");
+                        KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Overlay/Mask Rollback: {name} (Add)");
                     }
                 }
             }

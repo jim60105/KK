@@ -18,9 +18,10 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
 using BepInEx;
+using BepInEx.Harmony;
 using BepInEx.Logging;
 using Extension;
-using Harmony;
+using HarmonyLib;
 using MessagePack;
 using Studio;
 using System;
@@ -32,20 +33,25 @@ using UILib;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using Logger = BepInEx.Logger;
+using ExIni;
 
 namespace KK_StudioCoordinateLoadOption {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
+    [BepInDependency("KCOX", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("KKABMX.Core", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("com.joan6694.illusionplugins.moreaccessories", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("com.deathweasel.bepinex.materialeditor", BepInDependency.DependencyFlags.SoftDependency)]
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "19.10.21.0";
+        internal const string PLUGIN_VERSION = "19.11.02.1";
 
+        internal static new ManualLogSource Logger;
         public void Awake() {
+            Logger = base.Logger;
             UIUtility.Init();
-            HarmonyInstance harmonyInstance = HarmonyInstance.Create(GUID);
-            harmonyInstance.PatchAll(typeof(Patches));
+            var harmonyInstance = HarmonyWrapper.PatchAll(typeof(Patches));
             harmonyInstance.PatchAll(typeof(MoreAccessories_Support));
             harmonyInstance.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("Init", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(Patches.InitPostfix), null), null);
             harmonyInstance.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("OnClickLoad", AccessTools.all), new HarmonyMethod(typeof(Patches), nameof(Patches.OnClickLoadPrefix), null), null, null);
@@ -58,24 +64,24 @@ namespace KK_StudioCoordinateLoadOption {
         public static bool _isMaterialEditorExist = false;
 
         public void Start() {
-            bool IsPluginExist(string pluginName, System.Version minimumVersion) {
-                var target = BepInEx.Bootstrap.Chainloader.Plugins.Select(MetadataHelper.GetMetadata).FirstOrDefault(x => x.GUID == pluginName);
-                if (null != target) {
-                    if (target.Version >= minimumVersion) {
-                        return true;
-                    }
-                    Logger.Log(LogLevel.Message, $"[KK_StudioCoordinateLoadOption] {pluginName} is detacted OUTDATED.");
-                    Logger.Log(LogLevel.Message, $"[KK_StudioCoordinateLoadOption] Please update {pluginName} to at least v{minimumVersion.ToString()} to enable related feature.");
-                }
-                return false;
-            }
-
-            _isKCOXExist = IsPluginExist("KCOX", new Version(5, 0)) && KCOX_Support.LoadAssembly();
-            _isABMXExist = IsPluginExist("KKABMX.Core", null) && ABMX_Support.LoadAssembly();
-            _isMoreAccessoriesExist = IsPluginExist("com.joan6694.illusionplugins.moreaccessories", null) && MoreAccessories_Support.LoadAssembly();
-            _isMaterialEditorExist = IsPluginExist("com.deathweasel.bepinex.materialeditor", new Version(1, 4)) && MaterialEditor_Support.LoadAssembly();
+            _isKCOXExist = KCOX_Support.LoadAssembly();
+            _isABMXExist = ABMX_Support.LoadAssembly();
+            _isMoreAccessoriesExist = MoreAccessories_Support.LoadAssembly();
+            _isMaterialEditorExist = MaterialEditor_Support.LoadAssembly();
 
             StringResources.StringResourcesManager.SetUICulture();
+        }
+
+        internal static BaseUnityPlugin TryGetPluginInstance(string pluginName, Version minimumVersion = null) {
+            BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue(pluginName, out var target);
+            if (null != target) {
+                if (target.Metadata.Version >= minimumVersion) {
+                    return target.Instance;
+                }
+                Logger.LogMessage($"{pluginName} v{target.Metadata.Version.ToString()} is detacted OUTDATED.");
+                Logger.LogMessage($"Please update {pluginName} to at least v{minimumVersion.ToString()} to enable related feature.");
+            }
+            return null;
         }
     }
 
@@ -124,12 +130,7 @@ namespace KK_StudioCoordinateLoadOption {
 
         public static void InitPostfix(object __instance) {
             BlockAnotherPlugin();
-
-            //如果找到機翻就一律顯示英文，否則機翻會毀了我的文字
-            if (null != GameObject.Find("___XUnityAutoTranslator")) {
-                StringResources.StringResourcesManager.SetUICulture("en-US");
-                Logger.Log(LogLevel.Info, "[KK_SCLO] Found XUnityAutoTranslator, load English UI");
-            }
+            BlockXUATranslate();
 
             ClothesKindName = new string[]{
                 StringResources.StringResourcesManager.GetString("ClothesKind_top"),
@@ -288,7 +289,7 @@ namespace KK_StudioCoordinateLoadOption {
                     ocichar.charInfo.AssignCoordinate((ChaFileDefine.CoordinateType)ocichar.charInfo.fileStatus.coordinateType);
                 }
 
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] Clear accessories Finish");
+                KK_StudioCoordinateLoadOption.Logger.LogDebug("Clear accessories Finish");
             });
 
             btnChangeAccLoadMode.onClick.RemoveAllListeners();
@@ -298,16 +299,16 @@ namespace KK_StudioCoordinateLoadOption {
                     addAccModeFlag ?
                     StringResources.StringResourcesManager.GetString("addMode") :
                     StringResources.StringResourcesManager.GetString("replaceMode");
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] Set add accessories mode to " + (addAccModeFlag ? "add" : "replace") + " mode");
+                KK_StudioCoordinateLoadOption.Logger.LogDebug("Set add accessories mode to " + (addAccModeFlag ? "add" : "replace") + " mode");
             });
             btnChangeAccLoadMode.onClick.Invoke();
 
-            Logger.Log(LogLevel.Debug, "[KK_SCLO] Draw UI Finish");
+            KK_StudioCoordinateLoadOption.Logger.LogDebug("Draw UI Finish");
         }
 
         internal static string GetNameFromIDAndType(int id, ChaListDefine.CategoryNo type) {
             ChaListControl chaListControl = Singleton<Manager.Character>.Instance.chaListCtrl;
-            Logger.Log(LogLevel.Debug, $"[KK_SCLO] Find Accessory id / type: {id} / {type}");
+            KK_StudioCoordinateLoadOption.Logger.LogDebug($"Find Accessory id / type: {id} / {type}");
 
             string name = "";
             if (type == (ChaListDefine.CategoryNo)120) {
@@ -358,12 +359,12 @@ namespace KK_StudioCoordinateLoadOption {
             if (tgls[(int)ClothesKind.accessories].isOn) {
                 panel2.gameObject.SetActive(true);
             }
-            Logger.Log(LogLevel.Debug, "[KK_SCLO] Onselect");
+            KK_StudioCoordinateLoadOption.Logger.LogDebug("Onselect");
         }
 
         //Load衣裝時觸發
         internal static bool OnClickLoadPrefix() {
-            Logger.Log(LogLevel.Debug, "[KK_SCLO] Studio Coordinate Load Option Start");
+            KK_StudioCoordinateLoadOption.Logger.LogDebug("Studio Coordinate Load Option Start");
 
             bool isAllTrueFlag = true;
             bool isAllFalseFlag = true;
@@ -375,8 +376,8 @@ namespace KK_StudioCoordinateLoadOption {
                 isAllTrueFlag &= tgl.isOn;
             }
             if (isAllFalseFlag) {
-                Logger.Log(LogLevel.Info, "[KK_SCLO] No Toogle selected, skip loading coordinate");
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] Studio Coordinate Load Option Finish");
+                KK_StudioCoordinateLoadOption.Logger.LogInfo("No Toogle selected, skip loading coordinate");
+                KK_StudioCoordinateLoadOption.Logger.LogDebug("Studio Coordinate Load Option Finish");
                 return false;
             }
 
@@ -385,7 +386,7 @@ namespace KK_StudioCoordinateLoadOption {
                                where v != null
                                select v).ToArray();
             if (isAllTrueFlag && !lockHairAcc && !addAccModeFlag) {
-                Logger.Log(LogLevel.Info, "[KK_SCLO] Toggle all true, use original game function");
+                KK_StudioCoordinateLoadOption.Logger.LogInfo("Toggle all true, use original game function");
                 foreach (var ocichar in array) {
                     ocichar.LoadClothesFile(charaFileSort.selectPath);
                 }
@@ -398,7 +399,7 @@ namespace KK_StudioCoordinateLoadOption {
                 }
                 Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
 
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] Studio Coordinate Load Option Finish");
+                KK_StudioCoordinateLoadOption.Logger.LogDebug("Studio Coordinate Load Option Finish");
             }
             return false;
         }
@@ -455,13 +456,13 @@ namespace KK_StudioCoordinateLoadOption {
                                 //如果要替入的不是空格，就放進accQueue
                                 if (tmpChaFileCoordinate.accessory.parts[i].type != 120) {
                                     accQueue.Enqueue(tmp);
-                                    Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Lock: Acc{i} / ID: {chaCtrl.nowCoordinate.accessory.parts[i].id}");
-                                    Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->EnQueue: Acc{i} / ID: {tmpChaFileCoordinate.accessory.parts[i].id}");
+                                    KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Lock: Acc{i} / ID: {chaCtrl.nowCoordinate.accessory.parts[i].id}");
+                                    KK_StudioCoordinateLoadOption.Logger.LogDebug($"->EnQueue: Acc{i} / ID: {tmpChaFileCoordinate.accessory.parts[i].id}");
                                 }
                             } else {
                                 chaCtrl.nowCoordinate.accessory.parts[i] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tmp);
                                 //chaCtrl.ChangeAccessory(i, chaCtrl.nowCoordinate.accessory.parts[i].type, chaCtrl.nowCoordinate.accessory.parts[i].id, chaCtrl.nowCoordinate.accessory.parts[i].parentKey, true);
-                                Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->Changed: Acc{i} / ID: {tmpChaFileCoordinate.accessory.parts[i].id}");
+                                KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Changed: Acc{i} / ID: {tmpChaFileCoordinate.accessory.parts[i].id}");
                             }
                         }
                         chaCtrl.ChangeAccessory(true);
@@ -471,7 +472,7 @@ namespace KK_StudioCoordinateLoadOption {
                             if (chaCtrl.nowCoordinate.accessory.parts[j].type == 120) {
                                 chaCtrl.nowCoordinate.accessory.parts[j] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(accQueue.Dequeue());
                                 chaCtrl.ChangeAccessory(j, chaCtrl.nowCoordinate.accessory.parts[j].type, chaCtrl.nowCoordinate.accessory.parts[j].id, chaCtrl.nowCoordinate.accessory.parts[j].parentKey, true);
-                                Logger.Log(LogLevel.Debug, $"[KK_SCLO] ->DeQueue: Acc{j} / ID: {chaCtrl.nowCoordinate.accessory.parts[j].id}");
+                                KK_StudioCoordinateLoadOption.Logger.LogDebug($"->DeQueue: Acc{j} / ID: {chaCtrl.nowCoordinate.accessory.parts[j].id}");
                             }
                         }
 
@@ -482,17 +483,17 @@ namespace KK_StudioCoordinateLoadOption {
                         } else {
                             while (accQueue.Count > 0) {
                                 ChaFileAccessory.PartsInfo c = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(accQueue.Dequeue());
-                                Logger.Log(LogLevel.Message, "[KK_SCLO] Accessories slot is not enough! Discard " + GetNameFromIDAndType(c.id, (ChaListDefine.CategoryNo)c.type));
+                                KK_StudioCoordinateLoadOption.Logger.LogMessage("Accessories slot is not enough! Discard " + GetNameFromIDAndType(c.id, (ChaListDefine.CategoryNo)c.type));
                             }
                         }
-                        Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Changed: " + tgl.name);
+                        KK_StudioCoordinateLoadOption.Logger.LogDebug("->Changed: " + tgl.name);
                     } else if (kind >= 0) {
                         //Change clothes
                         var tmp = MessagePackSerializer.Serialize<ChaFileClothes.PartsInfo>(tmpChaFileCoordinate.clothes.parts[kind]);
                         chaCtrl.nowCoordinate.clothes.parts[kind] = MessagePackSerializer.Deserialize<ChaFileClothes.PartsInfo>(tmp);
                         chaCtrl.ChangeClothes(kind, tmpChaFileCoordinate.clothes.parts[kind].id, tmpChaFileCoordinate.clothes.subPartsId[0], tmpChaFileCoordinate.clothes.subPartsId[1], tmpChaFileCoordinate.clothes.subPartsId[2], true);
 
-                        Logger.Log(LogLevel.Debug, "[KK_SCLO] ->Changed: " + tgl.name + " / ID: " + tmpChaFileCoordinate.clothes.parts[kind].id);
+                        KK_StudioCoordinateLoadOption.Logger.LogDebug("->Changed: " + tgl.name + " / ID: " + tmpChaFileCoordinate.clothes.parts[kind].id);
                     }
                 }
             }
@@ -614,7 +615,18 @@ namespace KK_StudioCoordinateLoadOption {
             var anotherPlugin = GameObject.Find("StudioScene/Canvas Main Menu/ClosesLoadOption Panel");
             if (null != anotherPlugin) {
                 anotherPlugin.transform.localScale = Vector3.zero;
-                Logger.Log(LogLevel.Debug, "[KK_SCLO] Block KK_ClothesLoadOption Panel");
+                KK_StudioCoordinateLoadOption.Logger.LogDebug("Block KK_ClothesLoadOption Panel");
+            }
+        }
+
+        //如果啟動機翻就一律顯示英文，否則機翻會毀了我的文字
+        private static void BlockXUATranslate() {
+            if (null != KK_StudioCoordinateLoadOption.TryGetPluginInstance("gravydevsupreme.xunity.autotranslator")) {
+                var XUAConfigPath = Path.Combine(Paths.ConfigPath, "AutoTranslatorConfig.ini");
+                if (IniFile.FromFile(XUAConfigPath).GetSection("TextFrameworks").GetKey("EnableUGUI").Value == "True") {
+                    StringResources.StringResourcesManager.SetUICulture("en-US");
+                    KK_StudioCoordinateLoadOption.Logger.LogInfo("Found XUnityAutoTranslator Enabled, load English UI");
+                }
             }
         }
     }
