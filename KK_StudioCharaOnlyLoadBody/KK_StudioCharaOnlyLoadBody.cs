@@ -41,7 +41,7 @@ namespace KK_StudioCharaOnlyLoadBody {
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "19.11.02.0";
+        internal const string PLUGIN_VERSION = "19.11.02.3";
 
         public static ConfigEntry<string> ExtendedDataToCopySetting { get; private set; }
         public static string[] ExtendedDataToCopy;
@@ -59,7 +59,7 @@ namespace KK_StudioCharaOnlyLoadBody {
             };
 
             //config.ini設定
-            ExtendedDataToCopySetting = Config.AddSetting("Config", "ExtendedDataToCopy", string.Join(";", SampleArray), "If you want to load the ExtendedData when you load the body, add the ExtendedData ID.");
+            ExtendedDataToCopySetting = Config.AddSetting("Config", "ExtendedData To Copy", string.Join(";", SampleArray), "If you want to load the ExtendedData when you load the body, add the ExtendedData ID.");
 
             ExtendedDataToCopy = ExtendedDataToCopySetting.Value.Split(';');
         }

@@ -42,7 +42,7 @@ namespace KK_FBIOpenUp {
     public class KK_FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "19.11.02.1";
+        internal const string PLUGIN_VERSION = "19.11.02.3";
 
         internal static bool _isenabled = false;
         internal static bool _isABMXExist = false;
@@ -94,8 +94,8 @@ namespace KK_FBIOpenUp {
             //讀取config
             Enable = Config.AddSetting("Config", "Enable", false);
             _isenabled = Enable.Value;
-
-            Sample_chara = Config.AddSetting("Config", "Sample_chara", "");
+ 
+            Sample_chara = Config.AddSetting("Config", "Sample chara", "");
             string sampleCharaPath = Sample_chara.Value;
             if (sampleCharaPath.Length == 0) {
                 KK_FBIOpenUp.Logger.LogDebug("Use default chara");
@@ -111,12 +111,12 @@ namespace KK_FBIOpenUp {
                 }
             }
 
-            Change_rate = Config.AddSetting("Config", "change_rate", 0.77f);
+            Change_rate = Config.AddSetting("Config", "Change rate", 0.77f);
             float rate = Change_rate.Value;
             Patches.ChangeRate = rate;
             KK_FBIOpenUp.Logger.LogDebug("Change Rate: " + rate);
 
-            Video_related_path = Config.AddSetting("Config", "Video_related_path", "UserData/audio/FBI.mp4");
+            Video_related_path = Config.AddSetting("Config", "Video related path", "UserData/audio/FBI.mp4");
             var tempVideoPath = Video_related_path.Value;
             if (!File.Exists(tempVideoPath)) {
                 KK_FBIOpenUp.Logger.LogError("Video Not Found: " + tempVideoPath);
@@ -124,7 +124,7 @@ namespace KK_FBIOpenUp {
                 videoPath = $"file://{Application.dataPath}/../{tempVideoPath}";
             }
 
-            Video_volume = Config.AddSetting("Config", "Video_volume", 0.06f);
+            Video_volume = Config.AddSetting("Config", "Video volume", 0.06f);
             videoVolume = Video_volume.Value;
             KK_FBIOpenUp.Logger.LogDebug($"Set video volume to {videoVolume}");
 

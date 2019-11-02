@@ -31,7 +31,7 @@ namespace KK_StudioAutoCloseLoadingSceneWindow {
     public class KK_StudioAutoCloseLoadingSceneWindow : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Auto Close Loading Scene Window";
         internal const string GUID = "com.jim60105.kk.studioautocloseloadingscenewindow";
-        internal const string PLUGIN_VERSION = "19.11.02.0";
+        internal const string PLUGIN_VERSION = "19.11.02.3";
 
         public static ConfigEntry<bool> EnableOnLoad { get; private set; }
         public static ConfigEntry<bool> EnableOnImport { get; private set; }
@@ -41,8 +41,8 @@ namespace KK_StudioAutoCloseLoadingSceneWindow {
             Logger = base.Logger;
             HarmonyWrapper.PatchAll(typeof(Patches));
 
-            EnableOnLoad = Config.AddSetting("Config", "EnableOnLoad", true, "Auto close after scene Loaded.");
-            EnableOnImport = Config.AddSetting("Config", "EnableOnImport", true, "Auto close after scene Imported.");
+            EnableOnLoad = Config.AddSetting("Config", "Auto close after scene Loaded.", true);
+            EnableOnImport = Config.AddSetting("Config", "Auto close after scene Imported.", true);
         }
     }
 
