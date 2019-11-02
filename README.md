@@ -7,10 +7,10 @@
 「鎖定頭髮飾品」可將頭髮飾品鎖定，使之不會受到清除和複寫<br>
 **將「鎖定頭髮飾品」以外的選項全勾，並使用飾品「取代模式」即會調用遊戲原始程式碼**<br>
 目前確定支援Plugin:<br>
-- Koikatu Overlay Mods **v5.0以上** (v4.2版用戶請下載[舊版v2.0.2](https://github.com/jim60105/KK/releases/download/v19.07.22.0/KK_StudioCoordinateLoadOption2.0.2.rar)版)<br>
+- Koikatu Overlay Mods v5.0.2
 - Koikatu ABMX V3.3
 - Koikatu More Accessories v1.0.5
-- Koikatu MaterialEditor v1.4.1
+- Koikatu MaterialEditor v1.7
 
 # Studio全是妹子插件 (Studio All Girls Plugin)
 ![image](https://github.com/jim60105/KK/raw/master/demo/demo2.gif)<br>
@@ -19,7 +19,7 @@
 身體外型依照其原始數據女體化<br>
 以此插件可以實現跨性別替換角色卡功能<br>
 例: 讀取一般的男女Scene，將男角色替換成女角色，就變成了百合Scene!<br>
-插件可從Configuration Manager暫時關閉功能<br>
+插件可從Configuration Manager關閉功能<br>
 
 ### **警語**:<br>
 1. 所有角色將以女性載入<br>
@@ -31,17 +31,17 @@
 
 使女性支持單色化功能，用意在於彌補全女插件所造成的限制<br>
 可以和全女插件分開使用<br>
-**依賴Darkness特典，0201版用戶請下載[舊版v1.0.1](https://github.com/jim60105/KK/releases/download/v19.05.16.2/OLD_KK_StudioSimpleColorOnGirls1.0.1.rar)版**<br>
+**依賴Darkness特典，無Darkness必定出問題**<br>
 
 # Studio換人插件 (Studio Chara Only Load Body)
 ![image](https://github.com/jim60105/KK/raw/master/demo/demo4.gif)<br>
 
 保留衣服和飾品，只替換人物<br>
 目前確定支援Plugin:<br>
-- Koikatu Overlay Mods v4.2.1
+- Koikatu Overlay Mods v5.0.2
 - Koikatu More Accessories v1.0.5
-- Koikatu KK_UncensorSelector v3.6.4
-- Koikatu KKABMX v3.2
+- Koikatu KK_UncensorSelector v3.8.3
+- Koikatu KKABMX v3.3
 
 # Studio IK→FK修正插件 (Studio Reflect FK Fix)
 <a href="https://blog.maki0419.com/2019/05/koikatu-studio-reflect-fk-fix.html" target="_blank"><img src="https://github.com/jim60105/KK/raw/master/demo/demo5-5.png" width="800" title="Click the image to watch demo"></a><br>
@@ -73,11 +73,11 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 可以使用Configuration Manager個別設定Import/Load是否啟用 (預設皆啟用)<br>
 
 # 需求依賴
-BepInEx v4.1.2<br>
-BepisPlugins r11.2.1
+**BepInEx v5 build 161** <br>
+BepisPlugins r12.3
 
 # 安裝方式
-- 將所有的「*.dll」檔案放進BepInEx資料夾<br>
+- 參考壓縮檔結構，將文件放進「BepInEx/plugins/jim60105」資料夾之下<br>
 
 # 下載位置
 [Latest Release](https://github.com/jim60105/KK/releases/latest "Latest Release")
