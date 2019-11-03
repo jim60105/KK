@@ -9,8 +9,8 @@
 目前確定支援Plugin:<br>
 - Koikatu Overlay Mods v5.0.2
 - Koikatu ABMX V3.3
-- Koikatu More Accessories v1.0.5
-- Koikatu MaterialEditor v1.7
+- Koikatu More Accessories v1.0.6
+- Koikatu MaterialEditor v1.8
 
 # Studio全是妹子插件 (Studio All Girls Plugin)
 ![image](https://github.com/jim60105/KK/raw/master/demo/demo2.gif)<br>
@@ -39,7 +39,7 @@
 保留衣服和飾品，只替換人物<br>
 目前確定支援Plugin:<br>
 - Koikatu Overlay Mods v5.0.2
-- Koikatu More Accessories v1.0.5
+- Koikatu More Accessories v1.0.6
 - Koikatu KK_UncensorSelector v3.8.3
 - Koikatu KKABMX v3.3
 
