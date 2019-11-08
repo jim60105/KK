@@ -28,10 +28,11 @@ using Studio;
 namespace KK_StudioAutoCloseLoadingSceneWindow {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
+    [BepInProcess("StudioNEOV2")]
     public class KK_StudioAutoCloseLoadingSceneWindow : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Auto Close Loading Scene Window";
         internal const string GUID = "com.jim60105.kk.studioautocloseloadingscenewindow";
-        internal const string PLUGIN_VERSION = "19.11.02.3";
+        internal const string PLUGIN_VERSION = "19.11.08.0";
 
         public static ConfigEntry<bool> EnableOnLoad { get; private set; }
         public static ConfigEntry<bool> EnableOnImport { get; private set; }
