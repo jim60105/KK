@@ -31,7 +31,7 @@ namespace KK_PluginListTool {
     public class KK_PluginListTool : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Plugin List Tool";
         internal const string GUID = "com.jim60105.kk.pluginlisttool";
-        internal const string PLUGIN_VERSION = "19.11.09.3";
+        internal const string PLUGIN_VERSION = "19.11.09.4";
 
         internal static new ManualLogSource Logger;
         bool init = false;
