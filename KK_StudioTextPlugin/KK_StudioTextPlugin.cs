@@ -18,6 +18,7 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
 using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Harmony;
 using BepInEx.Logging;
 using Extension;
@@ -37,14 +38,36 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "19.11.02.0";
+        internal const string PLUGIN_VERSION = "19.11.09.0";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
-            HarmonyWrapper.PatchAll(typeof(Patches));
-            UIUtility.Init();
-            Patches.Start();
+            if (TextPlugin.Awake()) {
+                UIUtility.Init();
+                HarmonyWrapper.PatchAll(typeof(Patches));
+            }
+        }
+
+        public static ConfigEntry<bool> Auto_change_default{ get; private set; }
+
+        // 新增字體物件時的預設參數
+        public static ConfigEntry<string> Default_FontName { get; private set; }
+        public static ConfigEntry<float> Default_FontSize { get; private set; }
+        public static ConfigEntry<Color> Default_Color { get; private set; }
+        public static ConfigEntry<FontStyle> Default_FontStyle { get; private set; }
+        public static ConfigEntry<TextAlignment> Default_Alignment { get; private set; }
+        public static ConfigEntry<TextAnchor> Default_Anchor { get; private set; }
+
+        public void Start() {
+            Auto_change_default = Config.AddSetting("Config", "Auto Change Default", true, "Save all text settings to create the next new Text Object.");
+
+            Default_FontName = Config.AddSetting("Default Settings", "FontName", "MS Gothic", new ConfigDescription("", new AcceptableValueList<string>(TextPlugin.GetDynamicFontNames().ToArray())));
+            Default_FontSize = Config.AddSetting("Default Settings", "FontSize", 1f, "Enter only floating point numbers.");
+            Default_Color = Config.AddSetting("Default Settings", "Color", Color.white);
+            Default_FontStyle = Config.AddSetting("Default Settings", "FontStyle", FontStyle.Normal);
+            Default_Alignment = Config.AddSetting("Default Settings", "Alignment", TextAlignment.Center);
+            Default_Anchor = Config.AddSetting("Default Settings", "Anchor", TextAnchor.MiddleCenter);
         }
     }
 
@@ -55,7 +78,7 @@ namespace KK_StudioTextPlugin {
         private static bool isConfigPanelCreated = false;
         private static bool onUpdating = false;
 
-        //資料夾名稱前墜
+        //資料夾名稱前墜 - 千萬不要改動這些!!!
         public static readonly string TextObjPrefix = "-Text Plugin:";
         public static readonly string TextConfigPrefix = "-Text Config";
         public static readonly string TextConfigFontPrefix = "-Text Font:";
@@ -68,17 +91,12 @@ namespace KK_StudioTextPlugin {
         // 新增字體物件時的預設文字
         public static readonly string newText = "New Text";
 
-        internal static void Start() {
-            TextPlugin.Start();
-        }
-
         internal static Image panel;
         internal static Image panelSelectFont;
         internal static void DrawConfigPanel() {
             if (isConfigPanelCreated) {
                 return;
             }
-            TextPlugin.CreateDynamicFonts();
 
             //畫Config視窗
             var panelRoot = GameObject.Find("StudioScene/Canvas Main Menu/02_Manipulate/04_Folder");
@@ -160,7 +178,7 @@ namespace KK_StudioTextPlugin {
             //Config2: FontSize (CharacterSize)
             var text2 = UIUtility.CreateText("FontSize", panel.transform, "FontSize");
             text2.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -115f), new Vector2(155f, -90f));
-            var input = UIUtility.CreateInputField("fontSizeInput", panel.transform,"1");
+            var input = UIUtility.CreateInputField("fontSizeInput", panel.transform, "e.g., 1.56 (float)");
             input.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -155f), new Vector2(155f, -120f));
             input.text = "1";
             input.onEndEdit.AddListener(delegate {
@@ -234,7 +252,7 @@ namespace KK_StudioTextPlugin {
             btn.onClick.AddListener(delegate {
                 if (!onUpdating) {
                     if (!ColorUtility.TryParseHtmlString(TextPlugin.GetConfig(null, TextPlugin.Config.Color), out var color)) {
-                        color = Color.white;
+                        color = KK_StudioTextPlugin.Default_Color.Value;
                     }
                     Singleton<Studio.Studio>.Instance.colorPalette.Setup("字體顏色", color, new Action<Color>(TextPlugin.ChangeColor), true);
                     Singleton<Studio.Studio>.Instance.colorPalette.visible = true;
@@ -248,7 +266,8 @@ namespace KK_StudioTextPlugin {
             foreach (var text in panel.GetComponentsInChildren<Text>(true)) {
                 text.color = Color.white;
             }
-            btn.image.color = Color.white;
+            input.GetComponent<InputField>().placeholder.GetComponent<Text>().color = new Color(1, 1, 1, 0.3f);
+            btn.image.color = KK_StudioTextPlugin.Default_Color.Value;
 
             //拖曳event
             Vector2 mouse = Vector2.zero;

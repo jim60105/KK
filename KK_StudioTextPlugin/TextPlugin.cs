@@ -1,5 +1,4 @@
-﻿using BepInEx.Logging;
-using Studio;
+﻿using Studio;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,17 +10,21 @@ namespace KK_StudioTextPlugin {
         private static Material Font3DMaterial;
         internal static bool DisablePreview = true;
         private static readonly Dictionary<string, Font> DynamicFonts = new Dictionary<string, Font>();
-        private static string[] FontList;
-        internal static void Start() {
+        private static string[] FontList = new string[] { };
+        internal static bool Awake() {
             //載入font3DMaterial，為了解決UI文字穿透其他物品的問題
             //因為文字無法編輯Shader，只能做Material來用
             if (AssetBundle.LoadFromMemory(Properties.Resources.text) is AssetBundle assetBundle) {
                 Font3DMaterial = assetBundle.LoadAsset<Material>("Font3DMaterial");
                 Font3DMaterial.color = Color.white;
                 assetBundle.Unload(false);
+                if (GetDynamicFontNames().Count != 0) {
+                    return true;
+                }
             } else {
-                KK_StudioTextPlugin.Logger.LogError("[KK_STP] Load assetBundle faild");
+                KK_StudioTextPlugin.Logger.LogError("Load assetBundle faild");
             }
+            return false;
         }
 
         /// <summary>
@@ -29,11 +32,21 @@ namespace KK_StudioTextPlugin {
         /// </summary>
         /// <returns>動態字體清單</returns>
         public static List<string> GetDynamicFontNames() {
+            List<string> output;
             if (DisablePreview) {
-                return FontList.ToList();
+                output = FontList.ToList();
             } else {
-                return DynamicFonts.Keys.ToList();
+                output = DynamicFonts.Keys.ToList();
             }
+            if (output.Count == 0) {
+                KK_StudioTextPlugin.Logger.LogDebug("Empty font list. Try generating...");
+                if (CreateDynamicFonts() == 0) {
+                    KK_StudioTextPlugin.Logger.LogError("Empty font list or generated failed.");
+                } else {
+                    output = GetDynamicFontNames();
+                }
+            }
+            return output;
         }
 
         /// <summary>
@@ -54,9 +67,9 @@ namespace KK_StudioTextPlugin {
             FontList = fontlist.ToArray();
             if (fontlist.Count >= 500) {
                 DynamicFonts.Add("Arial", Resources.GetBuiltinResource<Font>("Arial.ttf"));
-                KK_StudioTextPlugin.Logger.LogInfo($"[KK_STP] Detact {fontlist.Count} fonts in your system.");
-                KK_StudioTextPlugin.Logger.LogInfo($"[KK_STP] Based on Unity's limitations, this number is more than that can be generated.");
-                KK_StudioTextPlugin.Logger.LogInfo($"[KK_STP] I am sorry to tell you that I have to disable your fonts preview.");
+                KK_StudioTextPlugin.Logger.LogInfo($"Detact {fontlist.Count} fonts in your system.");
+                KK_StudioTextPlugin.Logger.LogInfo($"Based on Unity's limitations, this number is more than that can be generated.");
+                KK_StudioTextPlugin.Logger.LogInfo($"I am sorry to tell you that I have to disable your fonts preview.");
             } else {
                 DisablePreview = false;
                 if (fontlist.Remove("Arial")) {
@@ -65,7 +78,7 @@ namespace KK_StudioTextPlugin {
                 foreach (var fontName in fontlist) {
                     DynamicFonts.Add(fontName, Font.CreateDynamicFontFromOSFont(new string[] { fontName, "Arial" }, 30));
                 }
-                KK_StudioTextPlugin.Logger.LogInfo($"[KK_STP] Generate {DynamicFonts.Count} System Fonts");
+                KK_StudioTextPlugin.Logger.LogInfo($"Generate {DynamicFonts.Count} System Fonts");
             }
             return DynamicFonts.Count;
         }
@@ -77,11 +90,11 @@ namespace KK_StudioTextPlugin {
         /// <returns></returns>
         public static Font GetFont(string fontName) {
             if (!CheckFontInOS(fontName)) {
-                KK_StudioTextPlugin.Logger.LogMessage($"[KK_STP] Cannot find {fontName} in your System.");
+                KK_StudioTextPlugin.Logger.LogMessage($"Cannot find {fontName} in your System.");
                 FallbackFont();
             } else if (DynamicFonts.Count >= 499) {
-                KK_StudioTextPlugin.Logger.LogMessage($"[KK_STP] Based on Unity's limitations, you can't generate more than 500 different fonts at the same time.");
-                KK_StudioTextPlugin.Logger.LogMessage($"[KK_STP] Please restart Studio.");
+                KK_StudioTextPlugin.Logger.LogMessage($"Based on Unity's limitations, you can't generate more than 500 different fonts at the same time.");
+                KK_StudioTextPlugin.Logger.LogMessage($"Please restart Studio.");
                 FallbackFont();
             }
             if (!DynamicFonts.ContainsKey(fontName)) {
@@ -91,10 +104,10 @@ namespace KK_StudioTextPlugin {
 
             void FallbackFont() {
                 if (CheckFontInOS("MS Gothic")) {
-                    KK_StudioTextPlugin.Logger.LogMessage($"[KK_STP] Fallback to MS Gothic");
+                    KK_StudioTextPlugin.Logger.LogMessage($"Fallback to MS Gothic");
                     fontName = "MS Gothic";
                 } else {
-                    KK_StudioTextPlugin.Logger.LogMessage($"[KK_STP] Use Unity BuiltinResource Arial.");
+                    KK_StudioTextPlugin.Logger.LogMessage($"Use Unity BuiltinResource Arial.");
                     fontName = "Arial";
                 }
             }
@@ -134,9 +147,9 @@ namespace KK_StudioTextPlugin {
                 doMain(Patches.TextConfigFontStylePrefix, t.fontStyle.ToString(), nConfig);
             if (config == Config.Color || config == Config.All)
                 doMain(Patches.TextConfigColorPrefix, '#' + ColorUtility.ToHtmlStringRGBA(m.material.color), nConfig);
-            if (config == Config.Anchor|| config == Config.All)
+            if (config == Config.Anchor || config == Config.All)
                 doMain(Patches.TextConfigAnchorPrefix, t.anchor.ToString(), nConfig);
-            if (config == Config.Align|| config == Config.All)
+            if (config == Config.Align || config == Config.All)
                 doMain(Patches.TextConfigAlignPrefix, t.alignment.ToString(), nConfig);
 
             Patches.isCreatingTextStructure = false;
@@ -230,14 +243,14 @@ namespace KK_StudioTextPlugin {
             t.fontSize = 500;
             t.text = text;
             go.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
-            SetFont(folder);
-            SetCharacterSize(folder);
-            SetColor(folder,Color.white);
-            SetFontStyle(folder);
-            SetAlignment(folder);
-            SetAnchor(folder);
+            SetColor(folder, KK_StudioTextPlugin.Default_Color.Value);
+            SetFont(folder, KK_StudioTextPlugin.Default_FontName.Value);
+            SetCharacterSize(folder, KK_StudioTextPlugin.Default_FontSize.Value);
+            SetFontStyle(folder, KK_StudioTextPlugin.Default_FontStyle.Value);
+            SetAlignment(folder, KK_StudioTextPlugin.Default_Alignment.Value);
+            SetAnchor(folder, KK_StudioTextPlugin.Default_Anchor.Value);
 
-            KK_StudioTextPlugin.Logger.LogInfo("[KK_STP] Create Text");
+            KK_StudioTextPlugin.Logger.LogInfo("Create Text");
             return t;
         }
 
@@ -270,6 +283,9 @@ namespace KK_StudioTextPlugin {
             folder.objectItem.GetComponentInChildren<MeshRenderer>(true).material.SetTexture("_MainTex", textMesh.font.material.mainTexture);
             folder.objectItem.GetComponentInChildren<MeshRenderer>(true).material.EnableKeyword("_NORMALMAP");
             SetColor(folder, colorBackup);
+            if (KK_StudioTextPlugin. Auto_change_default.Value) {
+                KK_StudioTextPlugin.Default_FontName.Value = fontName;
+            }
         }
 
         /// <summary>
@@ -282,7 +298,7 @@ namespace KK_StudioTextPlugin {
             if (i >= 0) {
                 return true;
             }
-            KK_StudioTextPlugin.Logger.LogMessage("[KK_STP] Missing font: " + fontName);
+            KK_StudioTextPlugin.Logger.LogMessage("Missing font: " + fontName);
             return false;
         }
 
@@ -307,7 +323,7 @@ namespace KK_StudioTextPlugin {
         /// <param name="folder">對象OCIFolder</param>
         /// <param name="size">字體大小</param>
         public static void SetCharacterSize(OCIFolder folder, string size) {
-            if(!float.TryParse(size, out float f)) {
+            if (!float.TryParse(size, out float f)) {
                 f = 1f;
             }
             SetCharacterSize(folder, f);
@@ -319,6 +335,9 @@ namespace KK_StudioTextPlugin {
         /// <param name="size">字體大小</param>
         public static void SetCharacterSize(OCIFolder folder, float size = 1f) {
             folder.objectItem.GetComponentInChildren<TextMesh>(true).characterSize = 0.002f * size;
+            if (KK_StudioTextPlugin. Auto_change_default.Value) {
+                KK_StudioTextPlugin.Default_FontSize.Value = size;
+            }
         }
 
         /// <summary>
@@ -342,7 +361,7 @@ namespace KK_StudioTextPlugin {
         /// </summary>
         /// <param name="folder">對象OCIFolder</param>
         /// <param name="color">字型顏色</param>
-        public static void SetColor(OCIFolder folder,string color) {
+        public static void SetColor(OCIFolder folder, string color) {
             if (!ColorUtility.TryParseHtmlString(color, out var c)) {
                 c = default;
             }
@@ -355,6 +374,9 @@ namespace KK_StudioTextPlugin {
         /// <param name="color">字型顏色</param>
         public static void SetColor(OCIFolder folder, Color color = default) {
             folder.objectItem.GetComponentInChildren<MeshRenderer>(true).material.color = color;
+            if (KK_StudioTextPlugin. Auto_change_default.Value) {
+                KK_StudioTextPlugin.Default_Color.Value = color;
+            }
         }
 
         /// <summary>
@@ -382,11 +404,23 @@ namespace KK_StudioTextPlugin {
                 if (style == "") {
                     style = "Normal";
                 }
-                folder.objectItem.GetComponentInChildren<TextMesh>(true).fontStyle = (FontStyle)Enum.Parse(typeof(FontStyle), style);
+                SetFontStyle(folder, (FontStyle)Enum.Parse(typeof(FontStyle), style));
             } catch (OverflowException) {
-                KK_StudioTextPlugin.Logger.LogError("[KK_STP] OverflowException: Please use a correct FontStyle.");
-                KK_StudioTextPlugin.Logger.LogError("[KK_STP] Fallback to FontStyle.Normal");
-                folder.objectItem.GetComponentInChildren<TextMesh>(true).fontStyle = FontStyle.Normal;
+                KK_StudioTextPlugin.Logger.LogError("OverflowException: Please use a correct FontStyle.");
+                KK_StudioTextPlugin.Logger.LogError("Fallback to FontStyle.Normal");
+                SetFontStyle(folder, FontStyle.Normal);
+            }
+        }
+
+        /// <summary>
+        /// 設定字體樣式
+        /// </summary>
+        /// <param name="folder">對象OCIFolder</param>
+        /// <param name="style">字體樣式</param>
+        public static void SetFontStyle(OCIFolder folder, FontStyle style = FontStyle.Normal) {
+            folder.objectItem.GetComponentInChildren<TextMesh>(true).fontStyle = style;
+            if (KK_StudioTextPlugin. Auto_change_default.Value) {
+                KK_StudioTextPlugin.Default_FontStyle.Value = style;
             }
         }
 
@@ -415,11 +449,23 @@ namespace KK_StudioTextPlugin {
                 if (anchor == "") {
                     anchor = "MiddleCenter";
                 }
-                folder.objectItem.GetComponentInChildren<TextMesh>(true).anchor = (TextAnchor)Enum.Parse(typeof(TextAnchor), anchor);
+                SetAnchor(folder, (TextAnchor)Enum.Parse(typeof(TextAnchor), anchor));
             } catch (OverflowException) {
-                KK_StudioTextPlugin.Logger.LogError("[KK_STP] OverflowException: Please use a correct Anchor(Upper/Lower/Middle + Left/Right/Center).");
-                KK_StudioTextPlugin.Logger.LogError("[KK_STP] Fallback to TextAnchor.MiddleCenter");
-                folder.objectItem.GetComponentInChildren<TextMesh>(true).anchor = TextAnchor.MiddleCenter;
+                KK_StudioTextPlugin.Logger.LogError("OverflowException: Please use a correct Anchor(Upper/Lower/Middle + Left/Right/Center).");
+                KK_StudioTextPlugin.Logger.LogError("Fallback to TextAnchor.MiddleCenter");
+                SetAnchor(folder, TextAnchor.MiddleCenter);
+            }
+        }
+
+        /// <summary>
+        /// 設定字體錨點
+        /// </summary>
+        /// <param name="folder">對象OCIFolder</param>
+        /// <param name="anchor">字體錨點</param>
+        public static void SetAnchor(OCIFolder folder, TextAnchor anchor = TextAnchor.MiddleCenter) {
+            folder.objectItem.GetComponentInChildren<TextMesh>(true).anchor = anchor;
+            if (KK_StudioTextPlugin. Auto_change_default.Value) {
+                KK_StudioTextPlugin.Default_Anchor.Value = anchor;
             }
         }
 
@@ -448,11 +494,23 @@ namespace KK_StudioTextPlugin {
                 if (alignment == "") {
                     alignment = "Center";
                 }
-                folder.objectItem.GetComponentInChildren<TextMesh>(true).alignment = (TextAlignment)Enum.Parse(typeof(TextAlignment), alignment);
+                SetAlignment(folder, (TextAlignment)Enum.Parse(typeof(TextAlignment), alignment));
             } catch (OverflowException) {
-                KK_StudioTextPlugin.Logger.LogError("[KK_STP] OverflowException: Please use a correct Alignment (Left, Right, Center).");
-                KK_StudioTextPlugin.Logger.LogError("[KK_STP] Fallback to TextAlignment.Center");
-                folder.objectItem.GetComponentInChildren<TextMesh>(true).alignment = TextAlignment.Center;
+                KK_StudioTextPlugin.Logger.LogError("OverflowException: Please use a correct Alignment (Left, Right, Center).");
+                KK_StudioTextPlugin.Logger.LogError("Fallback to TextAlignment.Center");
+                SetAlignment(folder, TextAlignment.Center);
+            }
+        }
+
+        /// <summary>
+        /// 設定字體對齊
+        /// </summary>
+        /// <param name="folder">對象OCIFolder</param>
+        /// <param name="alignment">字體對齊(Left, Right, Center)</param>
+        public static void SetAlignment(OCIFolder folder, TextAlignment alignment = TextAlignment.Center) {
+            folder.objectItem.GetComponentInChildren<TextMesh>(true).alignment = alignment;
+            if (KK_StudioTextPlugin. Auto_change_default.Value) {
+                KK_StudioTextPlugin.Default_Alignment.Value = alignment;
             }
         }
     }
