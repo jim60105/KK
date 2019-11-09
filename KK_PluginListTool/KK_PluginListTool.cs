@@ -27,110 +27,113 @@ using System.Linq;
 using System.Text;
 
 namespace KK_PluginListTool {
-    [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
-    public class KK_PluginListTool : BaseUnityPlugin {
-        internal const string PLUGIN_NAME = "Plugin List Tool";
-        internal const string GUID = "com.jim60105.kk.pluginlisttool";
-        internal const string PLUGIN_VERSION = "19.11.09.4";
+	[BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
+	public class KK_PluginListTool : BaseUnityPlugin {
+		internal const string PLUGIN_NAME = "Plugin List Tool";
+		internal const string GUID = "com.jim60105.kk.pluginlisttool";
+		internal const string PLUGIN_VERSION = "19.11.10.0";
 
-        internal static new ManualLogSource Logger;
-        bool init = false;
-        public void LateUpdate() {
-            if (!init) {
-                init = true;
-                Logger = base.Logger;
-                Logger.LogDebug($"Start listing loaded plugin infos...");
-                FileLog.logPath = Path.Combine(Path.GetDirectoryName(base.Info.Location), Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList.json";
+		internal static new ManualLogSource Logger;
+		bool init = false;
+		public void LateUpdate() {
+			if (!init) {
+				init = true;
+				Logger = base.Logger;
+				Logger.LogDebug($"Start listing loaded plugin infos...");
+				FileLog.logPath = Path.Combine(Path.GetDirectoryName(base.Info.Location), Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList.json";
 
-                List<string> strList = new List<string>();
-                List<BepInPlugin> errorList = new List<BepInPlugin>();
-                foreach (var kv in BepInEx.Bootstrap.Chainloader.PluginInfos) {
-                    try {
-                        if (kv.Value != null) {
-                            Logger.LogDebug($"{kv.Key} {kv.Value.Metadata.Version}");
-                            strList.Add(Json.JsonParser.Serialize(kv.Value.Metadata));
-                        }
-                    } catch (Exception e) {
-                        Logger.LogError($"Logging Plugin Info ERROR: {kv.Key} : {e.Message}");
-                    };
-                }
+				List<string> strList = new List<string>();
+				foreach (var kv in BepInEx.Bootstrap.Chainloader.PluginInfos) {
+					try {
+						if (kv.Value != null) {
+							Logger.LogDebug($"{kv.Value.Metadata.Name} v{kv.Value.Metadata.Version}");
+//							strList.Add(Json.JsonParser.Serialize(kv.Value.Metadata));
 
-                FileLog.LogBuffered(JsonHelper.FormatJson($"[\n{strList.Join(delimiter: ",")}\n]"));
+							List<string> strItem = new List<string>();
+							strItem.Add("\"guid\": \"" + $"{kv.Value.Metadata.GUID}" + "\"");
+							strItem.Add("\"name\": \"" + $"{kv.Value.Metadata.Name}" + "\"");
+							strItem.Add("\"version\": \"" + $"{kv.Value.Metadata.Version}" + "\"");
+							strList.Add("{" + $"{strItem.Join(delimiter: ", ")}" + "}");
+						}
+					} catch (Exception e) {
+						Logger.LogError($"Logging Plugin Info ERROR: {kv.Key} : {e.Message}");
+					};
+				}
 
-                if (File.Exists(FileLog.logPath)) {
-                    File.Delete(FileLog.logPath);
-                }
-                FileLog.FlushBuffer();
+				if (File.Exists(FileLog.logPath)) {
+					File.Delete(FileLog.logPath);
+				}
+				FileLog.Log(JsonHelper.FormatJson($"[{strList.Join(delimiter: ",")}]"));
 
-                Logger.LogInfo($"Logged Plugin Info into: {FileLog.logPath}");
-            }
-        }
-    }
+				Logger.LogInfo($"Logged Plugin Info into: {FileLog.logPath}");
+			}
+		}
+	}
 
-    #region ToolStuff
-    //JSON formatter in C#  - Stack Overflow
-    //https://stackoverflow.com/a/6237866
-    class JsonHelper {
-        private const string INDENT_STRING = "    ";
-        public static string FormatJson(string str) {
-            var indent = 0;
-            var quoted = false;
-            var sb = new StringBuilder();
-            for (var i = 0; i < str.Length; i++) {
-                var ch = str[i];
-                switch (ch) {
-                    case '{':
-                    case '[':
-                        sb.Append(ch);
-                        if (!quoted) {
-                            sb.AppendLine();
-                            Enumerable.Range(0, ++indent).ForEach(item => sb.Append(INDENT_STRING));
-                        }
-                        break;
-                    case '}':
-                    case ']':
-                        if (!quoted) {
-                            sb.AppendLine();
-                            Enumerable.Range(0, --indent).ForEach(item => sb.Append(INDENT_STRING));
-                        }
-                        sb.Append(ch);
-                        break;
-                    case '"':
-                        sb.Append(ch);
-                        bool escaped = false;
-                        var index = i;
-                        while (index > 0 && str[--index] == '\\')
-                            escaped = !escaped;
-                        if (!escaped)
-                            quoted = !quoted;
-                        break;
-                    case ',':
-                        sb.Append(ch);
-                        if (!quoted) {
-                            sb.AppendLine();
-                            Enumerable.Range(0, indent).ForEach(item => sb.Append(INDENT_STRING));
-                        }
-                        break;
-                    case ':':
-                        sb.Append(ch);
-                        if (!quoted)
-                            sb.Append(" ");
-                        break;
-                    default:
-                        sb.Append(ch);
-                        break;
-                }
-            }
-            return sb.ToString();
-        }
-    }
+	#region ToolStuff
+	//JSON formatter in C#  - Stack Overflow
+	//https://stackoverflow.com/a/6237866
+	class JsonHelper {
+		private const string INDENT_STRING = "    ";
+		public static string FormatJson(string str) {
+			var indent = 0;
+			var quoted = false;
+			var sb = new StringBuilder();
+			for (var i = 0; i < str.Length; i++) {
+				var ch = str[i];
+				switch (ch) {
+					case '{':
+					case '[':
+						sb.Append(ch);
+						if (!quoted) {
+							sb.AppendLine();
+							Enumerable.Range(0, ++indent).ForEach(item => sb.Append(INDENT_STRING));
+						}
+						break;
+					case '}':
+					case ']':
+						if (!quoted) {
+							sb.AppendLine();
+							Enumerable.Range(0, --indent).ForEach(item => sb.Append(INDENT_STRING));
+						}
+						sb.Append(ch);
+						break;
+					case '"':
+						sb.Append(ch);
+						bool escaped = false;
+						var index = i;
+						while (index > 0 && str[--index] == '\\')
+							escaped = !escaped;
+						if (!escaped)
+							quoted = !quoted;
+						break;
+					case ',':
+						sb.Append(ch);
+						if (!quoted) {
+							sb.AppendLine();
+							Enumerable.Range(0, indent).ForEach(item => sb.Append(INDENT_STRING));
+						}
+						break;
+					case ':':
+						sb.Append(ch);
+						if (!quoted)
+							sb.Append(" ");
+						break;
+					default:
+						sb.Append(ch);
+						break;
+				}
+			}
+			return sb.ToString();
+		}
+	}
 
-    static class Extensions {
-        public static void ForEach<T>(this IEnumerable<T> ie, Action<T> action) {
-            foreach (var i in ie) {
-                action(i);
-            }
-        }
-    }
-    #endregion
+	static class Extensions {
+		public static void ForEach<T>(this IEnumerable<T> ie, Action<T> action) {
+			foreach (var i in ie) {
+				action(i);
+			}
+		}
+	}
+	#endregion
 }
