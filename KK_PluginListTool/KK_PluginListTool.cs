@@ -68,6 +68,8 @@ namespace KK_PluginListTool {
     }
 
     #region ToolStuff
+    //JSON formatter in C#  - Stack Overflow
+    //https://stackoverflow.com/a/6237866
     class JsonHelper {
         private const string INDENT_STRING = "    ";
         public static string FormatJson(string str) {
