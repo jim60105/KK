@@ -38,7 +38,7 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "19.11.09.0";
+        internal const string PLUGIN_VERSION = "19.11.09.1";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -49,7 +49,8 @@ namespace KK_StudioTextPlugin {
             }
         }
 
-        public static ConfigEntry<bool> Auto_change_default{ get; private set; }
+        public static ConfigEntry<bool> Auto_change_default { get; private set; }
+        public static ConfigEntry<string> Default_New_Text{ get; private set; }
 
         // 新增字體物件時的預設參數
         public static ConfigEntry<string> Default_FontName { get; private set; }
@@ -60,6 +61,7 @@ namespace KK_StudioTextPlugin {
         public static ConfigEntry<TextAnchor> Default_Anchor { get; private set; }
 
         public void Start() {
+            Default_New_Text= Config.AddSetting("Config", "Default New Text", "NewText", "Text for new text. This is not affected by the Auto Change setting.");
             Auto_change_default = Config.AddSetting("Config", "Auto Change Default", true, "Save all text settings to create the next new Text Object.");
 
             Default_FontName = Config.AddSetting("Default Settings", "FontName", "MS Gothic", new ConfigDescription("", new AcceptableValueList<string>(TextPlugin.GetDynamicFontNames().ToArray())));
@@ -88,19 +90,29 @@ namespace KK_StudioTextPlugin {
         public static readonly string TextConfigAnchorPrefix = "-Text Anchor:";
         public static readonly string TextConfigAlignPrefix = "-Text Align:";
 
-        // 新增字體物件時的預設文字
-        public static readonly string newText = "New Text";
-
         internal static Image panel;
         internal static Image panelSelectFont;
         internal static void DrawConfigPanel() {
             if (isConfigPanelCreated) {
                 return;
             }
-
-            //畫Config視窗
             var panelRoot = GameObject.Find("StudioScene/Canvas Main Menu/02_Manipulate/04_Folder");
+            //畫Config視窗
             panel = UIUtility.CreatePanel("ConfigPanel", panelRoot.transform);
+            panel.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -510), new Vector2(160, -70));
+
+            //畫大輸入視窗
+            Image nameInputPanel = UIUtility.CreatePanel("FolderNameInputPanel", panel.transform);
+            nameInputPanel.transform.SetRect(Vector2.up, Vector2.up, new Vector2(165f, -200f), new Vector2(645f, 0f));
+            InputField inputField = UIUtility.CreateInputField("FolderNameInput", nameInputPanel.transform);
+            inputField.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(5f, 5f), new Vector2(-5f, -5f));
+            inputField.textComponent.resizeTextMinSize = 15;
+            inputField.textComponent.resizeTextMaxSize = 20;
+            inputField.text = KK_StudioTextPlugin.Default_New_Text.Value;
+            inputField.lineType = InputField.LineType.MultiLineNewline;
+            inputField.textComponent.alignment = TextAnchor.UpperLeft;
+            nameInputPanel.gameObject.SetActive(false);
+
             //Config1: Font
             var text1 = UIUtility.CreateText("FontText", panel.transform, "Font");
             text1.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -30f), new Vector2(155f, -5f));
@@ -148,9 +160,9 @@ namespace KK_StudioTextPlugin {
                     Text demoText = UnityEngine.Object.Instantiate(text, text.transform.parent);
                     demoText.name = "demoText";
                     demoText.alignment = TextAnchor.LowerLeft;
-                    demoText.text = newText;
+                    demoText.text = KK_StudioTextPlugin.Default_New_Text.Value;
                     demoText.font = TextPlugin.GetFont(fontName);
-                    demoText.font.RequestCharactersInTexture(newText);
+                    demoText.font.RequestCharactersInTexture(KK_StudioTextPlugin.Default_New_Text.Value);
                     demoText.transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 7.5f), new Vector2(-5f, -30f));
                     fontDisplayBtn.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -75f * (tmpBtns.Count + 1)), new Vector2(-5f, -75f * tmpBtns.Count));
                 } else {
@@ -173,6 +185,13 @@ namespace KK_StudioTextPlugin {
             } else {
                 btnGroup.transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(0, 900f - (75f * tmpBtns.Count) - 10f), new Vector2(0, 0));
             }
+            EventTrigger trigger3 = panelSelectFont.gameObject.AddComponent<EventTrigger>();
+            EventTrigger.Entry entry3 = new EventTrigger.Entry { eventID = EventTriggerType.Deselect };
+            entry3.callback.AddListener((data) => {
+                panelSelectFont.gameObject.SetActive(false);
+                KK_StudioTextPlugin.Logger.LogDebug("LostFocus.");
+            });
+            trigger3.triggers.Add(entry3);
             panelSelectFont.gameObject.SetActive(false);
 
             //Config2: FontSize (CharacterSize)
@@ -259,7 +278,6 @@ namespace KK_StudioTextPlugin {
                 }
             });
 
-            panel.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -510), new Vector2(160, -70));
             foreach (var image in panel.GetComponentsInChildren<Image>(true)) {
                 image.color = new Color32(120, 120, 120, 220);
             }
@@ -381,8 +399,8 @@ namespace KK_StudioTextPlugin {
         public static void LoadPostfix(ref OCIFolder __result, OIFolderInfo _info, ObjectCtrlInfo _parent, TreeNodeObject _parentNode, bool _addInfo, int _initialPosition) {
             //Scene讀取的進入點
             if (isCreatingTextFolder || __result.name.Contains(TextObjPrefix)) {
-                __result.name = isCreatingTextFolder ? TextObjPrefix + newText : _info.name;
-                var t = TextPlugin.MakeTextObj(__result, isCreatingTextFolder ? newText : _info.name.Replace(TextObjPrefix, "").Replace("\\n", "\n"));
+                __result.name = isCreatingTextFolder ? TextObjPrefix + KK_StudioTextPlugin.Default_New_Text.Value : _info.name;
+                var t = TextPlugin.MakeTextObj(__result, isCreatingTextFolder ? KK_StudioTextPlugin.Default_New_Text.Value : _info.name.Replace(TextObjPrefix, "").Replace("\\n", "\n"));
                 isCreatingTextFolder = false;
                 if (_addInfo) {
                     //Scene Load就不創建Config資料夾結構
@@ -407,6 +425,34 @@ namespace KK_StudioTextPlugin {
             if (__instance.name.Contains(TextObjPrefix)) {
                 GameObject go = __instance.objectItem.GetComponentInChildren<TextMesh>(true).gameObject;
                 go?.SetActive(_visible);
+            }
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(MPFolderCtrl), "Start")]
+        public static void Start(MPFolderCtrl __instance) {
+            if (__instance.ociFolder.name.Contains(TextObjPrefix)) {
+                InputField input = (InputField)__instance.GetField("inputName");
+                input.readOnly = true;
+
+                var inputFieldPanel = __instance.transform.Find("ConfigPanel/FolderNameInputPanel").gameObject;
+                var inputField = inputFieldPanel.GetComponentInChildren<InputField>();
+
+                inputField.onEndEdit.RemoveAllListeners();
+                inputField.onEndEdit.AddListener(delegate {
+                    input.text = inputField.text.TrimEnd('\n').Replace("\n", "\\n");
+                    input.onEndEdit.Invoke(input.text);
+                    inputFieldPanel.SetActive(false);
+                });
+
+                EventTrigger trigger = input.gameObject.AddComponent<EventTrigger>();
+                EventTrigger.Entry entry = new EventTrigger.Entry { eventID = EventTriggerType.PointerClick };
+                entry.callback.AddListener((data) => {
+                    //點擊FolderName輸入框時觸發
+                    inputField.text = input.text.Replace("\\n", "\n");
+                    inputFieldPanel.SetActive(true);
+                    inputField.Select();
+                });
+                trigger.triggers.Add(entry);
             }
         }
 
