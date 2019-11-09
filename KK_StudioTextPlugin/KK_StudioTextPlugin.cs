@@ -38,7 +38,7 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "19.11.09.1";
+        internal const string PLUGIN_VERSION = "19.11.09.2";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -104,7 +104,7 @@ namespace KK_StudioTextPlugin {
             //畫大輸入視窗
             Image nameInputPanel = UIUtility.CreatePanel("FolderNameInputPanel", panel.transform);
             nameInputPanel.transform.SetRect(Vector2.up, Vector2.up, new Vector2(165f, -200f), new Vector2(645f, 0f));
-            InputField inputField = UIUtility.CreateInputField("FolderNameInput", nameInputPanel.transform);
+            InputField inputField = UIUtility.CreateInputField("FolderNameInput", nameInputPanel.transform,"");
             inputField.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(5f, 5f), new Vector2(-5f, -5f));
             inputField.textComponent.resizeTextMinSize = 15;
             inputField.textComponent.resizeTextMaxSize = 20;
