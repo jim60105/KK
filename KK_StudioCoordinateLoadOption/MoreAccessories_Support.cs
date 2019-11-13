@@ -117,21 +117,22 @@ namespace KK_StudioCoordinateLoadOption {
 
                 var tempSerlz = MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(tempLoadedAccessory ?? new ChaFileAccessory.PartsInfo());
                 //如果該位置為髮飾品、增加模式，且在舊飾品數量內，則Enqueue
-                if (i < parts.Count && (Patches.IsHairAccessory(chaCtrl, i + 20) || Patches.addAccModeFlag)) {
-                    accQueue.Enqueue(tempSerlz);
-                    //parts[i] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(ori);
-                    KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Lock: MoreAcc{i} / ID: {parts.ElementAtOrDefault(i)?.id ?? 0}");
-                    KK_StudioCoordinateLoadOption.Logger.LogDebug($"->EnQueue: MoreAcc{i} / ID: {tempLoadedAccessory.id}");
-                    KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Changed: MoreAcc{i} / ID: {parts[i].id}");
+                if (i < parts.Count && (Patches.IsHairAccessory(chaCtrl, i + 20) || Patches.addAccModeFlag) && parts[i].type!=120) {
+                    if (tempLoadedAccessory.type != 120) {
+                        accQueue.Enqueue(tempSerlz);
+                        KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Lock: MoreAcc{i} / ID: {parts.ElementAtOrDefault(i)?.id ?? 0}");
+                        KK_StudioCoordinateLoadOption.Logger.LogDebug($"->EnQueue: MoreAcc{i} / ID: {tempLoadedAccessory.id}");
+                    } //else continue;
                 } else if (i >= parts.Count) {
                     //超過原本數量，就改用Add
                     parts.Add(MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tempSerlz));
-                    KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Changed: MoreAcc{i} / ID: {parts.Last().id}");
+                    KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Added: MoreAcc{i} / ID: {parts.Last().id}");
                 } else {
                     parts[i] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tempSerlz);
                     KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Changed: MoreAcc{i} / ID: {parts[i].id}");
                 }
             }
+
             //遍歷空欄，寫入暫存在accQueue的飾品
             for (int j = 0; accQueue.Count > 0; j++) {
                 if (j < parts.Count - 1) {
@@ -161,15 +162,15 @@ namespace KK_StudioCoordinateLoadOption {
             List<ChaAccessoryComponent> cusAcsCmp = charAdditionalData.GetField("cusAcsCmp").ToList<ChaAccessoryComponent>();
             List<bool> showAccessories = charAdditionalData.GetField("showAccessories").ToList<bool>();
 
-            while (infoAccessory.Count < parts.Count+21)
+            while (infoAccessory.Count < parts.Count)
                 infoAccessory.Add(null);
-            while (objAccessory.Count < parts.Count+21)
+            while (objAccessory.Count < parts.Count)
                 objAccessory.Add(null);
-            while (objAcsMove.Count < parts.Count+21)
+            while (objAcsMove.Count < parts.Count)
                 objAcsMove.Add(new GameObject[2]);
-            while (cusAcsCmp.Count < parts.Count+21)
+            while (cusAcsCmp.Count < parts.Count)
                 cusAcsCmp.Add(null);
-            while (showAccessories.Count < parts.Count+21)
+            while (showAccessories.Count < parts.Count)
                 showAccessories.Add(true);
 
             //charAdditionalData.SetField("nowAccessories", parts);
