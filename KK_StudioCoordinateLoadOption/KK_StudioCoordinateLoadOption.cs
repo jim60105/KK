@@ -460,7 +460,9 @@ namespace KK_StudioCoordinateLoadOption {
                                 //如果要替入的不是空格，就放進accQueue
                                 if (tmpChaFileCoordinate.accessory.parts[i].type != 120) {
                                     accQueue.Enqueue(tmp);
+                                    GetChaAccessoryComponent(tmpChaCtrl, i)?.gameObject.GetComponent<ChaCustomHairComponent>().SetColor();
                                     accHairComQueue.Enqueue(GetChaAccessoryComponent(tmpChaCtrl, i)?.gameObject.GetComponent<ChaCustomHairComponent>());
+                                    KK_StudioCoordinateLoadOption.Logger.LogDebug(GetChaAccessoryComponent(tmpChaCtrl, i)?.gameObject.GetComponent<ChaCustomHairComponent>().acsDefColor[0]);
                                     //KK_StudioCoordinateLoadOption.Logger.LogDebug($"isHair?: {IsHairAccessory(chaCtrl, i)}, {IsHairAccessory(tmpChaCtrl, i)}");
                                     KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Lock: Acc{i} / ID: {chaCtrl.nowCoordinate.accessory.parts[i].id}");
                                     KK_StudioCoordinateLoadOption.Logger.LogDebug($"->EnQueue: Acc{i} / ID: {tmpChaFileCoordinate.accessory.parts[i].id}");
@@ -480,7 +482,6 @@ namespace KK_StudioCoordinateLoadOption {
                                 KK_StudioCoordinateLoadOption.Logger.LogDebug($"->DeQueue: Acc{j} / ID: {chaCtrl.nowCoordinate.accessory.parts[j].id}");
                             } //else continue;
                         }
-                        //chaCtrl.ChangeAccessory(j, chaCtrl.nowCoordinate.accessory.parts[j].type, chaCtrl.nowCoordinate.accessory.parts[j].id, chaCtrl.nowCoordinate.accessory.parts[j].parentKey, true);
 
                         //accQueue內容物太多，放不下的丟到MoreAcc，或是報告後捨棄
                         if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
@@ -492,8 +493,8 @@ namespace KK_StudioCoordinateLoadOption {
                                 KK_StudioCoordinateLoadOption.Logger.LogMessage("Accessories slot is not enough! Discard " + GetNameFromIDAndType(c.id, (ChaListDefine.CategoryNo)c.type));
                             }
                         }
-                        chaCtrl.ChangeAccessory(true);
-                        chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
+                        //chaCtrl.ChangeAccessory(true);
+                        //chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
                         KK_StudioCoordinateLoadOption.Logger.LogDebug("->Changed: " + tgl.name);
                     } else if (kind >= 0) {
                         //Change clothes
@@ -506,13 +507,21 @@ namespace KK_StudioCoordinateLoadOption {
                 }
             }
             chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
-            chaCtrl.Reload(false, true, false, true);
+            chaCtrl.Reload(false, true, true, true);
 
             //LoadExtData(chaCtrl, tmpChaCtrl);
         }
 
         private static void ReplaceHairAccessory(ChaControl chaCtrl, int index, ChaCustomHairComponent chaCusHairCom) {
-            chaCtrl.Load();
+            //TODO
+            /* 假呼叫ChaCustom.CvsAccessoryChange.CopyAcs()來觸發HairAccessoryCustomizer透過KKAPI掛在上面的鉤子
+             * 以更新頭髮飾品
+             */
+
+
+            //chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
+            chaCtrl.Reload(false, true, true, true);
+            //chaCtrl.Load();
             //ChaAccessoryComponent chaAcsCom = GetChaAccessoryComponent(chaCtrl, index);
             //if (null == chaAcsCom) {
             //chaCtrl.cusAcsCmp = new ChaAccessoryComponent[20];
@@ -522,13 +531,17 @@ namespace KK_StudioCoordinateLoadOption {
             //}
             if (null != chaCusHairCom) {
                 KK_StudioCoordinateLoadOption.Logger.LogDebug($"notNull?: {cusAcsCmp != null}, {chaCusHairCom != null}");
-                if (null != cusAcsCmp.gameObject.GetComponent<ChaCustomHairComponent>()) {
-                    UnityEngine.Object.Destroy(cusAcsCmp.gameObject.GetComponent<ChaCustomHairComponent>().gameObject);
-                    UnityEngine.Object.Destroy(cusAcsCmp.gameObject.GetComponent<ChaCustomHairComponent>().gameObject);
-                    UnityEngine.Object.Destroy(cusAcsCmp.gameObject.GetComponent<ChaCustomHairComponent>().gameObject);
+                if(null != cusAcsCmp.gameObject.GetComponent<ChaCustomHairComponent>()) {
+                    var tmp =  cusAcsCmp.gameObject.GetComponent<ChaCustomHairComponent>();
+                    tmp.gameObject.SetActive(false);
+                    tmp.transform.SetParent(null);
+                    UnityEngine.Object.Destroy(tmp.gameObject);
                 }
-                /*UnityEngine.Object.Instantiate*/(chaCusHairCom).transform.SetParent(cusAcsCmp.transform);
+                UnityEngine.Object.Instantiate(chaCusHairCom).transform.SetParent(cusAcsCmp.transform);
                 KK_StudioCoordinateLoadOption.Logger.LogDebug("**Copied hair acc comp");
+                chaCusHairCom.SetColor();
+                KK_StudioCoordinateLoadOption.Logger.LogDebug(chaCusHairCom.acsDefColor[0]);
+                chaCtrl.ChangeAccessoryColor(index);
             }
         }
 
