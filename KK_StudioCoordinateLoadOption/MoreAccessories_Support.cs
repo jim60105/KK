@@ -1,5 +1,6 @@
 ﻿using ExtensibleSaveFormat;
 using Extension;
+using HarmonyLib;
 using MessagePack;
 using System;
 using System.Collections.Generic;
@@ -37,12 +38,12 @@ namespace KK_StudioCoordinateLoadOption {
             }
         }
 
-        //private static bool fakeCopyCall = false;
-        //[HarmonyPrefix, HarmonyPatch(typeof(ChaFile), "CopyAll")]
-        //public static bool CopyAllPrefix() {
-        //    //KK_StudioCoordinateLoadOption.Logger.LogDebug("Block Origin Copy?:"+fakeCopyCall);
-        //    return !fakeCopyCall;
-        //}
+        private static bool fakeCallFlag_CopyAll = false;
+        [HarmonyPrefix, HarmonyPatch(typeof(ChaFile), "CopyAll")]
+        public static bool CopyAllPrefix() {
+            //KK_StudioCoordinateLoadOption.Logger.LogDebug("Block Origin Copy?:"+fakeCopyCall);
+            return !fakeCallFlag_CopyAll;
+        }
 
         /// <summary>
         /// 將所有的MoreAccessories飾品由來源對象複製到目標對象
@@ -50,9 +51,9 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="sourceChaCtrl">來源對象</param>
         /// <param name="targetChaCtrl">目標對象</param>
         public static void CopyAllAccessories() {
-            //fakeCopyCall = true;
+            fakeCallFlag_CopyAll = true;
             _targetChaCtrl.chaFile.CopyAll(_sourceChaCtrl.chaFile);
-            //fakeCopyCall = false;
+            fakeCallFlag_CopyAll = false;
 
             _MoreAccessories.InvokeMember("Update",
                 BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance,
@@ -60,6 +61,9 @@ namespace KK_StudioCoordinateLoadOption {
                 _MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null),
                 null);
 
+            if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
+                HairAccessoryCustomizer_Support.CopyAllHairAcc(_sourceChaCtrl, _targetChaCtrl);
+            }
             KK_StudioCoordinateLoadOption.Logger.LogDebug("Copy all MoreAccessories Finish");
         }
 
@@ -155,24 +159,22 @@ namespace KK_StudioCoordinateLoadOption {
             KK_StudioCoordinateLoadOption.Logger.LogDebug($"MoreAcc Toggles Count : {toggleList.Length}");
 
             for (int i = 0; i < _sourceAccParts.Count; i++) {
-                //if (!toggleList[i]) {
-                //    continue;
-                //}
-
                 //倒回時，如果該位置為髮飾品、增加模式，且在舊飾品數量內，則把佔位的Enqueue
-                if (i < toggleList.Length && (Patches.IsHairAccessory(_sourceChaCtrl, i + 20) || Patches.addAccModeFlag) && _targetAccParts[i].type != 120) {
+                if ((i >= toggleList.Length || !Patches.IsHairAccessory(_sourceChaCtrl, i + 20) || _targetAccParts[i].type == 120) && !Patches.addAccModeFlag) {
+                    if (toggleList[i]) {
+                        CopyAccessory(_sourceChaCtrl, i, _targetChaCtrl, i);
+                        KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Rollback: MoreAcc{i + 20} / ID: {_sourceAccParts[i].id} -> {_targetAccParts[i].id}");
+                    }
+                } else {
                     if (_sourceAccParts[i].type != 120) {
                         _accQueue.Enqueue(i);
-                        KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Lock: MoreAcc{i} / ID: {_targetAccParts.ElementAtOrDefault(i)?.id ?? 0}");
-                        KK_StudioCoordinateLoadOption.Logger.LogDebug($"->EnQueue: MoreAcc{i} / ID: {_sourceAccParts.ElementAtOrDefault(i).id}");
+                        KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Lock: MoreAcc{i + 20} / ID: {_targetAccParts.ElementAtOrDefault(i)?.id ?? 0}");
+                        KK_StudioCoordinateLoadOption.Logger.LogDebug($"->EnQueue: MoreAcc{i + 20} / ID: {_sourceAccParts.ElementAtOrDefault(i).id}");
                     } //else continue;
                       //} else if (i >= targetAccParts.Count) {
                       //    //超過原本數量，就改用Add
                       //    targetAccParts.Add(MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tempSerlz));
                       //    KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Added: MoreAcc{i} / ID: {targetAccParts.Last().id}");
-                } else if (toggleList[i]) {
-                    CopyAccessory(_sourceChaCtrl, i, _targetChaCtrl, i);
-                    KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Rollback: MoreAcc{i} / ID: {_sourceAccParts[i].id} -> {_targetAccParts[i].id}");
                 }
             }
 
@@ -184,7 +186,7 @@ namespace KK_StudioCoordinateLoadOption {
                 var dequeueSlot = _accQueue.Dequeue();
                 CopyAccessory(_targetChaCtrl, dequeueSlot, _targetChaCtrl, j);
                 CopyAccessory(_sourceChaCtrl, dequeueSlot, _targetChaCtrl, dequeueSlot);
-                KK_StudioCoordinateLoadOption.Logger.LogDebug($"->DeQueue: MoreAcc{j} / ID: {_targetAccParts[j].id}");
+                KK_StudioCoordinateLoadOption.Logger.LogDebug($"->DeQueue: MoreAcc{j + 20} / ID: {_targetAccParts[j].id}");
             }
 
             ////由後往前刪除空欄
@@ -214,7 +216,7 @@ namespace KK_StudioCoordinateLoadOption {
             if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
                 HairAccessoryCustomizer_Support.CopyHairAcc(sourceChaCtrl, sourceSlot + 20, targetChaCtrl, targetSlot + 20);
             }
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"MoreAcc Copy: {sourceChaCtrl.fileParam.fullname} {sourceSlot} -> {targetChaCtrl.fileParam.fullname} {targetSlot}");
+            KK_StudioCoordinateLoadOption.Logger.LogDebug($">MoreAcc Copy: {sourceChaCtrl.fileParam.fullname} {sourceSlot + 20} -> {targetChaCtrl.fileParam.fullname} {targetSlot + 20}");
         }
 
         /// <summary>

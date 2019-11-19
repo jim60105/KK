@@ -26,24 +26,32 @@ namespace Extension {
         }
 
         private static readonly Dictionary<FieldKey, FieldInfo> _fieldCache = new Dictionary<FieldKey, FieldInfo>();
-        public static object GetField(this object self, string name) {
+
+        public static object GetField(this object self, string name,Type type = null) {
+            if (null == type) {
+                type = self.GetType();
+            }
             if (!self.SearchForFields(name)) {
                 Console.WriteLine("[KK_Extension] Field Not Found: " + name);
                 return false;
             }
-            FieldKey key = new FieldKey(self.GetType(), name);
+            FieldKey key = new FieldKey(type, name);
             if (_fieldCache.TryGetValue(key, out FieldInfo info) == false) {
                 info = key.type.GetField(key.name, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
                 _fieldCache.Add(key, info);
             }
             return info.GetValue(self);
         }
-        public static bool SetField(this object self, string name, object value) {
+
+        public static bool SetField(this object self, string name, object value,Type type = null) {
+            if (null == type) {
+                type = self.GetType();
+            }
             if (!self.SearchForFields(name)) {
                 Console.WriteLine("[KK_Extension] Field Not Found: " + name);
                 return false;
             }
-            FieldKey fieldKey = new FieldKey(self.GetType(), name);
+            FieldKey fieldKey = new FieldKey(type, name);
             if (!_fieldCache.TryGetValue(fieldKey, out FieldInfo field)) {
                 field = fieldKey.type.GetField(fieldKey.name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
                 if (null != field) {
