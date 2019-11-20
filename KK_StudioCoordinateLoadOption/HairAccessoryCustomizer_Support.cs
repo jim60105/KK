@@ -4,7 +4,6 @@ using MessagePack;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using UnityEngine;
 
 namespace KK_StudioCoordinateLoadOption {
@@ -17,9 +16,8 @@ namespace KK_StudioCoordinateLoadOption {
         private static Type HairAccessoryInfoType = null;
 
         public static bool LoadAssembly() {
-            string path = KK_StudioCoordinateLoadOption.TryGetPluginInstance(GUID, new Version(1, 1, 2))?.Info.Location;
-            //HairAccessoryInfoType = Assembly.LoadFrom(path).GetType("KK_Plugins.HairAccessoryCustomizer.HairAccessoryController").GetNestedType("HairAccessoryInfo", BindingFlags.NonPublic);
-            if (null != path) {
+            if (null != KK_StudioCoordinateLoadOption.TryGetPluginInstance(GUID, new Version(1, 1, 2))) {
+                //MessagePack.Resolvers.CompositeResolver.RegisterAndSetAsDefault(MessagePack.Unity.UnityResolver.Instance, MessagePack.Resolvers.StandardResolver.Instance);
                 KK_StudioCoordinateLoadOption.Logger.LogDebug("Hair Accessory Customizer found");
                 return true;
             } else {
@@ -29,9 +27,18 @@ namespace KK_StudioCoordinateLoadOption {
         }
 
         public static bool GetExtendedDataToDictionary(ChaControl chaCtrl, ref Dictionary<int, object> dict) {
+            if (null == HairAccessoryInfoType) {
+                var tmpHairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
+                HairAccessoryInfoType = tmpHairAccCusController.GetType().GetNestedType("HairAccessoryInfo", HarmonyLib.AccessTools.all);
+                if (null == HairAccessoryInfoType) {
+                    KK_StudioCoordinateLoadOption.Logger.LogDebug("No Hair Accessory Info Type found");
+                    return false;
+                }
+            }
+
             PluginData data = ExtendedSave.GetExtendedDataById(chaCtrl.nowCoordinate, GUID);
             if (data != null && data.data.TryGetValue("CoordinateHairAccessories", out var loadedHairAccessories1) && loadedHairAccessories1 != null) {
-                dict = MessagePackSerializer.Deserialize<Dictionary<int, object>>((byte[])loadedHairAccessories1);
+                dict = MessagePackSerializer.Deserialize<Dictionary<int, object>>((byte[])loadedHairAccessories1).ToDictionary<int, object>();
                 KK_StudioCoordinateLoadOption.Logger.LogDebug($"Get {chaCtrl.fileParam.fullname} Hair Accessories: {dict.Count}");
                 return true;
             }
@@ -58,13 +65,9 @@ namespace KK_StudioCoordinateLoadOption {
             CleanHairAccBackup();
             SourceHairAccCusController = sourceChaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
             TargetHairAccCusController = targetChaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
-            HairAccessoryInfoType = SourceHairAccCusController.GetType().GetNestedType("HairAccessoryInfo", BindingFlags.NonPublic);
+            //HairAccessoryInfoType = SourceHairAccCusController.GetType().GetNestedType("HairAccessoryInfo", BindingFlags.NonPublic);
             if (null == SourceHairAccCusController || null == TargetHairAccCusController) {
                 KK_StudioCoordinateLoadOption.Logger.LogDebug("No Hair Accessory Customizer Controller found");
-                return;
-            }
-            if (null == HairAccessoryInfoType) {
-                KK_StudioCoordinateLoadOption.Logger.LogDebug("No Hair Accessory Info Type found");
                 return;
             }
 
@@ -122,6 +125,10 @@ namespace KK_StudioCoordinateLoadOption {
                     KK_StudioCoordinateLoadOption.Logger.LogDebug("-->Copy End");
                     return;
                 }
+
+                //Color color = new Color((float)v.GetProperty("r"), (float)v.GetProperty("g"),(float) v.GetProperty("b"),(float) v.GetProperty("a"));
+                //KK_StudioCoordinateLoadOption.Logger.LogInfo(color);
+
                 //if (!targetDict.TryGetValue(targetSlot, out var targetHairInfo)) {
                 //    targetDict.Add(targetSlot, Activator.CreateInstance(HairAccessoryInfoType));
                 //    //KK_StudioCoordinateLoadOption.Logger.LogError($"-->Copy Hair Acc FAILED: Target Accessory {targetSlot} Extended Data NOT FOUND.");
@@ -131,13 +138,25 @@ namespace KK_StudioCoordinateLoadOption {
                 if (targetDict.ContainsKey(targetSlot)) {
                     targetDict.Remove(targetSlot);
                 }
-                targetDict.Add(targetSlot, Activator.CreateInstance(HairAccessoryInfoType));
-                var targetHairInfo = targetDict[targetSlot];
-                targetHairInfo.SetField("HairGloss",(bool) sourceHairInfo.GetField("HairGloss",HairAccessoryInfoType),HairAccessoryInfoType);
-                targetHairInfo.SetField("ColorMatch",(bool) sourceHairInfo.GetField("ColorMatch",HairAccessoryInfoType),HairAccessoryInfoType);
-                targetHairInfo.SetField("OutlineColor",(Color) sourceHairInfo.GetField("OutlineColor",HairAccessoryInfoType),HairAccessoryInfoType);
-                targetHairInfo.SetField("AccessoryColor",(Color) sourceHairInfo.GetField("AccessoryColor",HairAccessoryInfoType),HairAccessoryInfoType);
-                targetHairInfo.SetField("HairLength",(float) sourceHairInfo.GetField("HairLength",HairAccessoryInfoType),HairAccessoryInfoType);
+                var v = sourceHairInfo.ToDictionary<object, object>()["AccessoryColor"];
+                Dictionary<object, object> tmpDict = new Dictionary<object, object> {
+                    { "HairGloss", (bool)sourceHairInfo.ToDictionary<object, object>()["HairGloss"] },
+                    { "ColorMatch", (bool)sourceHairInfo.ToDictionary<object, object>()["ColorMatch"] },
+                    { "OutlineColor",v},
+                    { "AccessoryColor",v},
+                    //{ "OutlineColor", (UnityEngine.Color) MessagePackSerializer.Deserialize<Color>(MessagePackSerializer.Serialize(v))},
+                    //{ "AccessoryColor",(UnityEngine.Color) MessagePackSerializer.Deserialize<Color>(MessagePackSerializer.Serialize(v))},
+                    { "HairLength", (float)sourceHairInfo.ToDictionary<object, object>()["HairLength"] }
+                };
+                targetDict.Add(targetSlot, tmpDict);
+                KK_StudioCoordinateLoadOption.Logger.LogInfo(MessagePackSerializer.Deserialize<Color>(MessagePackSerializer.Serialize(v)).ToString());
+                //targetDict.Add(targetSlot, Activator.CreateInstance(HairAccessoryInfoType));
+                //var targetHairInfo = targetDict[targetSlot];
+                //targetHairInfo.SetField("HairGloss", (bool)sourceHairInfo.ToDictionary<object,object>()["HairGloss"], HairAccessoryInfoType);
+                //targetHairInfo.SetField("ColorMatch", (bool)sourceHairInfo.GetField("ColorMatch", HairAccessoryInfoType), HairAccessoryInfoType);
+                //targetHairInfo.SetField("OutlineColor", (Color)sourceHairInfo.GetField("OutlineColor", HairAccessoryInfoType), HairAccessoryInfoType);
+                //targetHairInfo.SetField("AccessoryColor", (Color)sourceHairInfo.GetField("AccessoryColor", HairAccessoryInfoType), HairAccessoryInfoType);
+                //targetHairInfo.SetField("HairLength", (float)sourceHairInfo.GetField("HairLength", HairAccessoryInfoType), HairAccessoryInfoType);
 
                 SetExtendedDataFromDictionary(targetChaCtrl, targetDict);
 

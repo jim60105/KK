@@ -9,6 +9,7 @@ using UnityEngine;
 
 namespace Extension {
     public static class Extension {
+        #region Reflection Stuff
         private struct FieldKey {
             public readonly Type type;
             public readonly string name;
@@ -145,7 +146,9 @@ namespace Extension {
             }
             return false;
         }
+        #endregion
 
+        #region Picture Stuff
         public static Sprite LoadNewSprite(string FilePath, int width, int height, float PixelsPerUnit = 100.0f) {
             Sprite NewSprite;
             Texture2D SpriteTexture = LoadTexture(FilePath);
@@ -220,6 +223,7 @@ namespace Extension {
                 stream.Position = originalPosition;
             }
         }
+        #endregion
 
         public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this object self) {
             if (!(self is IDictionary dictionary)) {
