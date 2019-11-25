@@ -36,6 +36,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace KK_StudioCoordinateLoadOption {
+
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
     [BepInDependency("KCOX", BepInDependency.DependencyFlags.SoftDependency)]
@@ -49,6 +50,7 @@ namespace KK_StudioCoordinateLoadOption {
         internal const string PLUGIN_VERSION = "19.11.19.1";
 
         internal static new ManualLogSource Logger;
+
         public void Awake() {
             Logger = base.Logger;
             UIUtility.Init();
@@ -88,7 +90,7 @@ namespace KK_StudioCoordinateLoadOption {
         }
     }
 
-    class Patches {
+    internal class Patches {
         private static CharaFileSort charaFileSort;
 
         public static readonly string[] MainClothesNames = {
@@ -394,7 +396,6 @@ namespace KK_StudioCoordinateLoadOption {
                     ocichar.LoadClothesFile(charaFileSort.selectPath);
                 }
             } else {
-
                 ChaControl tmpChaCtrl = Singleton<Manager.Character>.Instance.CreateFemale(Singleton<Manager.Scene>.Instance.commonSpace, -1);
                 tmpChaCtrl.Load();
                 tmpChaCtrl.nowCoordinate.LoadFile(charaFileSort.selectPath);
@@ -510,7 +511,6 @@ namespace KK_StudioCoordinateLoadOption {
             LoadExtData(chaCtrl, tmpChaCtrl);
         }
 
-
         private static void LoadExtData(ChaControl chaCtrl, ChaControl tmpChaCtrl) {
             //Backup KCOX
             if (KK_StudioCoordinateLoadOption._isKCOXExist) {
@@ -572,7 +572,7 @@ namespace KK_StudioCoordinateLoadOption {
                     //Rollback Parts of MoreAccessories
                     if (kind == 9 && KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
                         MoreAccessories_Support.GetMoreAccInfoLists(tmpChaCtrl, chaCtrl);
-                        MoreAccessories_Support.CopyMoreAccessories(tgls2.Select(x => !x.isOn).ToArray());
+                        MoreAccessories_Support.RollbackMoreAccessories(tgls2.Select(x => x.isOn).ToArray());
                     }
                 } else {
                     if (kind == 9) {
@@ -628,7 +628,7 @@ namespace KK_StudioCoordinateLoadOption {
             HairAccessoryCustomizer_Support.CleanHairAccBackup();
             MoreAccessories_Support.CleanMoreAccBackup();
 
-            //KCOX和MaterialEditor需要Reload
+            //KCOX、MaterialEditor需要Reload
             chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
             chaCtrl.ChangeCoordinateTypeAndReload(false);
         }
@@ -657,6 +657,7 @@ namespace KK_StudioCoordinateLoadOption {
         }
 
         private static bool fakeCallFlag_LoadBytes = false;
+
         [HarmonyPrefix, HarmonyPatch(typeof(ChaFileCoordinate), "LoadBytes")]
         public static bool LoadBytesPrefix(ref bool __result) {
             __result = true;
