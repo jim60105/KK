@@ -202,7 +202,7 @@ namespace KK_StudioCoordinateLoadOption {
             //    }
             //}
 
-            WriteBackMoreAccData(_targetChaCtrl, _targetAccParts);
+            //WriteBackMoreAccData(_targetChaCtrl, _targetAccParts);
             KK_StudioCoordinateLoadOption.Logger.LogDebug($"MoreAcc Parts Count : {_targetAccParts.Count}");
             KK_StudioCoordinateLoadOption.Logger.LogDebug("Load MoreAccessories Finish (3)");
         }
@@ -217,6 +217,10 @@ namespace KK_StudioCoordinateLoadOption {
             } else {
                 targetAccParts.Add(MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tmp));
             }
+
+            //必須先寫回再處理HairAcc，否則會抓不到cusAcsCmp
+            WriteBackMoreAccData(targetChaCtrl, targetAccParts);
+
             if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
                 HairAccessoryCustomizer_Support.CopyHairAcc(sourceChaCtrl, sourceSlot + 20, targetChaCtrl, targetSlot + 20);
             }

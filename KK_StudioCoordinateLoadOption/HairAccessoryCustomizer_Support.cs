@@ -27,6 +27,12 @@ namespace KK_StudioCoordinateLoadOption {
             }
         }
 
+        /// <summary>
+        /// 從HairAccessoryController取得給定ChaControl的HairAccessories和單一hairAccessoryInfo
+        /// </summary>
+        /// <param name="chaCtrl">要查詢的ChaControl</param>
+        /// <param name="nowcoordinateExtData">nowCoordinate的hairAccessoryInfo</param>
+        /// <returns>整個HairAccessories</returns>
         public static Dictionary<int, Dictionary<int, object>> GetExtendedDataToDictionary(ChaControl chaCtrl, out Dictionary<int, object> nowcoordinateExtData) {
             nowcoordinateExtData = null;
             //if (null == HairAccessoryInfoType) {
@@ -39,9 +45,9 @@ namespace KK_StudioCoordinateLoadOption {
             //}
 
             PluginData data = ExtendedSave.GetExtendedDataById(chaCtrl.chaFile, GUID);
-            if (data != null && data.data.TryGetValue("HairAccessories", out var loadedHairAccessories1) && loadedHairAccessories1 != null) {
-                var result = MessagePackSerializer.Deserialize<Dictionary<int, Dictionary<int, object>>>((byte[])loadedHairAccessories1);
-                result.TryGetValue(chaCtrl.fileStatus.coordinateType,out nowcoordinateExtData);
+            if (data != null && data.data.TryGetValue("HairAccessories", out var loadedHairAccessories) && loadedHairAccessories != null) {
+                var result = MessagePackSerializer.Deserialize<Dictionary<int, Dictionary<int, object>>>((byte[])loadedHairAccessories);
+                result?.TryGetValue(chaCtrl.fileStatus.coordinateType,out nowcoordinateExtData);
                 KK_StudioCoordinateLoadOption.Logger.LogDebug($"Get {chaCtrl.fileParam.fullname} Hair Accessories: {nowcoordinateExtData.Count}");
                 return result;
             }
@@ -83,11 +89,10 @@ namespace KK_StudioCoordinateLoadOption {
             //GetExtendedDataToDictionary(sourceChaCtrl, ref sourceDict);
             //GetExtendedDataToDictionary(targetChaCtrl, ref targetDict);
             //KK_StudioCoordinateLoadOption.Logger.LogDebug("-----");
-            //SourceHairAccCusController.Invoke("LoadCoordinateData", new object[] { sourceChaCtrl.nowCoordinate });
+            SourceHairAccCusController.Invoke("LoadCoordinateData", new object[] { sourceChaCtrl.nowCoordinate });
             //SourceHairAccCusController.Invoke("LoadData");
-            //sourceChaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)targetChaCtrl.fileStatus.coordinateType);
+            //sourceChaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)sourceChaCtrl.fileStatus.coordinateType);
             //sourceChaCtrl.ChangeCoordinateTypeAndReload(false);
-
 
             //targetChaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)targetChaCtrl.fileStatus.coordinateType);
             //targetChaCtrl.ChangeCoordinateTypeAndReload(false);
