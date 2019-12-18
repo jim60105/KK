@@ -1,4 +1,5 @@
-﻿using HarmonyLib;
+﻿using BepInEx;
+using HarmonyLib;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -356,5 +357,18 @@ namespace Extension {
             }
         }
         #endregion
+
+
+        public static BaseUnityPlugin TryGetPluginInstance(string pluginName, Version minimumVersion = null) {
+            BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue(pluginName, out var target);
+            if (null != target) {
+                if (target.Metadata.Version >= minimumVersion) {
+                    return target.Instance;
+                }
+                Console.WriteLine($"[KK_Extension] {pluginName} v{target.Metadata.Version.ToString()} is detacted OUTDATED.");
+                Console.WriteLine($"[KK_Extension] Please update {pluginName} to at least v{minimumVersion.ToString()} to enable related feature.");
+            }
+            return null;
+        }
     }
 }
