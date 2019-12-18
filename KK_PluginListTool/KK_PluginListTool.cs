@@ -18,6 +18,7 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
 using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using Extension;
 using HarmonyLib;
@@ -34,14 +35,18 @@ namespace KK_PluginListTool {
     public class KK_PluginListTool : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Plugin List Tool";
         internal const string GUID = "com.jim60105.kk.pluginlisttool";
-        internal const string PLUGIN_VERSION = "19.12.19.0";
+        internal const string PLUGIN_VERSION = "19.12.19.1";
         internal static new ManualLogSource Logger;
+        public static ConfigEntry<bool> Enable { get; private set; }
+        public void Awake() {
+            Enable = Config.Bind<bool>("Config", "Trigger log action", false, "Click to trigger log action.");
+        }
 
         bool init = false;
         internal static List<string> strList = new List<string>();
         internal static List<Plugin> pluginList = new List<Plugin>();
         public void LateUpdate() {
-            if (!init) {
+            if (!init && Enable.Value) {
                 init = true;
                 Logger = base.Logger;
                 Logger.LogDebug($"Start listing loaded plugin infos...");
@@ -83,12 +88,14 @@ namespace KK_PluginListTool {
                 }
                 FileLog.Log(JsonHelper.FormatJson($"[{strList.Join(delimiter: ",")}]"));
 
-                Logger.LogInfo($"Logged JSON into: {FileLog.logPath}");
+                Logger.LogMessage($"Logged JSON into: {FileLog.logPath}");
 
                 string xmlPath = Path.Combine(Path.GetDirectoryName(base.Info.Location), Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList_ExcelXML.xml";
                 XDocument xdoc = pluginList.Select(x => (object)x).ToExcelXml();
                 xdoc.Save(xmlPath);
-                Logger.LogInfo($"Logged Excel XML into: {xmlPath}");
+                Logger.LogMessage($"Logged Excel XML into: {xmlPath}");
+
+                Enable.Value = false;
             }
         }
 
