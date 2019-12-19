@@ -73,9 +73,20 @@
 Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 可以使用Configuration Manager個別設定Import/Load是否啟用 (預設皆啟用)<br>
 
+# 插件清單工具 (Plugin List Tool)
+![image](https://github.com/jim60105/KK/raw/master/demo/demo8.png)<br>
+
+此工具可導出當前遊戲中已加載的BepInEx插件和IPA插件
+格式為Json和Excel XML
+適配IPALoaderX v1.2以上版本
+
+### 使用方式
+1. 至Configuration Manager中點擊「Trigger log action」項的「Disabled」(Demo圖中游標位置)
+1. 觸發後會直接導出資料，並瞬間轉回Disabled
+
 # 需求依賴
-**BepInEx v5 build 161** <br>
-BepisPlugins r12.3
+**BepInEx v5.0** <br>
+BepisPlugins r13.0.1
 
 # 安裝方式
 - 參考壓縮檔結構，將文件放進「BepInEx/plugins/jim60105」資料夾之下<br>
