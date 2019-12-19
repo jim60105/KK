@@ -35,22 +35,26 @@ namespace KK_PluginListTool {
     public class KK_PluginListTool : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Plugin List Tool";
         internal const string GUID = "com.jim60105.kk.pluginlisttool";
-        internal const string PLUGIN_VERSION = "19.12.19.1";
+        internal const string PLUGIN_VERSION = "19.12.19.2";
         internal static new ManualLogSource Logger;
         public static ConfigEntry<bool> Enable { get; private set; }
+        public static ConfigEntry<string> SavePath { get; private set; }
         public void Awake() {
-            Enable = Config.Bind<bool>("Config", "Trigger log action", false, "Click to trigger log action.");
+            Enable = Config.Bind<bool>("Trigger", "Trigger log action", false, "Note the message after clicking!");
+            SavePath = Config.Bind<string>("Config", "Output Directory", Path.GetDirectoryName(base.Info.Location), "Where do you want to store them?");
+            Logger = base.Logger;
+            Logger.LogWarning($">>Please trigger this plugin in Configuration Manager<<");
         }
 
-        bool init = false;
         internal static List<string> strList = new List<string>();
         internal static List<Plugin> pluginList = new List<Plugin>();
         public void LateUpdate() {
-            if (!init && Enable.Value) {
-                init = true;
-                Logger = base.Logger;
+            if (Enable.Value) {
+                //只觸發一次
+                Enable.Value = false;
                 Logger.LogDebug($"Start listing loaded plugin infos...");
 
+                #region GetPlugins
                 //IPA
                 Logger.LogDebug($"Try load IPA plugin infos...");
                 string IPAAssPath = Extension.Extension.TryGetPluginInstance("BepInEx.IPALoader", new Version(1, 2))?.Info.Location;
@@ -59,7 +63,7 @@ namespace KK_PluginListTool {
                     Type IPlugin = Assembly.LoadFrom(IPAAssPath).GetType("IllusionPlugin.IPlugin");
                     Type PluginManager = Assembly.LoadFrom(IPAAssPath).GetType("IllusionInjector.PluginManager");
 
-                    //Call KK_PluginListTool.GetIPA<IPlugin>(Plugins);
+                    //呼叫 KK_PluginListTool.GetIPA<IPlugin>(Plugins);
                     MethodInfo method = typeof(KK_PluginListTool).GetMethod(nameof(GetIPA), BindingFlags.Public | BindingFlags.Static);
                     method = method.MakeGenericMethod(IPlugin);
                     method.Invoke(null, new object[] { PluginManager.GetProperties()[0].GetValue(null, null) });
@@ -70,32 +74,27 @@ namespace KK_PluginListTool {
                 //BepPlugin
                 Logger.LogDebug($">>Get {BepInEx.Bootstrap.Chainloader.PluginInfos.Count} BepInEx Plugins.");
                 foreach (var kv in BepInEx.Bootstrap.Chainloader.PluginInfos) {
-                    AddJsonString(
-                        kv.Value.Metadata.GUID,
-                        kv.Value.Metadata.Name,
-                        kv.Value.Metadata.Version.ToString()
-                    );
                     pluginList.Add(new Plugin(
                         kv.Value.Metadata.GUID,
                         kv.Value.Metadata.Name,
                         kv.Value.Metadata.Version.ToString()
                     ));
                 }
+                #endregion
 
-                FileLog.logPath = Path.Combine(Path.GetDirectoryName(base.Info.Location), Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList_JSON.json";
+                #region WriteFile
+                FileLog.logPath = Path.Combine(SavePath.Value, Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList_JSON.json";
                 if (File.Exists(FileLog.logPath)) {
                     File.Delete(FileLog.logPath);
                 }
-                FileLog.Log(JsonHelper.FormatJson($"[{strList.Join(delimiter: ",")}]"));
-
+                FileLog.Log(JsonHelper.FormatJson($"[{pluginList.Select(x => MakeJsonString(x.GUID, x.Name, x.Version)).Join(delimiter: ",")}]"));
                 Logger.LogMessage($"Logged JSON into: {FileLog.logPath}");
 
-                string xmlPath = Path.Combine(Path.GetDirectoryName(base.Info.Location), Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList_ExcelXML.xml";
+                string xmlPath = Path.Combine(SavePath.Value, Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList_ExcelXML.xml";
                 XDocument xdoc = pluginList.Select(x => (object)x).ToExcelXml();
                 xdoc.Save(xmlPath);
                 Logger.LogMessage($"Logged Excel XML into: {xmlPath}");
-
-                Enable.Value = false;
+                #endregion
             }
         }
 
@@ -104,13 +103,8 @@ namespace KK_PluginListTool {
                 List<T> newList = new List<T>(iEnumerable);
                 Logger.LogDebug($">>Get {newList.Count} IPA Plugins.");
                 foreach (var l in newList) {
-                    AddJsonString(
-                        "IPA." + ((string)l.GetProperty("Name")).Replace(' ', '.'),   //IPlugin結構內沒有GUID，姑且拼一個
-                        (string)l.GetProperty("Name"),
-                        (string)l.GetProperty("Version")
-                    );
                     pluginList.Add(new Plugin(
-                        "IPA." + ((string)l.GetProperty("Name")).Replace(' ', '.'),   //IPlugin結構內沒有GUID，姑且拼一個
+                        "IPA." + ((string)l.GetProperty("Name")).Replace("_", "").Replace(" ", "."),   //IPlugin結構內沒有GUID，姑且拼一個
                         (string)l.GetProperty("Name"),
                         (string)l.GetProperty("Version")
                     ));
@@ -118,45 +112,34 @@ namespace KK_PluginListTool {
             }
         }
 
-        public static void AddJsonString(string guid, string name, string version) {
-            try {
-                //Log to Console
-                Logger.LogDebug($"{name} v{version}");
-
-                //Log to File
-                List<string> strItem = new List<string> {
-                    "\"guid\": \"" + $"{guid}" + "\"",
-                    "\"name\": \"" + $"{name}" + "\"",
-                    "\"version\": \"" + $"{version}" + "\""
-                };
-                strList.Add("{" + $" {strItem.Join(delimiter: ", ")}" + "}");
-            } catch (Exception e) {
-                Logger.LogError($"Logging Plugin Info ERROR: {name} : {e.Message}");
+        public static string MakeJsonString(string guid, string name, string version) {
+            //Log to File
+            List<string> strItem = new List<string> {
+                "\"guid\": \"" + $"{guid}" + "\"",
+                "\"name\": \"" + $"{name}" + "\"",
+                "\"version\": \"" + $"{version}" + "\""
             };
+            return "{" + $" {strItem.Join(delimiter: ", ")}" + "}";
         }
     }
 
     public class Plugin {
-        private string guid;
-        private string name;
-        private string version;
-
-        public string GUID { get => guid; set => guid = value; }
-        public string Name { get => name; set => name = value; }
-        public string Version { get => version; set => version = value; }
+        public string GUID { get; set; }
+        public string Name { get; set; }
+        public string Version { get; set; }
 
         public Plugin(string guid, string name, string version) {
             GUID = guid;
             Name = name;
             Version = version;
+            KK_PluginListTool.Logger.LogDebug($"{name} v{version}");
         }
     }
-
 
     #region JSONTool 
     //JSON formatter in C#  - Stack Overflow
     //https://stackoverflow.com/a/6237866
-    class JsonHelper {
+    static class JsonHelper {
         private const string INDENT_STRING = "    ";
         public static string FormatJson(string str) {
             var indent = 0;
@@ -209,9 +192,7 @@ namespace KK_PluginListTool {
             }
             return sb.ToString();
         }
-    }
 
-    static class Extensions {
         public static void ForEach<T>(this IEnumerable<T> ie, Action<T> action) {
             foreach (var i in ie) {
                 action(i);
