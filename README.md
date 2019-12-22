@@ -77,7 +77,7 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 ![image](https://github.com/jim60105/KK/raw/master/demo/demo8.png)<br>
 
 此工具可導出當前遊戲中已加載的BepInEx插件和IPA插件<br>
-格式為Json和Excel XML<br>
+格式為**Json和CSV**<br>
 適配IPALoaderX v1.2以上版本
 
 ### 使用方式
