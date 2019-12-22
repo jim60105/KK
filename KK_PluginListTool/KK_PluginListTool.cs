@@ -34,7 +34,7 @@ namespace KK_PluginListTool {
 	public class KK_PluginListTool : BaseUnityPlugin {
 		internal const string PLUGIN_NAME = "Plugin List Tool";
 		internal const string GUID = "com.jim60105.kk.pluginlisttool";
-		internal const string PLUGIN_VERSION = "19.12.22.1";
+		internal const string PLUGIN_VERSION = "19.12.22.2";
 		internal static new ManualLogSource Logger;
 		public static ConfigEntry<bool> Enable { get; private set; }
 		public static ConfigEntry<string> SavePath { get; private set; }
@@ -83,7 +83,7 @@ namespace KK_PluginListTool {
 				#endregion
 
 				#region WriteFile
-				FileLog.logPath = Path.Combine(SavePath.Value, Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList_JSON.json";
+				FileLog.logPath = Path.Combine(SavePath.Value, Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList.json";
 				if (File.Exists(FileLog.logPath)) {
 					File.Delete(FileLog.logPath);
 				}
