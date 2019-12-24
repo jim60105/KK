@@ -29,4 +29,5 @@ using System.Runtime.InteropServices;
 //      修訂編號
 //
 [assembly: AssemblyVersion(KK_FBIOpenUp.KK_FBIOpenUp.PLUGIN_VERSION)]
-[assembly: AssemblyFileVersion(KK_FBIOpenUp.KK_FBIOpenUp.PLUGIN_VERSION)]
+//[assembly: AssemblyFileVersion(KK_FBIOpenUp.KK_FBIOpenUp.PLUGIN_VERSION)]
+[assembly: AssemblyInformationalVersion(KK_FBIOpenUp.KK_FBIOpenUp.PLUGIN_RELEASE_VERSION)]

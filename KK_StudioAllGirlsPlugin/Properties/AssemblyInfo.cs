@@ -13,4 +13,5 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 [assembly: Guid("40CCD521-BA9B-4C89-95AA-20BC77E55DD4")]
 [assembly: AssemblyVersion(KK_StudioAllGirlsPlugin.KK_StudioAllGirlsPlugin.PLUGIN_VERSION)]
-[assembly: AssemblyFileVersion(KK_StudioAllGirlsPlugin.KK_StudioAllGirlsPlugin.PLUGIN_VERSION)]
+//[assembly: AssemblyFileVersion(KK_StudioAllGirlsPlugin.KK_StudioAllGirlsPlugin.PLUGIN_VERSION)]
+[assembly: AssemblyInformationalVersion(KK_StudioAllGirlsPlugin.KK_StudioAllGirlsPlugin.PLUGIN_RELEASE_VERSION)]

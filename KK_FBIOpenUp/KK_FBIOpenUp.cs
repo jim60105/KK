@@ -43,6 +43,7 @@ namespace KK_FBIOpenUp {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
         internal const string PLUGIN_VERSION = "19.11.02.3";
+		internal const string PLUGIN_RELEASE_VERSION = "0.0.0";
 
         internal static bool _isenabled = false;
         internal static bool _isABMXExist = false;

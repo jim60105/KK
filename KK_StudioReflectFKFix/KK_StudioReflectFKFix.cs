@@ -34,6 +34,7 @@ namespace KK_StudioReflectFKFix {
         internal const string PLUGIN_NAME = "Studio Reflect FK Fix";
         internal const string GUID = "com.jim60105.kk.studioreflectfkfix";
         internal const string PLUGIN_VERSION = "19.11.01.0";
+		internal const string PLUGIN_RELEASE_VERSION = "1.0.3";
 
         internal static new ManualLogSource Logger;
         public void Awake() {

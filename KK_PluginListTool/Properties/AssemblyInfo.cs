@@ -29,4 +29,6 @@ using System.Runtime.InteropServices;
 //      修訂編號
 //
 [assembly: AssemblyVersion(KK_PluginListTool.KK_PluginListTool.PLUGIN_VERSION)]
-[assembly: AssemblyFileVersion(KK_PluginListTool.KK_PluginListTool.PLUGIN_VERSION)]
+//[assembly: AssemblyFileVersion(KK_PluginListTool.KK_PluginListTool.PLUGIN_VERSION)]
+[assembly: AssemblyInformationalVersion(KK_PluginListTool.KK_PluginListTool.PLUGIN_RELEASE_VERSION)]
+

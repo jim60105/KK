@@ -35,6 +35,7 @@ namespace KK_PluginListTool {
 		internal const string PLUGIN_NAME = "Plugin List Tool";
 		internal const string GUID = "com.jim60105.kk.pluginlisttool";
 		internal const string PLUGIN_VERSION = "19.12.24.0";
+		internal const string PLUGIN_RELEASE_VERSION = "1.0.1";
 		internal static new ManualLogSource Logger;
 		public static ConfigEntry<bool> Enable { get; private set; }
 		public static ConfigEntry<string> SavePath { get; private set; }

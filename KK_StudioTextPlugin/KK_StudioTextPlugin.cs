@@ -39,6 +39,7 @@ namespace KK_StudioTextPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
         internal const string PLUGIN_VERSION = "19.11.09.2";
+		internal const string PLUGIN_RELEASE_VERSION = "1.1.2";
 
         internal static new ManualLogSource Logger;
         public void Awake() {

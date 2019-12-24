@@ -29,4 +29,5 @@ using System.Runtime.InteropServices;
 //      修訂編號
 //
 [assembly: AssemblyVersion(KK_StudioReflectFKFix.KK_StudioReflectFKFix.PLUGIN_VERSION)]
-[assembly: AssemblyFileVersion(KK_StudioReflectFKFix.KK_StudioReflectFKFix.PLUGIN_VERSION)]
+//[assembly: AssemblyFileVersion(KK_StudioReflectFKFix.KK_StudioReflectFKFix.PLUGIN_VERSION)]
+[assembly: AssemblyInformationalVersion(KK_StudioReflectFKFix.KK_StudioReflectFKFix.PLUGIN_RELEASE_VERSION)]

@@ -30,4 +30,5 @@ using System.Runtime.InteropServices;
 //      修訂編號
 //
 [assembly: AssemblyVersion(KK_StudioAutoCloseLoadingSceneWindow.KK_StudioAutoCloseLoadingSceneWindow.PLUGIN_VERSION)]
-[assembly: AssemblyFileVersion(KK_StudioAutoCloseLoadingSceneWindow.KK_StudioAutoCloseLoadingSceneWindow.PLUGIN_VERSION)]
+//[assembly: AssemblyFileVersion(KK_StudioAutoCloseLoadingSceneWindow.KK_StudioAutoCloseLoadingSceneWindow.PLUGIN_VERSION)]
+[assembly: AssemblyInformationalVersion(KK_StudioAutoCloseLoadingSceneWindow.KK_StudioAutoCloseLoadingSceneWindow.PLUGIN_RELEASE_VERSION)]

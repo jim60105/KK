@@ -33,6 +33,7 @@ namespace KK_StudioAutoCloseLoadingSceneWindow {
         internal const string PLUGIN_NAME = "Studio Auto Close Loading Scene Window";
         internal const string GUID = "com.jim60105.kk.studioautocloseloadingscenewindow";
         internal const string PLUGIN_VERSION = "19.11.08.0";
+		internal const string PLUGIN_RELEASE_VERSION = "1.0.3";
 
         public static ConfigEntry<bool> EnableOnLoad { get; private set; }
         public static ConfigEntry<bool> EnableOnImport { get; private set; }

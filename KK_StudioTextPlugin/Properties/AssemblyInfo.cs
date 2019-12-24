@@ -29,4 +29,5 @@ using System.Runtime.InteropServices;
 //      修訂編號
 //
 [assembly: AssemblyVersion(KK_StudioTextPlugin.KK_StudioTextPlugin.PLUGIN_VERSION)]
-[assembly: AssemblyFileVersion(KK_StudioTextPlugin.KK_StudioTextPlugin.PLUGIN_VERSION)]
+//[assembly: AssemblyFileVersion(KK_StudioTextPlugin.KK_StudioTextPlugin.PLUGIN_VERSION)]
+[assembly: AssemblyInformationalVersion(KK_StudioTextPlugin.KK_StudioTextPlugin.PLUGIN_RELEASE_VERSION)]

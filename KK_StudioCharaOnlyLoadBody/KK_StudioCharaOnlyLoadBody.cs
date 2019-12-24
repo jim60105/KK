@@ -42,6 +42,7 @@ namespace KK_StudioCharaOnlyLoadBody {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
         internal const string PLUGIN_VERSION = "19.11.02.3";
+		internal const string PLUGIN_RELEASE_VERSION = "1.3.6";
 
         public static ConfigEntry<string> ExtendedDataToCopySetting { get; private set; }
         public static string[] ExtendedDataToCopy;
