@@ -79,10 +79,7 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 此工具可導出當前遊戲中已加載的BepInEx插件和IPA插件<br>
 格式為**Json和CSV**<br>
 適配IPALoaderX v1.2以上版本
-
-### 使用方式
-1. 至Configuration Manager中點擊「Trigger log action」項的「Disabled」(Demo圖中游標位置)
-1. 觸發後會直接導出資料，並瞬間轉回Disabled
+重新Enable後會立即倒出當前加載清單
 
 # 需求依賴
 **BepInEx v5.0** <br>

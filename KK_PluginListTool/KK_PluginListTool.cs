@@ -34,23 +34,27 @@ namespace KK_PluginListTool {
 	public class KK_PluginListTool : BaseUnityPlugin {
 		internal const string PLUGIN_NAME = "Plugin List Tool";
 		internal const string GUID = "com.jim60105.kk.pluginlisttool";
-		internal const string PLUGIN_VERSION = "19.12.22.2";
+		internal const string PLUGIN_VERSION = "19.12.24.0";
 		internal static new ManualLogSource Logger;
 		public static ConfigEntry<bool> Enable { get; private set; }
 		public static ConfigEntry<string> SavePath { get; private set; }
 		public void Awake() {
-			Enable = Config.Bind<bool>("Trigger", "Trigger log action", false, "Note the message after clicking!");
+			Enable = Config.Bind<bool>("Config", "Enable", true, "Re-enable to output again immediately");
 			SavePath = Config.Bind<string>("Config", "Output Directory", Path.GetDirectoryName(base.Info.Location), "Where do you want to store them?");
 			Logger = base.Logger;
-			Logger.LogWarning($">>Please trigger this plugin in Configuration Manager<<");
+            _isInited = !Enable.Value;
+            Enable.SettingChanged += delegate {
+                _isInited = !Enable.Value;
+            };
 		}
 
 		internal static List<string> strList = new List<string>();
 		internal static List<Plugin> pluginList = new List<Plugin>();
+        internal static bool _isInited = false;
 		public void LateUpdate() {
-			if (Enable.Value) {
-				//只觸發一次
-				Enable.Value = false;
+            //只觸發一次
+			if (!_isInited) {
+                _isInited = true;
 				Logger.LogDebug($"Start listing loaded plugin infos...");
 
 				#region GetPlugins
@@ -80,22 +84,34 @@ namespace KK_PluginListTool {
 						kv.Value.Location.Replace(Paths.GameRootPath + "\\", "")
 					));
 				}
-				#endregion
+                #endregion
 
-				#region WriteFile
-				FileLog.logPath = Path.Combine(SavePath.Value, Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList.json";
-				if (File.Exists(FileLog.logPath)) {
-					File.Delete(FileLog.logPath);
-				}
-				FileLog.Log(JsonHelper.FormatJson($"[{pluginList.Select(x => MakeJsonString(x.GUID, x.Name, x.Version, x.Location)).Join(delimiter: ",")}]"));
-				Logger.LogMessage($"Logged JSON into: {FileLog.logPath}");
-
-                FileLog.logPath = Path.Combine(SavePath.Value, Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList.csv";
-                if (File.Exists(FileLog.logPath)) {
-                    File.Delete(FileLog.logPath);
+                #region WriteFile
+                try {
+                    FileLog.logPath = Path.Combine(SavePath.Value, Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList.json";
+                    if (File.Exists(FileLog.logPath)) {
+                        File.Delete(FileLog.logPath);
+                    }
+                    FileLog.Log(JsonHelper.FormatJson($"[{pluginList.Select(x => MakeJsonString(x.GUID, x.Name, x.Version, x.Location)).Join(delimiter: ",")}]"));
+                    Logger.LogInfo($"Logged JSON into: {FileLog.logPath}");
+                }catch(Exception e) {
+                    Logger.LogError($"Logged JSON FAILED");
+                    Logger.LogError(e.Message);
+                    Logger.LogError(e.StackTrace);
                 }
-                FileLog.Log($"GUID, Name, Version, Location\n{pluginList.Select(x => MakeCsvString(x.GUID, x.Name, x.Version, x.Location)).Join(delimiter: "\n")}");
-                Logger.LogMessage($"Logged CSV into: {FileLog.logPath}");
+
+                try {
+                    FileLog.logPath = Path.Combine(SavePath.Value, Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList.csv";
+                    if (File.Exists(FileLog.logPath)) {
+                        File.Delete(FileLog.logPath);
+                    }
+                    FileLog.Log($"GUID, Name, Version, Location\n{pluginList.Select(x => MakeCsvString(x.GUID, x.Name, x.Version, x.Location)).Join(delimiter: "\n")}");
+                    Logger.LogInfo($"Logged CSV into: {FileLog.logPath}");
+                }catch(Exception e) {
+                    Logger.LogError($"Logged CSV FAILED");
+                    Logger.LogError(e.Message);
+                    Logger.LogError(e.StackTrace);
+                }
                 #endregion
             }
 		}
