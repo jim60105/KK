@@ -34,14 +34,14 @@ namespace KK_PluginListTool {
 	public class KK_PluginListTool : BaseUnityPlugin {
 		internal const string PLUGIN_NAME = "Plugin List Tool";
 		internal const string GUID = "com.jim60105.kk.pluginlisttool";
-		internal const string PLUGIN_VERSION = "19.12.24.0";
-		internal const string PLUGIN_RELEASE_VERSION = "1.0.1";
+		internal const string PLUGIN_VERSION = "19.12.25.0";
+		internal const string PLUGIN_RELEASE_VERSION = "1.0.2";
 		internal static new ManualLogSource Logger;
 		public static ConfigEntry<bool> Enable { get; private set; }
 		public static ConfigEntry<string> SavePath { get; private set; }
 		public void Awake() {
 			Enable = Config.Bind<bool>("Config", "Enable", true, "Re-enable to output again immediately");
-			SavePath = Config.Bind<string>("Config", "Output Directory", Path.GetDirectoryName(base.Info.Location), "Where do you want to store them?");
+			SavePath = Config.Bind<string>("Config", "Output Directory", Path.Combine(Path.GetDirectoryName(base.Info.Location), "KK_PluginListTool"), "Where do you want to store them?");
 			Logger = base.Logger;
             _isInited = !Enable.Value;
             Enable.SettingChanged += delegate {
@@ -88,6 +88,10 @@ namespace KK_PluginListTool {
                 #endregion
 
                 #region WriteFile
+                if (!Directory.Exists(SavePath.Value)) {
+                    Directory.CreateDirectory(@SavePath.Value);
+                }
+
                 try {
                     FileLog.logPath = Path.Combine(SavePath.Value, Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList.json";
                     if (File.Exists(FileLog.logPath)) {
