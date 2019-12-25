@@ -12,6 +12,7 @@ using ResolveInfo = Sideloader.AutoResolver.ResolveInfo;
 
 namespace KK_StudioCoordinateLoadOption {
     class MoreAccessories_Support {
+        private static readonly BepInEx.Logging.ManualLogSource Logger = KK_StudioCoordinateLoadOption.Logger;
         internal static Type MoreAccessories = null;
 
         public static bool LoadAssembly() {
@@ -19,14 +20,13 @@ namespace KK_StudioCoordinateLoadOption {
                 string path = KK_StudioCoordinateLoadOption.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories")?.Info.Location;
                 Assembly ass = Assembly.LoadFrom(path);
                 MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
-                //CharAdditionalData = MoreAccessories.GetNestedType("CharAdditionalData");
                 if (null == MoreAccessories) {
                     throw new Exception("Load assembly FAILED: MoreAccessories");
                 }
-                KK_StudioCoordinateLoadOption.Logger.LogDebug("MoreAccessories found");
+                Logger.LogDebug("MoreAccessories found");
                 return true;
             } catch (Exception ex) {
-                KK_StudioCoordinateLoadOption.Logger.LogDebug(ex.Message);
+                Logger.LogDebug(ex.Message);
                 return false;
             }
         }
@@ -34,7 +34,7 @@ namespace KK_StudioCoordinateLoadOption {
         private static bool fakeCopyCall = false;
         [HarmonyPrefix, HarmonyPatch(typeof(ChaFile), "CopyAll")]
         public static bool CopyAllPrefix() {
-            //KK_StudioCoordinateLoadOption.Logger.LogDebug("Block Origin Copy?:"+fakeCopyCall);
+            //Logger.LogDebug("Block Origin Copy?:"+fakeCopyCall);
             return !fakeCopyCall;
         }
 
@@ -54,7 +54,7 @@ namespace KK_StudioCoordinateLoadOption {
                 MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null),
                 null);
 
-            KK_StudioCoordinateLoadOption.Logger.LogDebug("Copy MoreAccessories Finish");
+            Logger.LogDebug("Copy MoreAccessories Finish");
         }
 
         /// <summary>
@@ -68,10 +68,10 @@ namespace KK_StudioCoordinateLoadOption {
             charAdditionalData.GetField("rawAccessoriesInfos").ToDictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>>()
                 .TryGetValue((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, out List<ChaFileAccessory.PartsInfo> parts);
             for (int i = 0; i < parts.Count; i++) {
-                if (!Patches.IsHairAccessory(chaCtrl, i+20)) {
+                if (!Patches.IsHairAccessory(chaCtrl, i + 20)) {
                     parts[i] = new ChaFileAccessory.PartsInfo();
                 } else {
-                    KK_StudioCoordinateLoadOption.Logger.LogDebug($"Keep HairAcc{i}: {parts[i].id}");
+                    Logger.LogDebug($"Keep HairAcc{i}: {parts[i].id}");
                 }
             }
             //charAdditionalData.SetField("rawAccessoriesInfos", rawAccessoriesInfos);
@@ -81,7 +81,7 @@ namespace KK_StudioCoordinateLoadOption {
             MoreAccessories.InvokeMember("UpdateStudioUI", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
 
             chaCtrl.ChangeAccessory(true);
-            KK_StudioCoordinateLoadOption.Logger.LogDebug("Clear MoreAccessories Finish");
+            Logger.LogDebug("Clear MoreAccessories Finish");
         }
 
         /// <summary>
@@ -107,12 +107,10 @@ namespace KK_StudioCoordinateLoadOption {
             ChaFileAccessory.PartsInfo[] sourcePartsArray = sourceChaCtrl.nowCoordinate.accessory.parts.Concat(sourceParts).ToArray();
             ChaFileAccessory.PartsInfo[] targetPartsArray = targetChaCtrl.nowCoordinate.accessory.parts.Concat(targetParts).ToArray();
 
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"MoreAcc Source Count : {sourcePartsArray.Length}");
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"MoreAcc Target Count : {targetPartsArray.Length}");
+            Logger.LogDebug($"MoreAcc Source Count : {sourcePartsArray.Length}");
+            Logger.LogDebug($"MoreAcc Target Count : {targetPartsArray.Length}");
 
             Patches.ChangeAccessories(sourceChaCtrl, sourcePartsArray, targetChaCtrl, targetPartsArray, accQueue);
-            //sourceParts = sourcePartsArray.ToList();
-            //targetParts = targetPartsArray.ToList();
 
             targetParts.Clear();
             foreach (var part in targetPartsArray) {
@@ -120,54 +118,27 @@ namespace KK_StudioCoordinateLoadOption {
             }
 
             //遍歷空欄dequeue accQueue
-            for (int j = 0; accQueue.Count > 0; j++) {
+            while (accQueue.Count > 0) {
                 targetParts.Add(MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(
-                    MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(sourceParts[accQueue.Dequeue()])
+                    MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(sourcePartsArray[accQueue.Dequeue()])
                 ));
-                KK_StudioCoordinateLoadOption.Logger.LogDebug($"->DeQueue: MoreAcc{targetParts.Count - 1} / ID: {targetParts.Last().id}");
+                Logger.LogDebug($"->DeQueue: MoreAcc{targetParts.Count - 1} / Part: {(ChaListDefine.CategoryNo)targetParts.Last().type} / ID: {targetParts.Last().id}");
             }
 
             //由後往前刪除空欄
-            for (int k = targetParts.Count - 1; k >= 20; k--) {
-                if (targetParts[k].type == 120) {
-                    targetParts.RemoveAt(k);
-                } else {
-                    break;
-                }
-            }
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"MoreAcc Finish Count : {targetParts.Count}");
+            RemoveEmptyFromBackToFront(targetParts);
+            Logger.LogDebug($"MoreAcc Finish Count : {targetParts.Count}");
 
-            //for (int slotNo = 0; slotNo < 20; slotNo++) {
-            //    //targetChaCtrl.SafeDestroy(targetChaCtrl.objAccessory[slotNo]);
-            //    targetChaCtrl.objAccessory[slotNo] = null;
-            //    targetChaCtrl.infoAccessory[slotNo] = null;
-            //    targetChaCtrl.cusAcsCmp[slotNo] = null;
-            //    for (int i = 0; i < 2; i++) {
-            //        targetChaCtrl.objAcsMove[slotNo, i] = null;
-            //    }
-            //}
             targetChaCtrl.nowCoordinate.accessory.parts = targetParts.Take(20).ToArray();
-            //targetChaCtrl.ChangeAccessory(true);
             targetParts.RemoveRange(0, 20);
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"targetParts Count : {targetParts.Count}");
+            Logger.LogDebug($"targetParts Count : {targetParts.Count}");
 
             //資料寫入MoreAcc
             List<ListInfoBase> infoAccessory = targetCharAdditionalData.GetField("infoAccessory").ToList<ListInfoBase>();
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"infoAccessory Count : {infoAccessory.Count}");
             List<GameObject> objAccessory = targetCharAdditionalData.GetField("objAccessory").ToList<GameObject>();
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"objAccessory Count : {objAccessory.Count}");
             List<GameObject[]> objAcsMove = targetCharAdditionalData.GetField("objAcsMove").ToList<GameObject[]>();
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"objAcsMove Count : {objAcsMove.Count}");
             List<ChaAccessoryComponent> cusAcsCmp = targetCharAdditionalData.GetField("cusAcsCmp").ToList<ChaAccessoryComponent>();
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"cusAcsCmp Count : {cusAcsCmp.Count}");
             List<bool> showAccessories = targetCharAdditionalData.GetField("showAccessories").ToList<bool>();
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"showAccessories Count : {showAccessories.Count}");
-
-            //List<ListInfoBase> infoAccessory = new List<ListInfoBase>();
-            //List<GameObject> objAccessory = new List<GameObject>();
-            //List<GameObject[]> objAcsMove = new List<GameObject[]>();
-            //List<ChaAccessoryComponent> cusAcsCmp = new List<ChaAccessoryComponent>();
-            //List<bool> showAccessories = new List<bool>();
 
             while (infoAccessory.Count < targetParts.Count)
                 infoAccessory.Add(null);
@@ -180,20 +151,6 @@ namespace KK_StudioCoordinateLoadOption {
             while (showAccessories.Count < targetParts.Count)
                 showAccessories.Add(true);
 
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"infoAccessory Count : {infoAccessory.Count}");
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"objAccessory Count : {objAccessory.Count}");
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"objAcsMove Count : {objAcsMove.Count}");
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"cusAcsCmp Count : {cusAcsCmp.Count}");
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"showAccessories Count : {showAccessories.Count}");
-            //for (int i = 0; i < tmpParts.Count; i++) {
-            //    infoAccessory[i] = null;
-            //    objAccessory[i] = null;
-            //    objAcsMove[i] = new GameObject[2];
-            //    cusAcsCmp[i] = null;
-            //    showAccessories[i] = true;
-            //}
-
-
             //targetCharAdditionalData.SetField("nowAccessories", targetParts);
             //targetCharAdditionalData.SetField("infoAccessory", infoAccessory);
             //targetCharAdditionalData.SetField("objAccessory", objAccessory);
@@ -201,21 +158,17 @@ namespace KK_StudioCoordinateLoadOption {
             //targetCharAdditionalData.SetField("cusAcsCmp", cusAcsCmp);
             //targetCharAdditionalData.SetField("showAccessories", showAccessories);
 
-            //rawAccInfos[(ChaFileDefine.CoordinateType)targetChaCtrl.fileStatus.coordinateType] = targetParts;
-            //targetCharAdditionalData.SetField("rawAccessoriesInfos", rawAccInfos);
             //_accessoriesByChar[targetChaCtrl.chaFile] = targetCharAdditionalData;
             //MoreAccObj.SetField("_accessoriesByChar", _accessoriesByChar);
             MoreAccessories.InvokeMember("Update", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
-            //targetChaCtrl.ChangeAccessory(true);
-            //targetChaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)targetChaCtrl.fileStatus.coordinateType);
 
             if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
                 HairAccessoryCustomizer_Support.GetExtendedDataFromExtData(targetChaCtrl, out var nowCoor);
-                KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Hair Count: {nowCoor.Count} : {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
+                Logger.LogDebug($"->Hair Count: {nowCoor.Count} : {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
             }
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"->MoreAcc Parts Count : {GetAccessoriesAmount(targetChaCtrl.chaFile)}");
+            Logger.LogDebug($"->MoreAcc Parts Count : {GetAccessoriesAmount(targetChaCtrl.chaFile)}");
 
-            KK_StudioCoordinateLoadOption.Logger.LogDebug("Load MoreAccessories Finish");
+            Logger.LogDebug("Load MoreAccessories Finish");
         }
 
         private static PluginData sideLoaderExtData;
@@ -238,7 +191,7 @@ namespace KK_StudioCoordinateLoadOption {
             List<ResolveInfo> extInfoList;
             sideLoaderExtData = ExtendedSave.GetExtendedDataById(chaFileCoordinate, "com.bepis.sideloader.universalautoresolver");
             if (sideLoaderExtData == null || !sideLoaderExtData.data.ContainsKey("info")) {
-                KK_StudioCoordinateLoadOption.Logger.LogDebug("No sideloader extInfo found");
+                Logger.LogDebug("No sideloader extInfo found");
                 extInfoList = null;
             } else {
                 var tmpExtInfo = (object[])sideLoaderExtData.data["info"];
@@ -288,7 +241,7 @@ namespace KK_StudioCoordinateLoadOption {
                             if (default(ResolveInfo) != tmpExtInfo) {
                                 ResolveInfo localExtInfo = LoadedResolutionInfoList.FirstOrDefault(x => x.GUID == tmpExtInfo.GUID && x.CategoryNo == tmpExtInfo.CategoryNo && x.Slot == tmpExtInfo.Slot);
                                 if (default(ResolveInfo) != localExtInfo) {
-                                    KK_StudioCoordinateLoadOption.Logger.LogDebug($"Resolve {localExtInfo.GUID}: {localExtInfo.Slot} -> {localExtInfo.LocalSlot}");
+                                    Logger.LogDebug($"Resolve {localExtInfo.GUID}: {localExtInfo.Slot} -> {localExtInfo.LocalSlot}");
                                     part.id = localExtInfo.LocalSlot;
                                 }
                             }
@@ -298,16 +251,24 @@ namespace KK_StudioCoordinateLoadOption {
                 }
             }
 
-            //由後往前刪除空欄
-            for (int i = tempLoadedAccessories.Count - 1; i >= 20; i--) {
-                if (tempLoadedAccessories[i].type == 120) {
-                    tempLoadedAccessories.RemoveAt(i);
+            ////由後往前刪除空欄
+            RemoveEmptyFromBackToFront(tempLoadedAccessories);
+
+            return tempLoadedAccessories.Select(x => Patches.GetNameFromIDAndType(x.id, (ChaListDefine.CategoryNo)x.type)).ToArray();
+        }
+
+        /// <summary>
+        /// 由後往前刪除空欄
+        /// </summary>
+        /// <param name="partsInfos"></param>
+        public static void RemoveEmptyFromBackToFront(List<ChaFileAccessory.PartsInfo> partsInfos) {
+            for (int i = partsInfos.Count - 1; i >= 20; i--) {
+                if (partsInfos[i].type == 120) {
+                    partsInfos.RemoveAt(i);
                 } else {
                     break;
                 }
             }
-
-            return tempLoadedAccessories.Select(x => Patches.GetNameFromIDAndType(x.id, (ChaListDefine.CategoryNo)x.type)).ToArray();
         }
 
         /// <summary>
@@ -324,6 +285,11 @@ namespace KK_StudioCoordinateLoadOption {
                 new object[] { chaCtrl, index });
         }
 
+        /// <summary>
+        /// 取得飾品數量
+        /// </summary>
+        /// <param name="chaFile"></param>
+        /// <returns></returns>
         public static int GetAccessoriesAmount(ChaFile chaFile) {
             (MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null))
             .GetField("_accessoriesByChar")

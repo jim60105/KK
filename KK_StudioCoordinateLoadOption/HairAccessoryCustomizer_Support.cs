@@ -9,24 +9,29 @@ using UnityEngine;
 namespace KK_StudioCoordinateLoadOption {
 
     internal class HairAccessoryCustomizer_Support {
+        private static readonly BepInEx.Logging.ManualLogSource Logger = KK_StudioCoordinateLoadOption.Logger;
         private static object SourceHairAccCusController;
         private static object TargetHairAccCusController;
         private static readonly string GUID = "com.deathweasel.bepinex.hairaccessorycustomizer";
         public static Dictionary<int, object> sourceDict = new Dictionary<int, object>();
         public static Dictionary<int, object> targetDict = new Dictionary<int, object>();
-        //private static Type HairAccessoryInfoType = null;
 
         public static bool LoadAssembly() {
             if (null != KK_StudioCoordinateLoadOption.TryGetPluginInstance(GUID, new Version(1, 1, 2))) {
-                //MessagePack.Resolvers.CompositeResolver.RegisterAndSetAsDefault(MessagePack.Unity.UnityResolver.Instance, MessagePack.Resolvers.StandardResolver.Instance);
-                KK_StudioCoordinateLoadOption.Logger.LogDebug("Hair Accessory Customizer found");
+                Logger.LogDebug("Hair Accessory Customizer found");
                 return true;
             } else {
-                KK_StudioCoordinateLoadOption.Logger.LogDebug("Load assembly FAILED: Hair Accessory Customizer");
+                Logger.LogDebug("Load assembly FAILED: Hair Accessory Customizer");
                 return false;
             }
         }
 
+        /// <summary>
+        /// 檢查是否為頭髮飾品
+        /// </summary>
+        /// <param name="chaCtrl">對象角色</param>
+        /// <param name="index">飾品欄位index</param>
+        /// <returns></returns>
         public static bool IsHairAccessory(ChaControl chaCtrl, int index) {
             var HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
             return (bool)HairAccCusController.Invoke("IsHairAccessory", new object[] { index });
@@ -45,11 +50,11 @@ namespace KK_StudioCoordinateLoadOption {
                 Dictionary<int, Dictionary<int, object>> result = MessagePackSerializer.Deserialize<Dictionary<int, Dictionary<int, object>>>((byte[])loadedHairAccessories);
                 result?.TryGetValue(chaCtrl.fileStatus.coordinateType, out nowcoordinateExtData);
                 if (null != nowcoordinateExtData) {
-                    KK_StudioCoordinateLoadOption.Logger.LogDebug($"Get {chaCtrl.fileParam.fullname} Hair Accessories: {nowcoordinateExtData.Count} (1)");
+                    Logger.LogDebug($"Get {chaCtrl.fileParam.fullname} Hair Accessories: {nowcoordinateExtData.Count} From ExtData");
                     return result;
                 }
             }
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"No Hair Accessories get from {chaCtrl.fileParam.fullname} (1)");
+            Logger.LogDebug($"No Hair Accessories get from {chaCtrl.fileParam.fullname} From ExtData");
             return null;
         }
 
@@ -62,7 +67,7 @@ namespace KK_StudioCoordinateLoadOption {
         public static Dictionary<int, Dictionary<int, object>> GetExtendedDataFromController(ChaControl chaCtrl, out Dictionary<int, object> nowcoordinateExtData) {
             nowcoordinateExtData = null;
             var HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
-            var HairAccessories = HairAccCusController.GetField("HairAccessories").ToDictionary<int, object>();
+            var HairAccessories = HairAccCusController?.GetField("HairAccessories").ToDictionary<int, object>();
             Dictionary<int, Dictionary<int, object>> result = null;
             if (null != HairAccessories && HairAccessories.Count != 0) {
                 result = new Dictionary<int, Dictionary<int, object>>();
@@ -70,11 +75,11 @@ namespace KK_StudioCoordinateLoadOption {
                     result.Add(kv.Key, kv.Value.ToDictionary<int, object>());
                 }
                 result.TryGetValue(chaCtrl.fileStatus.coordinateType, out nowcoordinateExtData);
-                KK_StudioCoordinateLoadOption.Logger.LogDebug($"Get {chaCtrl.fileParam.fullname} Hair Accessories: {nowcoordinateExtData.Count} (2)");
-                KK_StudioCoordinateLoadOption.Logger.LogDebug($"->{string.Join(",", nowcoordinateExtData.Select(x => x.Key.ToString()).ToArray())}");
+                Logger.LogDebug($"Get {chaCtrl.fileParam.fullname} Hair Accessories From Controller: {nowcoordinateExtData.Count}");
+                Logger.LogDebug($"->{string.Join(",", nowcoordinateExtData.Select(x => x.Key.ToString()).ToArray())}");
                 return result;
             }
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"No Hair Accessories get from {chaCtrl.fileParam.fullname} (2)");
+            Logger.LogDebug($"No Hair Accessories get from {chaCtrl.fileParam.fullname} From Controller");
             return null;
         }
 
@@ -92,44 +97,62 @@ namespace KK_StudioCoordinateLoadOption {
                 if (null == nowcoordinateExtData) {
                     nowcoordinateExtData = new Dictionary<int, object>();
                 }
-                KK_StudioCoordinateLoadOption.Logger.LogDebug($"Get {coordinate.coordinateName} Hair Accessories: {nowcoordinateExtData.Count} (1)");
-                KK_StudioCoordinateLoadOption.Logger.LogDebug($"->{string.Join(",", nowcoordinateExtData.Select(x => x.Key.ToString()).ToArray())}");
+                Logger.LogDebug($"Get {coordinate.coordinateName} Hair Accessories: {nowcoordinateExtData.Count} (1)");
+                Logger.LogDebug($"->{string.Join(",", nowcoordinateExtData.Select(x => x.Key.ToString()).ToArray())}");
                 return nowcoordinateExtData;
             }
-            KK_StudioCoordinateLoadOption.Logger.LogDebug($"No Hair Accessories get from {coordinate.coordinateFileName} (1)");
+            Logger.LogDebug($"No Hair Accessories get from {coordinate.coordinateFileName} (1)");
             return null;
         }
 
+        /// <summary>
+        /// 由Coordinate載入HairAcc至Controller內
+        /// </summary>
+        /// <param name="chaCtrl">要被設定的ChaControl</param>
+        /// <param name="coordinate">要載入的coordibate</param>
+        /// <returns></returns>
         public static bool SetExtendedDataFromCoordinate(ChaControl chaCtrl, ChaFileCoordinate coordinate = null) {
             if (null == coordinate) {
                 coordinate = chaCtrl.nowCoordinate;
             }
             var HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
             if (null != HairAccCusController) {
-                //HairAccCusController.Invoke("LoadCoordinateData", new object[] { coordinate });
+                //注意這條是異步執行
                 HairAccCusController.Invoke("OnCoordinateBeingLoaded", new object[] { coordinate, false });
-                //HairAccCusController.Invoke("LoadData");
-                //chaCtrl.ChangeCoordinateTypeAndReload(false);
-                //HairAccCusController.Invoke("OnCoordinateBeingSaved", new object[] {chaCtrl.nowCoordinate });
-                //HairAccCusController.Invoke("OnCardBeingSaved", new object[] { 0 });
                 return true;
             } else {
-                KK_StudioCoordinateLoadOption.Logger.LogDebug($"No HairAccController found!");
+                Logger.LogDebug($"No HairAccController found!");
             }
             return false;
         }
 
+        /// <summary>
+        /// 由ExtData載入HairAcc至Controller內，注意這條是異步執行
+        /// </summary>
+        /// <param name="chaCtrl">要被設定的ChaControl</param>
+        /// <returns></returns>
         public static void SetControllerFromExtData(ChaControl chaCtrl) {
             var HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
+            //注意這條是異步執行
             HairAccCusController.Invoke("OnReload", new object[] { 2, false });
         }
 
+        /// <summary>
+        /// 由Controller載入HairAcc至ExtData內
+        /// </summary>
+        /// <param name="chaCtrl">要被設定的ChaControl</param>
+        /// <returns></returns>
         public static void SetExtendedDataFromController(ChaControl chaCtrl) {
             var HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
             HairAccCusController.Invoke("OnCardBeingSaved", new object[] { 0 });
         }
 
-        public static void SaveExtendedDataToChaCtrl(ChaControl chaCtrl, Dictionary<int, object> dict) {
+        /// <summary>
+        /// 將dict存入ChaControl ExtendedData
+        /// </summary>
+        /// <param name="chaCtrl">目標ChaControl</param>
+        /// <param name="dict">要存入的dict</param>
+        public static void SaveExtendedData(ChaControl chaCtrl, Dictionary<int, object> dict) {
             var HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
             PluginData data = new PluginData();
             var allExtData = GetExtendedDataFromExtData(chaCtrl, out _);
@@ -145,7 +168,12 @@ namespace KK_StudioCoordinateLoadOption {
             ExtendedSave.SetExtendedDataById(chaCtrl.chaFile, GUID, data);
         }
 
-        public static void SaveExtendedDataToCoordinate(ChaFileCoordinate coordinate, Dictionary<int, object> dict) {
+        /// <summary>
+        /// 將dict存入Coordinate ExtendedData
+        /// </summary>
+        /// <param name="coordinate">目標Coordinate</param>
+        /// <param name="dict">要存入的dict</param>
+        public static void SaveExtendedData(ChaFileCoordinate coordinate, Dictionary<int, object> dict) {
             var data = new PluginData();
             if (dict.Count > 0)
                 data.data.Add("CoordinateHairAccessories", MessagePackSerializer.Serialize(dict));
@@ -154,6 +182,12 @@ namespace KK_StudioCoordinateLoadOption {
             ExtendedSave.SetExtendedDataById(coordinate, GUID, data);
         }
 
+        /// <summary>
+        /// 檢核Reload是否完成，這是因為異步流程所需
+        /// </summary>
+        /// <param name="chaCtrl">檢核的ChaControl</param>
+        /// <param name="coordinate">判斷基礎的Coordinate，留空取chaCtrl.nowCoordinate</param>
+        /// <returns>檢核通過</returns>
         public static bool CheckReloadState(ChaControl chaCtrl, ChaFileCoordinate coordinate = null) {
             if (!KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
                 return true;
@@ -182,26 +216,30 @@ namespace KK_StudioCoordinateLoadOption {
             return true;
         }
 
+        /// <summary>
+        /// 拷貝整個髮飾品資料
+        /// </summary>
+        /// <param name="sourceCtrl">來源ChaControl</param>
+        /// <param name="targetCtrl">目標ChaControl</param>
+        /// <returns>拷貝成功</returns>
         public static bool CopyAllHairAcc(ChaControl sourceCtrl = null, ChaControl targetCtrl = null) {
-            //Dictionary<int, Dictionary<int, object>> sourceDictionary = sourceDict;
-            //Dictionary<int, Dictionary<int, object>> targetDictionary = targetDict;
             Dictionary<int, object> dict = null;
             if (sourceCtrl == null && targetCtrl == null) {
                 dict = sourceDict;
             } else if (sourceCtrl == null || targetCtrl == null) {
-                KK_StudioCoordinateLoadOption.Logger.LogError($"CopyAllHairAcc input not correct!");
+                Logger.LogError($"CopyAllHairAcc input not correct!");
                 return false;
             }
             if (null != dict || (null != GetExtendedDataFromExtData(sourceCtrl, out dict) && null != dict)) {
                 for (int i = 0; i < dict.Count; i++) {
                     dict[dict.Keys.ElementAt(i)] = CopyHairInfo(dict.Values.ElementAt(i));
                 }
-                SaveExtendedDataToChaCtrl(targetCtrl, dict);
+                SaveExtendedData(targetCtrl, dict);
                 targetCtrl.ChangeAccessory(true);
-                KK_StudioCoordinateLoadOption.Logger.LogDebug($"Copy all ({dict.Count}) HairAcc finish");
+                Logger.LogDebug($"Copy all HairAcc ({dict.Count}): {sourceCtrl.fileParam.fullname} -> {targetCtrl.fileParam.fullname} ");
                 return true;
             } else {
-                KK_StudioCoordinateLoadOption.Logger.LogDebug($"CopyAllHairAcc input not found!");
+                Logger.LogDebug($"CopyAllHairAcc input not found!");
                 return false;
             }
         }
@@ -211,61 +249,25 @@ namespace KK_StudioCoordinateLoadOption {
             SourceHairAccCusController = sourceChaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
             TargetHairAccCusController = targetChaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
             if (null == SourceHairAccCusController || null == TargetHairAccCusController) {
-                KK_StudioCoordinateLoadOption.Logger.LogDebug("No Hair Accessory Customizer Controller found");
+                Logger.LogDebug("No Hair Accessory Customizer Controller found");
                 return;
             }
-            KK_StudioCoordinateLoadOption.Logger.LogDebug("Source-----");
+            Logger.LogDebug("Source-----");
             GetExtendedDataFromExtData(sourceChaCtrl, out sourceDict);
-            KK_StudioCoordinateLoadOption.Logger.LogDebug("Target-----");
+            Logger.LogDebug("Target-----");
             GetExtendedDataFromExtData(targetChaCtrl, out targetDict);
-            //KK_StudioCoordinateLoadOption.Logger.LogDebug("-->Backup End");
+            //Logger.LogDebug("-->Backup End");
         }
 
         public static void CopyHairAcc(ChaControl sourceChaCtrl, int sourceSlot, ChaControl targetChaCtrl, int targetSlot) {
-            //KK_StudioCoordinateLoadOption.Logger.LogDebug("-->Copy Start");
             GetControllerAndHairDict(sourceChaCtrl, targetChaCtrl);
-            //KK_StudioCoordinateLoadOption.Logger.LogDebug("-----");
 
             if ((bool)SourceHairAccCusController.Invoke("IsHairAccessory", new object[] { sourceSlot })) {
-                //ChaAccessoryComponent cusAcsCmp = Patches.GetChaAccessoryComponent(targetChaCtrl, targetSlot);
-                //ChaCustomHairComponent chaCusHairCom = Patches.GetChaAccessoryComponent(sourceChaCtrl, sourceSlot).gameObject.GetComponent<ChaCustomHairComponent>();
-                //if (null != chaCusHairCom && null != cusAcsCmp) {
-                //    var c = cusAcsCmp.gameObject.GetComponent<ChaCustomHairComponent>();
-                //    while (null != c) {
-                //        c.transform.SetParent(null);
-                //        UnityEngine.GameObject.DestroyImmediate(c);
-                //        c = cusAcsCmp.gameObject.GetComponent<ChaCustomHairComponent>();
-                //    }
-                //    /*UnityEngine.Object.Instantiate*/(chaCusHairCom).transform.SetParent(cusAcsCmp.transform);
-                //} else {
-                //    KK_StudioCoordinateLoadOption.Logger.LogError($"-->Copy Hair Acc FAILED: Source ChaCustomHairComponent or Target ChaAccessoryComponent NOT FOUND.");
-                //    KK_StudioCoordinateLoadOption.Logger.LogError($"-->Error Info: {sourceChaCtrl.fileParam.fullname} {sourceSlot} -> {targetChaCtrl.fileParam.fullname} {targetSlot}");
-                //}
-
-                //----------
-                //targetChaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)targetChaCtrl.fileStatus.coordinateType);  //從nowCoordinate到chaFile
-                //targetChaCtrl.ChangeCoordinateTypeAndReload(false); //從chaFile讀出來給nowCoordinate
-
-                //KK_StudioCoordinateLoadOption.Logger.LogDebug($"Init Target:{TargetHairAccCusController.Invoke("InitHairAccessoryInfo", new object[] { targetSlot })}");
-                //TargetHairAccCusController.Invoke("InitHairAccessoryInfo", new object[] { targetSlot });
-                //GetExtendedDataToDictionary(sourceChaCtrl, out sourceDict);
-                //GetExtendedDataToDictionary(targetChaCtrl, out targetDict);
-
                 if (null == sourceDict || !sourceDict.TryGetValue(sourceSlot, out var sourceHairInfo)) {
-                    KK_StudioCoordinateLoadOption.Logger.LogError($"-->Copy Hair Acc FAILED: Source Accessory {sourceSlot} Extended Data NOT FOUND.");
-                    KK_StudioCoordinateLoadOption.Logger.LogDebug("-->Copy End");
+                    Logger.LogError($"-->Copy Hair Acc FAILED: Source Accessory {sourceSlot} Extended Data NOT FOUND.");
+                    Logger.LogDebug("-->Copy End");
                     return;
                 }
-
-                //Color color = new Color((float)v.GetProperty("r"), (float)v.GetProperty("g"),(float) v.GetProperty("b"),(float) v.GetProperty("a"));
-                //KK_StudioCoordinateLoadOption.Logger.LogInfo(color);
-
-                //if (!targetDict.TryGetValue(targetSlot, out var targetHairInfo)) {
-                //    targetDict.Add(targetSlot, Activator.CreateInstance(HairAccessoryInfoType));
-                //    //KK_StudioCoordinateLoadOption.Logger.LogError($"-->Copy Hair Acc FAILED: Target Accessory {targetSlot} Extended Data NOT FOUND.");
-                //    //KK_StudioCoordinateLoadOption.Logger.LogDebug("-->Copy End");
-                //    //return;
-                //}
                 if (null == targetDict) {
                     targetDict = new Dictionary<int, object>();
                 } else if (targetDict.ContainsKey(targetSlot)) {
@@ -275,50 +277,21 @@ namespace KK_StudioCoordinateLoadOption {
                 targetDict.Add(targetSlot, (sourceHairInfo));
                 sourceDict.Remove(sourceSlot);
 
-                //Dictionary<object, object> tmpDict = new Dictionary<object, object> {
-                //    { "HairGloss",sourceHairInfo.ToDictionary<object, object>()["HairGloss"] },
-                //    { "ColorMatch",sourceHairInfo.ToDictionary<object, object>()["ColorMatch"] },
-                //    { "OutlineColor",sourceHairInfo.ToDictionary<object, object>()["OutlineColor"]},
-                //    { "AccessoryColor",sourceHairInfo.ToDictionary<object, object>()["AccessoryColor"]},
-                //    //{ "OutlineColor", (UnityEngine.Color) MessagePackSerializer.Deserialize<Color>(MessagePackSerializer.Serialize(v))},
-                //    //{ "AccessoryColor",(UnityEngine.Color) MessagePackSerializer.Deserialize<Color>(MessagePackSerializer.Serialize(v))},
-                //    { "HairLength", sourceHairInfo.ToDictionary<object, object>()["HairLength"] }
-                //};
-                //targetDict.Add(targetSlot, tmpDict);
-
-                //KK_StudioCoordinateLoadOption.Logger.LogInfo(MessagePackSerializer.Deserialize<Color>(MessagePackSerializer.Serialize(sourceHairInfo.ToDictionary<object, object>()["AccessoryColor"])).ToString());
-                //targetDict.Add(targetSlot, Activator.CreateInstance(HairAccessoryInfoType));
-                //var targetHairInfo = targetDict[targetSlot];
-                //targetHairInfo.SetField("HairGloss", (bool)sourceHairInfo.ToDictionary<object,object>()["HairGloss"], HairAccessoryInfoType);
-                //targetHairInfo.SetField("ColorMatch", (bool)sourceHairInfo.GetField("ColorMatch", HairAccessoryInfoType), HairAccessoryInfoType);
-                //targetHairInfo.SetField("OutlineColor", (Color)sourceHairInfo.GetField("OutlineColor", HairAccessoryInfoType), HairAccessoryInfoType);
-                //targetHairInfo.SetField("AccessoryColor", (Color)sourceHairInfo.GetField("AccessoryColor", HairAccessoryInfoType), HairAccessoryInfoType);
-                //targetHairInfo.SetField("HairLength", (float)sourceHairInfo.GetField("HairLength", HairAccessoryInfoType), HairAccessoryInfoType);
-
-                SaveExtendedDataToChaCtrl(sourceChaCtrl, sourceDict);
-                SaveExtendedDataToChaCtrl(targetChaCtrl, targetDict);
-                //SaveExtendedDataToCoordinate(sourceChaCtrl.nowCoordinate, sourceDict);
-                //SaveExtendedDataToCoordinate(targetChaCtrl.nowCoordinate, targetDict);
-                //TargetHairAccCusController.Invoke("LoadData");
-
-                //targetChaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)targetChaCtrl.fileStatus.coordinateType);
-                //targetChaCtrl.ChangeCoordinateTypeAndReload(false);
-                //targetChaCtrl.Reload(false, true, false, true);
-
-                //GetExtendedDataToDictionary(sourceChaCtrl, ref sourceDict);
-                //GetExtendedDataToDictionary(targetChaCtrl, ref targetDict);
-
-                //SourceHairAccCusController.Invoke("UpdateAccessory", new object[] { sourceSlot, false });
-                //TargetHairAccCusController.Invoke("UpdateAccessory", new object[] { targetSlot, false });
-                KK_StudioCoordinateLoadOption.Logger.LogDebug($"-->Copy Hair Acc Finish: {sourceChaCtrl.fileParam.fullname} {sourceSlot} -> {targetChaCtrl.fileParam.fullname} {targetSlot}");
-                KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Hair Acc: {targetDict.Count} : {string.Join(",", targetDict.Select(x => x.Key.ToString()).ToArray())}");
+                SaveExtendedData(sourceChaCtrl, sourceDict);
+                SaveExtendedData(targetChaCtrl, targetDict);
+                Logger.LogDebug($"-->Copy Hair Acc Finish: {sourceChaCtrl.fileParam.fullname} {sourceSlot} -> {targetChaCtrl.fileParam.fullname} {targetSlot}");
+                Logger.LogDebug($"-->Hair Acc: {targetDict.Count} : {string.Join(",", targetDict.Select(x => x.Key.ToString()).ToArray())}");
             } else {
                 TargetHairAccCusController.Invoke("RemoveHairAccessoryInfo", new object[] { targetSlot });
-                KK_StudioCoordinateLoadOption.Logger.LogDebug($"-->Clear Hair Acc Finish: Slot {targetSlot}");
+                Logger.LogDebug($"-->Clear Hair Acc Finish: Slot {targetSlot}");
             }
-            //KK_StudioCoordinateLoadOption.Logger.LogDebug("-->Copy End");
         }
 
+        /// <summary>
+        /// 拷貝HairInfo
+        /// </summary>
+        /// <param name="sourceHairInfo">拷貝對象</param>
+        /// <returns>拷貝結果</returns>
         public static object CopyHairInfo(object sourceHairInfo) {
             return new Dictionary<object, object> {
                 { "HairGloss",sourceHairInfo.ToDictionary<object, object>()["HairGloss"] },
@@ -334,7 +307,6 @@ namespace KK_StudioCoordinateLoadOption {
             TargetHairAccCusController = null;
             sourceDict = null;
             targetDict = null;
-            //KK_StudioCoordinateLoadOption.Logger.LogDebug("-->Clean HairAccBackup");
         }
     }
 }

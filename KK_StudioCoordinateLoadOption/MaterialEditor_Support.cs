@@ -7,6 +7,7 @@ using UnityEngine;
 namespace KK_StudioCoordinateLoadOption {
     class MaterialEditor_Support {
         private static object MaterialEditorController;
+        private static readonly BepInEx.Logging.ManualLogSource Logger = KK_StudioCoordinateLoadOption.Logger;
         private static Dictionary<string, object> MaterialBackup = null;
         private static Dictionary<int, byte[]> TextureDictionaryBackup = null;
 
@@ -46,7 +47,7 @@ namespace KK_StudioCoordinateLoadOption {
         public enum ObjectType { StudioItem, Clothing, Accessory, Hair, Character, Other };
 
         public static void BackupMaterialData(ChaControl chaCtrl) {
-            MaterialEditorController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KK_MaterialEditor"));
+            MaterialEditorController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "MaterialEditorCharaController"));
             if (null == MaterialEditorController) {
                 KK_StudioCoordinateLoadOption.Logger.LogDebug("No MaterialEditor Controller found");
             } else {
