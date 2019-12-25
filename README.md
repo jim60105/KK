@@ -11,6 +11,7 @@
 - Koikatu ABMX V3.3
 - Koikatu More Accessories v1.0.6
 - Koikatu MaterialEditor v1.8
+- Koikatu HairAccessoryCustomizer v1.1.2 
 
 # Studio全是妹子插件 (Studio All Girls Plugin)
 ![image](https://github.com/jim60105/KK/raw/master/demo/demo2.gif)<br>
