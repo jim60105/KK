@@ -14,5 +14,6 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 [assembly: Guid("EF0169B6-166D-4298-A1B8-05CCA0E095BC")]
 [assembly: AssemblyVersion(KK_StudioCoordinateLoadOption.KK_StudioCoordinateLoadOption.PLUGIN_VERSION)]
-[assembly: AssemblyFileVersion(KK_StudioCoordinateLoadOption.KK_StudioCoordinateLoadOption.PLUGIN_VERSION)]
+//[assembly: AssemblyFileVersion(KK_StudioCoordinateLoadOption.KK_StudioCoordinateLoadOption.PLUGIN_VERSION)]
+[assembly: AssemblyInformationalVersion(KK_StudioCoordinateLoadOption.KK_StudioCoordinateLoadOption.PLUGIN_RELEASE_VERSION)]
 
