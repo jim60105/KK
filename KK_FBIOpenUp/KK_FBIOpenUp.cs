@@ -42,7 +42,7 @@ namespace KK_FBIOpenUp {
     public class KK_FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "19.12.28.0";
+        internal const string PLUGIN_VERSION = "19.12.28.1";
         internal const string PLUGIN_RELEASE_VERSION = "0.0.0";
 
         internal static bool _isenabled = false;
@@ -573,16 +573,6 @@ namespace KK_FBIOpenUp {
                 //baseEventData.selectedObject.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
                 switch (KK_FBIOpenUp.nowGameMode) {
                     case KK_FBIOpenUp.GameMode.Maker:
-                    //KK_FBIOpenUp.ToggleEnabled();
-                    //ChangeRedBagBtn(redBagBtn, gameMode);
-
-                    //DrawSlidePic(10, gameMode);
-
-                    //KK_FBIOpenUp._isenabled = true;
-                    //KK_FBIOpenUp.ToggleEnabled();
-                    //ChangeRedBagBtn(redBagBtn, gameMode);
-
-                    //break;
                     case KK_FBIOpenUp.GameMode.MainGame:
                         //主遊戲不分長短按
                         KK_FBIOpenUp.SetEnabled();
@@ -597,16 +587,16 @@ namespace KK_FBIOpenUp {
                         KK_FBIOpenUp.SetEnabled();
                         if (clickDeltaTime <= 1f) {
                             if (KK_FBIOpenUp._isenabled) {
-                                DrawSlidePic(1, gameMode);
+                                DrawSlidePic(10, gameMode);
                             } else {
-                                DrawSlidePic(2, gameMode);
+                                DrawSlidePic(20, gameMode);
                             }
                             ChangeRedBagBtn(gameMode);
                         } else {
                             if (KK_FBIOpenUp._isenabled) {
-                                DrawSlidePic(10, gameMode);
+                                DrawSlidePic(1, gameMode);
                             } else {
-                                DrawSlidePic(20, gameMode);
+                                DrawSlidePic(2, gameMode);
                             }
                             ChangeRedBagBtn(gameMode);
                         }
@@ -680,10 +670,10 @@ namespace KK_FBIOpenUp {
                 case KK_FBIOpenUp.GameMode.MainGame:
                     parent = GameObject.Find("ActionScene/UI/ActionMenuCanvas/ModeAnimation");
                     break;
-                case KK_FBIOpenUp.GameMode.Maker:
+                //case KK_FBIOpenUp.GameMode.Maker:
                 default:
-                    parent = redBagBtn;
-                    return;
+                    parent = redBagBtn.transform.parent.gameObject;
+                    break;
             }
             GameObject gameObject = new GameObject();
             gameObject.transform.SetParent(parent.transform, false);
