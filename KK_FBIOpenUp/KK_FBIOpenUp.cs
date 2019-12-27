@@ -42,7 +42,7 @@ namespace KK_FBIOpenUp {
     public class KK_FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "19.12.28.1";
+        internal const string PLUGIN_VERSION = "19.12.28.3";
         internal const string PLUGIN_RELEASE_VERSION = "0.0.0";
 
         internal static bool _isenabled = false;
@@ -109,6 +109,7 @@ namespace KK_FBIOpenUp {
             var tempVideoPath = Video_related_path.Value;
             if (!File.Exists(tempVideoPath)) {
                 KK_FBIOpenUp.Logger.LogError("Video Not Found: " + tempVideoPath);
+                videoPath = null;
             } else {
                 videoPath = $"file://{Application.dataPath}/../{tempVideoPath}";
             }
@@ -343,7 +344,7 @@ namespace KK_FBIOpenUp {
             }
             KK_FBIOpenUp.Logger.LogDebug($"Get {charList.Count} charaters.");
             foreach (var chaCtrl in charList) {
-                if(null== chaCtrl) {
+                if (null == chaCtrl) {
                     continue;
                 }
                 if (rollback) {
@@ -685,6 +686,13 @@ namespace KK_FBIOpenUp {
                 shiftPicture = null;
             }
             shiftPicture = new ShiftPicture();
+
+            //如果影片不存在，用熊吉代替
+            bool noVideoFallback = _step == 20 && null == KK_FBIOpenUp.videoPath;
+            if (noVideoFallback) {
+                _step = 2;
+            }
+
             switch (_step) {
                 case 1:
                     //小學生真是太棒了
@@ -709,10 +717,6 @@ namespace KK_FBIOpenUp {
                     break;
                 case 20:
                     //FBI Open Up影片
-                    if (null == KK_FBIOpenUp.videoPath) {
-                        return;
-                    }
-
                     shiftPicture.type = ShiftPicture.Type.video;
 
                     shiftPicture.video = UIUtility.CreateRawImage("", gameObject.transform);
@@ -765,6 +769,12 @@ namespace KK_FBIOpenUp {
                     break;
             }
 
+            //如果影片不存在，用熊吉代替
+            if (noVideoFallback) {
+                _step = 20;
+            }
+
+            step = _step;
             KK_FBIOpenUp.Logger.LogDebug("Draw Slide Pic");
 
             void Right2Center() {
@@ -772,14 +782,12 @@ namespace KK_FBIOpenUp {
                 shiftPicture.Transform.position = new Vector3(Screen.width + shiftPicture.Width / 2, Screen.height / 2);
                 shiftPicture.targetPosition = new Vector3(Screen.width / 2, Screen.height / 2);
                 gameObject.SetActive(true);
-                step = _step;
             }
             void Left2Center() {
                 //Left To Center
                 shiftPicture.Transform.position = new Vector3(-1 * (Screen.width + shiftPicture.Width / 2), Screen.height / 2);
                 shiftPicture.targetPosition = new Vector3(Screen.width / 2, Screen.height / 2);
                 gameObject.SetActive(true);
-                step = _step;
             }
         }
 
