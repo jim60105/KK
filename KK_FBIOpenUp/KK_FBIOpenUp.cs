@@ -17,6 +17,7 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
+using ActionGame.H;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Harmony;
@@ -37,7 +38,7 @@ namespace KK_FBIOpenUp {
     public class KK_FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "19.12.28.4";
+        internal const string PLUGIN_VERSION = "19.12.29.0";
         internal const string PLUGIN_RELEASE_VERSION = "0.0.0";
 
         internal static bool _isenabled = false;
@@ -331,6 +332,9 @@ namespace KK_FBIOpenUp {
                     break;
                 case KK_FBIOpenUp.GameMode.MainGame:
                     charList = Singleton<Manager.Game>.Instance.HeroineList.Select(x => x.chaCtrl).ToList();
+                    break;
+                case KK_FBIOpenUp.GameMode.FreeH:
+                    charList = Hooks.hSceneProc.GetField("lstFemale").ToList<ChaControl>();
                     break;
             }
             if (null == charList) {

@@ -1,7 +1,10 @@
 ﻿using ChaCustom;
+using Extension;
 using HarmonyLib;
 using Studio;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace KK_FBIOpenUp {
     internal static class Hooks {
@@ -17,18 +20,25 @@ namespace KK_FBIOpenUp {
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(CustomControl), "Start")]
-        public static void StartPostfix() {
-            KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.Maker;
+        public static void StartPostfix_Maker() {
             KK_FBIOpenUp._isenabled = false;
             UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.Maker);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ActionScene), "Start")]
-        public static void StartPostfix3() {
-            KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.MainGame;
+        public static void StartPostfix_MainGame() {
             KK_FBIOpenUp._isenabled = false;
             UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.MainGame);
         }
+
+        internal static HSceneProc hSceneProc;
+        [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Start")]
+        public static void StartPostfix_FreeH(HSceneProc __instance) {
+            KK_FBIOpenUp._isenabled = false;
+            hSceneProc = __instance;
+            UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.FreeH);
+        }
+
 
         [HarmonyPostfix, HarmonyPatch(typeof(AddObjectFemale), "Add", new Type[] { typeof(ChaControl), typeof(OICharInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject), typeof(bool), typeof(int) })]
         public static void AddPostfix(ChaControl _female, OICharInfo _info) {

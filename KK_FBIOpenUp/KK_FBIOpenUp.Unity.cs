@@ -60,9 +60,9 @@ namespace KK_FBIOpenUp {
                 get {
                     switch (type) {
                         case Type.picture:
-                            return image.transform;
+                            return image?.transform;
                         case Type.video:
-                            return video.transform;
+                            return video?.transform;
                     }
                     return null;
                 }
@@ -110,6 +110,12 @@ namespace KK_FBIOpenUp {
                     offsetMin = new Vector2(0, -80);
                     offsetMax = new Vector2(80, 0);
                     break;
+                case KK_FBIOpenUp.GameMode.FreeH:
+                    original = GameObject.Find("Canvas/SubMenu/DressCategory/ClothChange");
+                    parent = original.transform.parent.gameObject;
+                    offsetMin = new Vector2(5, -198);
+                    offsetMax = new Vector2(107, -96);
+                    break;
                 default:
                     return;
             }
@@ -154,6 +160,7 @@ namespace KK_FBIOpenUp {
                 btnClickTimer = 0;
                 //baseEventData.selectedObject.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
                 switch (KK_FBIOpenUp.nowGameMode) {
+                    case KK_FBIOpenUp.GameMode.FreeH:
                     case KK_FBIOpenUp.GameMode.Maker:
                     case KK_FBIOpenUp.GameMode.MainGame:
                         //主遊戲不分長短按
@@ -332,6 +339,7 @@ namespace KK_FBIOpenUp {
         private static CameraLightCtrl.LightInfo studioLightInfo;
         private static object studioLightCalc;
         private static UnityEngine.Light makerLight;
+        private static UnityEngine.Light freeHLight;
         /// <summary>
         /// 調整角色燈光，製造爆亮轉場
         /// </summary>
@@ -339,10 +347,26 @@ namespace KK_FBIOpenUp {
         private static void ToggleFlashLight(bool goLighter) {
             intensityState = true;
             switch (KK_FBIOpenUp.nowGameMode) {
-                case KK_FBIOpenUp.GameMode.Maker:
-                    Light light = ((UnityEngine.GameObject)Singleton<ChaCustom.CustomControl>.Instance.cmpDrawCtrl.GetField("objLight")).GetComponent<UnityEngine.Light>();
+                case KK_FBIOpenUp.GameMode.FreeH:
+                    Light light = Hooks.hSceneProc.lightCamera;
                     if (null != light) {
-                        makerLight = light;
+                        freeHLight= light;
+                    } else {
+                        Logger.LogError("Get Camera Light FAILED");
+                        goto default;
+                    }
+                    if (goLighter) {
+                        intensityFrom = freeHLight.intensity;
+                        intensityTo = 5f;
+                    } else {
+                        intensityTo = intensityFrom;
+                        intensityFrom = freeHLight.intensity;
+                    }
+                    break;
+                case KK_FBIOpenUp.GameMode.Maker:
+                    Light light1 = ((UnityEngine.GameObject)Singleton<ChaCustom.CustomControl>.Instance.cmpDrawCtrl.GetField("objLight")).GetComponent<UnityEngine.Light>();
+                    if (null != light1) {
+                        makerLight = light1;
                     } else {
                         Logger.LogError("Get Camera Light FAILED");
                         goto default;
@@ -391,13 +415,16 @@ namespace KK_FBIOpenUp {
                 videoTimer -= Time.deltaTime;
             } else if (null != shiftPicture && null != shiftPicture.Transform) {
                 shiftPicture.Transform.position = Vector3.SmoothDamp(shiftPicture.Transform.position, shiftPicture.targetPosition, ref shiftPicture.velocity, shiftPicture.smoothTime);
-                //Logger.LogDebug($"Velocity:{velocity} ; Image.position:{shiftPicture.Transform.position}");
+                //Logger.LogDebug($"Velocity:{shiftPicture.velocity} ; Image.position:{shiftPicture.Transform.position}");
                 if ((shiftPicture.Transform.position - shiftPicture.targetPosition).sqrMagnitude < 1f) {
                     if (intensityState && reflectCount < 60) {
                         switch (KK_FBIOpenUp.nowGameMode) {
                             case KK_FBIOpenUp.GameMode.Studio:
                                 studioLightInfo.intensity += (intensityTo - intensityFrom) / 60;
                                 studioLightCalc.Invoke("Reflect");
+                                break;
+                            case KK_FBIOpenUp.GameMode.FreeH:
+                                freeHLight.intensity += (intensityTo - intensityFrom) / 60;
                                 break;
                             case KK_FBIOpenUp.GameMode.Maker:
                                 makerLight.intensity += (intensityTo - intensityFrom) / 60;
