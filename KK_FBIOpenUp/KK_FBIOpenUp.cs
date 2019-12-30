@@ -34,12 +34,12 @@ using UnityEngine;
 
 namespace KK_FBIOpenUp {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
-    [BepInDependency("KKABMX.Core", BepInDependency.DependencyFlags.SoftDependency)]
+    //[BepInDependency("KKABMX.Core", BepInDependency.DependencyFlags.SoftDependency)]
     public class KK_FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "19.12.29.0";
-        internal const string PLUGIN_RELEASE_VERSION = "0.0.0";
+        internal const string PLUGIN_VERSION = "19.12.31.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.0";
 
         internal static bool _isenabled = false;
         internal static bool _isABMXExist = false;
@@ -193,6 +193,7 @@ namespace KK_FBIOpenUp {
 
             List<float> originalShapeValueFace;
             List<float> originalShapeValueBody;
+
             ChaFileCustom chaFileCustom = chaCtrl.chaFile.custom;
 
             originalShapeValueFace = chaFileCustom.face.shapeValueFace.ToList();
@@ -338,7 +339,18 @@ namespace KK_FBIOpenUp {
                     break;
             }
             if (null == charList) {
-                Logger.LogError("Get CharaList FAILED! This should not happen!");
+                //Logger.LogError("Get CharaList FAILED! This should not happen!");
+                if(KK_FBIOpenUp.nowGameMode == KK_FBIOpenUp.GameMode.FreeH) {
+                    Logger.LogWarning("Get CharaList FAILED! Try to change to MainGame mode.");
+                    KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.MainGame;
+                    ChangeAllCharacters(rollback);
+                } else if(KK_FBIOpenUp.nowGameMode == KK_FBIOpenUp.GameMode.MainGame) {
+                    Logger.LogWarning("Get CharaList FAILED! Try to change to FreeH mode.");
+                    KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.FreeH;
+                    ChangeAllCharacters(rollback);
+                } else {
+                    Logger.LogError("Get CharaList FAILED! This should not happen!");
+                }
                 return;
             }
             Logger.LogDebug($"Get {charList.Count} charaters.");

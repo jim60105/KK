@@ -46,7 +46,7 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "19.12.25.0";
+        internal const string PLUGIN_VERSION = "19.12.30.0";
         internal const string PLUGIN_RELEASE_VERSION = "3.1.0";
 
         internal static new ManualLogSource Logger;
@@ -136,6 +136,7 @@ namespace KK_StudioCoordinateLoadOption {
         private static RectTransform toggleGroup;
         internal static bool lockHairAcc = true;
         internal static bool addAccModeFlag = true;
+        private static int finishedCount = 0;
 
         public static void InitPostfix(object __instance) {
             BlockAnotherPlugin();
@@ -413,6 +414,7 @@ namespace KK_StudioCoordinateLoadOption {
                 //建立tmpChara並等待載入完成
                 //然後再呼叫換衣
                 oCICharArray = array;
+                finishedCount = 0;
                 MakeTmpChara();
             }
             return false;
@@ -641,7 +643,10 @@ namespace KK_StudioCoordinateLoadOption {
 
                 chaCtrl.Reload(false, true, true, true);
 
-                Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
+                finishedCount++;
+                if (finishedCount >= oCICharArray.Length) {
+                    Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
+                }
 
                 Logger.LogDebug($"Extended Parts Count : {MoreAccessories_Support.GetAccessoriesAmount(chaCtrl.chaFile)}");
                 Logger.LogDebug("Studio Coordinate Load Option Finish");

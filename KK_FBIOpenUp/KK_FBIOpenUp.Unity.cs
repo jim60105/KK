@@ -16,7 +16,6 @@ namespace KK_FBIOpenUp {
         /// 按下按鈕?
         /// </summary>
         private static bool downState = false;
-        private static GameObject redBagBtn;
         /// <summary>
         /// 動畫步驟
         /// </summary>
@@ -72,7 +71,7 @@ namespace KK_FBIOpenUp {
         /// <summary>
         /// 切換紅色書包圖標顯示
         /// </summary>
-        private static void ChangeRedBagBtn() {
+        private static void ChangeRedBagBtn(GameObject redBagBtn) {
             if (KK_FBIOpenUp._isenabled) {
                 redBagBtn.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
                 Logger.LogInfo("Enable Plugin");
@@ -85,14 +84,14 @@ namespace KK_FBIOpenUp {
         /// <summary>
         /// 建立紅色書包圖標
         /// </summary>
-        /// <param name="instance">Studio要傳入__instance，其他GameMode可留空</param>
-        internal static void DrawRedBagBtn(KK_FBIOpenUp.GameMode gameMode, object instance = null) {
+        /// <param name="param">Studio要傳入__instance，其他GameMode可留空</param>
+        internal static void DrawRedBagBtn(KK_FBIOpenUp.GameMode gameMode, object param = null) {
             GameObject original, parent;
             Vector2 offsetMin, offsetMax;
             KK_FBIOpenUp.nowGameMode = gameMode;
-            switch (gameMode) {
+            switch (KK_FBIOpenUp.nowGameMode) {
                 case KK_FBIOpenUp.GameMode.Studio:
-                    CharaList charaList = instance as CharaList;
+                    CharaList charaList = param as CharaList;
                     original = GameObject.Find($"StudioScene/Canvas Main Menu/01_Add/{charaList.name}/Button Change");
                     parent = original.transform.parent.gameObject;
                     offsetMin = new Vector2(-120, -270);
@@ -112,14 +111,22 @@ namespace KK_FBIOpenUp {
                     break;
                 case KK_FBIOpenUp.GameMode.FreeH:
                     original = GameObject.Find("Canvas/SubMenu/DressCategory/ClothChange");
-                    parent = original.transform.parent.gameObject;
+                    //if (Hooks.hSceneProc.GetField("lstFemale").ToList<ChaControl>().Count <= 1) {
+                    int i = (int)param;
+                    if (i == 1) {
+                        parent = GameObject.Find("Canvas/SubMenu/DressCategory");
+                    } else {
+                        parent = GameObject.Find("Canvas/SubMenu/SecondDressCategory");
+                    }
+
+                    //parent = original.transform.parent.gameObject;
                     offsetMin = new Vector2(5, -198);
                     offsetMax = new Vector2(107, -96);
                     break;
                 default:
                     return;
             }
-            redBagBtn = UnityEngine.Object.Instantiate(original, parent.transform);
+            GameObject redBagBtn = UnityEngine.Object.Instantiate(original, parent.transform);
             redBagBtn.name = "redBagBtn";
             redBagBtn.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), offsetMin, offsetMax);
 
@@ -161,40 +168,49 @@ namespace KK_FBIOpenUp {
                 //baseEventData.selectedObject.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
                 switch (KK_FBIOpenUp.nowGameMode) {
                     case KK_FBIOpenUp.GameMode.FreeH:
+                        KK_FBIOpenUp.SetEnabled();
+                        if (KK_FBIOpenUp._isenabled) {
+                            step = 10;
+                        } else {
+                            step = 20;
+                        }
+                        ChangeWithoutShiftPicture = true;
+                        StepLightAndPlay();
+                        ChangeRedBagBtn(redBagBtn);
+                        break;
                     case KK_FBIOpenUp.GameMode.Maker:
                     case KK_FBIOpenUp.GameMode.MainGame:
                         //主遊戲不分長短按
                         KK_FBIOpenUp.SetEnabled();
                         if (KK_FBIOpenUp._isenabled) {
-                            DrawSlidePic(10, gameMode);
+                            DrawSlidePic(10);
                         } else {
-                            DrawSlidePic(20, gameMode);
+                            DrawSlidePic(20);
                         }
-                        ChangeRedBagBtn();
+                        ChangeRedBagBtn(redBagBtn);
                         break;
                     case KK_FBIOpenUp.GameMode.Studio:
                         KK_FBIOpenUp.SetEnabled();
                         if (clickDeltaTime <= 1f) {
                             if (KK_FBIOpenUp._isenabled) {
-                                DrawSlidePic(10, gameMode);
+                                DrawSlidePic(10);
                             } else {
-                                DrawSlidePic(20, gameMode);
+                                DrawSlidePic(20);
                             }
-                            ChangeRedBagBtn();
+                            ChangeRedBagBtn(redBagBtn);
                         } else {
                             if (KK_FBIOpenUp._isenabled) {
-                                DrawSlidePic(1, gameMode);
+                                DrawSlidePic(1);
                             } else {
-                                DrawSlidePic(2, gameMode);
+                                DrawSlidePic(2);
                             }
-                            ChangeRedBagBtn();
+                            ChangeRedBagBtn(redBagBtn);
                         }
                         break;
                 }
             });
             trigger.triggers.Add(pointerUp);
-
-            ChangeRedBagBtn();
+            ChangeRedBagBtn(redBagBtn);
         }
 
         private static float videoTimer = 0;
@@ -204,18 +220,23 @@ namespace KK_FBIOpenUp {
         /// </summary>
         /// <param name="_step">繪製完後要進入的腳本位置</param>
         /// <param name="sceneName">Scene名稱</param>
-        private static void DrawSlidePic(int _step, KK_FBIOpenUp.GameMode sceneName) {
+        private static void DrawSlidePic(int _step) {
             GameObject parent;
-            switch (sceneName) {
+            switch (KK_FBIOpenUp.nowGameMode) {
                 case KK_FBIOpenUp.GameMode.Studio:
                     parent = GameObject.Find("StudioScene/Canvas Main Menu");
                     break;
                 case KK_FBIOpenUp.GameMode.MainGame:
                     parent = GameObject.Find("ActionScene/UI/ActionMenuCanvas/ModeAnimation");
                     break;
-                //case KK_FBIOpenUp.GameMode.Maker:
+                case KK_FBIOpenUp.GameMode.Maker:
+                    parent = GameObject.Find("CustomScene/CustomRoot/FrontUIGroup/CustomUIGroup/CvsCoordinateType/redBagBtn");
+                    break;
+                //case KK_FBIOpenUp.GameMode.FreeH:
+                //    parent = GameObject.Find("CommonSpace");
+                //    break;
                 default:
-                    parent = redBagBtn.transform.parent.gameObject;
+                    parent = GameObject.FindObjectsOfType<GameObject>()[0]; //Not tested
                     break;
             }
             GameObject gameObject = new GameObject();
@@ -350,9 +371,10 @@ namespace KK_FBIOpenUp {
                 case KK_FBIOpenUp.GameMode.FreeH:
                     Light light = Hooks.hSceneProc.lightCamera;
                     if (null != light) {
-                        freeHLight= light;
+                        freeHLight = light;
                     } else {
                         Logger.LogError("Get Camera Light FAILED");
+                        KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.MainGame;
                         goto default;
                     }
                     if (goLighter) {
@@ -404,95 +426,109 @@ namespace KK_FBIOpenUp {
 
         //加亮動畫的計數器
         private static int reflectCount = 0;
+        private static bool ChangeWithoutShiftPicture = false;
         internal static void Update() {
             //長按計時
             if (downState) {
                 btnClickTimer += Time.deltaTime;
             }
 
-            //影片delay兩秒再做轉場動畫，讓FBIOpenUp影片先在外頭撥放兩秒
-            if (videoTimer > 0) {
+            if (ChangeWithoutShiftPicture) {
+                StepLightAndPlay();
+            } else if (videoTimer > 0) {
+                //影片delay兩秒再做轉場動畫，讓FBIOpenUp影片先在外頭撥放兩秒
                 videoTimer -= Time.deltaTime;
-            } else if (null != shiftPicture && null != shiftPicture.Transform) {
+            } else if ((null != shiftPicture && null != shiftPicture.Transform)) {
                 shiftPicture.Transform.position = Vector3.SmoothDamp(shiftPicture.Transform.position, shiftPicture.targetPosition, ref shiftPicture.velocity, shiftPicture.smoothTime);
                 //Logger.LogDebug($"Velocity:{shiftPicture.velocity} ; Image.position:{shiftPicture.Transform.position}");
                 if ((shiftPicture.Transform.position - shiftPicture.targetPosition).sqrMagnitude < 1f) {
-                    if (intensityState && reflectCount < 60) {
-                        switch (KK_FBIOpenUp.nowGameMode) {
-                            case KK_FBIOpenUp.GameMode.Studio:
-                                studioLightInfo.intensity += (intensityTo - intensityFrom) / 60;
-                                studioLightCalc.Invoke("Reflect");
-                                break;
-                            case KK_FBIOpenUp.GameMode.FreeH:
-                                freeHLight.intensity += (intensityTo - intensityFrom) / 60;
-                                break;
-                            case KK_FBIOpenUp.GameMode.Maker:
-                                makerLight.intensity += (intensityTo - intensityFrom) / 60;
-                                break;
-                        }
-                        reflectCount++;
-                    } else {
-                        Logger.LogDebug($"At Step: {step}");
-                        switch (step) {
-                            case 0:
-                                //消滅圖片
-                                if (null != shiftPicture.Transform.parent.gameObject) {
-                                    GameObject.Destroy(shiftPicture.Transform.parent.gameObject);
-                                    shiftPicture.image = null;
-                                    shiftPicture.video = null;
-                                    shiftPicture = null;
-                                }
-                                break;
-                            case 1:
-                                //由中間移動到左邊
-                                shiftPicture.targetPosition = new Vector3(0 - (shiftPicture.Width / 2), Screen.height / 2);
-                                stepSet(0);
-                                break;
-                            case 2:
-                                //由中間移動到右邊
-                                shiftPicture.targetPosition = new Vector3(Screen.width + shiftPicture.Width / 2, Screen.height / 2);
-                                stepSet(0);
-                                break;
-                            case 10:
-                                //將角色全部替換
-                                //加亮角色光
-                                reflectCount = 0;
-                                ToggleFlashLight(true);
-                                stepAdd();
-                                break;
-                            case 11:
-                                intensityState = false;
-                                Patches.ChangeAllCharacters(false);
-                                reflectCount = 0;
-                                ToggleFlashLight(false);
-                                stepAdd();
-                                break;
-                            case 12:
-                                intensityState = false;
-                                stepSet(1);
-                                break;
-                            case 20:
-                                //將角色換回
-                                //加亮角色光
-                                reflectCount = 0;
-                                ToggleFlashLight(true);
-                                stepAdd();
-                                break;
-                            case 21:
-                                intensityState = false;
-                                Patches.ChangeAllCharacters(true);
-                                reflectCount = 0;
-                                ToggleFlashLight(false);
-                                stepAdd();
-                                break;
-                            case 22:
-                                intensityState = false;
-                                stepSet(2);
-                                break;
-                        }
-                    }
+                    StepLightAndPlay();
                 }
+            }
+        }
 
+        private static void StepLightAndPlay() {
+            if (intensityState && reflectCount < 60) {
+                switch (KK_FBIOpenUp.nowGameMode) {
+                    case KK_FBIOpenUp.GameMode.Studio:
+                        studioLightInfo.intensity += (intensityTo - intensityFrom) / 60;
+                        studioLightCalc.Invoke("Reflect");
+                        break;
+                    case KK_FBIOpenUp.GameMode.FreeH:
+                        freeHLight.intensity += (intensityTo - intensityFrom) / 60;
+                        break;
+                    case KK_FBIOpenUp.GameMode.Maker:
+                        makerLight.intensity += (intensityTo - intensityFrom) / 60;
+                        break;
+                }
+                reflectCount++;
+            } else {
+                Logger.LogDebug($"At Step: {step}");
+                switch (step) {
+                    case 0:
+                        //消滅圖片
+                        if (null != shiftPicture.Transform.parent.gameObject) {
+                            GameObject.Destroy(shiftPicture.Transform.parent.gameObject);
+                            shiftPicture.image = null;
+                            shiftPicture.video = null;
+                            shiftPicture = null;
+                        }
+                        break;
+                    case 1:
+                        //由中間移動到左邊
+                        shiftPicture.targetPosition = new Vector3(0 - (shiftPicture.Width / 2), Screen.height / 2);
+                        stepSet(0);
+                        break;
+                    case 2:
+                        //由中間移動到右邊
+                        shiftPicture.targetPosition = new Vector3(Screen.width + shiftPicture.Width / 2, Screen.height / 2);
+                        stepSet(0);
+                        break;
+                    case 10:
+                        //將角色全部替換
+                        //加亮角色光
+                        reflectCount = 0;
+                        ToggleFlashLight(true);
+                        stepAdd();
+                        break;
+                    case 11:
+                        intensityState = false;
+                        Patches.ChangeAllCharacters(false);
+                        reflectCount = 0;
+                        ToggleFlashLight(false);
+                        stepAdd();
+                        break;
+                    case 12:
+                        intensityState = false;
+                        if (!ChangeWithoutShiftPicture) {
+                            stepSet(1);
+                        } else {
+                            ChangeWithoutShiftPicture = false;
+                        }
+                        break;
+                    case 20:
+                        //將角色換回
+                        //加亮角色光
+                        reflectCount = 0;
+                        ToggleFlashLight(true);
+                        stepAdd();
+                        break;
+                    case 21:
+                        intensityState = false;
+                        Patches.ChangeAllCharacters(true);
+                        reflectCount = 0;
+                        ToggleFlashLight(false);
+                        stepAdd();
+                        break;
+                    case 22:
+                        intensityState = false;
+                        if (!ChangeWithoutShiftPicture) {
+                            stepSet(2);
+                        } else {
+                            ChangeWithoutShiftPicture = false;
+                        }
+                        break;
+                }
                 void stepAdd() {
                     step++;
                 }

@@ -1,13 +1,11 @@
 ﻿using ChaCustom;
-using Extension;
 using HarmonyLib;
 using Studio;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace KK_FBIOpenUp {
     internal static class Hooks {
+        #region 繪製圖標
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "InitCharaList")]
         public static void InitCharaListPostfix(CharaList __instance) {
             //屏蔽男的，未來再看跨性別運作(?
@@ -36,10 +34,12 @@ namespace KK_FBIOpenUp {
         public static void StartPostfix_FreeH(HSceneProc __instance) {
             KK_FBIOpenUp._isenabled = false;
             hSceneProc = __instance;
-            UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.FreeH);
+            UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.FreeH,1);
+            UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.FreeH,2);
         }
+        #endregion
 
-
+        #region Patch換人
         [HarmonyPostfix, HarmonyPatch(typeof(AddObjectFemale), "Add", new Type[] { typeof(ChaControl), typeof(OICharInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject), typeof(bool), typeof(int) })]
         public static void AddPostfix(ChaControl _female, OICharInfo _info) {
             if (KK_FBIOpenUp._isenabled) {
@@ -60,7 +60,9 @@ namespace KK_FBIOpenUp {
                 Patches.ChangeChara(Singleton<CustomBase>.Instance.chaCtrl);
             }
         }
+        #endregion
 
+        #region 暫時屏蔽運作，用在讀取人物清單之類的地方
         public static bool BlockChanging { get; set; } = false;
 
         [HarmonyPrefix, HarmonyPatch(typeof(CharaList), "InitFemaleList")]
@@ -90,5 +92,6 @@ namespace KK_FBIOpenUp {
             }
             KK_FBIOpenUp.Logger.LogDebug($"Set Init: {flag}");
         }
+        #endregion
     }
 }
