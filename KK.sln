@@ -31,6 +31,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioAutoCloseLoadingSc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_PluginListTool", "KK_PluginListTool\KK_PluginListTool.csproj", "{EAA640EA-AC91-41C6-A655-4AB5A364986D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BEA015AE-BB02-4641-8DAE-CEF9BB0A2191}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Extension\Extension.projitems*{0646be09-f599-4edb-b115-de4043c8d3be}*SharedItemsImports = 13
@@ -127,7 +132,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		RESX_NeutralResourcesLanguage = en-US
 		SolutionGuid = {9C634E2C-489D-470F-94E5-72383D9364B5}
+		RESX_NeutralResourcesLanguage = en-US
 	EndGlobalSection
 EndGlobal

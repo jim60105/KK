@@ -11,7 +11,7 @@ namespace KK_FBIOpenUp {
             //屏蔽男的，未來再看跨性別運作(?
             bool flag = string.Equals(__instance.name, "00_Female");
             if (SampleChara.chaFile.parameter.sex != 1) { flag = !flag; }
-            if (flag) {
+            if (flag && null == UnityEngine.GameObject.Find($"StudioScene/Canvas Main Menu/01_Add/{__instance.name}/redBagBtn")) {
                 KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.Studio;
                 UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.Studio, __instance);
             }

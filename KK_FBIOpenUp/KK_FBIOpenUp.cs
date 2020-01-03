@@ -17,7 +17,6 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
-using ActionGame.H;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Harmony;
@@ -30,7 +29,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using UILib;
-using UnityEngine;
 
 namespace KK_FBIOpenUp {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
@@ -38,11 +36,10 @@ namespace KK_FBIOpenUp {
     public class KK_FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "19.12.31.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.0";
+        internal const string PLUGIN_VERSION = "20.01.03.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.1";
 
         internal static bool _isenabled = false;
-        internal static bool _isABMXExist = false;
         internal static GameMode nowGameMode;
         internal enum GameMode {
             Studio = 0,
@@ -73,25 +70,27 @@ namespace KK_FBIOpenUp {
         public void Update() => UnityStuff.Update();
 
         public void Start() {
-            _isABMXExist = null != Extension.Extension.TryGetPluginInstance("KKABMX.Core", new Version(3, 3));
-
             //讀取config
             Enable = Config.Bind<bool>("Config", "Enable", false);
             _isenabled = Enable.Value;
 
-            Sample_chara = Config.Bind<string>("Config", "Sample chara", "", "Leave blank to use my default loli");
-            string sampleCharaPath = Sample_chara.Value;
-            if (sampleCharaPath.Length == 0) {
-                Logger.LogDebug("Use default chara");
-                //Logger.LogDebug("FBI! Open Up!");
-                Assembly ass = Assembly.GetExecutingAssembly();
-                using (Stream stream = ass.GetManifestResourceStream("KK_FBIOpenUp.Resources.sample_chara.png")) {
-                    Patches.LoadSampleChara(stream);
-                }
-            } else {
-                Logger.LogDebug("Load path: " + sampleCharaPath);
-                using (FileStream fileStream = new FileStream(sampleCharaPath, FileMode.Open, FileAccess.Read)) {
-                    Patches.LoadSampleChara(fileStream);
+            Sample_chara = Config.Bind<string>("Config", "Sample chara", "", "Leave blank to use my default loli, or use paths like UserData/chara/female/*.png");
+            Sample_chara.SettingChanged += SetCharaPath;
+            SetCharaPath(null, null);
+            void SetCharaPath(object sender, EventArgs e) {
+                try {
+                    string sampleCharaPath = Path.GetFullPath(Sample_chara.Value);
+                        using (FileStream fileStream = new FileStream(sampleCharaPath, FileMode.Open, FileAccess.Read)) {
+                            Patches.LoadSampleChara(fileStream);
+                        }
+                        Logger.LogDebug($@"Load path: {sampleCharaPath}");
+                } catch (Exception) {
+                    Logger.LogDebug("Use default chara");
+                    Logger.LogDebug("FBI! Open Up!");
+                    Assembly ass = Assembly.GetExecutingAssembly();
+                    using (Stream stream = ass.GetManifestResourceStream("KK_FBIOpenUp.Resources.sample_chara.png")) {
+                        Patches.LoadSampleChara(stream);
+                    }
                 }
             }
 
@@ -100,26 +99,22 @@ namespace KK_FBIOpenUp {
             Patches.ChangeRate = rate;
             Logger.LogDebug("Change Rate: " + rate);
 
-            Video_related_path = Config.Bind<string>("Config", "Video related path", "UserData/audio/FBI.mp4", "Relative path where FBI Open Up video is located");
-            string tempVideoPath = Video_related_path.Value;
-            if (!File.Exists(tempVideoPath)) {
-                Logger.LogError("Video Not Found: " + tempVideoPath);
+            Video_related_path = Config.Bind<string>("Config", "Video path", "UserData/audio/FBI.mp4", "Path where FBI Open Up video is located");
+            try {
+                string tempVideoPath = Uri.UnescapeDataString(new Uri(Path.GetFullPath(Video_related_path.Value)).ToString());
+                if (File.Exists(new Uri(tempVideoPath).LocalPath)) {
+                    videoPath = tempVideoPath;
+                } else {
+                    throw new Exception();
+                }
+            } catch (Exception) {
+                Logger.LogError($@"Video Not Found: {Video_related_path.Value}");
                 videoPath = null;
-            } else {
-                videoPath = $"file://{Application.dataPath}/../{tempVideoPath}";
             }
 
             Video_volume = Config.Bind<float>("Config", "Video volume", 0.06f);
             videoVolume = Video_volume.Value;
             Logger.LogDebug($"Set video volume to {videoVolume}");
-
-            //if (Application.productName == "CharaStudio") {
-            //    nowGameMode = GameMode.Studio;
-            //} else {
-            //    if (Manager.Game.Instance != null) {
-            //        nowGameMode = GameMode.MainGame;
-            //    }
-            //}
         }
 
         internal static void SetEnabled() {
@@ -134,7 +129,6 @@ namespace KK_FBIOpenUp {
     static class SampleChara {
         internal static List<float> shapeValueFace;
         internal static List<float> shapeValueBody;
-        //internal static PluginData ABMXData;
         internal static ChaFileControl chaFile;
     }
 
@@ -166,13 +160,6 @@ namespace KK_FBIOpenUp {
             //Logger.LogMessage("Length Body: " + body.shapeValueBody.Length);
             SampleChara.shapeValueFace = face.shapeValueFace.ToList();
             SampleChara.shapeValueBody = body.shapeValueBody.ToList();
-
-            //SampleChara.ABMXData = ExtendedSave.GetExtendedDataById(SampleChara.chaFile, "KKABMPlugin.ABMData");
-            //if (null != SampleChara.ABMXData) {
-            //    Logger.LogDebug("Loaded sample chara ABMX");
-            //} else {
-            //    Logger.LogDebug("NO sample chara ABMX");
-            //}
         }
 
         /// <summary>
@@ -231,96 +218,12 @@ namespace KK_FBIOpenUp {
                 } else { Logger.LogError("Sample data is not match to target data!"); }
                 Logger.LogDebug("Changed body finish");
             }
-            //chaCtrl.Reload();
-
-            #region ABMX
-            //if (KK_FBIOpenUp._isABMXExist) {
-            //    //取得BoneController
-            //    object BoneController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
-            //    if (null == BoneController) {
-            //        Logger.LogDebug("No ABMX BoneController found");
-            //        return;
-            //    }
-
-            //    //建立重用function
-            //    void GetModifiers(Action<object> action) {
-            //        foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames")) {
-            //            var modifier = BoneController.Invoke("GetModifier", new object[] { boneName });
-            //            if (null != modifier) {
-            //                action(modifier);
-            //            }
-            //        }
-            //    }
-
-            //    //取得舊角色衣服ABMX數據
-            //    List<object> previousModifier = new List<object>();
-            //    GetModifiers(x => {
-            //        if ((bool)x.Invoke("IsCoordinateSpecific")) {
-            //            previousModifier.Add(x);
-            //        }
-            //    });
-
-            //    //將擴充資料由暫存複製到角色身上
-            //    ExtendedSave.SetExtendedDataById(chaCtrl.chaFile, "KKABMPlugin.ABMData", SampleChara.ABMXData);
-
-            //    //把擴充資料載入ABMX插件
-            //    BoneController.Invoke("OnReload", new object[] { 2, false });
-
-            //    //清理新角色數據，將衣服數據刪除
-            //    List<object> newModifiers = new List<object>();
-            //    int i = 0;
-            //    GetModifiers(x => {
-            //        if ((bool)x.Invoke("IsCoordinateSpecific")) {
-            //            Logger.LogDebug("Clean new coordinate ABMX BoneData: " + (string)x.GetProperty("BoneName"));
-            //            x.Invoke("MakeNonCoordinateSpecific");
-            //            var y = x.Invoke("GetModifier", new object[] { (ChaFileDefine.CoordinateType)0 });
-            //            y.Invoke("Clear");
-            //            x.Invoke("MakeCoordinateSpecific");    //保險起見以免後面沒有成功清除
-            //            i++;
-            //        } else {
-            //            newModifiers.Add(x);
-            //        }
-            //    });
-
-            //    //將舊的衣服數據合併回到角色身上
-            //    i = 0;
-            //    foreach (var modifier in previousModifier) {
-            //        string bonename = (string)modifier.GetProperty("BoneName");
-            //        if (!newModifiers.Any(x => string.Equals(bonename, (string)x.GetProperty("BoneName")))) {
-            //            BoneController.Invoke("AddModifier", new object[] { modifier });
-            //            Logger.LogDebug("Rollback cooridnate ABMX BoneData: " + bonename);
-            //        } else {
-            //            Logger.LogError("Duplicate coordinate ABMX BoneData: " + bonename);
-            //        }
-            //        i++;
-            //    }
-            //    Logger.LogDebug($"Merge {i} previous ABMX Bone Modifiers");
-
-            //    //重整
-            //    BoneController.SetProperty("NeedsFullRefresh", true);
-            //    BoneController.SetProperty("NeedsBaselineUpdate", true);
-            //    BoneController.Invoke("LateUpdate");
-
-            //    //把ABMX的數據存進擴充資料
-            //    BoneController.Invoke("OnCardBeingSaved", new object[] { 1 });
-            //    BoneController.Invoke("OnReload", new object[] { 2, false });
-
-            //    //列出角色身上所有ABMX數據
-            //    Logger.LogDebug("--List all exist ABMX BoneData--");
-            //    foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames", null)) {
-            //        var modifier = BoneController.Invoke("GetModifier", new object[] { boneName });
-            //        if (null != modifier) {
-            //            Logger.LogDebug("" + boneName);
-            //        }
-            //    }
-            //}
-            #endregion
-            Logger.LogDebug($"Changed.");
         }
 
         /// <summary>
         /// 將所有角色做替換
         /// </summary>
+        /// <param name="rollback">True時做全部回退</param>
         public static void ChangeAllCharacters(bool rollback = false) {
             List<ChaControl> charList = new List<ChaControl>();
             Logger.LogDebug($"GameMode: {Enum.GetNames(typeof(KK_FBIOpenUp.GameMode))[(int)KK_FBIOpenUp.nowGameMode]}");
@@ -339,12 +242,11 @@ namespace KK_FBIOpenUp {
                     break;
             }
             if (null == charList) {
-                //Logger.LogError("Get CharaList FAILED! This should not happen!");
-                if(KK_FBIOpenUp.nowGameMode == KK_FBIOpenUp.GameMode.FreeH) {
+                if (KK_FBIOpenUp.nowGameMode == KK_FBIOpenUp.GameMode.FreeH) {
                     Logger.LogWarning("Get CharaList FAILED! Try to change to MainGame mode.");
                     KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.MainGame;
                     ChangeAllCharacters(rollback);
-                } else if(KK_FBIOpenUp.nowGameMode == KK_FBIOpenUp.GameMode.MainGame) {
+                } else if (KK_FBIOpenUp.nowGameMode == KK_FBIOpenUp.GameMode.MainGame) {
                     Logger.LogWarning("Get CharaList FAILED! Try to change to FreeH mode.");
                     KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.FreeH;
                     ChangeAllCharacters(rollback);
@@ -374,6 +276,9 @@ namespace KK_FBIOpenUp {
             }
         }
 
+        /// <summary>
+        /// 復原角色
+        /// </summary>
         public static void RollbackChara(ChaControl chaCtrl) {
             if (Hooks.BlockChanging || null == chaCtrl || null == chaCtrl.chaFile) {
                 return;

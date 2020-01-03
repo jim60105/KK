@@ -84,7 +84,8 @@ namespace KK_FBIOpenUp {
         /// <summary>
         /// 建立紅色書包圖標
         /// </summary>
-        /// <param name="param">Studio要傳入__instance，其他GameMode可留空</param>
+        /// <param name="gameMode">遊戲模式</param>
+        /// <param name="param">我知道這不安全，但這很方便σ`∀´)σ</param>
         internal static void DrawRedBagBtn(KK_FBIOpenUp.GameMode gameMode, object param = null) {
             GameObject original, parent;
             Vector2 offsetMin, offsetMax;
@@ -111,7 +112,6 @@ namespace KK_FBIOpenUp {
                     break;
                 case KK_FBIOpenUp.GameMode.FreeH:
                     original = GameObject.Find("Canvas/SubMenu/DressCategory/ClothChange");
-                    //if (Hooks.hSceneProc.GetField("lstFemale").ToList<ChaControl>().Count <= 1) {
                     int i = (int)param;
                     if (i == 1) {
                         parent = GameObject.Find("Canvas/SubMenu/DressCategory");
@@ -119,7 +119,6 @@ namespace KK_FBIOpenUp {
                         parent = GameObject.Find("Canvas/SubMenu/SecondDressCategory");
                     }
 
-                    //parent = original.transform.parent.gameObject;
                     offsetMin = new Vector2(5, -198);
                     offsetMax = new Vector2(107, -96);
                     break;
@@ -153,7 +152,6 @@ namespace KK_FBIOpenUp {
             pointerDown.callback.AddListener((baseEventData) => {
                 btnClickTimer = 0;
                 downState = true;
-                //baseEventData.selectedObject.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.65f);
             });
             trigger.triggers.Add(pointerDown);
 
@@ -165,7 +163,6 @@ namespace KK_FBIOpenUp {
                 downState = false;
                 float clickDeltaTime = btnClickTimer;
                 btnClickTimer = 0;
-                //baseEventData.selectedObject.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
                 switch (KK_FBIOpenUp.nowGameMode) {
                     case KK_FBIOpenUp.GameMode.FreeH:
                         KK_FBIOpenUp.SetEnabled();
@@ -232,6 +229,7 @@ namespace KK_FBIOpenUp {
                 case KK_FBIOpenUp.GameMode.Maker:
                     parent = GameObject.Find("CustomScene/CustomRoot/FrontUIGroup/CustomUIGroup/CvsCoordinateType/redBagBtn");
                     break;
+                //FreeH死都不成功，放棄
                 //case KK_FBIOpenUp.GameMode.FreeH:
                 //    parent = GameObject.Find("CommonSpace");
                 //    break;
@@ -310,6 +308,7 @@ namespace KK_FBIOpenUp {
 
                     videoPlayer.Prepare();
                     videoPlayer.prepareCompleted += (source) => {
+                        ///TODO 這實際上沒有辦法真的catch到錯誤，待修
                         if (videoPlayer.texture == null) {
                             Logger.LogError("Video not found");
                             GameObject.Destroy(shiftPicture.Transform.parent.gameObject);
@@ -419,6 +418,7 @@ namespace KK_FBIOpenUp {
                     }
                     break;
                 default:
+                    ///TODO MainGame角色光未完成
                     intensityState = false;
                     return;
             }
