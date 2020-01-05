@@ -1,10 +1,13 @@
 # 開門查水表！ (FBI Open Up)
+<a href="https://gfycat.com/genuineredindianhare" target="_blank"><img src="../demo/demo9.png" width="800" title="Click the image to watch demo"></a><br>
+↑ 請點選圖片觀看範例影片 ↑ Click the image to watch demo! ↑  (備用載點: [影片](../demo/demo9.mp4))<br>
 此插件可依照原始角色，將她們轉變為小蘿莉<br>
 支援替換模板角色，例如: 若將模板自訂為巨乳姊姊，就可以轉變功能為替換成大姊姊<br>
 可在Studio、Maker和Free H內執行<br>
 我置入了幾張過場圖片和動畫，作為娛樂效果
 
 ### 使用說明
+![image](../demo/demo9-1.png)<br>
 1. 功能觸發圖標為一紅色書包，位置紀錄如下
     - Studio: 位在「Add」→「女角色」
     - Maker: 位在正上方之「衣裝切換欄」的右側
@@ -26,11 +29,10 @@
 - Video volume: 影片音量<br>預設為0.06，請視喜好自行調整。
 
 ### ※注意事項※
-1. 雖然目前有作主遊戲之功能，但並未完整測試<br>
-推測多次轉換場景可能會造成運行失敗，但我並沒有計畫再完善它<br>
+1. 雖然目前有作主遊戲之功能，但並未完整測試，且沒有計畫再完善它<br>
 **主遊戲功能請單純作為附加功能視之**
 2. 目前只支援替換女性角色
-3. Free H內沒有過場插圖、主遊戲沒有人物加亮動畫
+3. Free H內沒有過場插圖；主遊戲沒有人物加亮動畫
 4. 模板角色可在Configuration Manager設定內更改，製作要點請見後述
 5. 如果不想要FBI影片，請直接移除mp4檔案即可
 

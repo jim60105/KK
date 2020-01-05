@@ -83,6 +83,8 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 重新Enable後會立即倒出當前加載清單
 
 # 開門查水表！ (FBI Open Up)
+<a href="https://gfycat.com/genuineredindianhare" target="_blank"><img src="demo/demo9.png" width="800" title="Click the image to watch demo"></a><br>
+↑ 請點選圖片觀看範例影片 ↑ Click the image to watch demo! ↑  (備用載點: [影片](demo/demo9.mp4))<br>
 此插件可依照原始角色，將她們轉變為小蘿莉<br>
 可在Studio、Maker和Free H內執行<br>
 支援替換模板角色，例如: 若將模板自訂為巨乳姊姊，就可以轉變功能為替換成大姊姊<br>

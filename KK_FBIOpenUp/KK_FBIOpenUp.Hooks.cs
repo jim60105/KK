@@ -8,9 +8,8 @@ namespace KK_FBIOpenUp {
         #region 繪製圖標
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "InitCharaList")]
         public static void InitCharaListPostfix(CharaList __instance) {
-            //屏蔽男的，未來再看跨性別運作(?
-            bool flag = string.Equals(__instance.name, "00_Female");
-            if (SampleChara.chaFile.parameter.sex != 1) { flag = !flag; }
+            bool flag = string.Equals(__instance.name, "00_Female") == (SampleChara.chaFile.parameter.sex !=1) ;
+            if (Extension.Extension.TryGetPluginInstance("com.jim60105.kk.studioallgirlsplugin")) { flag = true; }
             if (flag && null == UnityEngine.GameObject.Find($"StudioScene/Canvas Main Menu/01_Add/{__instance.name}/redBagBtn")) {
                 KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.Studio;
                 UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.Studio, __instance);
@@ -75,15 +74,15 @@ namespace KK_FBIOpenUp {
             SetInitFlag(false);
         }
 
-        [HarmonyPrefix, HarmonyPatch(typeof(SceneLoadScene), "Awake")]
-        public static void AwakePrefix() {
-            SetInitFlag(true);
-        }
+        //[HarmonyPrefix, HarmonyPatch(typeof(SceneLoadScene), "Awake")]
+        //public static void AwakePrefix() {
+        //    SetInitFlag(true);
+        //}
 
-        [HarmonyPostfix, HarmonyPatch(typeof(SceneLoadScene), "OnClickClose")]
-        public static void OnClickClosePostfix() {
-            SetInitFlag(false);
-        }
+        //[HarmonyPostfix, HarmonyPatch(typeof(SceneLoadScene), "OnClickClose")]
+        //public static void OnClickClosePostfix() {
+        //    SetInitFlag(false);
+        //}
 
         public static void SetInitFlag(bool flag) {
             BlockChanging = flag;

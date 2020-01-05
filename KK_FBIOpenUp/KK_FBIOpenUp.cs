@@ -80,10 +80,10 @@ namespace KK_FBIOpenUp {
             void SetCharaPath(object sender, EventArgs e) {
                 try {
                     string sampleCharaPath = Path.GetFullPath(Sample_chara.Value);
-                        using (FileStream fileStream = new FileStream(sampleCharaPath, FileMode.Open, FileAccess.Read)) {
-                            Patches.LoadSampleChara(fileStream);
-                        }
-                        Logger.LogDebug($@"Load path: {sampleCharaPath}");
+                    using (FileStream fileStream = new FileStream(sampleCharaPath, FileMode.Open, FileAccess.Read)) {
+                        Patches.LoadSampleChara(fileStream);
+                    }
+                    Logger.LogDebug($@"Load path: {sampleCharaPath}");
                 } catch (Exception) {
                     Logger.LogDebug("Use default chara");
                     Logger.LogDebug("FBI! Open Up!");
@@ -95,9 +95,12 @@ namespace KK_FBIOpenUp {
             }
 
             Change_rate = Config.Bind<float>("Config", "Change rate", 0.77f, "Proportion of change from original character to sample character, 1 is completely changed");
-            float rate = Change_rate.Value;
-            Patches.ChangeRate = rate;
-            Logger.LogDebug("Change Rate: " + rate);
+            Change_rate.SettingChanged += ChangeRate;
+            ChangeRate(null, null);
+            void ChangeRate(object sender, EventArgs e) {
+                Patches.ChangeRate = Change_rate.Value;
+                Logger.LogDebug("Change Rate: " + Change_rate.Value);
+            }
 
             Video_related_path = Config.Bind<string>("Config", "Video path", "UserData/audio/FBI.mp4", "Path where FBI Open Up video is located");
             try {
@@ -174,7 +177,7 @@ namespace KK_FBIOpenUp {
             }
 
             if (chaCtrl.chaFile.parameter.sex != SampleChara.chaFile.parameter.sex) {
-                Logger.LogInfo("Skip changing because of wrong sex.");
+                Logger.LogWarning($"Skip changes that differ from Sample Chara's gender: {chaCtrl.fileParam.fullname}");
                 return;
             }
 
@@ -218,6 +221,7 @@ namespace KK_FBIOpenUp {
                 } else { Logger.LogError("Sample data is not match to target data!"); }
                 Logger.LogDebug("Changed body finish");
             }
+            Logger.LogInfo($"Changed: {chaCtrl.fileParam.fullname}");
         }
 
         /// <summary>
@@ -226,10 +230,15 @@ namespace KK_FBIOpenUp {
         /// <param name="rollback">True時做全部回退</param>
         public static void ChangeAllCharacters(bool rollback = false) {
             List<ChaControl> charList = new List<ChaControl>();
+            Dictionary<Studio.OCIChar, float> mouthOpen = new Dictionary<Studio.OCIChar, float>();
             Logger.LogDebug($"GameMode: {Enum.GetNames(typeof(KK_FBIOpenUp.GameMode))[(int)KK_FBIOpenUp.nowGameMode]}");
             switch (KK_FBIOpenUp.nowGameMode) {
                 case KK_FBIOpenUp.GameMode.Studio:
-                    charList = Studio.Studio.Instance.dicInfo.Values.OfType<Studio.OCIChar>().Select(x => x.charInfo).ToList();
+                    charList = Studio.Studio.Instance.dicInfo.Values.OfType<Studio.OCIChar>().Select(delegate (Studio.OCIChar x) {
+                        //處理嘴巴open歸零問題
+                        mouthOpen.Add(x, x.oiCharInfo.mouthOpen);
+                        return x.charInfo;
+                    }).ToList();
                     break;
                 case KK_FBIOpenUp.GameMode.Maker:
                     charList.Add(Singleton<ChaCustom.CustomBase>.Instance.chaCtrl);
@@ -256,6 +265,7 @@ namespace KK_FBIOpenUp {
                 return;
             }
             Logger.LogDebug($"Get {charList.Count} charaters.");
+
             foreach (ChaControl chaCtrl in charList) {
                 if (null == chaCtrl) {
                     continue;
@@ -272,6 +282,13 @@ namespace KK_FBIOpenUp {
                     default:
                         chaCtrl.Reload();
                         break;
+                }
+            }
+
+            //處理嘴巴open歸零問題
+            if (KK_FBIOpenUp.nowGameMode == KK_FBIOpenUp.GameMode.Studio) {
+                foreach (KeyValuePair<Studio.OCIChar, float> kv in mouthOpen) {
+                    kv.Key.ChangeMouthOpen(kv.Value);
                 }
             }
         }
