@@ -51,17 +51,7 @@ namespace KK_IrisOverlayByCoordinate {
         private static readonly ManualLogSource Logger = KK_IrisOverlayByCoordinate.Logger;
         private KoiSkinOverlayController KSOXController;
         private KoiSkinOverlayGui KoiSkinOverlayGui;
-        protected override void Start() {
-            KSOXController = CharacterApi.GetRegisteredBehaviour(typeof(KoiSkinOverlayController)).Instances.First() as KoiSkinOverlayController;
-            KoiSkinOverlayGui = Extension.Extension.TryGetPluginInstance("KSOX_GUI") as KoiSkinOverlayGui;
-            BackCoordinateType = CurrentCoordinate.Value;
-
-            //切換服裝
-            CurrentCoordinate.Subscribe(onNext: delegate { ChangeCoordinate(); });
-            OnReload(KoikatuAPI.GetCurrentGameMode());
-        }
-
-        //儲存服裝的瞳孔資料
+        private ChaFileDefine.CoordinateType BackCoordinateType;
         public readonly Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>> Overlays = new Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>>();
         public Dictionary<TexType, byte[]> CurrentIrisOverlay {
             get {
@@ -74,8 +64,17 @@ namespace KK_IrisOverlayByCoordinate {
                 Overlays[CurrentCoordinate.Value] = value;
             }
         }
-        private ChaFileDefine.CoordinateType BackCoordinateType;
 
+        protected override void Start() {
+            KSOXController = CharacterApi.GetRegisteredBehaviour(typeof(KoiSkinOverlayController)).Instances.First() as KoiSkinOverlayController;
+            KoiSkinOverlayGui = Extension.Extension.TryGetPluginInstance("KSOX_GUI") as KoiSkinOverlayGui;
+            BackCoordinateType = CurrentCoordinate.Value;
+
+            CurrentCoordinate.Subscribe(onNext: delegate { ChangeCoordinate(); });
+            OnReload(KoikatuAPI.GetCurrentGameMode());
+        }
+
+        #region SaveLoad
         protected override void OnCardBeingSaved(GameMode currentGameMode) {
             ChangeCoordinate();
             //保存此插件資料
@@ -119,7 +118,9 @@ namespace KK_IrisOverlayByCoordinate {
             }
             OverWriteIrisOverlay();
         }
+        #endregion
 
+        #region Model
         //取得現在載入的Iris Overlay
         public Dictionary<TexType, byte[]> GetIrisOverlayLoaded() {
             Dictionary<TexType, byte[]> result = new Dictionary<TexType, byte[]>();
@@ -130,6 +131,7 @@ namespace KK_IrisOverlayByCoordinate {
             return result;
         }
 
+        //切換服裝
         private void ChangeCoordinate() {
             if (!KSOXController.Started) {
                 return;
@@ -142,7 +144,6 @@ namespace KK_IrisOverlayByCoordinate {
             }
         }
 
-
         //複寫Iris Overlay
         public void OverWriteIrisOverlay() {
             KSOXController.SetOverlayTex(CurrentIrisOverlay[TexType.EyeOver], TexType.EyeOver);
@@ -153,5 +154,6 @@ namespace KK_IrisOverlayByCoordinate {
 
             Logger.LogDebug("OverWrite Iris");
         }
+        #endregion
     }
 }

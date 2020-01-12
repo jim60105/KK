@@ -91,6 +91,11 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 我置入了幾張過場插入圖片和動畫作為娛樂效果<br>
 詳細說明請見: [另一篇Readme](KK_FBIOpenUp/README.md)
 
+# 瞳孔Overlay隨服裝變換 (Iris Overlay By Coordinate)
+讓瞳孔(Iris)Overlay隨著服裝(Coordinate)變更<br>
+反映在人物存檔和服裝存檔上<br>
+需求**KKAPI v1.9.5 & Illusion Overlay Mods v5.1.1** 以上版本
+
 # 需求依賴
 **BepInEx v5.0**<br>
 BepisPlugins r13.0.1
