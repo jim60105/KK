@@ -94,7 +94,8 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 # 瞳孔Overlay隨服裝變換 (Iris Overlay By Coordinate)
 讓瞳孔(Iris)Overlay隨著服裝(Coordinate)變更<br>
 反映在人物存檔和服裝存檔上<br>
-需求**KKAPI v1.9.5 & Illusion Overlay Mods v5.1.1** 以上版本
+需求**KKAPI v1.9.5 & Illusion Overlay Mods v5.1.1** 以上版本<br>
+**※預設不啟用存檔功能※**<br>
 
 # 需求依賴
 **BepInEx v5.0**<br>
