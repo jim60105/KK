@@ -38,8 +38,8 @@ namespace KK_IrisOverlayByCoordinate {
     class KK_IrisOverlayByCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Iris Overlay By Coordinate";
         internal const string GUID = "com.jim60105.kk.irisoverlaybycoordinate";
-        internal const string PLUGIN_VERSION = "20.01.13.1";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.1";
+        internal const string PLUGIN_VERSION = "20.01.14.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.2";
 
         internal static new ManualLogSource Logger;
         public static ConfigEntry<bool> EnableSaving { get; private set; }
@@ -69,17 +69,24 @@ namespace KK_IrisOverlayByCoordinate {
         }
 
         protected override void Start() {
-            KSOXController = CharacterApi.GetRegisteredBehaviour(typeof(KoiSkinOverlayController)).Instances.First() as KoiSkinOverlayController;
+            KSOXController = CharacterApi.GetRegisteredBehaviour(typeof(KoiSkinOverlayController)).Instances.Where(x=>x.ChaControl == base.ChaControl).Single() as KoiSkinOverlayController;
             KoiSkinOverlayGui = Extension.Extension.TryGetPluginInstance("KSOX_GUI") as KoiSkinOverlayGui;
             BackCoordinateType = CurrentCoordinate.Value;
 
             CurrentCoordinate.Subscribe(onNext: delegate { ChangeCoordinate(); });
             OnReload(KoikatuAPI.GetCurrentGameMode());
+
+            if (KoikatuAPI.GetCurrentGameMode() == GameMode.Studio) {
+                KKAPI.Studio.SaveLoad.StudioSaveLoadApi.SceneSave += new EventHandler(delegate (object sender, EventArgs e) {
+                    OnCardBeingSaved(GameMode.Studio);
+                });
+            }
         }
 
         #region SaveLoad
         protected override void OnCardBeingSaved(GameMode currentGameMode) {
-            ChangeCoordinate();
+            Overlays[BackCoordinateType] = GetIrisOverlayLoaded();
+            //ChangeCoordinate();
             if (!ShowSaveMessage(Overlays.Where(x => x.Key != CurrentCoordinate.Value).Select(x => x.Value).Where(x => x.Values.Where(y => null != y).Any()).Any())) {
                 return;
             }
@@ -88,11 +95,12 @@ namespace KK_IrisOverlayByCoordinate {
             pd.data.Add("AllIrisOverlays", Overlays);
 
             SetExtendedData(pd);
+            Logger.LogDebug("Save Chara data");
         }
 
-        protected override void OnReload(GameMode currentGameMode) {
+        protected override void OnReload(GameMode currentGameMode,bool maintain) {
             //沒有打勾就不載入
-            if (!CheckLoad()) return;
+            if (!CheckLoad() || maintain) return;
 
             PluginData data = GetExtendedData();
             Overlays.Clear();
@@ -110,7 +118,8 @@ namespace KK_IrisOverlayByCoordinate {
         }
 
         protected override void OnCoordinateBeingSaved(ChaFileCoordinate coordinate) {
-            ChangeCoordinate();
+            Overlays[BackCoordinateType] = GetIrisOverlayLoaded();
+            //ChangeCoordinate();
             if (!ShowSaveMessage(CurrentIrisOverlay.Values.Where(x => null != x).Any())) {
                 return;
             }
@@ -118,6 +127,7 @@ namespace KK_IrisOverlayByCoordinate {
             pd.data.Add("IrisOverlay", CurrentIrisOverlay);
 
             SetCoordinateExtendedData(coordinate, pd);
+            Logger.LogDebug("Save Coordinate data");
         }
 
         protected override void OnCoordinateBeingLoaded(ChaFileCoordinate coordinate) {
