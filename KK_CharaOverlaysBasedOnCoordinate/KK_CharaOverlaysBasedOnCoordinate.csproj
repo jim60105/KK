@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{94DDA10B-7A91-4F59-9C62-4AA363E1C36F}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>KK_IrisOverlayByCoordinate</RootNamespace>
-    <AssemblyName>KK_IrisOverlayByCoordinate</AssemblyName>
+    <RootNamespace>KK_CharaOverlaysBasedOnCoordinate</RootNamespace>
+    <AssemblyName>KK_CharaOverlaysBasedOnCoordinate</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -86,9 +86,13 @@
       <HintPath>C:\illusion\Koikatu\CharaStudio_Data\Managed\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>C:\illusion\Koikatu\CharaStudio_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="KK_IrisOverlayByCoordinate.cs" />
+    <Compile Include="KK_CharaOverlaysBasedOnCoordinate.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

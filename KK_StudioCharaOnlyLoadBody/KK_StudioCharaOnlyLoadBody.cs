@@ -41,8 +41,8 @@ namespace KK_StudioCharaOnlyLoadBody {
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "19.11.02.3";
-		internal const string PLUGIN_RELEASE_VERSION = "1.3.6";
+        internal const string PLUGIN_VERSION = "20.01.19.0";
+		internal const string PLUGIN_RELEASE_VERSION = "1.3.7";
 
         public static ConfigEntry<string> ExtendedDataToCopySetting { get; private set; }
         public static string[] ExtendedDataToCopy;
@@ -56,11 +56,12 @@ namespace KK_StudioCharaOnlyLoadBody {
                 "KSOX",
                 "com.deathweasel.bepinex.uncensorselector",
                 "KKABMPlugin.ABMData",
-                "com.bepis.sideloader.universalautoresolver"
+                "com.bepis.sideloader.universalautoresolver",
+                "com.jim60105.kk.charaoverlaysbasedoncoordinate"
             };
 
             //config.ini設定
-            ExtendedDataToCopySetting = Config.AddSetting("Config", "ExtendedData To Copy", string.Join(";", SampleArray), "If you want to load the ExtendedData when you load the body, add the ExtendedData ID.");
+            ExtendedDataToCopySetting = Config.Bind<string>("Config", "ExtendedData To Copy", string.Join(";", SampleArray), "If you want to load the ExtendedData when you load the body, add the ExtendedData ID.");
 
             ExtendedDataToCopy = ExtendedDataToCopySetting.Value.Split(';');
         }
@@ -155,9 +156,9 @@ namespace KK_StudioCharaOnlyLoadBody {
                 ocichar.ChangeBlink(ocichar.charFileStatus.eyesBlink);
                 ocichar.ChangeMouthOpen(ocichar.oiCharInfo.mouthOpen);
 
-                fakeChangeCharaFlag = true;
-                ocichar.ChangeChara(charaFileSort.selectPath);
-                fakeChangeCharaFlag = false;
+                //fakeChangeCharaFlag = true;
+                //ocichar.ChangeChara(charaFileSort.selectPath);
+                //fakeChangeCharaFlag = false;
 
                 KK_StudioCharaOnlyLoadBody.Logger.LogInfo($"Load Body: {oldName} -> {ocichar.charInfo.chaFile.parameter.fullname}");
             }
