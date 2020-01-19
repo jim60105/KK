@@ -40,10 +40,10 @@
 保留衣服和飾品，只替換人物<br>
 目前確定支援Plugin:<br>
 - Koikatu Overlay Mods v5.0.2
-- Koikatu More Accessories v1.0.6
+- Koikatu More Accessories v1.0.7
 - Koikatu KK_UncensorSelector v3.8.3
 - Koikatu KKABMX v3.3
-- Koikatu Chara Overlays Based On Coordinate v1.1.0
+- Koikatu Chara Overlays Based On Coordinate v1.1.0 <br>(Chara Overlays跟著服裝了，所以換人時將會保留)
 
 # Studio IK→FK修正插件 (Studio Reflect FK Fix)
 <a href="https://blog.maki0419.com/2019/05/koikatu-studio-reflect-fk-fix.html" target="_blank"><img src="demo/demo5-5.png" width="800" title="Click the image to watch demo"></a><br>
