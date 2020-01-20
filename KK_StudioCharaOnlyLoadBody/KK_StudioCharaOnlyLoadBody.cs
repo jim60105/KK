@@ -38,10 +38,11 @@ using UnityEngine.UI;
 namespace KK_StudioCharaOnlyLoadBody {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
+    [BepInDependency("com.joan6694.illusionplugins.moreaccessories", BepInDependency.DependencyFlags.SoftDependency)]
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "20.01.20.0";
+        internal const string PLUGIN_VERSION = "20.01.20.1";
         internal const string PLUGIN_RELEASE_VERSION = "1.3.7";
 
         public static ConfigEntry<string> ExtendedDataToCopySetting { get; private set; }
@@ -54,6 +55,7 @@ namespace KK_StudioCharaOnlyLoadBody {
 
             string[] SampleArray = {
                 "KSOX",
+                "com.jim60105.kk.charaoverlaysbasedoncoordinate",
                 "com.deathweasel.bepinex.uncensorselector",
                 "KKABMPlugin.ABMData",
                 "com.bepis.sideloader.universalautoresolver"
@@ -73,12 +75,15 @@ namespace KK_StudioCharaOnlyLoadBody {
     class Patches {
         private static readonly ManualLogSource Logger = KK_StudioCharaOnlyLoadBody.Logger;
         private static readonly GameObject[] btn = new GameObject[2];
+        internal static Type ChaFile_CopyAll_Patches = null;
         internal static Type MoreAccessories = null;
 
         internal static void Awake() {
+            //MoreAcc相關
             string path = Extension.Extension.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories")?.Info.Location;
             if (null != path && path.Length != 0) {
                 Assembly ass = Assembly.LoadFrom(path);
+                ChaFile_CopyAll_Patches = ass.GetType("MoreAccessoriesKOI.ChaFile_CopyAll_Patches");
                 MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
             }
         }
@@ -93,7 +98,7 @@ namespace KK_StudioCharaOnlyLoadBody {
             btn[i].transform.position += new Vector3(0, -25, 0);
             btn[i].transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(180, -401), new Vector2(390, -380));
 
-            //希望將來可以用文字UI，而不是內嵌於圖片
+            //依照語言選擇圖片
             switch (Application.systemLanguage) {
                 case SystemLanguage.Chinese:
                     btn[i].GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaOnlyLoadBody.Resources.buttonChange.png", 183, 20);
@@ -146,10 +151,14 @@ namespace KK_StudioCharaOnlyLoadBody {
 
                 string oldName = ocichar.charInfo.chaFile.parameter.fullname;
 
-                ChaControl tmpCtrl = Singleton<Manager.Character>.Instance.CreateFemale(null, -1);
+                //用這種方式初始化不會觸發其他鉤子
+                ChaControl tmpCtrl = new ChaControl();
+                tmpCtrl.SetProperty("chaFile", new ChaFileControl());
+
                 if (null != MoreAccessories) {
                     CopyAllMoreAccessoriesData(ocichar.charInfo, tmpCtrl);
                 }
+
                 //Main Load Control
                 if (chaCtrl.chaFile.LoadFileLimited(fullPath, (byte)sex, true, true, true, true, false) || !LoadExtendedData(ocichar, charaFileSort.selectPath, (byte)sex) || !UpdateTreeNodeObjectName(ocichar)) {
                     Logger.LogError("Load Body FAILED");
@@ -158,10 +167,8 @@ namespace KK_StudioCharaOnlyLoadBody {
                         CopyAllMoreAccessoriesData(tmpCtrl, ocichar.charInfo);
                     }
                 }
-                Logger.LogWarning("Errors may appear below.");
-                Logger.LogWarning("Because I removed a dummy used to copy MoreAcc, and some plugins didn't catch related errors.");
-                Logger.LogWarning("(｢･ω･)｢ 阿拉花瓜");
-                Singleton<Manager.Character>.Instance.DeleteChara(tmpCtrl);
+
+                GameObject.Destroy(tmpCtrl);
 
                 ocichar.charInfo.AssignCoordinate((ChaFileDefine.CoordinateType)ocichar.charInfo.fileStatus.coordinateType);
                 chaCtrl.Reload(false, false, false, false);
@@ -176,15 +183,11 @@ namespace KK_StudioCharaOnlyLoadBody {
                 ocichar.ActiveKinematicMode(OICharInfo.KinematicMode.FK, ocichar.oiCharInfo.enableFK, true);
                 ocichar.UpdateFKColor(new OIBoneInfo.BoneGroup[]
                 {
-                        OIBoneInfo.BoneGroup.Hair
+                    OIBoneInfo.BoneGroup.Hair
                 });
                 ocichar.ChangeEyesOpen(ocichar.charFileStatus.eyesOpenMax);
                 ocichar.ChangeBlink(ocichar.charFileStatus.eyesBlink);
                 ocichar.ChangeMouthOpen(ocichar.oiCharInfo.mouthOpen);
-
-                fakeChangeCharaFlag = true;
-                ocichar.ChangeChara(charaFileSort.selectPath);
-                fakeChangeCharaFlag = false;
 
                 Logger.LogInfo($"Load Body: {oldName} -> {ocichar.charInfo.chaFile.parameter.fullname}");
             }
@@ -192,6 +195,7 @@ namespace KK_StudioCharaOnlyLoadBody {
         }
 
         //將我的按鈕和官方的變更按鈕同步狀態
+        #region Button Interactive
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnDelete")]
         public static void OnDelete(CharaList __instance) {
             SetKeepCoorButtonInteractable(__instance);
@@ -225,9 +229,16 @@ namespace KK_StudioCharaOnlyLoadBody {
                 }
             }
         }
+        #endregion
 
-        //載入擴充資料
-        public static bool LoadExtendedData(OCIChar ocichar, string file, byte sex) {
+        /// <summary>
+        /// 載入擴充資料
+        /// </summary>
+        /// <param name="ocichar">要被替換的對象</param>
+        /// <param name="file">新角色存檔路徑</param>
+        /// <param name="sex">性別</param>
+        /// <returns></returns>
+        private static bool LoadExtendedData(OCIChar ocichar, string file, byte sex) {
             ChaFileControl tmpChaFile = new ChaFileControl();
             tmpChaFile.LoadCharaFile(file, sex);
 
@@ -235,7 +246,7 @@ namespace KK_StudioCharaOnlyLoadBody {
                 switch (ext) {
                     case "KKABMPlugin.ABMData":
                         //取得BoneController
-                        object BoneController = ocichar.charInfo.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
+                        object BoneController = ocichar.charInfo.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "BoneController"));
                         if (null == BoneController) {
                             Logger.LogDebug("No ABMX BoneController found");
                             break;
@@ -399,15 +410,7 @@ namespace KK_StudioCharaOnlyLoadBody {
                 KCOXController?.Invoke("OnCardBeingSaved", new object[] { 1 });
             }
 
-
             return true;
-        }
-
-        private static bool fakeCopyCall = false;
-        [HarmonyPrefix, HarmonyPatch(typeof(ChaFile), "CopyAll")]
-        public static bool CopyAllPrefix() {
-            //Logger.LogDebug("Block Origin Copy?:"+fakeCopyCall);
-            return !fakeCopyCall;
         }
 
         /// <summary>
@@ -416,9 +419,13 @@ namespace KK_StudioCharaOnlyLoadBody {
         /// <param name="oriChaCtrl">來源對象</param>
         /// <param name="targetChaCtrl">目標對象</param>
         public static void CopyAllMoreAccessoriesData(ChaControl oriChaCtrl, ChaControl targetChaCtrl) {
-            fakeCopyCall = true;
-            targetChaCtrl.chaFile.CopyAll(oriChaCtrl.chaFile);
-            fakeCopyCall = false;
+            //這條如果call ChaFile.CopyAll會觸發其他鉤子，導致ExtendedData無法正常作用
+            //所以用reflection處理
+            ChaFile_CopyAll_Patches.InvokeMember("Postfix",
+                BindingFlags.InvokeMethod | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance,
+                null,
+                null,
+                new object[] { (ChaFile)targetChaCtrl.chaFile, (ChaFile)oriChaCtrl.chaFile });
 
             MoreAccessories.InvokeMember("Update",
                 BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance,
@@ -429,7 +436,10 @@ namespace KK_StudioCharaOnlyLoadBody {
             Logger.LogDebug("Copy MoreAccessories Finish");
         }
 
-        //右側選單的名字更新
+        /// <summary>
+        /// 右側選單的名字更新
+        /// </summary>
+        /// <param name="oCIChar">更新對象</param>
         public static bool UpdateTreeNodeObjectName(OCIChar oCIChar) {
             oCIChar.charInfo.name = oCIChar.charInfo.chaFile.parameter.fullname;
             oCIChar.charInfo.chaFile.SetProperty("charaFileName", oCIChar.charInfo.chaFile.parameter.fullname);
@@ -437,13 +447,6 @@ namespace KK_StudioCharaOnlyLoadBody {
             Logger.LogDebug("Set Name to: " + oCIChar.charInfo.chaFile.parameter.fullname);
 
             return true;
-        }
-
-        //Some plugins hook on this function, so call it to trigger them. (Example: KKAPI.Chara.OnReload)
-        private static bool fakeChangeCharaFlag = false;
-        [HarmonyPrefix, HarmonyPatch(typeof(OCIChar), "ChangeChara")]
-        public static bool ChangeCharaPrefix(OCIChar __instance) {
-            return !fakeChangeCharaFlag;
         }
     }
 }
