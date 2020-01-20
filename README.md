@@ -43,7 +43,7 @@
 - Koikatu More Accessories v1.0.7
 - Koikatu KK_UncensorSelector v3.8.3
 - Koikatu KKABMX v3.3
-- Koikatu Chara Overlays Based On Coordinate v1.1.0 <br>(Chara Overlays跟著服裝了，所以換人時將會保留)
+- Koikatu Chara Overlays Based On Coordinate v1.1.0 <br>(Chara Overlays跟著插件了，如果要更改載入與否請至設定修改)
 
 # Studio IK→FK修正插件<br>Studio Reflect FK Fix
 <a href="https://blog.maki0419.com/2019/05/koikatu-studio-reflect-fk-fix.html" target="_blank"><img src="demo/demo5-5.png" width="800" title="Click the image to watch demo"></a><br>
