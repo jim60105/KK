@@ -42,8 +42,8 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.01.20.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
+        internal const string PLUGIN_VERSION = "20.01.21.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
 
         internal static new ManualLogSource Logger;
         public static ConfigEntry<bool> Enable_Saving_To_Chara { get; private set; }
@@ -127,18 +127,84 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
         private KoiSkinOverlayController KSOXController;
         private KoiSkinOverlayGui KoiSkinOverlayGui;
         private ChaFileDefine.CoordinateType BackCoordinateType;
-        public readonly Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>> Overlays = new Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>>();
+
+        private readonly List<byte[]> Resources = new List<byte[]>();
+        private readonly Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, int>> OverlayTable = new Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, int>>();
+
+        /// <summary>
+        /// 此插件內儲存的Overlay。Get method返回之Dictionary只能讀，寫入需以Set完整寫入
+        /// </summary>
+        public Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>> Overlays {
+            get {
+                Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>> overlays = new Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>>();
+                foreach (var kvp in OverlayTable) {
+                    TryGetOverlayByCoordinateType(kvp.Key, out var overlay);
+                    if (null == overlay) {
+                        overlay = new Dictionary<TexType, byte[]>();
+                        foreach (TexType type in Enum.GetValues(typeof(TexType))) {
+                            overlay[type] = null;
+                        }
+                    }
+                    overlays[kvp.Key] = overlay;
+                }
+                return overlays;
+            }
+            internal set {
+                OverlayTable.Clear();
+                Resources.Clear();
+                foreach (var kvp in value) {
+                    SetOverlayByCoordinateType(kvp.Key, kvp.Value);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 現在穿著的Overlay。Get method只能讀，寫入須以Set整個寫
+        /// </summary>
         public Dictionary<TexType, byte[]> CurrentOverlay {
             get {
-                if (!Overlays.TryGetValue(CurrentCoordinate.Value, out _)) {
+                Dictionary<TexType, byte[]> overlay;
+                while (!TryGetOverlayByCoordinateType(CurrentCoordinate.Value, out overlay)) {
                     CurrentOverlay = GetOverlayLoaded();
-                    //CurrentOverlay = null;
                 }
-                return Overlays[CurrentCoordinate.Value];
+                return overlay;
             }
             private set {
-                Overlays[CurrentCoordinate.Value] = value;
+                SetOverlayByCoordinateType(CurrentCoordinate.Value, value);
             }
+        }
+
+        public int InputOverlayTexture(byte[] b) {
+            //永遠在最前面放一個空內容
+            if (Resources.Count == 0) Resources.Add(new byte[] { });
+
+            var tmp = Resources.Select((texture, index) => new { texture, index }).Where(x => x.texture.SequenceEqual(b));
+            if (tmp.Any()) {
+                return tmp.Single().index;
+            } else {
+                Resources.Add(b);
+                return Resources.Count - 1;
+            }
+        }
+
+        public void SetOverlayByCoordinateType(ChaFileDefine.CoordinateType type, Dictionary<TexType, byte[]> overlay) {
+            OverlayTable[type] = new Dictionary<TexType, int>();
+            foreach (var kvp in overlay) {
+                OverlayTable[type][kvp.Key] = InputOverlayTexture(kvp.Value);
+            }
+        }
+
+        public bool TryGetOverlayByCoordinateType(ChaFileDefine.CoordinateType type, out Dictionary<TexType, byte[]> result) {
+            result = new Dictionary<TexType, byte[]>();
+            if (OverlayTable.TryGetValue(type, out var tmp)) {
+                foreach (var kvp in tmp) {
+                    result.Add(kvp.Key, kvp.Value < Resources.Count ? Resources[kvp.Value] : null);
+                }
+            } else {
+                result = null;
+                return false;
+            }
+            return true;
         }
 
         protected override void Start() {
@@ -161,13 +227,14 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
                 return;
             }
 
-            Overlays[BackCoordinateType] = GetOverlayLoaded();
+            SetOverlayByCoordinateType(BackCoordinateType, GetOverlayLoaded());
             FillAllEmptyOutfits();
 
             //保存此插件資料
             PluginData pd = new PluginData();
-            pd.data.Add("AllCharaOverlays", PrepareAllOverlaysToSave());
-            pd.version = 1;
+            pd.data.Add("AllCharaOverlayTable", PrepareOverlayTableToSave());
+            pd.data.Add("AllCharaResources", Resources);
+            pd.version = 2;
 
             SetExtendedData(pd);
             Logger.LogDebug("Saved Chara data");
@@ -191,8 +258,18 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
                 return;
             }
             PluginData pd = new PluginData();
-            pd.data.Add("CharaOverlay", PrepareOverlayToSave(GetOverlayLoaded()));
-            pd.version = 1;
+            Dictionary<TexType, int> overlayTable = PrepareOverlayToSave(OverlayTable[CurrentCoordinate.Value], out var resourceUsed);
+            List<byte[]> resources = new List<byte[]>();
+            foreach (var i in resourceUsed) {
+                resources.Add(Resources[i]);
+            }
+            foreach (var kvp in overlayTable) {
+                overlayTable[kvp.Key] = resourceUsed.ToList().IndexOf(kvp.Value);
+            }
+
+            pd.data.Add("CharaOverlayTable", overlayTable);
+            pd.data.Add("CharaResources", resources);
+            pd.version = 2;
 
             SetCoordinateExtendedData(coordinate, pd);
             Logger.LogDebug("Save Coordinate data");
@@ -201,22 +278,27 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
         protected override void OnCoordinateBeingLoaded(ChaFileCoordinate coordinate, bool maintainState) {
             if (!CheckLoad(false) || maintainState) return;
 
-
             PluginData data = GetCoordinateExtendedData((ChaFileCoordinate)CheckForOldGUID(coordinate));
-            if (data != null && (data.data.TryGetValue("CharaOverlay", out object tmpOverlay) || data.data.TryGetValue("IrisOverlay", out tmpOverlay)) && tmpOverlay != null) {
-                CurrentOverlay = tmpOverlay.ToDictionary<TexType, byte[]>();
+            if ((!data.data.TryGetValue("CharaOverlayTable", out object tmpOverlayTable) || tmpOverlayTable == null) ||
+                 (!data.data.TryGetValue("CharaResources", out object tmpResources) || tmpResources == null)) {
+                Logger.LogWarning("No Exist Data found from Coordinate.");
+            } else {
+                Dictionary<TexType, byte[]> coordinateData = new Dictionary<TexType, byte[]>();
+                List<byte[]> resourceList = tmpResources.ToList<byte[]>();
+                foreach (var kvp in tmpOverlayTable.ToDictionary<TexType, int>()) {
+                    coordinateData.Add(kvp.Key, resourceList[kvp.Value]);
+                }
+
+                CurrentOverlay = coordinateData;
 
                 foreach (TexType type in Enum.GetValues(typeof(TexType))) {
-                    if (!CurrentOverlay.TryGetValue(type, out _)) {
-                        CurrentOverlay[type] = null;
+                    if (!OverlayTable[CurrentCoordinate.Value].TryGetValue(type, out _)) {
+                        OverlayTable[CurrentCoordinate.Value][type] = 0;
                     }
                 }
                 OverwriteOverlay();
 
                 OnCardBeingSaved(KoikatuAPI.GetCurrentGameMode());
-            } else {
-                Logger.LogWarning("No Exist Data found from Coordinate.");
-                //CurrentOverlay = null;
             }
         }
         #endregion
@@ -236,39 +318,48 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             return result;
         }
 
-        public Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>> PrepareAllOverlaysToSave() {
+        public Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, int>> PrepareOverlayTableToSave() {
             if (KKAPI.Studio.StudioAPI.InsideStudio) {
-                return Overlays;
+                return OverlayTable;
             }
 
-            Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>> result = new Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>>();
-            foreach (KeyValuePair<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>> coordKVP in Overlays) {
-                Dictionary<TexType, byte[]> tmpCoord = PrepareOverlayToSave(coordKVP.Value);
+            FillAllEmptyOutfits();
+            Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, int>> result = new Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, int>>();
+            foreach (KeyValuePair<ChaFileDefine.CoordinateType, Dictionary<TexType, int>> coordKVP in OverlayTable) {
+                Dictionary<TexType, int> tmpCoord = PrepareOverlayToSave(coordKVP.Value, out _);
                 result.Add(coordKVP.Key, tmpCoord);
             }
             return result;
         }
 
-        public Dictionary<TexType, byte[]> PrepareOverlayToSave(Dictionary<TexType, byte[]> coordinateData) {
-            Dictionary<TexType, byte[]> result = new Dictionary<TexType, byte[]>();
-            Dictionary<TexType, byte[]> overlayLoaded = GetOverlayLoaded();
+        public Dictionary<TexType, int> PrepareOverlayToSave(Dictionary<TexType, int> coordinateData, out int[] resourceUsed) {
+            List<int> resourceUsedList = new List<int>();
+            Dictionary<TexType, int> result = new Dictionary<TexType, int>();
+            Dictionary<TexType, int> overlayLoaded = OverlayTable[CurrentCoordinate.Value];
             try {
                 doMain(KK_CharaOverlaysBasedOnCoordinate.Save_Eyes_Overlay.Value, TexType.EyeOver, TexType.EyeUnder);
                 doMain(KK_CharaOverlaysBasedOnCoordinate.Save_Face_Overlay.Value, TexType.FaceOver, TexType.FaceUnder);
                 doMain(KK_CharaOverlaysBasedOnCoordinate.Save_Body_Overlay.Value, TexType.BodyOver, TexType.BodyUnder);
+                resourceUsed = resourceUsedList.ToArray();
             } catch (KeyNotFoundException) {
                 FillAllEmptyOutfits();
-                return PrepareOverlayToSave(coordinateData);
+                return PrepareOverlayToSave(coordinateData, out resourceUsed);
             }
             return result;
 
             void doMain(bool b, TexType t1, TexType t2) {
                 if (b) {
-                    result.Add(t1, coordinateData[t1]);
-                    result.Add(t2, coordinateData[t2]);
+                    doMain2(t1);
+                    doMain2(t2);
                 } else {
                     result.Add(t1, overlayLoaded[t1]);
                     result.Add(t2, overlayLoaded[t2]);
+                }
+            }
+            void doMain2(TexType t) {
+                result.Add(t, coordinateData[t]);
+                if (!resourceUsedList.Where(x => x == coordinateData[t]).Any()) {
+                    resourceUsedList.Add(coordinateData[t]);
                 }
             }
         }
@@ -281,7 +372,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             }
 
             if (BackCoordinateType != CurrentCoordinate.Value) {
-                Overlays[BackCoordinateType] = GetOverlayLoaded();
+                SetOverlayByCoordinateType(BackCoordinateType, GetOverlayLoaded());
                 OverwriteOverlay(true);
                 BackCoordinateType = CurrentCoordinate.Value;
             }
@@ -309,16 +400,16 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
 
         private bool CheckEnableSaving(bool charaEntry) {
             if (charaEntry) {
-                if (Overlays.Where(x => x.Key != CurrentCoordinate.Value).Select(x => x.Value).Where(delegate (Dictionary<TexType, byte[]> x) {
+                if (OverlayTable.Where(x => x.Key != CurrentCoordinate.Value).Select(x => x.Value).Where(delegate (Dictionary<TexType, int> x) {
                     bool flag2 = false;
                     if (!KK_CharaOverlaysBasedOnCoordinate.Save_Eyes_Overlay.Value || !KK_CharaOverlaysBasedOnCoordinate.Enable_Saving_To_Chara.Value) {
-                        flag2 = null != x[TexType.EyeOver] || null != x[TexType.EyeUnder];
+                        flag2 = 0 != x[TexType.EyeOver] || 0 != x[TexType.EyeUnder];
                     }
                     if (!flag2 && (!KK_CharaOverlaysBasedOnCoordinate.Save_Face_Overlay.Value || !KK_CharaOverlaysBasedOnCoordinate.Enable_Saving_To_Chara.Value)) {
-                        flag2 = null != x[TexType.FaceOver] || null != x[TexType.FaceUnder];
+                        flag2 = 0 != x[TexType.FaceOver] || 0 != x[TexType.FaceUnder];
                     }
                     if (!flag2 && (!KK_CharaOverlaysBasedOnCoordinate.Save_Body_Overlay.Value || !KK_CharaOverlaysBasedOnCoordinate.Enable_Saving_To_Chara.Value)) {
-                        flag2 = null != x[TexType.BodyOver] || null != x[TexType.BodyUnder];
+                        flag2 = 0 != x[TexType.BodyOver] || 0 != x[TexType.BodyUnder];
                     }
 
                     return flag2;
@@ -356,36 +447,47 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
         }
 
         public void CopyOverlayToAllOutfits(TexType type) {
-            foreach (KeyValuePair<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>> coordKVP in Overlays) {
-                coordKVP.Value[type] = CurrentOverlay[type];
+            foreach (KeyValuePair<ChaFileDefine.CoordinateType, Dictionary<TexType, int>> coordKVP in OverlayTable) {
+                coordKVP.Value[type] = OverlayTable[CurrentCoordinate.Value][type];
             }
         }
 
         public void ReadPluginData(PluginData data) {
-            Overlays.Clear();
-            if (data != null && (data.data.TryGetValue("AllCharaOverlays", out object tmpOverlays) || data.data.TryGetValue("AllIrisOverlays", out tmpOverlays)) && tmpOverlays != null) {
-                foreach (KeyValuePair<ChaFileDefine.CoordinateType, object> kvp in tmpOverlays.ToDictionary<ChaFileDefine.CoordinateType, object>()) {
-                    Overlays.Add(kvp.Key, kvp.Value.ToDictionary<TexType, byte[]>());
-                }
-                KSOXController.Invoke("OnReload", new object[] { KoikatuAPI.GetCurrentGameMode(), false });
-            } else {
+            if (data == null) {
                 Logger.LogWarning("No PluginData Existed");
+            } else {
+                if ((!data.data.TryGetValue("AllCharaOverlayTable", out object tmpOverlayTable) || tmpOverlayTable == null) ||
+                     (!data.data.TryGetValue("AllCharaResources", out object tmpResources) || tmpResources == null)) {
+                } else {
+                    Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>> overlays = new Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>>();
+                    List<byte[]> resourceList = tmpResources.ToList<byte[]>();
+                    foreach (KeyValuePair<ChaFileDefine.CoordinateType, object> kvp in tmpOverlayTable.ToDictionary<ChaFileDefine.CoordinateType, object>()) {
+                        var coordinate = new Dictionary<TexType, byte[]>();
+                        foreach (var kvp2 in kvp.Value.ToDictionary<TexType, int>()) {
+                            coordinate.Add(kvp2.Key, resourceList[kvp2.Value]);
+                        }
+                        overlays.Add(kvp.Key, coordinate);
+                    }
+                    Overlays = overlays;
+                    KSOXController.Invoke("OnReload", new object[] { KoikatuAPI.GetCurrentGameMode(), false });
+                }
             }
             FillAllEmptyOutfits();
         }
 
-        public Dictionary<TexType, byte[]> FillAllEmptyOutfits(bool fillWithNull = false) {
-            Dictionary<TexType, byte[]> fillIn = GetOverlayLoaded();
+        public Dictionary<TexType, int> FillAllEmptyOutfits(bool fillWithNull = false) {
+            CurrentOverlay = GetOverlayLoaded();
+            Dictionary<TexType, int> fillIn = OverlayTable[CurrentCoordinate.Value];
             if (fillWithNull || null == fillIn) {
-                fillIn = new Dictionary<TexType, byte[]>();
+                fillIn = new Dictionary<TexType, int>();
                 foreach (TexType type in Enum.GetValues(typeof(TexType))) {
-                    fillIn[type] = null;
+                    fillIn[type] = 0;
                 }
             }
 
             foreach (ChaFileDefine.CoordinateType type in Enum.GetValues(typeof(ChaFileDefine.CoordinateType))) {
-                if (!Overlays.TryGetValue(type, out Dictionary<TexType, byte[]> o) || null == o) {
-                    Overlays[type] = fillIn;
+                if (!OverlayTable.TryGetValue(type, out Dictionary<TexType, int> o) || null == o) {
+                    OverlayTable[type] = fillIn;
                 } else {
                     foreach (TexType type2 in Enum.GetValues(typeof(TexType))) {
                         if (!o.ContainsKey(type2)) {
