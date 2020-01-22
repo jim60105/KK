@@ -42,7 +42,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.01.22.1";
+        internal const string PLUGIN_VERSION = "20.01.22.2";
         internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
 
         internal static new ManualLogSource Logger;
@@ -234,14 +234,16 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             FillAllEmptyOutfits();
 
             RebuildOverlayTableAndResources();
-            //保存此插件資料
+            SavePluginData();
+
+            Logger.LogDebug("Saved Chara data");
+        }
+        //保存此插件資料
+        public void SavePluginData() {
             PluginData pd = new PluginData();
             pd.data.Add("AllCharaOverlayTable", PrepareOverlayTableToSave());
             pd.data.Add("AllCharaResources", MessagePack.MessagePackSerializer.Serialize(Resources));
             pd.version = 2;
-
-            SetExtendedData(pd);
-            Logger.LogDebug("Saved Chara data");
         }
 
         protected override void OnReload(GameMode currentGameMode, bool maintainState) {
@@ -250,9 +252,13 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             //沒有打勾就不載入
             if (!CheckLoad(true) || maintainState) return;
 
-            CheckForOldGUID((ChaFile)ChaFileControl);
+            UpdateOldGUIDSaveData((ChaFile)ChaFileControl);
             PluginData data = GetExtendedData(true);
-            ReadPluginData(data);
+            if (data.version != 2) {
+                UpdateOldVersionSaveData(data);
+            } else {
+                ReadPluginData(data);
+            }
             Logger.LogDebug($"{ChaFileControl.parameter.fullname} Load Extended Data");
             OverwriteOverlay(true);
         }
@@ -261,7 +267,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
                 Logger.LogWarning("No PluginData Existed");
             } else {
                 if ((!data.data.TryGetValue("AllCharaOverlayTable", out object tmpOverlayTable) || tmpOverlayTable == null) ||
-                     (!data.data.TryGetValue("AllCharaResources", out object tmpResources) || null==tmpResources)) {
+                     (!data.data.TryGetValue("AllCharaResources", out object tmpResources) || null == tmpResources)) {
                     Logger.LogWarning("Wrong PluginData Existed");
                 } else {
                     Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>> overlays = new Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>>();
@@ -308,28 +314,30 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
         protected override void OnCoordinateBeingLoaded(ChaFileCoordinate coordinate, bool maintainState) {
             if (!CheckLoad(false) || maintainState) return;
 
-            PluginData data = GetCoordinateExtendedData((ChaFileCoordinate)CheckForOldGUID(coordinate));
-            if ((!data.data.TryGetValue("CharaOverlayTable", out object tmpOverlayTable) || tmpOverlayTable == null) ||
-                 (!data.data.TryGetValue("CharaResources", out object tmpResources) || null==tmpResources)) {
-                Logger.LogWarning("No Exist Data found from Coordinate.");
+            PluginData data = GetCoordinateExtendedData((ChaFileCoordinate)UpdateOldGUIDSaveData(coordinate));
+            if (data.version != 2) {
+                UpdateOldVersionSaveData(data);
             } else {
-                Dictionary<TexType, byte[]> coordinateData = new Dictionary<TexType, byte[]>();
-                List<byte[]> resourceList = MessagePack.MessagePackSerializer.Deserialize<List<byte[]>>((byte[])tmpResources);
-                foreach (KeyValuePair<TexType, int> kvp in tmpOverlayTable.ToDictionary<TexType, int>()) {
-                    coordinateData.Add(kvp.Key, resourceList[kvp.Value]);
-                }
-
-                CurrentOverlay = coordinateData;
-
-                foreach (TexType type in Enum.GetValues(typeof(TexType))) {
-                    if (!OverlayTable[CurrentCoordinate.Value].TryGetValue(type, out _)) {
-                        OverlayTable[CurrentCoordinate.Value][type] = 0;
+                if ((!data.data.TryGetValue("CharaOverlayTable", out object tmpOverlayTable) || tmpOverlayTable == null) ||
+                     (!data.data.TryGetValue("CharaResources", out object tmpResources) || null == tmpResources)) {
+                    Logger.LogWarning("No Exist Data found from Coordinate.");
+                } else {
+                    Dictionary<TexType, byte[]> coordinateData = new Dictionary<TexType, byte[]>();
+                    List<byte[]> resourceList = MessagePack.MessagePackSerializer.Deserialize<List<byte[]>>((byte[])tmpResources);
+                    foreach (KeyValuePair<TexType, int> kvp in tmpOverlayTable.ToDictionary<TexType, int>()) {
+                        coordinateData.Add(kvp.Key, resourceList[kvp.Value]);
                     }
-                }
-                OverwriteOverlay();
 
-                //OnCardBeingSaved(KoikatuAPI.GetCurrentGameMode());
+                    CurrentOverlay = coordinateData;
+                }
             }
+            foreach (TexType type in Enum.GetValues(typeof(TexType))) {
+                if (!OverlayTable[CurrentCoordinate.Value].TryGetValue(type, out _)) {
+                    OverlayTable[CurrentCoordinate.Value][type] = 0;
+                }
+            }
+            OverwriteOverlay();
+            //OnCardBeingSaved(KoikatuAPI.GetCurrentGameMode());
         }
         #endregion
 
@@ -549,7 +557,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
         /// </summary>
         /// <param name="input">要過轉換的ChaFile或ChaFileCoordinate</param>
         /// <returns>轉換完成的ChaFile或ChaFileCoordinate</returns>
-        private object CheckForOldGUID(object input) {
+        private object UpdateOldGUIDSaveData(object input) {
             if (input is ChaFile chaFile) {
                 PluginData data = ExtendedSave.GetExtendedDataById(chaFile, "com.jim60105.kk.irisoverlaybycoordinate");
                 if (null != data) {
@@ -566,6 +574,47 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
                 return coordinate;
             }
             return null;
+        }
+
+        /// <summary>
+        /// 更新並讀入舊版本的SaveData
+        /// </summary>
+        /// <param name="data">舊PluginData</param>
+        private void UpdateOldVersionSaveData(PluginData data) {
+            if (null != data) {
+                try {
+                    switch (data.version) {
+                        case 0:
+                        case 1:
+                            if ((data.data.TryGetValue("AllCharaOverlays", out object tmpOverlays) || data.data.TryGetValue("AllIrisOverlays", out tmpOverlays)) && tmpOverlays != null) {
+                                Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>> overlays = new Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>>();
+                                foreach (KeyValuePair<ChaFileDefine.CoordinateType, object> kvp in tmpOverlays.ToDictionary<ChaFileDefine.CoordinateType, object>()) {
+                                    overlays.Add(kvp.Key, kvp.Value.ToDictionary<TexType, byte[]>());
+                                }
+                                Overlays = overlays;
+                                KSOXController.Invoke("OnReload", new object[] { KoikatuAPI.GetCurrentGameMode(), false });
+                                FillAllEmptyOutfits();
+                                SavePluginData();
+                            } else if ((data.data.TryGetValue("CharaOverlay", out object tmpOverlay) || data.data.TryGetValue("IrisOverlay", out tmpOverlay)) && tmpOverlay != null) {
+                                Dictionary<TexType, byte[]> coordinate = tmpOverlay.ToDictionary<TexType, byte[]>();
+                                foreach (TexType type in Enum.GetValues(typeof(TexType))) {
+                                    if (!coordinate.TryGetValue(type, out _)) {
+                                        coordinate[type] = null;
+                                    }
+                                }
+                                CurrentOverlay = coordinate;
+                            } else {
+                                Logger.LogWarning("Wrong Old PluginData");
+                            }
+                            break;
+                    }
+                    Logger.LogInfo($"Read Old PluginData from version {data.version}");
+                } catch (Exception e) {
+                    Logger.LogError($"Reading Old PluginData FAILED");
+                    Logger.LogError($"{e.GetType().ToString()}: {e.Message}");
+                    Logger.LogError($"{e.StackTrace}");
+                }
+            }
         }
         #endregion
     }
