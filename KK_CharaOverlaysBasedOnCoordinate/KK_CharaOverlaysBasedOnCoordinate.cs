@@ -42,7 +42,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.01.22.2";
+        internal const string PLUGIN_VERSION = "20.01.22.3";
         internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
 
         internal static new ManualLogSource Logger;
@@ -244,6 +244,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             pd.data.Add("AllCharaOverlayTable", PrepareOverlayTableToSave());
             pd.data.Add("AllCharaResources", MessagePack.MessagePackSerializer.Serialize(Resources));
             pd.version = 2;
+            SetExtendedData(pd);
         }
 
         protected override void OnReload(GameMode currentGameMode, bool maintainState) {
@@ -254,7 +255,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
 
             UpdateOldGUIDSaveData((ChaFile)ChaFileControl);
             PluginData data = GetExtendedData(true);
-            if (data.version != 2) {
+            if (null!=data && data.version != 2) {
                 UpdateOldVersionSaveData(data);
             } else {
                 ReadPluginData(data);
@@ -315,7 +316,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             if (!CheckLoad(false) || maintainState) return;
 
             PluginData data = GetCoordinateExtendedData((ChaFileCoordinate)UpdateOldGUIDSaveData(coordinate));
-            if (data.version != 2) {
+            if (null!=data && data.version != 2) {
                 UpdateOldVersionSaveData(data);
             } else {
                 if ((!data.data.TryGetValue("CharaOverlayTable", out object tmpOverlayTable) || tmpOverlayTable == null) ||
