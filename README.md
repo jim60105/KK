@@ -100,6 +100,7 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 此插件在「讀存」跟「切換服裝」時覆蓋Overlay，原本KSOX的功能依然運作<br>
 因此**產生的存檔可以和「無此插件的遊戲環境」相容**<br>
 (存檔時，當前人物套用的Overlay依然會儲存進去，在無插件環境讀取時會被讀取出來，一如原本的KSOX功能)<br>
+v1.2.0起支援資源重用，同樣的貼圖重複使用時只會佔一份空間<br>
 ### 注意事項:<br>
 - 特別需求 **KKAPI v1.9.5 & Illusion Overlay Mods v5.1.1** 以上版本<br>
 - **預設不啟用服裝存檔功能，請至Configuration Manager開啟**<br>
