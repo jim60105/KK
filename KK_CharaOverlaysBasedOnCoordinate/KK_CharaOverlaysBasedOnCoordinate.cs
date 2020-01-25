@@ -42,8 +42,8 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.01.24.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
+        internal const string PLUGIN_VERSION = "20.01.25.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.1";
 
         internal static new ManualLogSource Logger;
         public static ConfigEntry<bool> Enable_Saving_To_Chara { get; private set; }
@@ -189,14 +189,15 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             }
         }
 
-        public Dictionary<TexType,int> SetOverlayByCoordinateType(ChaFileDefine.CoordinateType? coordinateType, Dictionary<TexType, byte[]> overlay) {
+        public Dictionary<TexType, int> SetOverlayByCoordinateType(ChaFileDefine.CoordinateType? coordinateType, Dictionary<TexType, byte[]> overlay) {
+            bool nullFlag = !(null == coordinateType);
             Dictionary<TexType, int> result = new Dictionary<TexType, int>();
-                ChaFileDefine.CoordinateType type = coordinateType ?? ChaFileDefine.CoordinateType.School01;
-                foreach (KeyValuePair<TexType, byte[]> kvp in overlay) {
-                    result[kvp.Key] = InputOverlayTexture(kvp.Value);
-                    Logger.LogDebug($"Input Texture: {type.ToString()}({kvp.Key.ToString()}): {result[kvp.Key]}");
-                }
-            if (null != coordinateType) {
+            ChaFileDefine.CoordinateType type = coordinateType ?? ChaFileDefine.CoordinateType.School01;
+            foreach (KeyValuePair<TexType, byte[]> kvp in overlay) {
+                result[kvp.Key] = InputOverlayTexture(kvp.Value);
+                Logger.LogDebug($"Input Texture: {type.ToString()}({kvp.Key.ToString()}): {result[kvp.Key]}");
+            }
+            if (nullFlag) {
                 OverlayTable[type] = result;
             }
             return result;
@@ -260,6 +261,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             if (!CheckLoad(true) || maintainState) return;
 
             UpdateOldGUIDSaveData((ChaFile)ChaFileControl);
+            OverlayTable.Clear();
             PluginData data = GetExtendedData(true);
             if (null != data && data.version != 2) {
                 UpdateOldVersionSaveData(data);
@@ -267,7 +269,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
                 ReadPluginData(data);
             }
             Logger.LogDebug($"{ChaFileControl.parameter.fullname} Load Extended Data");
-            OverwriteOverlay(true);
+            OverwriteOverlay();
         }
         public void ReadPluginData(PluginData data) {
             if (data == null) {
@@ -287,9 +289,9 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
                         overlays.Add(kvp.Key, coordinate);
                     }
                     Overlays = overlays;
-                    KSOXController.Invoke("OnReload", new object[] { KoikatuAPI.GetCurrentGameMode(), false });
                 }
             }
+            KSOXController.Invoke("OnReload", new object[] { KoikatuAPI.GetCurrentGameMode(), false });
             FillAllEmptyOutfits();
         }
 
@@ -433,7 +435,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
 
             if (BackCoordinateType != CurrentCoordinate.Value) {
                 SetOverlayByCoordinateType(BackCoordinateType, GetOverlayLoaded());
-                OverwriteOverlay(true);
+                OverwriteOverlay();
                 BackCoordinateType = CurrentCoordinate.Value;
             }
         }
@@ -442,12 +444,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
         /// <summary>
         /// 往KSOX複寫Overlay
         /// </summary>
-        /// <param name="force">略過OverlayTable outfit檢查，正常不應該發生被檢查擋住的狀況</param>
-        public void OverwriteOverlay(bool force = false) {
-            if (null == CurrentOverlay && !force) {
-                Logger.LogDebug("Skip OverWrite Overlay");
-                return;
-            }
+        public void OverwriteOverlay() {
             foreach (TexType texType in Enum.GetValues(typeof(TexType))) {
                 if (null != CurrentOverlay && CurrentOverlay.TryGetValue(texType, out byte[] texture)) {
                     KSOXController.SetOverlayTex(texture, texType);
@@ -539,7 +536,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
         public Dictionary<TexType, int> FillAllEmptyOutfits(bool fillWithNull = false) {
             //CurrentOverlay = GetOverlayLoaded();
             Dictionary<TexType, int> fillIn = SetOverlayByCoordinateType(null, GetOverlayLoaded());
-            if (fillWithNull || null == fillIn) {
+            if (fillWithNull) {
                 fillIn = new Dictionary<TexType, int>();
                 foreach (TexType type in Enum.GetValues(typeof(TexType))) {
                     fillIn[type] = 0;
