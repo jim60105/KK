@@ -242,6 +242,9 @@ namespace KK_StudioTextPlugin {
             TextMesh t = go.AddComponent<TextMesh>();
             t.fontSize = 500;
             t.text = text;
+            t.transform.localScale = Vector3.one;
+            t.name = "TextObj";
+            t.gameObject.SetActive(true);
             go.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
             SetColor(folder, KK_StudioTextPlugin.Default_Color.Value);
             SetFont(folder, KK_StudioTextPlugin.Default_FontName.Value);

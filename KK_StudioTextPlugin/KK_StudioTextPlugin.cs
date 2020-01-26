@@ -38,8 +38,8 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "19.11.09.2";
-		internal const string PLUGIN_RELEASE_VERSION = "1.1.2";
+        internal const string PLUGIN_VERSION = "20.01.26.0";
+		internal const string PLUGIN_RELEASE_VERSION = "1.1.3";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -347,7 +347,7 @@ namespace KK_StudioTextPlugin {
                     }
 
                     //FontSize
-                    panel.GetComponentInChildren<InputField>(true).text = (t.characterSize * 500).ToString();
+                    panel.GetComponentsInChildren<InputField>(true).Where(x=>x.name == "fontSizeInput").Single().text = (t.characterSize * 500).ToString();
                     //FontStyle
                     panel.GetComponentsInChildren<Dropdown>(true)[0].value = Array.IndexOf(Enum.GetNames(typeof(FontStyle)), t.fontStyle.ToString());
                     //Color
@@ -530,7 +530,7 @@ namespace KK_StudioTextPlugin {
                 doMain(TextPlugin.SetColor, TextPlugin.Config.Color);
                 doMain(TextPlugin.SetAnchor, TextPlugin.Config.Anchor);
                 doMain(TextPlugin.SetAlignment, TextPlugin.Config.Align);
-                oCIFolder.objectItem.SetActive(_source.visible);
+                //oCIFolder.objectItem.SetActive(true);
 
                 void doMain(Action<OCIFolder, string> setConfigFunc, TextPlugin.Config config) {
                     //如果沒有找到該設定項的folder，就不設定和建立，否則在讀取Scene時會報錯
