@@ -38,7 +38,7 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "20.01.26.0";
+        internal const string PLUGIN_VERSION = "20.01.27.0";
 		internal const string PLUGIN_RELEASE_VERSION = "1.1.3";
 
         internal static new ManualLogSource Logger;
@@ -62,19 +62,20 @@ namespace KK_StudioTextPlugin {
         public static ConfigEntry<TextAnchor> Default_Anchor { get; private set; }
 
         public void Start() {
-            Default_New_Text= Config.AddSetting("Config", "Default New Text", "NewText", "Text for new text. This is not affected by the Auto Change setting.");
-            Auto_change_default = Config.AddSetting("Config", "Auto Change Default", true, "Save all text settings to create the next new Text Object.");
+            Default_New_Text= Config.Bind<string>("Config", "Default New Text", "NewText", "Text for new text. This is not affected by the Auto Change setting.");
+            Auto_change_default = Config.Bind<bool>("Config", "Auto Change Default", true, "Save all text settings to create the next new Text Object.");
 
-            Default_FontName = Config.AddSetting("Default Settings", "FontName", "MS Gothic", new ConfigDescription("", new AcceptableValueList<string>(TextPlugin.GetDynamicFontNames().ToArray())));
-            Default_FontSize = Config.AddSetting("Default Settings", "FontSize", 1f, "Enter only floating point numbers.");
-            Default_Color = Config.AddSetting("Default Settings", "Color", Color.white);
-            Default_FontStyle = Config.AddSetting("Default Settings", "FontStyle", FontStyle.Normal);
-            Default_Alignment = Config.AddSetting("Default Settings", "Alignment", TextAlignment.Center);
-            Default_Anchor = Config.AddSetting("Default Settings", "Anchor", TextAnchor.MiddleCenter);
+            Default_FontName = Config.Bind<string>("Default Settings", "FontName", "MS Gothic", new ConfigDescription("", new AcceptableValueList<string>(TextPlugin.GetDynamicFontNames().ToArray())));
+            Default_FontSize = Config.Bind<float>("Default Settings", "FontSize", 1f, "Enter only floating point numbers.");
+            Default_Color = Config.Bind<Color>("Default Settings", "Color", Color.white);
+            Default_FontStyle = Config.Bind<FontStyle>("Default Settings", "FontStyle", FontStyle.Normal);
+            Default_Alignment = Config.Bind<TextAlignment>("Default Settings", "Alignment", TextAlignment.Center);
+            Default_Anchor = Config.Bind<TextAnchor>("Default Settings", "Anchor", TextAnchor.MiddleCenter);
         }
     }
 
     static class Patches {
+        internal static ManualLogSource Logger = KK_StudioTextPlugin.Logger;
         //Flag
         private static bool isCreatingTextFolder = false;
         internal static bool isCreatingTextStructure = false;
@@ -190,7 +191,7 @@ namespace KK_StudioTextPlugin {
             EventTrigger.Entry entry3 = new EventTrigger.Entry { eventID = EventTriggerType.Deselect };
             entry3.callback.AddListener((data) => {
                 panelSelectFont.gameObject.SetActive(false);
-                KK_StudioTextPlugin.Logger.LogDebug("LostFocus.");
+                Logger.LogDebug("LostFocus.");
             });
             trigger3.triggers.Add(entry3);
             panelSelectFont.gameObject.SetActive(false);
@@ -204,8 +205,8 @@ namespace KK_StudioTextPlugin {
             input.onEndEdit.AddListener(delegate {
                 if (!onUpdating) {
                     if (!float.TryParse(input.text, out float f)) {
-                        KK_StudioTextPlugin.Logger.LogError("FormatException: Please input only numbers into FontSize.");
-                        KK_StudioTextPlugin.Logger.LogMessage("FormatException: Please input only numbers into FontSize.");
+                        Logger.LogError("FormatException: Please input only numbers into FontSize.");
+                        Logger.LogMessage("FormatException: Please input only numbers into FontSize.");
                         input.text = TextPlugin.GetConfig(null, TextPlugin.Config.FontSize);
                     } else {
                         TextPlugin.ChangeCharacterSize(f);
@@ -304,7 +305,7 @@ namespace KK_StudioTextPlugin {
 
             panel.gameObject.SetActive(true);
             CheckAlignSettingActive();
-            KK_StudioTextPlugin.Logger.LogDebug("Draw ConfigPanel Finish");
+            Logger.LogDebug("Draw ConfigPanel Finish");
             isConfigPanelCreated = true;
         }
 
@@ -409,11 +410,11 @@ namespace KK_StudioTextPlugin {
                 }
                 //套用座標、旋轉、縮放
                 _info.changeAmount.OnChange();
-                KK_StudioTextPlugin.Logger.LogDebug($"Pos:{_info.changeAmount.pos.ToString()}");
-                KK_StudioTextPlugin.Logger.LogDebug($"Rot:{_info.changeAmount.rot.ToString()}");
-                KK_StudioTextPlugin.Logger.LogDebug($"Scale:{_info.changeAmount.scale.ToString()}");
+                Logger.LogDebug($"Pos:{_info.changeAmount.pos.ToString()}");
+                Logger.LogDebug($"Rot:{_info.changeAmount.rot.ToString()}");
+                Logger.LogDebug($"Scale:{_info.changeAmount.scale.ToString()}");
 
-                KK_StudioTextPlugin.Logger.LogInfo("Load Text:" + t.text);
+                Logger.LogInfo("Load Text:" + t.text);
             }
 
             //處理Folder未定義OnVisible造成的不隱藏
@@ -473,7 +474,7 @@ namespace KK_StudioTextPlugin {
                 __instance.ociFolder.objectItem.GetComponentInChildren<TextMesh>(true).text = _value;
                 EditDemoText(_value);
                 CheckAlignSettingActive();
-                KK_StudioTextPlugin.Logger.LogInfo("Edit Text: " + _value);
+                Logger.LogInfo("Edit Text: " + _value);
                 return false;
             }
             return true;

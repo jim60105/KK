@@ -7,6 +7,7 @@ using UnityEngine.UI;
 
 namespace KK_StudioTextPlugin {
     static class TextPlugin {
+        internal static BepInEx.Logging.ManualLogSource Logger = KK_StudioTextPlugin.Logger;
         private static Material Font3DMaterial;
         internal static bool DisablePreview = true;
         private static readonly Dictionary<string, Font> DynamicFonts = new Dictionary<string, Font>();
@@ -22,7 +23,7 @@ namespace KK_StudioTextPlugin {
                     return true;
                 }
             } else {
-                KK_StudioTextPlugin.Logger.LogError("Load assetBundle faild");
+                Logger.LogError("Load assetBundle faild");
             }
             return false;
         }
@@ -39,9 +40,9 @@ namespace KK_StudioTextPlugin {
                 output = DynamicFonts.Keys.ToList();
             }
             if (output.Count == 0) {
-                KK_StudioTextPlugin.Logger.LogDebug("Empty font list. Try generating...");
+                Logger.LogDebug("Empty font list. Try generating...");
                 if (CreateDynamicFonts() == 0) {
-                    KK_StudioTextPlugin.Logger.LogError("Empty font list or generated failed.");
+                    Logger.LogError("Empty font list or generated failed.");
                 } else {
                     output = GetDynamicFontNames();
                 }
@@ -67,9 +68,9 @@ namespace KK_StudioTextPlugin {
             FontList = fontlist.ToArray();
             if (fontlist.Count >= 500) {
                 DynamicFonts.Add("Arial", Resources.GetBuiltinResource<Font>("Arial.ttf"));
-                KK_StudioTextPlugin.Logger.LogInfo($"Detact {fontlist.Count} fonts in your system.");
-                KK_StudioTextPlugin.Logger.LogInfo($"Based on Unity's limitations, this number is more than that can be generated.");
-                KK_StudioTextPlugin.Logger.LogInfo($"I am sorry to tell you that I have to disable your fonts preview.");
+                Logger.LogInfo($"Detact {fontlist.Count} fonts in your system.");
+                Logger.LogInfo($"Based on Unity's limitations, this number is more than that can be generated.");
+                Logger.LogInfo($"I am sorry to tell you that I have to disable your fonts preview.");
             } else {
                 DisablePreview = false;
                 if (fontlist.Remove("Arial")) {
@@ -78,7 +79,7 @@ namespace KK_StudioTextPlugin {
                 foreach (var fontName in fontlist) {
                     DynamicFonts.Add(fontName, Font.CreateDynamicFontFromOSFont(new string[] { fontName, "Arial" }, 30));
                 }
-                KK_StudioTextPlugin.Logger.LogInfo($"Generate {DynamicFonts.Count} System Fonts");
+                Logger.LogInfo($"Generate {DynamicFonts.Count} System Fonts");
             }
             return DynamicFonts.Count;
         }
@@ -90,11 +91,11 @@ namespace KK_StudioTextPlugin {
         /// <returns></returns>
         public static Font GetFont(string fontName) {
             if (!CheckFontInOS(fontName)) {
-                KK_StudioTextPlugin.Logger.LogMessage($"Cannot find {fontName} in your System.");
+                Logger.LogMessage($"Cannot find {fontName} in your System.");
                 FallbackFont();
             } else if (DynamicFonts.Count >= 499) {
-                KK_StudioTextPlugin.Logger.LogMessage($"Based on Unity's limitations, you can't generate more than 500 different fonts at the same time.");
-                KK_StudioTextPlugin.Logger.LogMessage($"Please restart Studio.");
+                Logger.LogMessage($"Based on Unity's limitations, you can't generate more than 500 different fonts at the same time.");
+                Logger.LogMessage($"Please restart Studio.");
                 FallbackFont();
             }
             if (!DynamicFonts.ContainsKey(fontName)) {
@@ -104,10 +105,10 @@ namespace KK_StudioTextPlugin {
 
             void FallbackFont() {
                 if (CheckFontInOS("MS Gothic")) {
-                    KK_StudioTextPlugin.Logger.LogMessage($"Fallback to MS Gothic");
+                    Logger.LogMessage($"Fallback to MS Gothic");
                     fontName = "MS Gothic";
                 } else {
-                    KK_StudioTextPlugin.Logger.LogMessage($"Use Unity BuiltinResource Arial.");
+                    Logger.LogMessage($"Use Unity BuiltinResource Arial.");
                     fontName = "Arial";
                 }
             }
@@ -253,7 +254,7 @@ namespace KK_StudioTextPlugin {
             SetAlignment(folder, KK_StudioTextPlugin.Default_Alignment.Value);
             SetAnchor(folder, KK_StudioTextPlugin.Default_Anchor.Value);
 
-            KK_StudioTextPlugin.Logger.LogInfo("Create Text");
+            Logger.LogInfo("Create Text");
             return t;
         }
 
@@ -301,7 +302,7 @@ namespace KK_StudioTextPlugin {
             if (i >= 0) {
                 return true;
             }
-            KK_StudioTextPlugin.Logger.LogMessage("Missing font: " + fontName);
+            Logger.LogMessage("Missing font: " + fontName);
             return false;
         }
 
@@ -409,8 +410,8 @@ namespace KK_StudioTextPlugin {
                 }
                 SetFontStyle(folder, (FontStyle)Enum.Parse(typeof(FontStyle), style));
             } catch (OverflowException) {
-                KK_StudioTextPlugin.Logger.LogError("OverflowException: Please use a correct FontStyle.");
-                KK_StudioTextPlugin.Logger.LogError("Fallback to FontStyle.Normal");
+                Logger.LogError("OverflowException: Please use a correct FontStyle.");
+                Logger.LogError("Fallback to FontStyle.Normal");
                 SetFontStyle(folder, FontStyle.Normal);
             }
         }
@@ -454,8 +455,8 @@ namespace KK_StudioTextPlugin {
                 }
                 SetAnchor(folder, (TextAnchor)Enum.Parse(typeof(TextAnchor), anchor));
             } catch (OverflowException) {
-                KK_StudioTextPlugin.Logger.LogError("OverflowException: Please use a correct Anchor(Upper/Lower/Middle + Left/Right/Center).");
-                KK_StudioTextPlugin.Logger.LogError("Fallback to TextAnchor.MiddleCenter");
+                Logger.LogError("OverflowException: Please use a correct Anchor(Upper/Lower/Middle + Left/Right/Center).");
+                Logger.LogError("Fallback to TextAnchor.MiddleCenter");
                 SetAnchor(folder, TextAnchor.MiddleCenter);
             }
         }
@@ -499,8 +500,8 @@ namespace KK_StudioTextPlugin {
                 }
                 SetAlignment(folder, (TextAlignment)Enum.Parse(typeof(TextAlignment), alignment));
             } catch (OverflowException) {
-                KK_StudioTextPlugin.Logger.LogError("OverflowException: Please use a correct Alignment (Left, Right, Center).");
-                KK_StudioTextPlugin.Logger.LogError("Fallback to TextAlignment.Center");
+                Logger.LogError("OverflowException: Please use a correct Alignment (Left, Right, Center).");
+                Logger.LogError("Fallback to TextAlignment.Center");
                 SetAlignment(folder, TextAlignment.Center);
             }
         }
