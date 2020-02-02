@@ -42,8 +42,8 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.01.25.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.2.1";
+        internal const string PLUGIN_VERSION = "20.02.02.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.2";
 
         internal static new ManualLogSource Logger;
         public static ConfigEntry<bool> Enable_Saving_To_Chara { get; private set; }
@@ -328,8 +328,10 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             if (null != data && data.version != 2) {
                 UpdateOldVersionSaveData(data);
             } else {
-                if ((!data.data.TryGetValue("CharaOverlayTable", out object tmpOverlayTable) || tmpOverlayTable == null) ||
-                     (!data.data.TryGetValue("CharaResources", out object tmpResources) || null == tmpResources)) {
+                if (null == data) {
+                    Logger.LogWarning("No PluginData Existed");
+                } else if ((!data.data.TryGetValue("CharaOverlayTable", out object tmpOverlayTable) || tmpOverlayTable == null) ||
+                          (!data.data.TryGetValue("CharaResources", out object tmpResources) || null == tmpResources)) {
                     Logger.LogWarning("No Exist Data found from Coordinate.");
                 } else {
                     Dictionary<TexType, byte[]> coordinateData = new Dictionary<TexType, byte[]>();
