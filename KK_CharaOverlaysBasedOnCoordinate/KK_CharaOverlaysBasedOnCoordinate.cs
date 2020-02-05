@@ -42,7 +42,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.02.02.0";
+        internal const string PLUGIN_VERSION = "20.02.05.0";
         internal const string PLUGIN_RELEASE_VERSION = "1.2.2";
 
         internal static new ManualLogSource Logger;
@@ -468,19 +468,27 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
         /// <returns>依照設定判斷，是否要執行存檔動作</returns>
         private bool CheckEnableSaving(bool charaEntry) {
             if (charaEntry) {
+                OverlayTable.TryGetValue(CurrentCoordinate.Value, out var currentCoor);
                 if (OverlayTable.Where(x => x.Key != CurrentCoordinate.Value).Select(x => x.Value).Where(delegate (Dictionary<TexType, int> x) {
                     bool flag2 = false;
                     if (!KK_CharaOverlaysBasedOnCoordinate.Save_Eyes_Overlay.Value || !KK_CharaOverlaysBasedOnCoordinate.Enable_Saving_To_Chara.Value) {
-                        flag2 = 0 != x[TexType.EyeOver] || 0 != x[TexType.EyeUnder];
+                        flag2 |= doMain(TexType.EyeOver);
+                        flag2 |= doMain(TexType.EyeUnder);
                     }
                     if (!flag2 && (!KK_CharaOverlaysBasedOnCoordinate.Save_Face_Overlay.Value || !KK_CharaOverlaysBasedOnCoordinate.Enable_Saving_To_Chara.Value)) {
-                        flag2 = 0 != x[TexType.FaceOver] || 0 != x[TexType.FaceUnder];
+                        flag2 |= doMain(TexType.FaceOver);
+                        flag2 |= doMain(TexType.FaceUnder);
                     }
                     if (!flag2 && (!KK_CharaOverlaysBasedOnCoordinate.Save_Body_Overlay.Value || !KK_CharaOverlaysBasedOnCoordinate.Enable_Saving_To_Chara.Value)) {
-                        flag2 = 0 != x[TexType.BodyOver] || 0 != x[TexType.BodyUnder];
+                        flag2 |= doMain(TexType.BodyOver);
+                        flag2 |= doMain(TexType.BodyUnder);
                     }
 
                     return flag2;
+
+                    bool doMain(TexType type) {
+                        return x.ContainsKey(type) && x[type] != 0 && x[type] != currentCoor[type];
+                    }
                 }).Any()) {
                     Logger.LogInfo("There are overlays on other outfits but the saving setting is not enabled.");
                     ShowMessage("[WARNING] Chara overlays on other outfits are not saved to Chara files.");
