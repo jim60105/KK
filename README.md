@@ -89,7 +89,6 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 此插件可依照原始角色，將她們轉變為小蘿莉<br>
 可在Studio、Maker和Free H內執行<br>
 支援替換模板角色，例如: 若將模板自訂為巨乳姊姊，就可以轉變功能為替換成大姊姊<br>
-我置入了幾張過場插入圖片和動畫作為娛樂效果<br>
 詳細說明請見: [另一篇Readme](KK_FBIOpenUp/README.md)
 
 # 角色Overlay隨服裝變換<br>Chara Overlays Based On Coordinate
@@ -97,14 +96,18 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 ↑ 請點選圖片觀看完整影片 ↑ Click the image to watch full video! ↑  (備用載點: [影片](demo/demo10-1.mp4))<br>
 
 讓所有角色Overlay(Iris、Face、Body Overlay)隨著服裝變更，反映在人物存檔和服裝存檔上<br>
-此插件在「讀存」跟「切換服裝」時覆蓋Overlay，原本KSOX的功能依然運作<br>
-因此**產生的存檔可以和「無此插件的遊戲環境」相容**<br>
-(存檔時，當前人物套用的Overlay依然會儲存進去，在無插件環境讀取時會被讀取出來，一如原本的KSOX功能)<br>
+此插件在「讀存」跟「切換服裝」時覆蓋Overlay，依賴KSOX運作<br>
+**產生的存檔可以和「無此插件的遊戲環境」相容**，最後KSOX儲存的Overlay會被載入<br>
+(存檔時，當前套用的Overlay依然會儲存進去，並在無插件環境時被讀取出來)<br>
 v1.2.0起支援資源重用，同樣的貼圖重複使用時只會佔一份空間<br>
+
 ### 注意事項:<br>
 - 特別需求 **KKAPI v1.9.5 & Illusion Overlay Mods v5.1.1** 以上版本<br>
-- **預設不啟用服裝存檔功能，請至Configuration Manager開啟**<br>
-- 如果開啟了服裝儲存功能，但是卻沒有載入任何角色Overlay，那麼就會發生如「清除角色Overlay」的效果<br>因此強烈建議**只在需要時**開啟服裝儲存功能
+- **預設不啟用服裝存檔功能，請至Configuration Manager確認所有儲存設定**<br>
+- 以下狀況會顯示警示訊息 (警示可關閉)
+    - 存角色時**有Overlay未被儲存**
+    - 存服裝時存入了「**全無Overlay**」狀態<br>(如果開啟了服裝Coordinate儲存功能，但是卻沒有存入任何角色Overlay，**就會發生如「清除角色Overlay」的效果**)
+- 強烈建議**只在需要時開啟服裝儲存**功能
 
 # 需求依賴
 **BepInEx v5.0.1**<br>
