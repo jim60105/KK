@@ -42,8 +42,8 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.02.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.2.2";
+        internal const string PLUGIN_VERSION = "20.02.14.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.3";
 
         internal static new ManualLogSource Logger;
         public static ConfigEntry<bool> Enable_Saving_To_Chara { get; private set; }
@@ -195,7 +195,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             ChaFileDefine.CoordinateType type = coordinateType ?? ChaFileDefine.CoordinateType.School01;
             foreach (KeyValuePair<TexType, byte[]> kvp in overlay) {
                 result[kvp.Key] = InputOverlayTexture(kvp.Value);
-                Logger.LogDebug($"Input Texture: {type.ToString()}({kvp.Key.ToString()}): {result[kvp.Key]}");
+                if (0 != result[kvp.Key]) Logger.LogDebug($"Input Texture: {type.ToString()}({kvp.Key.ToString()}): {result[kvp.Key]}");
             }
             if (nullFlag) {
                 OverlayTable[type] = result;
@@ -251,7 +251,10 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             pd.data.Add("AllCharaOverlayTable", PrepareOverlayTableToSave());
             pd.data.Add("AllCharaResources", MessagePack.MessagePackSerializer.Serialize(Resources));
             pd.version = 2;
-            SetExtendedData(SaveNothing ? null : pd);
+            ExtendedSave.SetExtendedDataById(ChaControl.chaFile, KK_CharaOverlaysBasedOnCoordinate.GUID, SaveNothing ? null : pd);
+            
+            //不知道為什麼這條會跳錯誤
+            //SetExtendedData(SaveNothing ? null : pd);
         }
 
         protected override void OnReload(GameMode currentGameMode, bool maintainState) {
@@ -468,7 +471,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
         /// <returns>依照設定判斷，是否要執行存檔動作</returns>
         private bool CheckEnableSaving(bool charaEntry) {
             if (charaEntry) {
-                OverlayTable.TryGetValue(CurrentCoordinate.Value, out var currentCoor);
+                OverlayTable.TryGetValue(CurrentCoordinate.Value, out Dictionary<TexType, int> currentCoor);
                 if (OverlayTable.Where(x => x.Key != CurrentCoordinate.Value).Select(x => x.Value).Where(delegate (Dictionary<TexType, int> x) {
                     bool flag2 = false;
                     if (!KK_CharaOverlaysBasedOnCoordinate.Save_Eyes_Overlay.Value || !KK_CharaOverlaysBasedOnCoordinate.Enable_Saving_To_Chara.Value) {
