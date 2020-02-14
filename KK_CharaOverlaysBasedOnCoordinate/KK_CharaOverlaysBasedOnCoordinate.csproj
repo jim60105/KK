@@ -96,7 +96,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="KK_CharaOverlaysBasedOnCoordinate.cs" />
-    <Compile Include="MaterialEditor_Support.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
