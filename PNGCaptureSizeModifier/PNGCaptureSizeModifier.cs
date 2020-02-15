@@ -36,7 +36,7 @@ namespace PNGCaptureSizeModifier {
     public class PNGCaptureSizeModifier : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "PNG Capture Size Modifier";
         internal const string GUID = "com.jim60105.kk.pngcapturesizemodifier";
-        internal const string PLUGIN_VERSION = "20.02.15.0";
+        internal const string PLUGIN_VERSION = "20.02.15.1";
         internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
 
         public static ConfigEntry<float> TimesOfMaker { get; private set; }
@@ -53,6 +53,7 @@ namespace PNGCaptureSizeModifier {
     }
 
     class Patches {
+        //PNG存檔放大
         [HarmonyTranspiler, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CapCharaCard")]
         public static IEnumerable<CodeInstruction> CapCharaCardTranspiler(IEnumerable<CodeInstruction> instructions) => PngTranspiler(instructions, PNGCaptureSizeModifier.TimesOfMaker.Value);
 
@@ -78,7 +79,7 @@ namespace PNGCaptureSizeModifier {
             return codes.AsEnumerable();
         }
 
-
+        //CharaMaker存檔顯示放大
         [HarmonyPostfix, HarmonyPatch(typeof(ChaCustom.CustomFileListCtrl), "Update")]
         public static void UpdatePostFix(ChaCustom.CustomFileListCtrl __instance) => ChangeRowCount((ChaCustom.CustomFileWindow)__instance.GetField("cfWindow"));
 
@@ -109,5 +110,10 @@ namespace PNGCaptureSizeModifier {
             LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
             yield return new WaitForEndOfFrame();
         }
+
+        //Studio預覽放大
+        [HarmonyPostfix, HarmonyPatch(typeof(Studio.SceneLoadScene), "Awake")]
+        public static void AwakePostFix(Studio.SceneLoadScene __instance) => 
+            GameObject.Find("SceneLoadScene/Canvas Load Work/root").transform.localScale = new Vector3(2, 2, 1);
     }
 }
