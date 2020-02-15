@@ -36,18 +36,22 @@ namespace PNGCaptureSizeModifier {
     public class PNGCaptureSizeModifier : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "PNG Capture Size Modifier";
         internal const string GUID = "com.jim60105.kk.pngcapturesizemodifier";
-        internal const string PLUGIN_VERSION = "20.02.15.1";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
+        internal const string PLUGIN_VERSION = "20.02.15.2";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
 
         public static ConfigEntry<float> TimesOfMaker { get; private set; }
         public static ConfigEntry<float> TimesOfStudio { get; private set; }
         public static ConfigEntry<int> PNGColumnCount { get; private set; }
+        public static ConfigEntry<bool> StudioSceneWatermark { get; private set; }
+        public static ConfigEntry<bool> CharaMakerWatermark { get; private set; }
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
             TimesOfMaker = Config.Bind<float>("Config", "Times of multiplication (Maker)", 3.0f, "The game needs to be restarted for changes to take effect.");
             TimesOfStudio = Config.Bind<float>("Config", "Times of multiplication (Studio)", 5.0f, "The game needs to be restarted for changes to take effect.");
             PNGColumnCount = Config.Bind<int>("Config", "Number of PNG rows in File List View", 3, "Must be a natural number");
+            StudioSceneWatermark = Config.Bind<bool>("Config", "Use Studio Scene Watermark", true, "It is extremely NOT recommended to disable the watermark function, which is for distinguish between scene data and normal image.");
+            CharaMakerWatermark = Config.Bind<bool>("Config", "Use Character Watermark", true);
             HarmonyWrapper.PatchAll(typeof(Patches));
         }
     }
@@ -61,7 +65,9 @@ namespace PNGCaptureSizeModifier {
         public static IEnumerable<CodeInstruction> CapCoordinateCardTranspiler(IEnumerable<CodeInstruction> instructions) => PngTranspiler(instructions, PNGCaptureSizeModifier.TimesOfMaker.Value);
 
         [HarmonyTranspiler, HarmonyPatch(typeof(Studio.SceneInfo), "Save", new Type[] { typeof(string) })]
-        public static IEnumerable<CodeInstruction> SaveTranspiler(IEnumerable<CodeInstruction> instructions) => PngTranspiler(instructions, PNGCaptureSizeModifier.TimesOfStudio.Value);
+        public static IEnumerable<CodeInstruction> SaveTranspiler(IEnumerable<CodeInstruction> instructions) {
+            return PngTranspiler(instructions, PNGCaptureSizeModifier.TimesOfStudio.Value);
+        }
 
         private static IEnumerable<CodeInstruction> PngTranspiler(IEnumerable<CodeInstruction> instructions, float times) {
             List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
@@ -113,7 +119,35 @@ namespace PNGCaptureSizeModifier {
 
         //Studio預覽放大
         [HarmonyPostfix, HarmonyPatch(typeof(Studio.SceneLoadScene), "Awake")]
-        public static void AwakePostFix(Studio.SceneLoadScene __instance) => 
+        public static void AwakePostFix() => 
             GameObject.Find("SceneLoadScene/Canvas Load Work/root").transform.localScale = new Vector3(2, 2, 1);
+
+        //加浮水印
+        private static bool AddSDWatermarkFlag = false;
+        [HarmonyPrefix, HarmonyPatch(typeof(Studio.SceneInfo), "Save", new Type[] { typeof(string) })]
+        public static void SavePrefix() => AddSDWatermarkFlag = PNGCaptureSizeModifier.StudioSceneWatermark.Value;
+
+        [HarmonyPostfix, HarmonyPatch(typeof(Studio.GameScreenShot), "CreatePngScreen")]
+        public static void CreatePngScreenPostfix(ref byte[] __result) => AddWatermark(ref AddSDWatermarkFlag, ref __result, "sd_watermark.png");
+
+        private static bool AddCharaWatermarkFlag = false;
+        [HarmonyPrefix, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CapCharaCard")]
+        public static void CapCharaCardPrefix() => AddCharaWatermarkFlag = PNGCaptureSizeModifier.CharaMakerWatermark.Value;
+
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CreatePng")]
+        public static void CreatePngPostfix(ref byte[] pngData) => AddWatermark(ref AddCharaWatermarkFlag, ref pngData, "chara_watermark.png");
+
+        private static void AddWatermark(ref bool doFlag, ref byte[] basePng,string wmFileName) {
+            if (doFlag) {
+                doFlag = false;
+                Texture2D screenshot = new Texture2D(2, 2);
+                screenshot.LoadImage(basePng);
+                Texture2D watermark = Extension.Extension.LoadDllResource($"PNGCaptureSizeModifier.Resources.{wmFileName}", 230, 230);
+
+                screenshot = Extension.Extension.AddWatermark(screenshot, watermark, 0, screenshot.height - 230);
+                basePng = screenshot.EncodeToPNG();
+                PNGCaptureSizeModifier.Logger.LogDebug($"Add Watermark:{wmFileName}");
+            }
+        }
     }
 }
