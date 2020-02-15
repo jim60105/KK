@@ -42,7 +42,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.02.14.0";
+        internal const string PLUGIN_VERSION = "20.02.16.0";
         internal const string PLUGIN_RELEASE_VERSION = "1.2.3";
 
         internal static new ManualLogSource Logger;
@@ -249,10 +249,10 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
         public void SavePluginData(bool SaveNothing = false) {
             PluginData pd = new PluginData();
             pd.data.Add("AllCharaOverlayTable", PrepareOverlayTableToSave());
-            pd.data.Add("AllCharaResources", MessagePack.MessagePackSerializer.Serialize(Resources));
-            pd.version = 2;
+            pd.data.Add("AllCharaResources", Resources.Select((x, i) => new { i, x }).ToDictionary(y => y.i, y => y.x));
+            pd.version = 3;
             ExtendedSave.SetExtendedDataById(ChaControl.chaFile, KK_CharaOverlaysBasedOnCoordinate.GUID, SaveNothing ? null : pd);
-            
+
             //不知道為什麼這條會跳錯誤
             //SetExtendedData(SaveNothing ? null : pd);
         }
@@ -266,7 +266,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             UpdateOldGUIDSaveData((ChaFile)ChaFileControl);
             OverlayTable.Clear();
             PluginData data = GetExtendedData(true);
-            if (null != data && data.version != 2) {
+            if (null != data && data.version != 3) {
                 UpdateOldVersionSaveData(data);
             } else {
                 ReadPluginData(data);
@@ -283,7 +283,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
                     Logger.LogWarning("Wrong PluginData Existed");
                 } else {
                     Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>> overlays = new Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>>();
-                    List<byte[]> resourceList = MessagePack.MessagePackSerializer.Deserialize<List<byte[]>>((byte[])tmpResources);
+                    List<byte[]> resourceList = tmpResources.ToDictionary<int, byte[]>().Select(x => x.Value).ToList();
                     foreach (KeyValuePair<ChaFileDefine.CoordinateType, object> kvp in tmpOverlayTable.ToDictionary<ChaFileDefine.CoordinateType, object>()) {
                         Dictionary<TexType, byte[]> coordinate = new Dictionary<TexType, byte[]>();
                         foreach (KeyValuePair<TexType, int> kvp2 in kvp.Value.ToDictionary<TexType, int>()) {
@@ -317,10 +317,11 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             }
 
             pd.data.Add("CharaOverlayTable", resultTable);
-            pd.data.Add("CharaResources", MessagePack.MessagePackSerializer.Serialize(resources));
-            pd.version = 2;
+            pd.data.Add("CharaResources", resources.Select((x, i) => new { i, x }).ToDictionary(y => y.i, y => y.x));
+            pd.version = 3;
 
-            SetCoordinateExtendedData(coordinate, pd);
+            ExtendedSave.SetExtendedDataById(coordinate, KK_CharaOverlaysBasedOnCoordinate.GUID, pd);
+            //SetCoordinateExtendedData(coordinate, pd);
             Logger.LogDebug("Save Coordinate data");
         }
 
@@ -328,7 +329,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             if (!CheckLoad(false) || maintainState) return;
 
             PluginData data = GetCoordinateExtendedData((ChaFileCoordinate)UpdateOldGUIDSaveData(coordinate));
-            if (null != data && data.version != 2) {
+            if (null != data && data.version != 3) {
                 UpdateOldVersionSaveData(data);
             } else {
                 if (null == data) {
@@ -338,7 +339,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
                     Logger.LogWarning("No Exist Data found from Coordinate.");
                 } else {
                     Dictionary<TexType, byte[]> coordinateData = new Dictionary<TexType, byte[]>();
-                    List<byte[]> resourceList = MessagePack.MessagePackSerializer.Deserialize<List<byte[]>>((byte[])tmpResources);
+                    List<byte[]> resourceList = tmpResources.ToDictionary<int, byte[]>().Select(x => x.Value).ToList();
                     foreach (KeyValuePair<TexType, int> kvp in tmpOverlayTable.ToDictionary<TexType, int>()) {
                         coordinateData.Add(kvp.Key, resourceList[kvp.Value]);
                     }
@@ -623,6 +624,33 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
                                 CurrentOverlay = coordinate;
                             } else {
                                 Logger.LogWarning("Wrong Old PluginData");
+                            }
+                            break;
+                        case 2:
+                            if (data.data.TryGetValue("CharaOverlayTable", out object tmpOverlayTable) && tmpOverlayTable != null &&
+                                data.data.TryGetValue("CharaResources", out object tmpResources) && null != tmpResources) {
+                                Dictionary<TexType, byte[]> coordinateData = new Dictionary<TexType, byte[]>();
+                                List<byte[]> resourceList = MessagePack.MessagePackSerializer.Deserialize<List<byte[]>>((byte[])tmpResources);
+                                foreach (KeyValuePair<TexType, int> kvp in tmpOverlayTable.ToDictionary<TexType, int>()) {
+                                    coordinateData.Add(kvp.Key, resourceList[kvp.Value]);
+                                }
+                                CurrentOverlay = coordinateData;
+                            }
+
+                            if (data.data.TryGetValue("AllCharaOverlayTable", out tmpOverlayTable) && tmpOverlayTable != null &&
+                                data.data.TryGetValue("AllCharaResources", out tmpResources) && null != tmpResources) {
+                                Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>> overlays = new Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, byte[]>>();
+                                List<byte[]> resourceList = MessagePack.MessagePackSerializer.Deserialize<List<byte[]>>((byte[])tmpResources);
+                                foreach (KeyValuePair<ChaFileDefine.CoordinateType, object> kvp in tmpOverlayTable.ToDictionary<ChaFileDefine.CoordinateType, object>()) {
+                                    Dictionary<TexType, byte[]> coordinate = new Dictionary<TexType, byte[]>();
+                                    foreach (KeyValuePair<TexType, int> kvp2 in kvp.Value.ToDictionary<TexType, int>()) {
+                                        coordinate.Add(kvp2.Key, resourceList[kvp2.Value]);
+                                    }
+                                    overlays.Add(kvp.Key, coordinate);
+                                }
+                                Overlays = overlays;
+                                KSOXController.Invoke("OnReload", new object[] { KoikatuAPI.GetCurrentGameMode(), false });
+                                FillAllEmptyOutfits();
                             }
                             break;
                     }
