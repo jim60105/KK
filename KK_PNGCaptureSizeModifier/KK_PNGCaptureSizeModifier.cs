@@ -36,8 +36,8 @@ namespace KK_PNGCaptureSizeModifier {
     public class KK_PNGCaptureSizeModifier : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "PNG Capture Size Modifier";
         internal const string GUID = "com.jim60105.kk.pngcapturesizemodifier";
-        internal const string PLUGIN_VERSION = "20.02.16.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.2.1";
+        internal const string PLUGIN_VERSION = "20.02.17.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.2";
 
         public static ConfigEntry<float> TimesOfMaker { get; private set; }
         public static ConfigEntry<float> TimesOfStudio { get; private set; }
@@ -142,7 +142,7 @@ namespace KK_PNGCaptureSizeModifier {
                 doFlag = false;
                 Texture2D screenshot = new Texture2D(2, 2);
                 screenshot.LoadImage(basePng);
-                Texture2D watermark = Extension.Extension.LoadDllResource($"PNGCaptureSizeModifier.Resources.{wmFileName}", 230, 230);
+                Texture2D watermark = Extension.Extension.LoadDllResource($"KK_PNGCaptureSizeModifier.Resources.{wmFileName}", 230, 230);
 
                 screenshot = Extension.Extension.AddWatermark(screenshot, watermark, 0, screenshot.height - 230);
                 basePng = screenshot.EncodeToPNG();
