@@ -39,10 +39,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_CharaOverlaysBasedOnCoordinate", "KK_CharaOverlaysBasedOnCoordinate\KK_CharaOverlaysBasedOnCoordinate.csproj", "{94DDA10B-7A91-4F59-9C62-4AA363E1C36F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PNGCaptureSizeModifier", "PNGCaptureSizeModifier\PNGCaptureSizeModifier.csproj", "{2D638E6E-8295-40D9-B76E-6F5A06779C6B}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Extension\Extension.projitems*{0646be09-f599-4edb-b115-de4043c8d3be}*SharedItemsImports = 13
 		Extension\Extension.projitems*{0c47ebaa-b09c-44e1-b114-5337b8beba79}*SharedItemsImports = 4
+		Extension\Extension.projitems*{2d638e6e-8295-40d9-b76e-6f5a06779c6b}*SharedItemsImports = 4
 		Extension\Extension.projitems*{661b77ce-d337-49d2-a359-ad85e68986b2}*SharedItemsImports = 4
 		Extension\Extension.projitems*{670a8493-10c7-4071-8fc8-a49ace4ccfdb}*SharedItemsImports = 4
 		Extension\Extension.projitems*{85268fd6-a1fd-41aa-84d9-71f18815c034}*SharedItemsImports = 4
@@ -139,6 +142,14 @@ Global
 		{94DDA10B-7A91-4F59-9C62-4AA363E1C36F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{94DDA10B-7A91-4F59-9C62-4AA363E1C36F}.Release|x64.ActiveCfg = Release|Any CPU
 		{94DDA10B-7A91-4F59-9C62-4AA363E1C36F}.Release|x64.Build.0 = Release|Any CPU
+		{2D638E6E-8295-40D9-B76E-6F5A06779C6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D638E6E-8295-40D9-B76E-6F5A06779C6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D638E6E-8295-40D9-B76E-6F5A06779C6B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2D638E6E-8295-40D9-B76E-6F5A06779C6B}.Debug|x64.Build.0 = Debug|Any CPU
+		{2D638E6E-8295-40D9-B76E-6F5A06779C6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D638E6E-8295-40D9-B76E-6F5A06779C6B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D638E6E-8295-40D9-B76E-6F5A06779C6B}.Release|x64.ActiveCfg = Release|Any CPU
+		{2D638E6E-8295-40D9-B76E-6F5A06779C6B}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
