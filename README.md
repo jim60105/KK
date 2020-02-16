@@ -113,13 +113,13 @@ v1.2.0起支援資源重用，同樣的貼圖重複使用時只會佔一份空�
 ![image](demo/demo11.gif)<br>
 
 可調角色存檔、服裝存檔、Studio存檔的拍照尺寸<br>
-可調CharaMaker中角色、服裝檔案選擇器的顯示欄位數<br>
-放大Studio SceneData選擇器的點擊預覧<br>
-給角色存檔、Studio存檔加上浮水角標<br>
+可調CharaMaker中角色、服裝檔案選擇器的顯示列數<br>
+放大Studio SceneData選擇器的選中預覧<br>
+給角色存檔、Studio存檔加上浮水印角標<br>
 
-請至設定中調整這些功能<br>
-**強烈建議不要關閉Studio SceneData浮水角標，以利區分存檔PNG和普通截圖PNG**<br>
-**產生的存檔可以和「無此插件的遊戲環境」相容**<br>
+請至設定中調整這些功能
+因為改變了存檔圖片尺寸，**強烈建議不要禁用Studio SceneData浮水印**，以利區分存檔PNG和普通截圖PNG
+**產生的存檔可以和「無此插件的遊戲環境」相容**
 
 # 需求依賴
 **BepInEx v5.0.1**<br>
