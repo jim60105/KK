@@ -109,6 +109,18 @@ v1.2.0起支援資源重用，同樣的貼圖重複使用時只會佔一份空�
     - 存服裝時存入了「**全無Overlay**」狀態<br>(如果開啟了服裝Coordinate儲存功能，但是卻沒有存入任何角色Overlay，**就會發生如「清除角色Overlay」的效果**)
 - 強烈建議**只在需要時開啟服裝儲存**功能
 
+# 存檔尺寸調整工具<br>PNG Capture Size Modifier
+![image](demo/demo11.gif)<br>
+
+可調角色存檔、服裝存檔、Studio存檔的拍照尺寸<br>
+可調CharaMaker中角色、服裝檔案選擇器的顯示欄位數<br>
+放大Studio SceneData選擇器的點擊預覧<br>
+給角色存檔、Studio存檔加上浮水角標<br>
+
+請至設定中調整這些功能<br>
+**強烈建議不要關閉Studio SceneData浮水角標，以利區分存檔PNG和普通截圖PNG**<br>
+**產生的存檔可以和「無此插件的遊戲環境」相容**<br>
+
 # 需求依賴
 **BepInEx v5.0.1**<br>
 BepisPlugins r13.0.3

@@ -36,8 +36,8 @@ namespace PNGCaptureSizeModifier {
     public class PNGCaptureSizeModifier : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "PNG Capture Size Modifier";
         internal const string GUID = "com.jim60105.kk.pngcapturesizemodifier";
-        internal const string PLUGIN_VERSION = "20.02.15.2";
-        internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
+        internal const string PLUGIN_VERSION = "20.02.16.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.1";
 
         public static ConfigEntry<float> TimesOfMaker { get; private set; }
         public static ConfigEntry<float> TimesOfStudio { get; private set; }
