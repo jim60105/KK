@@ -38,8 +38,8 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "20.01.27.0";
-		internal const string PLUGIN_RELEASE_VERSION = "1.1.3";
+        internal const string PLUGIN_VERSION = "20.02.19.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.4";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -51,7 +51,7 @@ namespace KK_StudioTextPlugin {
         }
 
         public static ConfigEntry<bool> Auto_change_default { get; private set; }
-        public static ConfigEntry<string> Default_New_Text{ get; private set; }
+        public static ConfigEntry<string> Default_New_Text { get; private set; }
 
         // 新增字體物件時的預設參數
         public static ConfigEntry<string> Default_FontName { get; private set; }
@@ -62,7 +62,7 @@ namespace KK_StudioTextPlugin {
         public static ConfigEntry<TextAnchor> Default_Anchor { get; private set; }
 
         public void Start() {
-            Default_New_Text= Config.Bind<string>("Config", "Default New Text", "NewText", "Text for new text. This is not affected by the Auto Change setting.");
+            Default_New_Text = Config.Bind<string>("Config", "Default New Text", "NewText", "Text for new text. This is not affected by the Auto Change setting.");
             Auto_change_default = Config.Bind<bool>("Config", "Auto Change Default", true, "Save all text settings to create the next new Text Object.");
 
             Default_FontName = Config.Bind<string>("Default Settings", "FontName", "MS Gothic", new ConfigDescription("", new AcceptableValueList<string>(TextPlugin.GetDynamicFontNames().ToArray())));
@@ -106,7 +106,7 @@ namespace KK_StudioTextPlugin {
             //畫大輸入視窗
             Image nameInputPanel = UIUtility.CreatePanel("FolderNameInputPanel", panel.transform);
             nameInputPanel.transform.SetRect(Vector2.up, Vector2.up, new Vector2(165f, -200f), new Vector2(645f, 0f));
-            InputField inputField = UIUtility.CreateInputField("FolderNameInput", nameInputPanel.transform,"");
+            InputField inputField = UIUtility.CreateInputField("FolderNameInput", nameInputPanel.transform, "");
             inputField.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(5f, 5f), new Vector2(-5f, -5f));
             inputField.textComponent.resizeTextMinSize = 15;
             inputField.textComponent.resizeTextMaxSize = 20;
@@ -311,24 +311,24 @@ namespace KK_StudioTextPlugin {
 
         [HarmonyPostfix, HarmonyPatch(typeof(TreeNodeObject), "OnClickSelect")]
         public static void OnClickSelectPostfix(TreeNodeObject __instance) {
-            ObjectCtrlInfo objectCtrlInfo = Studio.Studio.GetCtrlInfo(__instance);
-            if (objectCtrlInfo?.objectInfo?.kind == 3 && objectCtrlInfo is OCIFolder oCIFolder) {
-                if (oCIFolder.name.Contains(TextConfigPrefix)) {
-                    TreeNodeCtrl treeNodeCtrl = Singleton<Studio.Studio>.Instance.treeNodeCtrl;
-                    treeNodeCtrl.SelectSingle(__instance.parent);
-                    oCIFolder = Studio.Studio.GetCtrlInfo(__instance.parent) as OCIFolder;
-                } else if (
-                        oCIFolder.name.Contains(TextConfigFontPrefix) ||
-                        oCIFolder.name.Contains(TextConfigFontSizePrefix) ||
-                        oCIFolder.name.Contains(TextConfigFontStylePrefix) ||
-                        oCIFolder.name.Contains(TextConfigColorPrefix) ||
-                        oCIFolder.name.Contains(TextConfigAnchorPrefix) ||
-                        oCIFolder.name.Contains(TextConfigAlignPrefix)
-                    ) {
-                    TreeNodeCtrl treeNodeCtrl = Singleton<Studio.Studio>.Instance.treeNodeCtrl;
-                    treeNodeCtrl.SelectSingle(__instance.parent.parent);
-                    oCIFolder = Studio.Studio.GetCtrlInfo(__instance.parent.parent) as OCIFolder;
+            if (Studio.Studio.GetCtrlInfo(__instance) is ObjectCtrlInfo objectCtrlInfo  &&
+                objectCtrlInfo.objectInfo?.kind == 3 && 
+                objectCtrlInfo is OCIFolder oCIFolder
+            ) {
+                //選擇到config資料夾時往上跳
+                if (oCIFolder.name.Contains(TextConfigPrefix) ||
+                    oCIFolder.name.Contains(TextConfigFontPrefix) ||
+                    oCIFolder.name.Contains(TextConfigFontSizePrefix) ||
+                    oCIFolder.name.Contains(TextConfigFontStylePrefix) ||
+                    oCIFolder.name.Contains(TextConfigColorPrefix) ||
+                    oCIFolder.name.Contains(TextConfigAnchorPrefix) ||
+                    oCIFolder.name.Contains(TextConfigAlignPrefix)
+                ) {
+                    Singleton<Studio.Studio>.Instance.treeNodeCtrl.SelectSingle(__instance.parent);
+                    OnClickSelectPostfix(__instance.parent);
+                    return;
                 }
+
                 if (oCIFolder.name.Contains(TextObjPrefix)) {
                     TextMesh t = oCIFolder.objectItem.GetComponentInChildren<TextMesh>(true);
                     if (null == t) {
@@ -348,7 +348,7 @@ namespace KK_StudioTextPlugin {
                     }
 
                     //FontSize
-                    panel.GetComponentsInChildren<InputField>(true).Where(x=>x.name == "fontSizeInput").Single().text = (t.characterSize * 500).ToString();
+                    panel.GetComponentsInChildren<InputField>(true).Where(x => x.name == "fontSizeInput").Single().text = (t.characterSize * 500).ToString();
                     //FontStyle
                     panel.GetComponentsInChildren<Dropdown>(true)[0].value = Array.IndexOf(Enum.GetNames(typeof(FontStyle)), t.fontStyle.ToString());
                     //Color
@@ -362,6 +362,39 @@ namespace KK_StudioTextPlugin {
                     onUpdating = false;
                 }
             }
+        }
+
+        //屏蔽掉Config資料夾的parent方法，以避免資料夾結構變動
+        private static bool blockChangeParentFlag = false;
+        [HarmonyPrefix, HarmonyPatch(typeof(WorkspaceCtrl), "OnClickParent")]
+        public static void OnClickParentPrefix() => blockChangeParentFlag = true;
+        [HarmonyPostfix, HarmonyPatch(typeof(WorkspaceCtrl), "OnClickParent")]
+        public static void OnClickParentPostfix() => blockChangeParentFlag = false;
+
+        [HarmonyPrefix, HarmonyPatch(typeof(WorkspaceCtrl), "OnClickRemove")]
+        public static void OnClickRemovePrefix() => blockChangeParentFlag = true;
+        [HarmonyPostfix, HarmonyPatch(typeof(WorkspaceCtrl), "OnClickRemove")]
+        public static void OnClickRemovePostfix() => blockChangeParentFlag = false;
+
+        [HarmonyPrefix, HarmonyPatch(typeof(TreeNodeCtrl), "SetParent", new Type[] { typeof(TreeNodeObject), typeof(TreeNodeObject) })]
+        public static bool SetParentPrefix(ref TreeNodeObject _node) {
+            //ObjectCtrlInfo objectCtrlInfo = Studio.Studio.GetCtrlInfo(_node);
+            if (blockChangeParentFlag &&
+                Studio.Studio.GetCtrlInfo(_node) is ObjectCtrlInfo objectCtrlInfo &&
+                objectCtrlInfo.objectInfo?.kind == 3 &&
+                objectCtrlInfo is OCIFolder oCIFolder &&
+                    (oCIFolder.name.Contains(TextConfigPrefix) ||
+                    oCIFolder.name.Contains(TextConfigFontPrefix) ||
+                    oCIFolder.name.Contains(TextConfigFontSizePrefix) ||
+                    oCIFolder.name.Contains(TextConfigFontStylePrefix) ||
+                    oCIFolder.name.Contains(TextConfigColorPrefix) ||
+                    oCIFolder.name.Contains(TextConfigAnchorPrefix) ||
+                    oCIFolder.name.Contains(TextConfigAlignPrefix))
+            ) {
+                //Logger.LogDebug("Block parent changing.");
+                return false;
+            }
+            return true;
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(TreeNodeObject), "OnDeselect")]
@@ -553,7 +586,7 @@ namespace KK_StudioTextPlugin {
                                        where v != null
                                        select v).ToArray();
             foreach (var oCIFolder in folderArray) {
-                if (oCIFolder.objectItem.GetComponentInChildren<TextMesh>(true).text.IndexOf("\n") >= 0) {
+                if (oCIFolder.objectItem.GetComponentInChildren<TextMesh>(true)?.text.IndexOf("\n") >= 0) {
                     active = true;
                     break;
                 }
