@@ -41,11 +41,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_CharaOverlaysBasedOnCoor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_PNGCaptureSizeModifier", "KK_PNGCaptureSizeModifier\KK_PNGCaptureSizeModifier.csproj", "{2D638E6E-8295-40D9-B76E-6F5A06779C6B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioChikaReplacer", "KK_StudioChikaReplacer\KK_StudioChikaReplacer.csproj", "{3438C334-6A7E-47CC-B243-0A3410FDC44F}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Extension\Extension.projitems*{0646be09-f599-4edb-b115-de4043c8d3be}*SharedItemsImports = 13
 		Extension\Extension.projitems*{0c47ebaa-b09c-44e1-b114-5337b8beba79}*SharedItemsImports = 4
 		Extension\Extension.projitems*{2d638e6e-8295-40d9-b76e-6f5a06779c6b}*SharedItemsImports = 4
+		Extension\Extension.projitems*{3438c334-6a7e-47cc-b243-0a3410fdc44f}*SharedItemsImports = 4
 		Extension\Extension.projitems*{661b77ce-d337-49d2-a359-ad85e68986b2}*SharedItemsImports = 4
 		Extension\Extension.projitems*{670a8493-10c7-4071-8fc8-a49ace4ccfdb}*SharedItemsImports = 4
 		Extension\Extension.projitems*{85268fd6-a1fd-41aa-84d9-71f18815c034}*SharedItemsImports = 4
@@ -150,6 +153,14 @@ Global
 		{2D638E6E-8295-40D9-B76E-6F5A06779C6B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2D638E6E-8295-40D9-B76E-6F5A06779C6B}.Release|x64.ActiveCfg = Release|Any CPU
 		{2D638E6E-8295-40D9-B76E-6F5A06779C6B}.Release|x64.Build.0 = Release|Any CPU
+		{3438C334-6A7E-47CC-B243-0A3410FDC44F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3438C334-6A7E-47CC-B243-0A3410FDC44F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3438C334-6A7E-47CC-B243-0A3410FDC44F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3438C334-6A7E-47CC-B243-0A3410FDC44F}.Debug|x64.Build.0 = Debug|Any CPU
+		{3438C334-6A7E-47CC-B243-0A3410FDC44F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3438C334-6A7E-47CC-B243-0A3410FDC44F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3438C334-6A7E-47CC-B243-0A3410FDC44F}.Release|x64.ActiveCfg = Release|Any CPU
+		{3438C334-6A7E-47CC-B243-0A3410FDC44F}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
