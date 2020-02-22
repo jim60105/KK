@@ -31,19 +31,28 @@ using System.Linq;
 namespace KK_StudioChikaReplacer {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
+    //[BepInDependency("com.jim60105.kk.studiocharaonlyloadbody", BepInDependency.DependencyFlags.SoftDependency)]
     public class KK_StudioChikaReplacer : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chika Replacer";
         internal const string GUID = "com.jim60105.kk.studiochikareplacer";
-        internal const string PLUGIN_VERSION = "20.02.21.0";
-        internal const string PLUGIN_RELEASE_VERSION = "0.0.0";
+        internal const string PLUGIN_VERSION = "20.02.23.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.0";
 
+        public static ConfigEntry<KeyboardShortcut> HotkeyAll { get; set; }
         public static ConfigEntry<KeyboardShortcut> Hotkey { get; set; }
-        public static ConfigEntry<string> Sample_chara { get; private set; }
+        public static ConfigEntry<string> Sample_chara { get; set; }
+        //public static ConfigEntry<bool> Only_Change_Body { get; set; }
+        public static ConfigEntry<bool> Save_before_change { get; set; }
         internal static new ManualLogSource Logger;
+        //internal static bool _isSCOLBExist = false;
         public void Start() {
             Logger = base.Logger;
-            Hotkey = Config.Bind<KeyboardShortcut>("Hotkey", "Change", new KeyboardShortcut(UnityEngine.KeyCode.Quote, new UnityEngine.KeyCode[] { UnityEngine.KeyCode.LeftControl, UnityEngine.KeyCode.LeftShift, UnityEngine.KeyCode.RightShift }));
+            //_isSCOLBExist = null!= Extension.Extension.TryGetPluginInstance("com.jim60105.kk.studiocharaonlyloadbody");
 
+            Hotkey = Config.Bind<KeyboardShortcut>("Hotkey", "Change selected characters", new KeyboardShortcut(UnityEngine.KeyCode.Quote, new UnityEngine.KeyCode[] { UnityEngine.KeyCode.LeftControl, UnityEngine.KeyCode.LeftShift, UnityEngine.KeyCode.RightShift }));
+            HotkeyAll = Config.Bind<KeyboardShortcut>("Hotkey", "Change all characters", new KeyboardShortcut(UnityEngine.KeyCode.Return, new UnityEngine.KeyCode[] { UnityEngine.KeyCode.LeftControl, UnityEngine.KeyCode.LeftShift, UnityEngine.KeyCode.RightShift }));
+            Save_before_change = Config.Bind<bool>("Config", "Save before change characters", true);
+            //Only_Change_Body = Config.Bind<bool>("Config", "Only change body", false, "Keep coordinates");
             Sample_chara = Config.Bind<string>("Config", "Chara to change", "", "Leave blank to use Chika, or use paths like UserData/chara/female/*.png");
 
             HarmonyWrapper.PatchAll(typeof(Patches));
@@ -54,69 +63,87 @@ namespace KK_StudioChikaReplacer {
 
     class Patches {
         private static readonly ManualLogSource Logger = KK_StudioChikaReplacer.Logger;
-        //internal static ChaControl SampleChara;
-        private static ChaControl tmpCtrl;
+        private static bool blockLoadFlag = false;
+        private static ChaControl tmpChaCtrl;
+        private static List<float> originalShapeValueBody;
 
         internal static void Update() {
             if (KK_StudioChikaReplacer.Hotkey.Value.IsDown()) {
-                //Logger.LogDebug("KeyDown");
-
-                List<OCIChar> ociCharList = new List<OCIChar>();
-                Dictionary<OCIChar, float> mouthOpen = new Dictionary<OCIChar, float>();
-                ociCharList = Studio.Studio.Instance.dicInfo.Values.OfType<OCIChar>().Select(delegate (OCIChar x) {
-                    //處理嘴巴open歸零問題
-                    mouthOpen.Add(x, x.oiCharInfo.mouthOpen);
-                    return x;
-                }).ToList();
-                Logger.LogDebug($"Get {ociCharList.Count} charaters.");
-
-                foreach (OCIChar ociChaCtrl in ociCharList) {
-                    if (null == ociChaCtrl) {
-                        continue;
-                    }
-                    if (ociChaCtrl.charInfo.chaFile.parameter.sex != 1) {
-                        Logger.LogWarning($"Skip changes that he is not a girl: {ociChaCtrl.charInfo.fileParam.fullname}");
-                        return;
-                    }
-
-                    //Backup and change to Chika
-                    ChaFileCustom chaFileCustom = ociChaCtrl.charInfo.chaFile.custom;
-                    List<float> originalShapeValueBody;
-                    originalShapeValueBody = chaFileCustom.body.shapeValueBody.ToList();
-
-                    tmpCtrl = ociChaCtrl.charInfo;
-                    blockLoadFlag = true;
-                    ociChaCtrl.ChangeChara(KK_StudioChikaReplacer.Sample_chara.Value);
-                    blockLoadFlag = false;
-                    chaFileCustom = ociChaCtrl.charInfo.chaFile.custom;
-
-                    //Restore Body
-                    if (originalShapeValueBody.Count == chaFileCustom.body.shapeValueBody.Length) {
-                        for (int i = 0; i < originalShapeValueBody.Count; i++) {
-                            chaFileCustom.body.shapeValueBody[i] = originalShapeValueBody[i];
-                        }
-                    } else { Logger.LogError("Sample data is not match to target data!"); }
-                    ociChaCtrl.charInfo.Reload();
-                }
-
-                //處理嘴巴open歸零問題
-                foreach (KeyValuePair<Studio.OCIChar, float> kv in mouthOpen) {
-                    kv.Key.ChangeMouthOpen(kv.Value);
-                }
-                Logger.LogDebug("Changed all finish");
+                Change((from v in Singleton<GuideObjectManager>.Instance.selectObjectKey
+                        select Studio.Studio.GetCtrlInfo(v) as OCIChar into v
+                        where v != null
+                        select v).ToList());
+            }
+            if (KK_StudioChikaReplacer.HotkeyAll.Value.IsDown()) {
+                Change(Studio.Studio.Instance.dicInfo.Values.OfType<OCIChar>().ToList());
             }
         }
 
-        private static bool blockLoadFlag = false;
-        [HarmonyPrefix, HarmonyPatch(typeof(ChaFileControl), "LoadCharaFile", new Type[] { typeof(string), typeof(byte), typeof(bool), typeof(bool) })]
-        public static bool LoadCharaFilePrefix() {
-            if (blockLoadFlag && KK_StudioChikaReplacer.Sample_chara.Value.IsNullOrEmpty()) {
-                tmpCtrl.LoadPreset(tmpCtrl.sex, tmpCtrl.exType);
-
-                return false;
-            } else {
-                return true;
+        private static void Change(List<OCIChar> ociCharList) {
+            Logger.LogDebug($"Get {ociCharList.Count} charaters.");
+            //先存檔
+            if (KK_StudioChikaReplacer.Save_before_change.Value) {
+                Singleton<Studio.Studio>.Instance.SaveScene();
             }
+
+            Dictionary<OCIChar, float> mouthOpen = new Dictionary<OCIChar, float>();
+            ociCharList.ForEach(x => {
+                mouthOpen.Add(x, x.oiCharInfo.mouthOpen);
+            });
+
+            foreach (OCIChar ociChaCtrl in ociCharList) {
+                if (null == ociChaCtrl) {
+                    continue;
+                }
+                if (ociChaCtrl.charInfo.chaFile.parameter.sex != 1) {
+                    Logger.LogWarning($"Skip changes that he is not a girl: {ociChaCtrl.charInfo.fileParam.fullname}");
+                    continue;
+                }
+
+                //Backup body 
+                originalShapeValueBody = ociChaCtrl.charInfo.chaFile.custom.body.shapeValueBody.ToList();
+                tmpChaCtrl = ociChaCtrl.charInfo;
+
+                blockLoadFlag = true;
+                ociChaCtrl.ChangeChara(KK_StudioChikaReplacer.Sample_chara.Value);
+                blockLoadFlag = false;
+
+                //ociChaCtrl.charInfo.Reload();
+            }
+
+            //處理嘴巴open歸零問題
+            foreach (KeyValuePair<Studio.OCIChar, float> kv in mouthOpen) {
+                kv.Key.ChangeMouthOpen(kv.Value);
+            }
+            Logger.LogDebug("Changes are all finished.");
+        }
+
+        [HarmonyPrefix, HarmonyPatch(typeof(ChaFileControl), "LoadCharaFile", new Type[] { typeof(string), typeof(byte), typeof(bool), typeof(bool) })]
+        public static bool LoadCharaFilePrefix(ref bool __result) {
+            if (blockLoadFlag && KK_StudioChikaReplacer.Sample_chara.Value.IsNullOrEmpty()) {
+                tmpChaCtrl.LoadPreset(tmpChaCtrl.sex, tmpChaCtrl.exType);
+                __result = true;
+                return false;
+            }
+            return true;
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaFileControl), "LoadCharaFile", new Type[] { typeof(string), typeof(byte), typeof(bool), typeof(bool) })]
+        public static void LoadCharaFilePostfix() {
+            if (blockLoadFlag) {
+                RestoreBody();
+            }
+        }
+
+        private static void RestoreBody() {
+            ChaFileCustom chaFileCustom = tmpChaCtrl.chaFile.custom;
+            if (originalShapeValueBody.Count == chaFileCustom.body.shapeValueBody.Length) {
+                for (int i = 0; i < originalShapeValueBody.Count; i++) {
+                    chaFileCustom.body.shapeValueBody[i] = originalShapeValueBody[i];
+                }
+            } else { Logger.LogError("Sample data is not match to target data!"); }
+            originalShapeValueBody.Clear();
+            Logger.LogDebug($"Restore body: {tmpChaCtrl.chaFile.parameter.fullname}");
         }
     }
 }
