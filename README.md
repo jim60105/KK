@@ -128,6 +128,18 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 因為改變了存檔圖片尺寸，**強烈建議不要禁用Studio SceneData浮水印**，以利區分存檔PNG和普通截圖PNG<br>
 **產生的存檔可以和「無此插件的遊戲環境」相容**<br>
 
+# Studio千佳替換器<br>Studio Chika Replacer
+![image](demo/demo12.gif)<br>
+
+- 一鍵把Studio內的所有女角色都換成千佳(預設角色)<br>
+- 或可自訂要用來替換的角色<br>
+- 可只替換選中的角色<br>
+- 用選擇方式來替換時，可替換男角色<br>
+
+快捷鍵我故意設定得的很複雜，以免誤觸<br>
+全替換: Enter + 右Shift + 左Shift + 左Ctrl
+選擇替換: '(單引號) + 右Shift + 左Shift + 左Ctrl
+
 # 需求依賴
 **BepInEx v5.0.1**<br>
 BepisPlugins r13.0.3
