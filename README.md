@@ -131,12 +131,12 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 # Studio千佳替換器<br>Studio Chika Replacer
 ![image](demo/demo12.gif)<br>
 
-- 一鍵把Studio內的所有女角色都換成千佳(預設角色)<br>
+- 一鍵把Studio內的所有女角色都換成千佳(預設角色)，並保留原始人物的身形數據<br>
 - 或可自訂要用來替換的角色<br>
 - 可只替換選中的角色<br>
 - 用選擇方式來替換時，可替換男角色<br>
 
-快捷鍵我故意設定得的很複雜，以免誤觸 (在F1修改)<br>
+快捷鍵我故意設定得的很複雜，以免誤觸 (可在config修改)<br>
 全替換: Enter + 右Shift + 左Shift + 左Ctrl<br>
 選擇替換: '(單引號) + 右Shift + 左Shift + 左Ctrl<br>
 
