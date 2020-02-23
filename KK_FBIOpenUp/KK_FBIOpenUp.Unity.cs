@@ -163,6 +163,7 @@ namespace KK_FBIOpenUp {
                 downState = false;
                 float clickDeltaTime = btnClickTimer;
                 btnClickTimer = 0;
+                if (step != 0) return;
                 switch (KK_FBIOpenUp.nowGameMode) {
                     case KK_FBIOpenUp.GameMode.FreeH:
                         KK_FBIOpenUp.SetEnabled();
@@ -176,6 +177,18 @@ namespace KK_FBIOpenUp {
                         ChangeRedBagBtn(redBagBtn);
                         break;
                     case KK_FBIOpenUp.GameMode.Maker:
+                        KK_FBIOpenUp.SetEnabled();
+                        if (KK_FBIOpenUp._isenabled) {
+                            DrawSlidePic(10);
+                        } else {
+                            DrawSlidePic(20);
+                        }
+                        //Maker啟用時長按不變更狀態，開ABMX時不變更狀態
+                        if ( KK_FBIOpenUp.Effect_on_ABMX.Value || (clickDeltaTime >= 1f && KK_FBIOpenUp._isenabled)) {
+                            KK_FBIOpenUp.SetEnabled();
+                        }
+                        ChangeRedBagBtn(redBagBtn);
+                        break;
                     case KK_FBIOpenUp.GameMode.MainGame:
                         //主遊戲不分長短按
                         KK_FBIOpenUp.SetEnabled();
@@ -187,12 +200,17 @@ namespace KK_FBIOpenUp {
                         ChangeRedBagBtn(redBagBtn);
                         break;
                     case KK_FBIOpenUp.GameMode.Studio:
+                        //Studio長按時調整狀態而不變人
                         KK_FBIOpenUp.SetEnabled();
                         if (clickDeltaTime <= 1f) {
                             if (KK_FBIOpenUp._isenabled) {
                                 DrawSlidePic(10);
                             } else {
-                                DrawSlidePic(20);
+                                if (KK_FBIOpenUp.Effect_on_ABMX.Value) {
+                                    DrawSlidePic(2);
+                                } else {
+                                    DrawSlidePic(20);
+                                }
                             }
                             ChangeRedBagBtn(redBagBtn);
                         } else {

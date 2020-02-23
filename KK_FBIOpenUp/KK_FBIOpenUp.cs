@@ -21,6 +21,7 @@ using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Harmony;
 using BepInEx.Logging;
+using ExtensibleSaveFormat;
 using Extension;
 using MessagePack;
 using System;
@@ -32,14 +33,15 @@ using UILib;
 
 namespace KK_FBIOpenUp {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
-    //[BepInDependency("KKABMX.Core", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("KKABMX.Core", BepInDependency.DependencyFlags.SoftDependency)]
     public class KK_FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "20.01.03.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.1";
+        internal const string PLUGIN_VERSION = "20.02.24.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
 
         internal static bool _isenabled = false;
+        internal static bool _isABMXExist = false;
         internal static GameMode nowGameMode;
         internal enum GameMode {
             Studio = 0,
@@ -54,6 +56,7 @@ namespace KK_FBIOpenUp {
         internal static float videoVolume = 0.1f;
 
         public static ConfigEntry<bool> Enable { get; private set; }
+        public static ConfigEntry<bool> Effect_on_ABMX { get; private set; }
         public static ConfigEntry<string> Sample_chara { get; private set; }
         public static ConfigEntry<float> Change_rate { get; private set; }
         public static ConfigEntry<string> Video_related_path { get; private set; }
@@ -74,25 +77,12 @@ namespace KK_FBIOpenUp {
             Enable = Config.Bind<bool>("Config", "Enable", false);
             _isenabled = Enable.Value;
 
+            Effect_on_ABMX = Config.Bind<bool>("Config", "Effect on ABMX", false, "In most cases, it is not recommended to enable.");
+            _isABMXExist = null != Extension.Extension.TryGetPluginInstance("KKABMX.Core", new Version(3, 5, 1));
+
             Sample_chara = Config.Bind<string>("Config", "Sample chara", "", "Leave blank to use my default loli, or use paths like UserData/chara/female/*.png");
             Sample_chara.SettingChanged += SetCharaPath;
             SetCharaPath(null, null);
-            void SetCharaPath(object sender, EventArgs e) {
-                try {
-                    string sampleCharaPath = Path.GetFullPath(Sample_chara.Value);
-                    using (FileStream fileStream = new FileStream(sampleCharaPath, FileMode.Open, FileAccess.Read)) {
-                        Patches.LoadSampleChara(fileStream);
-                    }
-                    Logger.LogDebug($@"Load path: {sampleCharaPath}");
-                } catch (Exception) {
-                    Logger.LogDebug("Use default chara");
-                    Logger.LogDebug("FBI! Open Up!");
-                    Assembly ass = Assembly.GetExecutingAssembly();
-                    using (Stream stream = ass.GetManifestResourceStream("KK_FBIOpenUp.Resources.sample_chara.png")) {
-                        Patches.LoadSampleChara(stream);
-                    }
-                }
-            }
 
             Change_rate = Config.Bind<float>("Config", "Change rate", 0.77f, "Proportion of change from original character to sample character, 1 is completely changed");
             Change_rate.SettingChanged += ChangeRate;
@@ -127,11 +117,28 @@ namespace KK_FBIOpenUp {
             _isenabled = b;
             Enable.Value = b;
         }
+        internal static void SetCharaPath(object sender, EventArgs e) {
+            try {
+                string sampleCharaPath = Path.GetFullPath(Sample_chara.Value);
+                using (FileStream fileStream = new FileStream(sampleCharaPath, FileMode.Open, FileAccess.Read)) {
+                    Patches.LoadSampleChara(fileStream);
+                }
+                Logger.LogDebug($@"Load path: {sampleCharaPath}");
+            } catch (Exception) {
+                Logger.LogDebug("Use default chara");
+                Logger.LogDebug("FBI! Open Up!");
+                Assembly ass = Assembly.GetExecutingAssembly();
+                using (Stream stream = ass.GetManifestResourceStream("KK_FBIOpenUp.Resources.sample_chara.png")) {
+                    Patches.LoadSampleChara(stream);
+                }
+            }
+        }
     }
 
     static class SampleChara {
         internal static List<float> shapeValueFace;
         internal static List<float> shapeValueBody;
+        internal static PluginData ABMXData;
         internal static ChaFileControl chaFile;
     }
 
@@ -163,6 +170,13 @@ namespace KK_FBIOpenUp {
             //Logger.LogMessage("Length Body: " + body.shapeValueBody.Length);
             SampleChara.shapeValueFace = face.shapeValueFace.ToList();
             SampleChara.shapeValueBody = body.shapeValueBody.ToList();
+
+            SampleChara.ABMXData = MessagePackSerializer.Deserialize<PluginData>(MessagePackSerializer.Serialize(ExtendedSave.GetExtendedDataById(SampleChara.chaFile, "KKABMPlugin.ABMData")));
+            if (KK_FBIOpenUp._isABMXExist && null != SampleChara.ABMXData) {
+                Logger.LogDebug("Loaded sample chara ABMX");
+            } else {
+                Logger.LogDebug("NO sample chara ABMX");
+            }
         }
 
         /// <summary>
@@ -175,6 +189,8 @@ namespace KK_FBIOpenUp {
             if (Hooks.BlockChanging || null == chaCtrl || null == chaCtrl.chaFile) {
                 return;
             }
+
+            KK_FBIOpenUp.SetCharaPath(null, null);
 
             if (chaCtrl.chaFile.parameter.sex != SampleChara.chaFile.parameter.sex) {
                 Logger.LogWarning($"Skip changes that differ from Sample Chara's gender: {chaCtrl.fileParam.fullname}");
@@ -194,13 +210,13 @@ namespace KK_FBIOpenUp {
             //(不block掉是因為，即使在單次Loading Chara內，此function也會被trigger不止一次)
             if (chaFileCustomDict.TryGetValue(chaFileCustom, out List<float>[] chaFileCustomStored)) {
                 if (disableDoubleChange) {
-                    chaFileCustomDict[chaFileCustom] = new List<float>[] { new List<float>(originalShapeValueFace), new List<float>(originalShapeValueBody) };
+                    chaFileCustomDict[chaFileCustom] = new List<float>[] { new List<float>(originalShapeValueFace), new List<float>(originalShapeValueBody)};
                 } else {
-                    originalShapeValueFace = chaFileCustomStored[0].ToList();
-                    originalShapeValueBody = chaFileCustomStored[1].ToList();
+                    originalShapeValueFace = chaFileCustomStored[0].ToList<float>();
+                    originalShapeValueBody = chaFileCustomStored[1].ToList<float>();
                 }
             } else {
-                chaFileCustomDict.Add(chaFileCustom, new List<float>[] { new List<float>(originalShapeValueFace), new List<float>(originalShapeValueBody) });
+                chaFileCustomDict.Add(chaFileCustom, new List<float>[] { new List<float>(originalShapeValueFace), new List<float>(originalShapeValueBody)});
                 Logger.LogDebug("chaFileCustomDict.Count: " + chaFileCustomDict.Count);
             }
 
@@ -221,7 +237,95 @@ namespace KK_FBIOpenUp {
                 } else { Logger.LogError("Sample data is not match to target data!"); }
                 Logger.LogDebug("Changed body finish");
             }
+
+            if (null != SampleChara.ABMXData && KK_FBIOpenUp._isABMXExist && KK_FBIOpenUp.Effect_on_ABMX.Value) {
+                //取得BoneController
+                object BoneController = chaCtrl.GetComponents<UnityEngine.MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
+                if (null == BoneController) {
+                    Logger.LogDebug("No ABMX BoneController found");
+                    return;
+                }
+
+                ////建立重用function
+                //void GetModifiers(Action<object> action) {
+                //    foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames")) {
+                //        object modifier = BoneController.Invoke("GetModifier", new object[] { boneName });
+                //        if (null != modifier) {
+                //            action(modifier);
+                //        }
+                //    }
+                //}
+
+                ////取得舊角色衣服ABMX數據
+                //List<object> previousModifier = new List<object>();
+                //GetModifiers(x => {
+                //    if ((bool)x.Invoke("IsCoordinateSpecific")) {
+                //        previousModifier.Add(x);
+                //    }
+                //});
+
+                //將擴充資料由暫存複製到角色身上
+                ExtendedSave.SetExtendedDataById(chaCtrl.chaFile, "KKABMPlugin.ABMData", SampleChara.ABMXData);
+
+                //把擴充資料載入ABMX插件
+                BoneController.Invoke("OnReload", new object[] { 2, false });
+
+                ////清理新角色數據，將衣服數據刪除
+                //List<object> newModifiers = new List<object>();
+                //int i = 0;
+                //GetModifiers(x => {
+                //    if ((bool)x.Invoke("IsCoordinateSpecific")) {
+                //        Logger.LogDebug("Clean new coordinate ABMX BoneData: " + (string)x.GetProperty("BoneName"));
+                //        x.Invoke("MakeNonCoordinateSpecific");
+                //        object y = x.Invoke("GetModifier", new object[] { (ChaFileDefine.CoordinateType)0 });
+                //        y.Invoke("Clear");
+                //        x.Invoke("MakeCoordinateSpecific");    //保險起見以免後面沒有成功清除
+                //        i++;
+                //    } else {
+                //        newModifiers.Add(x);
+                //    }
+                //});
+
+                ////將舊的衣服數據合併回到角色身上
+                //i = 0;
+                //foreach (object modifier in previousModifier) {
+                //    string bonename = (string)modifier.GetProperty("BoneName");
+                //    if (!newModifiers.Any(x => string.Equals(bonename, (string)x.GetProperty("BoneName")))) {
+                //        BoneController.Invoke("AddModifier", new object[] { modifier });
+                //        Logger.LogDebug("Rollback cooridnate ABMX BoneData: " + bonename);
+                //    } else {
+                //        Logger.LogError("Duplicate coordinate ABMX BoneData: " + bonename);
+                //    }
+                //    i++;
+                //}
+                //Logger.LogDebug($"Merge {i} previous ABMX Bone Modifiers");
+
+                //重整
+                BoneController.SetProperty("NeedsFullRefresh", true);
+                BoneController.SetProperty("NeedsBaselineUpdate", true);
+                BoneController.Invoke("LateUpdate");
+
+                //把ABMX的數據存進擴充資料
+                BoneController.Invoke("OnCardBeingSaved", new object[] { 1 });
+                BoneController.Invoke("OnReload", new object[] { 2, false });
+
+                ListABMX(BoneController);
+                Logger.LogDebug("Overwrite ABMX finish");
+            }
+
             Logger.LogInfo($"Changed: {chaCtrl.fileParam.fullname}");
+        }
+
+        internal static void ListABMX(object BoneController) {
+            //列出角色身上所有ABMX數據
+            Logger.LogDebug("--List all exist ABMX BoneData--");
+            foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames", null)) {
+                object modifier = BoneController.Invoke("GetModifier", new object[] { boneName });
+                if (null != modifier) {
+                    Logger.LogDebug("" + boneName);
+                }
+            }
+            Logger.LogDebug("--------------------------------");
         }
 
         /// <summary>
@@ -297,7 +401,7 @@ namespace KK_FBIOpenUp {
         /// 復原角色
         /// </summary>
         public static void RollbackChara(ChaControl chaCtrl) {
-            if (Hooks.BlockChanging || null == chaCtrl || null == chaCtrl.chaFile) {
+            if (Hooks.BlockChanging || null == chaCtrl || null == chaCtrl.chaFile || KK_FBIOpenUp.Effect_on_ABMX.Value) {
                 return;
             }
 
@@ -308,6 +412,7 @@ namespace KK_FBIOpenUp {
 
             if (chaCtrl.chaFile.custom is ChaFileCustom chaFileCustom) {
                 if (chaFileCustomDict.TryGetValue(chaFileCustom, out List<float>[] chaFileCustomStored)) {
+                    if (null == chaFileCustomStored) return;
                     bool[] done = { false, false };
                     if (chaFileCustomStored[0].Count == chaFileCustom.face.shapeValueFace.Length) {
                         chaFileCustom.face.shapeValueFace = chaFileCustomStored[0].ToArray();
@@ -322,7 +427,7 @@ namespace KK_FBIOpenUp {
                     if (done[0] & done[1]) {
                         chaFileCustomDict.Remove(chaFileCustom);
                     }
-                    chaCtrl.Reload(true, false, true, false);
+                    //chaCtrl.Reload(true, false, true, false);
                     Logger.LogDebug($"Rollbacked.");
                 } else {
                     Logger.LogInfo($"No rollback data found for {chaCtrl.chaFile.parameter.fullname}");
