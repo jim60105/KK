@@ -136,9 +136,9 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 - 可只替換選中的角色<br>
 - 用選擇方式來替換時，可替換男角色<br>
 
-快捷鍵我故意設定得的很複雜，以免誤觸<br>
-全替換: Enter + 右Shift + 左Shift + 左Ctrl
-選擇替換: '(單引號) + 右Shift + 左Shift + 左Ctrl
+快捷鍵我故意設定得的很複雜，以免誤觸 (在F1修改)<br>
+全替換: Enter + 右Shift + 左Shift + 左Ctrl<br>
+選擇替換: '(單引號) + 右Shift + 左Shift + 左Ctrl<br>
 
 # 需求依賴
 **BepInEx v5.0.1**<br>
