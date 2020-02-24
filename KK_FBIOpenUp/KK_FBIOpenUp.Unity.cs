@@ -179,6 +179,10 @@ namespace KK_FBIOpenUp {
                         }
                         ChangeWithoutShiftPicture = true;
                         StepLightAndPlay();
+                        //開ABMX時不變更狀態
+                        if (KK_FBIOpenUp.Effect_on_ABMX.Value) {
+                            KK_FBIOpenUp.SetEnabled();
+                        }
                         ChangeRedBagBtn(redBagBtn);
                         break;
                     case KK_FBIOpenUp.GameMode.Maker:
@@ -186,11 +190,11 @@ namespace KK_FBIOpenUp {
                         if (KK_FBIOpenUp._isenabled) {
                             DrawSlidePic(10);
                         } else {
-                                if (KK_FBIOpenUp.Effect_on_ABMX.Value) {
-                                    DrawSlidePic(2);
-                                } else {
-                                    DrawSlidePic(20);
-                                }
+                            if (KK_FBIOpenUp.Effect_on_ABMX.Value) {
+                                DrawSlidePic(2);
+                            } else {
+                                DrawSlidePic(20);
+                            }
                         }
                         //Maker開ABMX時、啟用長按時不變更狀態
                         if (KK_FBIOpenUp.Effect_on_ABMX.Value || (clickDeltaTime >= 1f && KK_FBIOpenUp._isenabled)) {
@@ -204,11 +208,14 @@ namespace KK_FBIOpenUp {
                         if (KK_FBIOpenUp._isenabled) {
                             DrawSlidePic(10);
                         } else {
-                                if (KK_FBIOpenUp.Effect_on_ABMX.Value) {
-                                    DrawSlidePic(2);
-                                } else {
-                                    DrawSlidePic(20);
-                                }
+                            if (KK_FBIOpenUp.Effect_on_ABMX.Value) {
+                                DrawSlidePic(2);
+                            } else {
+                                DrawSlidePic(20);
+                            }
+                        }
+                        if (KK_FBIOpenUp.Effect_on_ABMX.Value) {
+                            KK_FBIOpenUp.SetEnabled();
                         }
                         ChangeRedBagBtn(redBagBtn);
                         break;
@@ -535,6 +542,7 @@ namespace KK_FBIOpenUp {
                             stepSet(1);
                         } else {
                             ChangeWithoutShiftPicture = false;
+                            stepSet(0);
                         }
                         break;
                     case 20:
@@ -557,6 +565,7 @@ namespace KK_FBIOpenUp {
                             stepSet(2);
                         } else {
                             ChangeWithoutShiftPicture = false;
+                            stepSet(0);
                         }
                         break;
                 }
