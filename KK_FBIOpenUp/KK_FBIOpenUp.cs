@@ -37,7 +37,7 @@ namespace KK_FBIOpenUp {
     public class KK_FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "20.02.24.0";
+        internal const string PLUGIN_VERSION = "20.02.24.1";
         internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
 
         internal static bool _isenabled = false;
@@ -105,7 +105,7 @@ namespace KK_FBIOpenUp {
                 videoPath = null;
             }
 
-            Video_volume = Config.Bind<float>("Config", "Video volume", 0.06f);
+            Video_volume = Config.Bind<float>("Config", "Video volume", 0.04f);
             videoVolume = Video_volume.Value;
             Logger.LogDebug($"Set video volume to {videoVolume}");
         }
@@ -246,59 +246,11 @@ namespace KK_FBIOpenUp {
                     return;
                 }
 
-                ////建立重用function
-                //void GetModifiers(Action<object> action) {
-                //    foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames")) {
-                //        object modifier = BoneController.Invoke("GetModifier", new object[] { boneName });
-                //        if (null != modifier) {
-                //            action(modifier);
-                //        }
-                //    }
-                //}
-
-                ////取得舊角色衣服ABMX數據
-                //List<object> previousModifier = new List<object>();
-                //GetModifiers(x => {
-                //    if ((bool)x.Invoke("IsCoordinateSpecific")) {
-                //        previousModifier.Add(x);
-                //    }
-                //});
-
                 //將擴充資料由暫存複製到角色身上
                 ExtendedSave.SetExtendedDataById(chaCtrl.chaFile, "KKABMPlugin.ABMData", SampleChara.ABMXData);
 
                 //把擴充資料載入ABMX插件
                 BoneController.Invoke("OnReload", new object[] { 2, false });
-
-                ////清理新角色數據，將衣服數據刪除
-                //List<object> newModifiers = new List<object>();
-                //int i = 0;
-                //GetModifiers(x => {
-                //    if ((bool)x.Invoke("IsCoordinateSpecific")) {
-                //        Logger.LogDebug("Clean new coordinate ABMX BoneData: " + (string)x.GetProperty("BoneName"));
-                //        x.Invoke("MakeNonCoordinateSpecific");
-                //        object y = x.Invoke("GetModifier", new object[] { (ChaFileDefine.CoordinateType)0 });
-                //        y.Invoke("Clear");
-                //        x.Invoke("MakeCoordinateSpecific");    //保險起見以免後面沒有成功清除
-                //        i++;
-                //    } else {
-                //        newModifiers.Add(x);
-                //    }
-                //});
-
-                ////將舊的衣服數據合併回到角色身上
-                //i = 0;
-                //foreach (object modifier in previousModifier) {
-                //    string bonename = (string)modifier.GetProperty("BoneName");
-                //    if (!newModifiers.Any(x => string.Equals(bonename, (string)x.GetProperty("BoneName")))) {
-                //        BoneController.Invoke("AddModifier", new object[] { modifier });
-                //        Logger.LogDebug("Rollback cooridnate ABMX BoneData: " + bonename);
-                //    } else {
-                //        Logger.LogError("Duplicate coordinate ABMX BoneData: " + bonename);
-                //    }
-                //    i++;
-                //}
-                //Logger.LogDebug($"Merge {i} previous ABMX Bone Modifiers");
 
                 //重整
                 BoneController.SetProperty("NeedsFullRefresh", true);
@@ -401,6 +353,7 @@ namespace KK_FBIOpenUp {
         /// 復原角色
         /// </summary>
         public static void RollbackChara(ChaControl chaCtrl) {
+            //開啟ABMX功能的話就禁用所有Rollback
             if (Hooks.BlockChanging || null == chaCtrl || null == chaCtrl.chaFile || KK_FBIOpenUp.Effect_on_ABMX.Value) {
                 return;
             }

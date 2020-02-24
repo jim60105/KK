@@ -166,11 +166,16 @@ namespace KK_FBIOpenUp {
                 if (step != 0) return;
                 switch (KK_FBIOpenUp.nowGameMode) {
                     case KK_FBIOpenUp.GameMode.FreeH:
+                        //不分長短按
                         KK_FBIOpenUp.SetEnabled();
                         if (KK_FBIOpenUp._isenabled) {
                             step = 10;
                         } else {
-                            step = 20;
+                            if (KK_FBIOpenUp.Effect_on_ABMX.Value) {
+                                step = 2;
+                            } else {
+                                step = 20;
+                            }
                         }
                         ChangeWithoutShiftPicture = true;
                         StepLightAndPlay();
@@ -181,10 +186,14 @@ namespace KK_FBIOpenUp {
                         if (KK_FBIOpenUp._isenabled) {
                             DrawSlidePic(10);
                         } else {
-                            DrawSlidePic(20);
+                                if (KK_FBIOpenUp.Effect_on_ABMX.Value) {
+                                    DrawSlidePic(2);
+                                } else {
+                                    DrawSlidePic(20);
+                                }
                         }
-                        //Maker啟用時長按不變更狀態，開ABMX時不變更狀態
-                        if ( KK_FBIOpenUp.Effect_on_ABMX.Value || (clickDeltaTime >= 1f && KK_FBIOpenUp._isenabled)) {
+                        //Maker開ABMX時、啟用長按時不變更狀態
+                        if (KK_FBIOpenUp.Effect_on_ABMX.Value || (clickDeltaTime >= 1f && KK_FBIOpenUp._isenabled)) {
                             KK_FBIOpenUp.SetEnabled();
                         }
                         ChangeRedBagBtn(redBagBtn);
@@ -195,7 +204,11 @@ namespace KK_FBIOpenUp {
                         if (KK_FBIOpenUp._isenabled) {
                             DrawSlidePic(10);
                         } else {
-                            DrawSlidePic(20);
+                                if (KK_FBIOpenUp.Effect_on_ABMX.Value) {
+                                    DrawSlidePic(2);
+                                } else {
+                                    DrawSlidePic(20);
+                                }
                         }
                         ChangeRedBagBtn(redBagBtn);
                         break;
