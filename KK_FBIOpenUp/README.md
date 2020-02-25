@@ -44,7 +44,8 @@
 
 # 需求依賴
 BepInEx **v5.0**<br>
-BepisPlugins r13.0.1
+BepisPlugins r13.0.1<br>
+Koikatu ABMX v3.5.1
 
 # 安裝方式
 - 將*.dll放至「BepInEx/plugins/jim60105」資料夾之下<br>
