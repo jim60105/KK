@@ -19,9 +19,11 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 
 using BepInEx;
 using BepInEx.Configuration;
+using BepInEx.Harmony;
 using BepInEx.Logging;
 using ExtensibleSaveFormat;
 using Extension;
+using HarmonyLib;
 using KKAPI;
 using KKAPI.Chara;
 using KKAPI.Maker;
@@ -42,8 +44,8 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.02.18.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.2.4";
+        internal const string PLUGIN_VERSION = "20.03.04.1";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.4.1";
 
         internal static new ManualLogSource Logger;
         public static ConfigEntry<bool> Enable_Saving_To_Chara { get; private set; }
@@ -62,6 +64,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             Save_Face_Overlay = Config.Bind<bool>("Save By Coordinate (Enable Main Config first)", "Face Overlay", false, "This setting will only react when main config enabled");
             Save_Body_Overlay = Config.Bind<bool>("Save By Coordinate (Enable Main Config first)", "Body Overlay", false, "This setting will only react when main config enabled");
             CharacterApi.RegisterExtraBehaviour<CharaOverlaysBasedOnCoordinateController>(GUID);
+            HarmonyWrapper.PatchAll(typeof(Patches));
         }
 
         public void Start() {
@@ -122,6 +125,52 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
         #endregion
     }
 
+    class Patches {
+        static readonly int[] TempTexture = { 0, 0 };
+        static bool Lock = false;
+        static bool PrefixExcuted = false;
+        [HarmonyPrefix, HarmonyPatch(typeof(CustomTextureCreate), nameof(CustomTextureCreate.RebuildTextureAndSetMaterial))]
+        public static void RebuildTexPrefix(CustomTextureCreate __instance) {
+            if (Lock) {
+                return;
+            }
+
+            //Lock = true;
+            CharaOverlaysBasedOnCoordinateController overlay = __instance.trfParent?.GetComponent<CharaOverlaysBasedOnCoordinateController>();
+            if (overlay != null && overlay.Started && !CharacterApi.GetRegisteredBehaviour(overlay.ExtendedDataId).MaintainState) {
+                if (TempTexture[0] == 0 && 0 == TempTexture[1]) {
+                    TempTexture[0] = overlay.OverlayTable[overlay.CurrentCoordinate.Value][TexType.EyeOver];
+                    TempTexture[1] = overlay.OverlayTable[overlay.CurrentCoordinate.Value][TexType.EyeUnder];
+                    PrefixExcuted = true;
+                }
+                if (overlay.ChaControl.ctCreateEyeL == __instance) {
+                    //Left eye
+                    overlay.OverlayTable[overlay.CurrentCoordinate.Value][TexType.EyeOver] = 0;
+                    overlay.OverlayTable[overlay.CurrentCoordinate.Value][TexType.EyeUnder] = 0;
+                    overlay.OverwriteOverlayWithoutUpdate(TexType.EyeOver);
+                    overlay.OverwriteOverlayWithoutUpdate(TexType.EyeUnder);
+                } else if (overlay.ChaControl.ctCreateEyeR == __instance) {
+                    //Right eye
+                    overlay.OverlayTable[overlay.CurrentCoordinate.Value][TexType.EyeOver] = TempTexture[0];
+                    overlay.OverlayTable[overlay.CurrentCoordinate.Value][TexType.EyeUnder] = TempTexture[1];
+                    overlay.OverwriteOverlayWithoutUpdate(TexType.EyeOver);
+                    overlay.OverwriteOverlayWithoutUpdate(TexType.EyeUnder);
+                }
+            }
+            //Lock = false;
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(CustomTextureCreate), nameof(CustomTextureCreate.RebuildTextureAndSetMaterial))]
+        public static void RebuildTexPostfix(CustomTextureCreate __instance) {
+            CharaOverlaysBasedOnCoordinateController overlay = __instance.trfParent?.GetComponent<CharaOverlaysBasedOnCoordinateController>();
+            if (overlay != null && PrefixExcuted) {
+                PrefixExcuted = false;
+                overlay.OverlayTable[overlay.CurrentCoordinate.Value][TexType.EyeOver] = TempTexture[0];
+                overlay.OverlayTable[overlay.CurrentCoordinate.Value][TexType.EyeUnder] = TempTexture[1];
+            }
+        }
+    }
+
     internal class CharaOverlaysBasedOnCoordinateController : CharaCustomFunctionController {
         private static readonly ManualLogSource Logger = KK_CharaOverlaysBasedOnCoordinate.Logger;
         private KoiSkinOverlayController KSOXController;
@@ -129,7 +178,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
         private ChaFileDefine.CoordinateType BackCoordinateType;
 
         private readonly List<byte[]> Resources = new List<byte[]>();
-        private readonly Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, int>> OverlayTable = new Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, int>>();
+        internal readonly Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, int>> OverlayTable = new Dictionary<ChaFileDefine.CoordinateType, Dictionary<TexType, int>>();
         //private PluginData PluginDataBackup = null;
 
         /// <summary>
@@ -460,6 +509,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             foreach (TexType texType in Enum.GetValues(typeof(TexType))) {
                 if (null != CurrentOverlay && CurrentOverlay.TryGetValue(texType, out byte[] texture)) {
                     KSOXController.SetOverlayTex(texture, texType);
+                    //OverwriteOverlay(texType, texture);
                 } else {
                     KSOXController.SetOverlayTex(null, texType);
                 }
@@ -468,7 +518,22 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
                 KoiSkinOverlayGui.Invoke("UpdateInterface", new object[] { KSOXController });
             }
 
-            Logger.LogDebug("OverWrite Overlay");
+            Logger.LogDebug("OverWrite Overlay (1)");
+        }
+
+        internal void OverwriteOverlayWithoutUpdate(TexType texType) {
+            if (null != CurrentOverlay && CurrentOverlay.TryGetValue(texType, out byte[] texture)) {
+                if (((Dictionary<TexType, OverlayTexture>)KSOXController.GetField("_overlays")).ContainsKey(texType)) {
+                    if (null == texture) {
+                        ((Dictionary<TexType, OverlayTexture>)KSOXController.GetField("_overlays")).Remove(texType);
+                    } else {
+                        ((Dictionary<TexType, OverlayTexture>)KSOXController.GetField("_overlays"))[texType].Data = texture;
+                    }
+                } else {
+                    ((Dictionary<TexType, OverlayTexture>)KSOXController.GetField("_overlays")).Add(new OverlayTexture(texture));
+                }
+                Logger.LogDebug("OverWrite Overlay (2)");
+            }
         }
 
         /// <summary>
