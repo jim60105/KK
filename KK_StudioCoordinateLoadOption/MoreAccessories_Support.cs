@@ -164,7 +164,9 @@ namespace KK_StudioCoordinateLoadOption {
 
             if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
                 HairAccessoryCustomizer_Support.GetExtendedDataFromExtData(targetChaCtrl, out var nowCoor);
-                Logger.LogDebug($"->Hair Count: {nowCoor.Count} : {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
+                if (null != nowCoor) {
+                    Logger.LogDebug($"->Hair Count: {nowCoor.Count} : {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
+                }
             }
             Logger.LogDebug($"->MoreAcc Parts Count : {GetAccessoriesAmount(targetChaCtrl.chaFile)}");
 

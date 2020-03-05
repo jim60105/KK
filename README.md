@@ -106,8 +106,9 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 - 讓所有角色Overlay(Iris、Face、Body Overlay)隨著服裝變更，反映在人物存檔和服裝存檔上<br>
 - 此插件在「讀存」跟「切換服裝」時覆蓋Overlay，依賴KSOX運作<br>
 - v1.2.0起支援資源重用，同樣的貼圖重複使用時只會佔一份空間<br>
-- **產生的存檔可以和「無此插件的遊戲環境」相容**，最後KSOX儲存的Overlay會被載入<br>
+- **產生的存檔可以和「無此插件的遊戲環境」相容**，此時KSOX儲存的Overlay會被載入<br>
 (存檔時，當前套用的Overlay依然會儲存進去，並在無插件環境時被讀取出來)<br>
+- v1.3.0起Iris Overlay可只覆蓋在單一邊
 
 ### 注意事項:<br>
 - 特別需求 **KKAPI v1.9.5 & Illusion Overlay Mods v5.1.1** 以上版本<br>

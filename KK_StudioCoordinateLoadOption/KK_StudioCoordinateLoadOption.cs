@@ -46,8 +46,8 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "19.12.30.0";
-        internal const string PLUGIN_RELEASE_VERSION = "3.1.0";
+        internal const string PLUGIN_VERSION = "20.03.05.0";
+        internal const string PLUGIN_RELEASE_VERSION = "3.1.0.1";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -454,6 +454,7 @@ namespace KK_StudioCoordinateLoadOption {
             tmpChaCtrl.fileParam.firstname = "中天";
             backupTmpCoordinate = new ChaFileCoordinate();
             backupTmpCoordinate.LoadFile(charaFileSort.selectPath);
+            tmpChaCtrl.Reload();
             tmpChaCtrl.nowCoordinate.LoadFile(charaFileSort.selectPath);
             tmpChaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)tmpChaCtrl.fileStatus.coordinateType);
             tmpChaCtrl.Reload(false, true, true, true);
