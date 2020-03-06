@@ -44,7 +44,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.03.05.0";
+        internal const string PLUGIN_VERSION = "20.03.05.1";
         internal const string PLUGIN_RELEASE_VERSION = "1.3.0";
 
         internal static new ManualLogSource Logger;
@@ -54,7 +54,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
         public static ConfigEntry<bool> Save_Face_Overlay { get; private set; }
         public static ConfigEntry<bool> Save_Body_Overlay { get; private set; }
         public static ConfigEntry<bool> Warning_Message { get; private set; }
-        internal static MakerRadioButtons IrisSideRadioBtn;
+        internal static MakerRadioButtons IrisSideRadioBtn = null;
 
         public void Awake() {
             Logger = base.Logger;
@@ -105,6 +105,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             e.AddControl(IrisSideRadioBtn)
                 .ValueChanged.Subscribe(side => {
                     controller.ChangeIrisDisplayside(side);
+                    //Logger.LogDebug("Changed RadioBtn: " + side);
                 }
             );
         }
@@ -639,6 +640,12 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             foreach (KeyValuePair<ChaFileDefine.CoordinateType, Dictionary<TexType, int>> coordKVP in OverlayTable) {
                 coordKVP.Value[type] = OverlayTable[CurrentCoordinate.Value][type];
             }
+
+            if (type == TexType.EyeOver || type == TexType.EyeUnder) {
+                int side = IrisDisplaySide[(int)CurrentCoordinate.Value];
+                IrisDisplaySide = new int[] { side, side, side, side, side, side, side };
+                UpdateInterface();
+            }
             RebuildOverlayTableAndResources();
         }
 
@@ -770,7 +777,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
         }
 
         internal void UpdateInterface() {
-            if (MakerAPI.InsideAndLoaded && null != KK_CharaOverlaysBasedOnCoordinate.IrisSideRadioBtn) {
+            if (MakerAPI.InsideMaker && null != KK_CharaOverlaysBasedOnCoordinate.IrisSideRadioBtn) {
                 KK_CharaOverlaysBasedOnCoordinate.IrisSideRadioBtn.Value = IrisDisplaySide[(int)CurrentCoordinate.Value];
                 return;
             }
