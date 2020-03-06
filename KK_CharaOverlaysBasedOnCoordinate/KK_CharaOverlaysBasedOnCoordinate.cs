@@ -44,7 +44,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.03.05.1";
+        internal const string PLUGIN_VERSION = "20.03.05.2";
         internal const string PLUGIN_RELEASE_VERSION = "1.3.0";
 
         internal static new ManualLogSource Logger;
@@ -413,9 +413,11 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             } else {
                 if (null == data) {
                     Logger.LogInfo("No PluginData Existed");
+                    CurrentOverlay = GetOverlayLoaded();
                 } else if ((!data.data.TryGetValue("CharaOverlayTable", out object tmpOverlayTable) || tmpOverlayTable == null) ||
                           (!data.data.TryGetValue("CharaResources", out object tmpResources) || null == tmpResources)) {
                     Logger.LogInfo("No Exist Data found from Coordinate.");
+                    CurrentOverlay = GetOverlayLoaded();
                 } else {
                     Dictionary<TexType, byte[]> coordinateData = new Dictionary<TexType, byte[]>();
                     Dictionary<int, byte[]> resourceList = tmpResources.ToDictionary<int, byte[]>();
@@ -777,11 +779,14 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
         }
 
         internal void UpdateInterface() {
-            if (MakerAPI.InsideMaker && null != KK_CharaOverlaysBasedOnCoordinate.IrisSideRadioBtn) {
+            if (MakerAPI.InsideMaker &&
+                null != KK_CharaOverlaysBasedOnCoordinate.IrisSideRadioBtn &&
+                KK_CharaOverlaysBasedOnCoordinate.IrisSideRadioBtn.Value != IrisDisplaySide[(int)CurrentCoordinate.Value]
+            ) {
                 KK_CharaOverlaysBasedOnCoordinate.IrisSideRadioBtn.Value = IrisDisplaySide[(int)CurrentCoordinate.Value];
-                return;
+            } else {
+                ChangeIrisDisplayside(IrisDisplaySide[(int)CurrentCoordinate.Value]);
             }
-            ChangeIrisDisplayside(IrisDisplaySide[(int)CurrentCoordinate.Value]);
         }
         #endregion
     }

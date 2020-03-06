@@ -46,8 +46,8 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.03.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "3.1.0.1";
+        internal const string PLUGIN_VERSION = "20.03.05.2";
+        internal const string PLUGIN_RELEASE_VERSION = "3.1.1";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -402,14 +402,17 @@ namespace KK_StudioCoordinateLoadOption {
             }
 
             OCIChar[] array = (from v in Singleton<GuideObjectManager>.Instance.selectObjectKey
-                               select Studio.Studio.GetCtrlInfo(v) as OCIChar into v
-                               where v != null
-                               select v).ToArray();
+                               select Studio.Studio.GetCtrlInfo(v)  into v
+                               where v is OCIChar
+                               select v as OCIChar).ToArray();
             if (isAllTrueFlag && !lockHairAcc && !addAccModeFlag) {
                 Logger.LogInfo("Toggle all true, use original game function");
                 foreach (var ocichar in array) {
                     ocichar.LoadClothesFile(charaFileSort.selectPath);
                 }
+            }else if (array.Length == 0) { 
+                Logger.LogMessage("No available characters selected");
+                Logger.LogDebug("Studio Coordinate Load Option Finish");
             } else {
                 //建立tmpChara並等待載入完成
                 //然後再呼叫換衣
