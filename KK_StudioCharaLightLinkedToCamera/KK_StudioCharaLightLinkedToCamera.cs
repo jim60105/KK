@@ -32,8 +32,8 @@ namespace KK_StudioCharaLightLinkedToCamera {
     public class KK_StudioCharaLightLinkedToCamera : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Light Linked To Camera";
         internal const string GUID = "com.jim60105.kk.studiocharalightlinkedtocamera";
-        internal const string PLUGIN_VERSION = "20.03.11.1";
-        internal const string PLUGIN_RELEASE_VERSION = "0.0.1";
+        internal const string PLUGIN_VERSION = "20.03.11.2";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.0";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -45,22 +45,22 @@ namespace KK_StudioCharaLightLinkedToCamera {
     class Patches {
         private static bool locked = false;
         private static readonly float[] angleDiff = new float[] { 0, 0 };
-        private static readonly Studio.CameraLightCtrl.LightInfo charaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
+        private static Studio.CameraLightCtrl.LightInfo charaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
+        private static readonly object studioLightCalc = Singleton<Studio.Studio>.Instance.cameraLightCtrl.GetField("lightChara");
 
         [HarmonyPostfix, HarmonyPatch(typeof(Studio.CameraControl), "CameraUpdate")]
         public static void CameraUpdatePostfix(Studio.CameraControl __instance) {
             if (!locked) return;
-            object studioLightCalc = Singleton<Studio.Studio>.Instance.cameraLightCtrl.GetField("lightChara");
             float x = (__instance.cameraAngle.x + angleDiff[0]) % 360;
             float y = (__instance.cameraAngle.y + angleDiff[1]) % 360;
-            x = x >= 0 ? x : x + 360;
-            y = y >= 0 ? y : y + 360;
+            x = (x >= 0) ? x : x + 360;
+            y = (y >= 0) ? y : y + 360;
+            //KK_StudioCharaLightLinkedToCamera.Logger.LogDebug($"x: {x}, y: {y}");
             studioLightCalc.Invoke("OnValueChangeAxis", new object[] { x, 0 });
             studioLightCalc.Invoke("OnValueChangeAxis", new object[] { y, 1 });
             studioLightCalc.Invoke("UpdateUI");
 
-            //KK_StudioCharaLightLinkedToCamera.Logger.LogDebug($"CameraAngle: {__instance.cameraAngle[0]},{__instance.cameraAngle[1]},{__instance.cameraAngle[2]}");
-            //KK_StudioCharaLightLinkedToCamera.Logger.LogDebug($"LightAngle: {charaLight.rot[0]},{charaLight.rot[1]}");
+            //KK_StudioCharaLightLinkedToCamera.Logger.LogDebug($"CameraAngle: {__instance.cameraAngle[0]}, {__instance.cameraAngle[1]} / LightAngle: {charaLight.rot[0]}, {charaLight.rot[1]}");
         }
 
         static private Selectable[] interactableGroup;
@@ -88,14 +88,15 @@ namespace KK_StudioCharaLightLinkedToCamera {
             LockBtn.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(157.5f, -82f), new Vector2(180.5f, -59));
             LockBtn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaLightLinkedToCamera.Resources.lock_open.png", 36, 36);
             LockBtn.GetComponent<Button>().onClick.RemoveAllListeners();
-            //btn.GetComponent<Button>().onClick.SetPersistentListenerState(0, UnityEngine.Events.UnityEventCallState.Off);
             LockBtn.GetComponent<Button>().interactable = true;
 
             LockBtn.GetComponent<Button>().onClick.AddListener(() => {
+                charaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
+                angleDiff[0] = charaLight.rot[0] - Singleton<Studio.CameraControl>.Instance.cameraAngle.x;
+                angleDiff[1] = charaLight.rot[1] - Singleton<Studio.CameraControl>.Instance.cameraAngle.y;
+
                 locked = !locked;
                 if (locked) {
-                    angleDiff[0] = charaLight.rot[0] - Singleton<Studio.CameraControl>.Instance.cameraAngle.x;
-                    angleDiff[1] = charaLight.rot[1] - Singleton<Studio.CameraControl>.Instance.cameraAngle.y;
                     LockBtn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaLightLinkedToCamera.Resources.lock.png", 36, 36);
                 } else {
                     LockBtn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaLightLinkedToCamera.Resources.lock_open.png", 36, 36);
