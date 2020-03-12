@@ -143,6 +143,13 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 全替換: Enter + 右Shift + 左Shift + 左Ctrl<br>
 選擇替換: '(單引號) + 右Shift + 左Shift + 左Ctrl<br>
 
+# Studio角色光綁定視角<br>Studio Chara Light Linked To Camera
+
+- 將Studio角色光和顯示相機間之rotate值連動
+- 鎖定狀態能隨著SceneData儲存
+
+使用範例: 調整角色光為「右側面光，左側背光」後鎖定，則不論視角如何旋轉，都會維持是右側面光
+
 # 需求依賴
 **BepInEx v5.0.1**<br>
 BepisPlugins r13.0.3
