@@ -20,6 +20,7 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 using BepInEx;
 using BepInEx.Harmony;
 using BepInEx.Logging;
+using ExtensibleSaveFormat;
 using Extension;
 using HarmonyLib;
 using UILib;
@@ -29,11 +30,12 @@ using UnityEngine.UI;
 namespace KK_StudioCharaLightLinkedToCamera {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
+    [BepInDependency("com.bepis.bepinex.extendedsave")]
     public class KK_StudioCharaLightLinkedToCamera : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Light Linked To Camera";
         internal const string GUID = "com.jim60105.kk.studiocharalightlinkedtocamera";
-        internal const string PLUGIN_VERSION = "20.03.11.2";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.0";
+        internal const string PLUGIN_VERSION = "20.03.12.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -43,30 +45,39 @@ namespace KK_StudioCharaLightLinkedToCamera {
     }
 
     class Patches {
-        private static bool locked = false;
+        private static readonly ManualLogSource Logger = KK_StudioCharaLightLinkedToCamera.Logger;
+        public static bool locked = false;
         private static readonly float[] angleDiff = new float[] { 0, 0 };
         private static Studio.CameraLightCtrl.LightInfo charaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
         private static readonly object studioLightCalc = Singleton<Studio.Studio>.Instance.cameraLightCtrl.GetField("lightChara");
 
-        [HarmonyPostfix, HarmonyPatch(typeof(Studio.CameraControl), "CameraUpdate")]
-        public static void CameraUpdatePostfix(Studio.CameraControl __instance) {
-            if (!locked) return;
-            float x = (__instance.cameraAngle.x + angleDiff[0]) % 360;
-            float y = (__instance.cameraAngle.y + angleDiff[1]) % 360;
-            x = (x >= 0) ? x : x + 360;
-            y = (y >= 0) ? y : y + 360;
-            //KK_StudioCharaLightLinkedToCamera.Logger.LogDebug($"x: {x}, y: {y}");
-            studioLightCalc.Invoke("OnValueChangeAxis", new object[] { x, 0 });
-            studioLightCalc.Invoke("OnValueChangeAxis", new object[] { y, 1 });
-            studioLightCalc.Invoke("UpdateUI");
-
-            //KK_StudioCharaLightLinkedToCamera.Logger.LogDebug($"CameraAngle: {__instance.cameraAngle[0]}, {__instance.cameraAngle[1]} / LightAngle: {charaLight.rot[0]}, {charaLight.rot[1]}");
+        public static void RegisterSaveEvent() {
+            ExtendedSave.SceneBeingSaved += path => {
+                ExtendedSave.SetSceneExtendedDataById(KK_StudioCharaLightLinkedToCamera.GUID, new PluginData() {
+                    data = new System.Collections.Generic.Dictionary<string, object> {
+                        { "locked", locked ? "true" : "false" }
+                    },
+                    version = 1
+                });
+                Logger.LogDebug("Scene Saved");
+            };
+            ExtendedSave.SceneBeingLoaded += path => {
+                locked = false;
+                studioLightCalc.Invoke("UpdateUI");
+                PluginData pd = ExtendedSave.GetSceneExtendedDataById(KK_StudioCharaLightLinkedToCamera.GUID);
+                if (null != pd && pd.version == 1 && pd.data.TryGetValue("locked", out object l) && l is string boolstring) {
+                    ToggleLocked(boolstring == "true");
+                } else {
+                    ToggleLocked(false);
+                }
+            };
         }
 
+        #region View
         static private Selectable[] interactableGroup;
-        static private GameObject LockBtn;
+        static internal GameObject LockBtn;
         [HarmonyPostfix, HarmonyPatch(typeof(Studio.CameraLightCtrl), "Init")]
-        public static void InitPostfix(Studio.CameraLightCtrl __instance) {
+        public static void InitPostfix() {
             if (null != GameObject.Find("StudioScene/Canvas Main Menu/04_System/03_Light/Chara Light Lock Btn")) {
                 return;
             }
@@ -90,31 +101,49 @@ namespace KK_StudioCharaLightLinkedToCamera {
             LockBtn.GetComponent<Button>().onClick.RemoveAllListeners();
             LockBtn.GetComponent<Button>().interactable = true;
 
-            LockBtn.GetComponent<Button>().onClick.AddListener(() => {
-                charaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
-                angleDiff[0] = charaLight.rot[0] - Singleton<Studio.CameraControl>.Instance.cameraAngle.x;
-                angleDiff[1] = charaLight.rot[1] - Singleton<Studio.CameraControl>.Instance.cameraAngle.y;
+            LockBtn.GetComponent<Button>().onClick.AddListener(delegate { ToggleLocked(); });
 
-                locked = !locked;
-                if (locked) {
-                    LockBtn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaLightLinkedToCamera.Resources.lock.png", 36, 36);
-                } else {
-                    LockBtn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaLightLinkedToCamera.Resources.lock_open.png", 36, 36);
-                }
-
-                foreach (Selectable sel in interactableGroup) {
-                    sel.interactable = !locked;
-                }
-            });
-
-            //KK_StudioCharaLightLinkedToCamera.Logger.LogWarning("Draw Button Finish");
+            RegisterSaveEvent();
+            //Logger.LogMessage("Draw Button Finish");
         }
 
-        [HarmonyPrefix, HarmonyPatch(typeof(Studio.SceneLoadScene), "OnClickLoad")]
-        public static void OnClickLoadPrefix() {
-            if (locked) {
-                LockBtn.GetComponentInChildren<Button>().onClick.Invoke();
+        public static void ToggleLocked(bool? b = null) {
+            charaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
+            angleDiff[0] = charaLight.rot[0] - Singleton<Studio.CameraControl>.Instance.cameraAngle.x;
+            angleDiff[1] = charaLight.rot[1] - Singleton<Studio.CameraControl>.Instance.cameraAngle.y;
+
+            if (null == b) {
+                locked = !locked;
+            } else {
+                locked = (bool)b;
             }
+
+            if (locked) {
+                LockBtn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaLightLinkedToCamera.Resources.lock.png", 36, 36);
+            } else {
+                LockBtn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaLightLinkedToCamera.Resources.lock_open.png", 36, 36);
+            }
+
+            foreach (Selectable sel in interactableGroup) {
+                sel.interactable = !locked;
+            }
+            Logger.LogDebug("Locked status: " + locked);
+        }
+        #endregion
+
+        [HarmonyPostfix, HarmonyPatch(typeof(Studio.CameraControl), "CameraUpdate")]
+        public static void CameraUpdatePostfix(Studio.CameraControl __instance) {
+            if (!locked) return;
+            float x = (__instance.cameraAngle.x + angleDiff[0]) % 360;
+            float y = (__instance.cameraAngle.y + angleDiff[1]) % 360;
+            x = (x >= 0) ? x : x + 360;
+            y = (y >= 0) ? y : y + 360;
+            //Logger.LogDebug($"x: {x}, y: {y}");
+            studioLightCalc.Invoke("OnValueChangeAxis", new object[] { x, 0 });
+            studioLightCalc.Invoke("OnValueChangeAxis", new object[] { y, 1 });
+            studioLightCalc.Invoke("UpdateUI");
+
+            //Logger.LogDebug($"CameraAngle: {__instance.cameraAngle[0]}, {__instance.cameraAngle[1]} / LightAngle: {charaLight.rot[0]}, {charaLight.rot[1]}");
         }
     }
 }
