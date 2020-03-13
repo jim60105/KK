@@ -49,6 +49,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
         public static bool locked = false;
         private static readonly float[] angleDiff = new float[] { 0, 0 };
         private static Studio.CameraLightCtrl.LightInfo charaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
+        private static float charaLightX;
         private static readonly object studioLightCalc = Singleton<Studio.Studio>.Instance.cameraLightCtrl.GetField("lightChara");
 
         public static void RegisterSaveEvent() {
@@ -111,6 +112,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
             charaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
             angleDiff[0] = charaLight.rot[0] - Singleton<Studio.CameraControl>.Instance.cameraAngle.x;
             angleDiff[1] = charaLight.rot[1] - Singleton<Studio.CameraControl>.Instance.cameraAngle.y;
+            charaLightX = charaLight.rot[0];
 
             if (null == b) {
                 locked = !locked;
@@ -134,7 +136,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
         [HarmonyPostfix, HarmonyPatch(typeof(Studio.CameraControl), "CameraUpdate")]
         public static void CameraUpdatePostfix(Studio.CameraControl __instance) {
             if (!locked) return;
-            float x = (__instance.cameraAngle.x + angleDiff[0]) % 360;
+            float x = (charaLightX - (__instance.cameraAngle.x + angleDiff[0] - charaLightX)) % 360;
             float y = (__instance.cameraAngle.y + angleDiff[1]) % 360;
             x = (x >= 0) ? x : x + 360;
             y = (y >= 0) ? y : y + 360;
