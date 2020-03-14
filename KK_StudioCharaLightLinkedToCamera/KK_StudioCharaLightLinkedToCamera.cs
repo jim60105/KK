@@ -34,8 +34,8 @@ namespace KK_StudioCharaLightLinkedToCamera {
     public class KK_StudioCharaLightLinkedToCamera : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Light Linked To Camera";
         internal const string GUID = "com.jim60105.kk.studiocharalightlinkedtocamera";
-        internal const string PLUGIN_VERSION = "20.03.12.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
+        internal const string PLUGIN_VERSION = "20.03.14.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.1.1";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -47,10 +47,8 @@ namespace KK_StudioCharaLightLinkedToCamera {
     class Patches {
         private static readonly ManualLogSource Logger = KK_StudioCharaLightLinkedToCamera.Logger;
         public static bool locked = false;
-        private static readonly float[] angleDiff = new float[] { 0, 0 };
-        private static Studio.CameraLightCtrl.LightInfo charaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
-        private static float charaLightX;
         private static readonly object studioLightCalc = Singleton<Studio.Studio>.Instance.cameraLightCtrl.GetField("lightChara");
+        private static Quaternion angleDiff = Quaternion.Euler(0, 0, 0);
 
         public static void RegisterSaveEvent() {
             ExtendedSave.SceneBeingSaved += path => {
@@ -109,10 +107,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
         }
 
         public static void ToggleLocked(bool? b = null) {
-            charaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
-            angleDiff[0] = charaLight.rot[0] - Singleton<Studio.CameraControl>.Instance.cameraAngle.x;
-            angleDiff[1] = charaLight.rot[1] - Singleton<Studio.CameraControl>.Instance.cameraAngle.y;
-            charaLightX = charaLight.rot[0];
+            angleDiff = (studioLightCalc.GetField("transRoot") as Transform).rotation;
 
             if (null == b) {
                 locked = !locked;
@@ -136,16 +131,15 @@ namespace KK_StudioCharaLightLinkedToCamera {
         [HarmonyPostfix, HarmonyPatch(typeof(Studio.CameraControl), "CameraUpdate")]
         public static void CameraUpdatePostfix(Studio.CameraControl __instance) {
             if (!locked) return;
-            float x = (charaLightX - (__instance.cameraAngle.x + angleDiff[0] - charaLightX)) % 360;
-            float y = (__instance.cameraAngle.y + angleDiff[1]) % 360;
-            x = (x >= 0) ? x : x + 360;
-            y = (y >= 0) ? y : y + 360;
-            //Logger.LogDebug($"x: {x}, y: {y}");
-            studioLightCalc.Invoke("OnValueChangeAxis", new object[] { x, 0 });
-            studioLightCalc.Invoke("OnValueChangeAxis", new object[] { y, 1 });
-            studioLightCalc.Invoke("UpdateUI");
 
-            //Logger.LogDebug($"CameraAngle: {__instance.cameraAngle[0]}, {__instance.cameraAngle[1]} / LightAngle: {charaLight.rot[0]}, {charaLight.rot[1]}");
+            (studioLightCalc.GetField("transRoot") as Transform).rotation = Quaternion.Euler(Singleton<Studio.CameraControl>.Instance.cameraAngle) * angleDiff;
+            //Logger.LogDebug($"x: {x}, y: {y}");
+            //studioLightCalc.Invoke("OnValueChangeAxis", new object[] { result.x, 0 });
+            //studioLightCalc.Invoke("OnValueChangeAxis", new object[] { result.y, 1 });
+            //studioLightCalc.Invoke("UpdateUI");
+
+            //Studio.CameraLightCtrl.LightInfo charaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
+            Logger.LogDebug($"CameraAngle: {__instance.cameraAngle[0]}, {__instance.cameraAngle[1]} / LightAngle: {(Quaternion.Euler(Singleton<Studio.CameraControl>.Instance.cameraAngle) * angleDiff).eulerAngles.ToString()}");
         }
     }
 }
