@@ -34,8 +34,8 @@ namespace KK_StudioCharaLightLinkedToCamera {
     public class KK_StudioCharaLightLinkedToCamera : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Light Linked To Camera";
         internal const string GUID = "com.jim60105.kk.studiocharalightlinkedtocamera";
-        internal const string PLUGIN_VERSION = "20.03.14.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.1.1";
+        internal const string PLUGIN_VERSION = "20.03.16.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.1.2";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -61,8 +61,6 @@ namespace KK_StudioCharaLightLinkedToCamera {
                 Logger.LogDebug("Scene Saved");
             };
             ExtendedSave.SceneBeingLoaded += path => {
-                locked = false;
-                studioLightCalc.Invoke("UpdateUI");
                 PluginData pd = ExtendedSave.GetSceneExtendedDataById(KK_StudioCharaLightLinkedToCamera.GUID);
                 if (null != pd && pd.version == 1 && pd.data.TryGetValue("locked", out object l) && l is string boolstring) {
                     ToggleLocked(boolstring == "true");
@@ -102,12 +100,13 @@ namespace KK_StudioCharaLightLinkedToCamera {
 
             LockBtn.GetComponent<Button>().onClick.AddListener(delegate { ToggleLocked(); });
 
+            (studioLightCalc.GetField("transRoot") as Transform).localRotation = Quaternion.Euler(0, 0, 0);
             RegisterSaveEvent();
             //Logger.LogMessage("Draw Button Finish");
         }
 
         public static void ToggleLocked(bool? b = null) {
-            angleDiff = (studioLightCalc.GetField("transRoot") as Transform).rotation;
+            angleDiff = Quaternion.Inverse(Quaternion.Euler(Singleton<Studio.CameraControl>.Instance.cameraAngle)) * (studioLightCalc.GetField("transRoot") as Transform).localRotation;
 
             if (null == b) {
                 locked = !locked;
@@ -132,14 +131,23 @@ namespace KK_StudioCharaLightLinkedToCamera {
         public static void CameraUpdatePostfix(Studio.CameraControl __instance) {
             if (!locked) return;
 
-            (studioLightCalc.GetField("transRoot") as Transform).rotation = Quaternion.Euler(Singleton<Studio.CameraControl>.Instance.cameraAngle) * angleDiff;
-            //Logger.LogDebug($"x: {x}, y: {y}");
-            //studioLightCalc.Invoke("OnValueChangeAxis", new object[] { result.x, 0 });
-            //studioLightCalc.Invoke("OnValueChangeAxis", new object[] { result.y, 1 });
+            Transform transRoot = studioLightCalc.GetField("transRoot") as Transform;
+            transRoot.localRotation = Quaternion.Euler(Singleton<Studio.CameraControl>.Instance.cameraAngle) * angleDiff;
+            //Quaternion q = Quaternion.FromToRotation(new Vector3(1,0,0),q1.eulerAngles);
+            //Studio.CameraLightCtrl.LightInfo charaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
+            //charaLight.rot[0] = (q.eulerAngles).x;
+            //charaLight.rot[1] = (q.eulerAngles).y;
+            //studioLightCalc.Invoke("OnValueChangeAxis", new object[] { q.eulerAngles.x, 0 });
+            //studioLightCalc.Invoke("OnValueChangeAxis", new object[] { q.eulerAngles.y, 1 });
             //studioLightCalc.Invoke("UpdateUI");
 
-            //Studio.CameraLightCtrl.LightInfo charaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
-            Logger.LogDebug($"CameraAngle: {__instance.cameraAngle[0]}, {__instance.cameraAngle[1]} / LightAngle: {(Quaternion.Euler(Singleton<Studio.CameraControl>.Instance.cameraAngle) * angleDiff).eulerAngles.ToString()}");
+            //Logger.LogDebug($"LoaclRotation: {transRoot.localRotation.eulerAngles.ToString()}");
+            //Logger.LogDebug($"CameraAngle: {__instance.cameraAngle[0]}, {__instance.cameraAngle[1]} / LightAngle: {(Quaternion.Euler(Singleton<Studio.CameraControl>.Instance.cameraAngle) * angleDiff).eulerAngles.ToString()}");
+        }
+
+        [HarmonyPrefix, HarmonyPatch(typeof(Studio.SceneLoadScene), "OnClickLoad")]
+        public static void OnClickLoadPrefix() {
+            ToggleLocked(false);
         }
     }
 }
