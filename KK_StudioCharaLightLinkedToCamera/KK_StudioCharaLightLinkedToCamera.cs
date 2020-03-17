@@ -49,7 +49,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
             Logger = base.Logger;
             HarmonyWrapper.PatchAll(typeof(Patches));
 
-            RefreshUI = Config.Bind<bool>("Config", "Refresh UI", true, "Due to KK's character light design, if the light is forced to lock properly, the UI cannot be refreshed and stored in vanilla SceneData. Use this feature at your own risk.");
+            RefreshUI = Config.Bind<bool>("Config", "Refresh UI", true, "Due to KK's character lighting design, if the light is forced to lock accurately the UI cannot be refreshed and the setting will NOT be stored in vanilla SceneData. Use this feature at your own risk.");
         }
     }
 
