@@ -159,8 +159,9 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 **總而言之，若非需要不建議更改此設定。**
 
 # 需求依賴
-**BepInEx v5.0.1**<br>
-BepisPlugins r13.0.3
+- コイカツ！ ダークネス (Koikatu! Darkness)
+- **BepInEx v5.0.1**<br>
+- BepisPlugins r13.0.3<br>
 
 # 安裝方式
 - 參考壓縮檔結構，將文件放進「BepInEx/plugins/jim60105」資料夾之下<br>
