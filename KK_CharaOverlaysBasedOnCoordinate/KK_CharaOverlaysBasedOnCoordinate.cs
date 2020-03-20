@@ -44,8 +44,8 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.03.05.2";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.0";
+        internal const string PLUGIN_VERSION = "20.03.21.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.1";
 
         internal static new ManualLogSource Logger;
         public static ConfigEntry<bool> Enable_Saving_To_Chara { get; private set; }
@@ -135,6 +135,11 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     }
 
     class Patches {
+        private static readonly Dictionary<TexType, byte[]> EyeTexture = new Dictionary<TexType, byte[]>() {
+            { TexType.EyeOver, new byte[] { } },
+            { TexType.EyeUnder, new byte[] { } }
+        };
+
         [HarmonyPrefix, HarmonyPatch(typeof(CustomTextureCreate), nameof(CustomTextureCreate.RebuildTextureAndSetMaterial))]
         public static void RebuildTexPrefix(CustomTextureCreate __instance, ref bool __state) {
             __state = false;
@@ -158,18 +163,21 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             if (toCompare == __instance) return;
 
             __state = true;
-            controller.SetOverlayByCoordinateType(controller.CurrentCoordinate.Value, controller.GetOverlayLoaded());
-            controller.OverwriteOverlayWithoutUpdate(TexType.EyeOver, 0);
-            controller.OverwriteOverlayWithoutUpdate(TexType.EyeUnder, 0);
+            foreach(var kvp in controller.GetOverlayLoaded(new TexType[] { TexType.EyeOver, TexType.EyeUnder })) {
+                EyeTexture[kvp.Key] = kvp.Value;
+                controller.OverwriteOverlayWithoutUpdate(kvp.Key, new byte[] { });
+            }
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(CustomTextureCreate), nameof(CustomTextureCreate.RebuildTextureAndSetMaterial))]
         public static void RebuildTexPostfix(CustomTextureCreate __instance, ref bool __state) {
+            if (!__state) return;
+
             CharaOverlaysBasedOnCoordinateController controller = __instance.trfParent?.GetComponent<CharaOverlaysBasedOnCoordinateController>();
-            //KoiSkinOverlayController KSOXController = __instance.trfParent?.GetComponent<KoiSkinOverlayController>();
-            if (controller != null && __state) {
-                controller.OverwriteOverlayWithoutUpdate(TexType.EyeOver);
-                controller.OverwriteOverlayWithoutUpdate(TexType.EyeUnder);
+            if (null != controller) {
+                foreach (var kvp in EyeTexture) {
+                    controller.OverwriteOverlayWithoutUpdate(kvp.Key, kvp.Value);
+                }
                 Extension.Extension.TryGetPluginInstance("KSOX_GUI").Invoke("OnChaFileLoaded");
             }
         }
@@ -450,16 +458,18 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
         public void RebuildOverlayTableAndResources() => Overlays = Overlays;
 
         //取得現在載入的Overlay
-        public Dictionary<TexType, byte[]> GetOverlayLoaded() {
+        public Dictionary<TexType, byte[]> GetOverlayLoaded(params TexType[] texTypeArray) {
             Dictionary<TexType, byte[]> result = new Dictionary<TexType, byte[]>();
             Dictionary<TexType, OverlayTexture> ori = KSOXController.Overlays.ToDictionary<TexType, OverlayTexture>();
             if (null != ori) {
-                foreach (TexType type in Enum.GetValues(typeof(TexType))) {
+                if (texTypeArray.Length == 0) {
+                    texTypeArray = (TexType[])Enum.GetValues(typeof(TexType));
+                }
+                foreach (TexType type in texTypeArray) {
                     result.Add(type, ori.TryGetValue(type, out OverlayTexture texture) ? texture.Data : null);
                 }
-            } else {
-                result = null;
-            }
+            } else result = null;
+
             return result;
         }
 
@@ -548,21 +558,19 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             Logger.LogDebug("OverWrite Overlays");
         }
 
-        internal void OverwriteOverlayWithoutUpdate(TexType texType) {
-            if (CurrentOverlay.TryGetValue(texType, out byte[] texture)) {
-                OverwriteOverlayWithoutUpdate(texType, texture);
-            }
-        }
-        internal void OverwriteOverlayWithoutUpdate(TexType texType, int tex) {
-            byte[] texture = Resources[tex];
-            OverwriteOverlayWithoutUpdate(texType, texture);
-        }
         internal void OverwriteOverlayWithoutUpdate(TexType texType, byte[] texture) {
             Dictionary<TexType, OverlayTexture> overlay = KSOXController.GetField("_overlays").ToDictionary<TexType, OverlayTexture>();
             if (overlay.ContainsKey(texType)) {
-                overlay[texType].Data = texture;
+                if (null != texture) {
+                    overlay[texType].Data = texture;
+                } else {
+                    overlay[texType]?.Dispose();
+                    overlay.Remove(texType);
+                }
             } else {
-                ((Dictionary<TexType, OverlayTexture>)KSOXController.GetField("_overlays")).Add(new OverlayTexture(texture));
+                if (null != texture) {
+                    ((Dictionary<TexType, OverlayTexture>)KSOXController.GetField("_overlays")).Add(new OverlayTexture(texture));
+                }
             }
             //Logger.LogDebug($"OverWrite Overlay Without Update {Enum.GetName(typeof(TexType), texType)} : {InputOverlayTexture(texture)}");
         }
@@ -772,21 +780,22 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             }
         }
 
-        internal void ChangeIrisDisplayside(int side) {
-            IrisDisplaySide[(int)CurrentCoordinate.Value] = side;
-            Logger.LogDebug("Changed iris display: " + side);
-            KSOXController.UpdateTexture(TexType.EyeOver);
-        }
-
         internal void UpdateInterface() {
             if (MakerAPI.InsideMaker &&
                 null != KK_CharaOverlaysBasedOnCoordinate.IrisSideRadioBtn &&
                 KK_CharaOverlaysBasedOnCoordinate.IrisSideRadioBtn.Value != IrisDisplaySide[(int)CurrentCoordinate.Value]
             ) {
+                //改變後會觸發OnValueChange
                 KK_CharaOverlaysBasedOnCoordinate.IrisSideRadioBtn.Value = IrisDisplaySide[(int)CurrentCoordinate.Value];
             } else {
                 ChangeIrisDisplayside(IrisDisplaySide[(int)CurrentCoordinate.Value]);
             }
+        }
+
+        internal void ChangeIrisDisplayside(int side) {
+            IrisDisplaySide[(int)CurrentCoordinate.Value] = side;
+            Logger.LogDebug("Changed iris display: " + side);
+            ChaControl.ChangeSettingEye(true, true, true);
         }
         #endregion
     }
