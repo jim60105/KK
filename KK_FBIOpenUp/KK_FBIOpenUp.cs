@@ -37,8 +37,8 @@ namespace KK_FBIOpenUp {
     public class KK_FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "20.02.24.2";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
+        internal const string PLUGIN_VERSION = "20.03.22.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.1";
 
         internal static bool _isenabled = false;
         internal static bool _isABMXExist = false;
@@ -76,6 +76,7 @@ namespace KK_FBIOpenUp {
             //讀取config
             Enable = Config.Bind<bool>("Config", "Enable", false);
             _isenabled = Enable.Value;
+            SetEnabled(false);
 
             Effect_on_ABMX = Config.Bind<bool>("Config", "Effect on ABMX", false, "In most cases, it is not recommended to enable.");
             _isABMXExist = null != Extension.Extension.TryGetPluginInstance("KKABMX.Core", new Version(3, 5, 1));

@@ -8,7 +8,7 @@ namespace KK_FBIOpenUp {
         #region 繪製圖標
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "InitCharaList")]
         public static void InitCharaListPostfix(CharaList __instance) {
-            bool flag = string.Equals(__instance.name, "00_Female") == (SampleChara.chaFile.parameter.sex !=1) ;
+            bool flag = string.Equals(__instance.name, "00_Female") == (SampleChara.chaFile.parameter.sex == 1);
             if (Extension.Extension.TryGetPluginInstance("com.jim60105.kk.studioallgirlsplugin")) { flag = true; }
             if (flag && null == UnityEngine.GameObject.Find($"StudioScene/Canvas Main Menu/01_Add/{__instance.name}/redBagBtn")) {
                 KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.Studio;
@@ -18,23 +18,20 @@ namespace KK_FBIOpenUp {
 
         [HarmonyPostfix, HarmonyPatch(typeof(CustomControl), "Start")]
         public static void StartPostfix_Maker() {
-            KK_FBIOpenUp._isenabled = false;
             UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.Maker);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ActionScene), "Start")]
         public static void StartPostfix_MainGame() {
-            KK_FBIOpenUp._isenabled = false;
             UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.MainGame);
         }
 
         internal static HSceneProc hSceneProc;
         [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Start")]
         public static void StartPostfix_FreeH(HSceneProc __instance) {
-            KK_FBIOpenUp._isenabled = false;
             hSceneProc = __instance;
-            UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.FreeH,1);
-            UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.FreeH,2);
+            UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.FreeH, 1);
+            UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.FreeH, 2);
         }
         #endregion
 

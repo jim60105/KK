@@ -46,8 +46,8 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.03.05.2";
-        internal const string PLUGIN_RELEASE_VERSION = "3.1.1";
+        internal const string PLUGIN_VERSION = "20.03.22.0";
+        internal const string PLUGIN_RELEASE_VERSION = "3.1.2";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -637,6 +637,9 @@ namespace KK_StudioCoordinateLoadOption {
                     if (HairAccessoryCustomizer_Support.CopyAllHairAcc(tmpChaCtrl, chaCtrl)) {
                         HairAccessoryCustomizer_Support.SetControllerFromExtData(chaCtrl);
                         HairAccessoryCustomizer_Support.GetExtendedDataFromExtData(chaCtrl, out var nowCoor);
+                        if (null == nowCoor) {
+                            nowCoor = new Dictionary<int, object>();
+                        }
                         Logger.LogDebug($"->Hair Count: {nowCoor.Count} : {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
                     }
                     HairAccessoryCustomizer_Support.CleanHairAccBackup();
