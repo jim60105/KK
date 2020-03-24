@@ -24,6 +24,7 @@ using BepInEx.Logging;
 using Extension;
 using HarmonyLib;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 namespace KK_StudioDualScreen {
@@ -32,8 +33,8 @@ namespace KK_StudioDualScreen {
     public class KK_StudioDualScreen : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Dual Screen";
         internal const string GUID = "com.jim60105.kk.studiodualscreen";
-        internal const string PLUGIN_VERSION = "20.03.24.1";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.1";
+        internal const string PLUGIN_VERSION = "20.03.24.2";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.2";
 
         public static ConfigEntry<KeyboardShortcut> Hotkey { get; set; }
         internal static new ManualLogSource Logger;
@@ -94,6 +95,22 @@ namespace KK_StudioDualScreen {
                     chaCtrl.eyeLookCtrl.target = cloneCamera.transform;
                 }
             });
+
+            //Reset VMD
+            try {
+                string path = Extension.Extension.TryGetPluginInstance("KKVMDPlayPlugin.KKVMDPlayPlugin")?.Info.Location;
+                Assembly ass = Assembly.LoadFrom(path);
+                System.Type VMDAniMgrType = ass.GetType("KKVMDPlayPlugin.VMDAnimationMgr");
+                if (null != VMDAniMgrType) {
+                    object VMDAniMgr = VMDAniMgrType.GetField("_instance", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null);
+                    VMDAniMgr?.GetField("CameraMgr").SetField("cameraControl", cloneCamera.GetComponent<Studio.CameraControl>());
+                } else {
+                    throw new System.Exception("Load assembly FAILED: VMDPlayPlugin");
+                }
+                KK_StudioDualScreen.Logger.LogDebug("Reset VMD");
+            } catch (System.Exception ex) {
+                KK_StudioDualScreen.Logger.LogDebug(ex.Message);
+            }
         }
 
         private static bool isLoading = false;
