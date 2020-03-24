@@ -35,8 +35,8 @@ namespace KK_StudioCharaLightLinkedToCamera {
     public class KK_StudioCharaLightLinkedToCamera : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Light Linked To Camera";
         internal const string GUID = "com.jim60105.kk.studiocharalightlinkedtocamera";
-        internal const string PLUGIN_VERSION = "20.03.18.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.2";
+        internal const string PLUGIN_VERSION = "20.03.24.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.3";
 
         /// <summary>
         /// True: 將Quaternion換為俯仰角以填入UI才能儲存，但是此方法在垂直往上/往下看時光源會偏移。
@@ -59,6 +59,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
         private static readonly object studioLightCalc = Singleton<Studio.Studio>.Instance.cameraLightCtrl.GetField("lightChara");
         private static Transform transRoot;
         private static Quaternion angleDiff = Quaternion.Euler(0, 0, 0);
+        private static Studio.CameraControl cameraControl;
 
         #region View
         static private Selectable[] interactableGroup;
@@ -97,7 +98,10 @@ namespace KK_StudioCharaLightLinkedToCamera {
         }
 
         public static void ToggleLocked(bool? b = null) {
-            angleDiff = Quaternion.Inverse(Quaternion.Euler(Singleton<Studio.CameraControl>.Instance.cameraAngle)) * (studioLightCalc.GetField("transRoot") as Transform).localRotation;
+            cameraControl = Object.FindObjectOfType<Studio.CameraControl>();
+            Logger.LogDebug($"Get CameraControl: {cameraControl.gameObject.name}");
+
+            angleDiff = Quaternion.Inverse(Quaternion.Euler(cameraControl.cameraAngle)) * (studioLightCalc.GetField("transRoot") as Transform).localRotation;
 
             if (null == b) {
                 locked = !locked;
@@ -160,9 +164,9 @@ namespace KK_StudioCharaLightLinkedToCamera {
         #endregion
 
         [HarmonyPostfix, HarmonyPatch(typeof(Studio.CameraControl), "CameraUpdate")]
-        public static void CameraUpdatePostfix() {
-            if (!locked) return;
-            Quaternion q = Quaternion.Euler(Singleton<Studio.CameraControl>.Instance.cameraAngle) * angleDiff;
+        public static void CameraUpdatePostfix(Studio.CameraControl __instance) {
+            if (!locked || __instance != cameraControl) return;
+            Quaternion q = Quaternion.Euler(__instance.cameraAngle) * angleDiff;
 
             //這裡分成兩種方式操作
             // True: 將Quaternion換為俯仰角以填入UI才能儲存，但是此方法在垂直往上/往下看時光源會偏移。
