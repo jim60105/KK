@@ -159,6 +159,8 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 **總而言之，若非需要不建議更改此設定。**
 
 # Studio 雙螢幕<br>Studio Dual Screen
+<a href="https://youtu.be/zrIIoW44bsQ" target="_blank"><img src="demo/demo14.png" width="800" title="Click the image to watch video"></a><br>
+↑ 請點選圖片觀看範例影片 ↑ Click the image to watch video! ↑  (備用載點: [影片](demo/demo14.mp4))<br>
 
 **必需要有實體雙顯示器才能使用**<br>
 這是為了在VMD錄屏的同時操作UI而設計的插件<br>
