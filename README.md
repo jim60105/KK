@@ -158,6 +158,20 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 若在Config中關閉UI重整則會改為直接旋轉光源，此模式在任何角度都能正確作動，但光源在其他沒有此插件的環境就不能正確讀出。<br>
 **總而言之，若非需要不建議更改此設定。**
 
+# Studio 雙螢幕<br>Studio Dual Screen
+
+**必需要有實體雙顯示器才能使用**<br>
+這是為了在VMD錄屏的同時操作UI而設計的插件<br>
+- 啟用Studio的第二顯示器功能
+- UI只會顯示在主顯示畫面
+- Frame會顯示在雙畫面
+- VMD和KK_StudioCharaLightLinkedToCamera會作用在第二畫面
+
+### 注意:
+- 已知問題: 啟用雙螢幕後F9截圖會造成無回應，請改用F11
+- 預設快捷鍵為「未設定」，到Config設定後才能使用
+- **必需要有實體雙顯示器才能使用**
+
 # 需求依賴
 - コイカツ！ ダークネス (Koikatu! Darkness)
 - **BepInEx v5.0.1**<br>

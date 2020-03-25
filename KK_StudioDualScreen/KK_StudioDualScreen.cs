@@ -26,6 +26,7 @@ using HarmonyLib;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace KK_StudioDualScreen {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
@@ -33,7 +34,7 @@ namespace KK_StudioDualScreen {
     public class KK_StudioDualScreen : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Dual Screen";
         internal const string GUID = "com.jim60105.kk.studiodualscreen";
-        internal const string PLUGIN_VERSION = "20.03.24.2";
+        internal const string PLUGIN_VERSION = "20.03.24.3";
         internal const string PLUGIN_RELEASE_VERSION = "1.0.2";
 
         public static ConfigEntry<KeyboardShortcut> Hotkey { get; set; }
@@ -52,6 +53,7 @@ namespace KK_StudioDualScreen {
     class Patches {
         private static GameObject mainCamera;
         private static Camera cloneCamera;
+        private static GameObject cloneCanvas;
 
         public static void Update() {
             //監聽滑鼠按下
@@ -68,10 +70,26 @@ namespace KK_StudioDualScreen {
                     camCtrl.subCamera.gameObject.SetActive(false);
                     camCtrl.SetField("isInit", false);
 
-                    cloneCamera.name = "Camera Clone";
+                    //cloneCamera.name = "Camera Clone";
                     cloneCamera.CopyFrom(mainCamera.GetComponent<Camera>());
                     cloneCamera.targetDisplay = 1;
                     cloneCamera.transform.SetParent(mainCamera.transform.parent.transform);
+
+                    //Frame
+                    Camera cameraUI = GameObject.Find("StudioScene/Camera/Camera UI").GetComponent<Camera>();
+                    Camera cloneCameraUI = UnityEngine.Object.Instantiate(cameraUI);
+                    //cloneCameraUI.name = "Camera UI Clone";
+                    cloneCameraUI.CopyFrom(cameraUI);
+                    cloneCameraUI.targetDisplay = 1;
+                    cloneCameraUI.transform.SetParent(cameraUI.transform.parent.transform);
+
+                    GameObject canvas = GameObject.Find("StudioScene/Canvas Frame Cap");
+                    cloneCanvas = UnityEngine.Object.Instantiate(canvas);
+                    cloneCanvas.GetComponent<Canvas>().worldCamera = cloneCameraUI;
+                    cloneCanvas.GetComponent<Studio.FrameCtrl>().SetField("cameraUI", cloneCameraUI);
+                    cloneCanvas.GetComponent<CanvasScaler>().referenceResolution = new Vector2(Display.displays[1].systemWidth, Display.displays[1].systemHeight);
+                    cloneCanvas.transform.SetParent(canvas.transform.parent.transform);
+                    //Frame end
 
                     Display.displays[0].SetRenderingResolution(Display.displays[0].renderingWidth, Display.displays[0].renderingHeight);
                     Display.displays[0].Activate();
@@ -125,6 +143,14 @@ namespace KK_StudioDualScreen {
                 if (null != cloneCamera) {
                     ResetView();
                 }
+            }
+        }
+
+        //Frame
+        [HarmonyPostfix, HarmonyPatch(typeof(Studio.FrameList), "OnClickSelect")]
+        public static void OnClickSelectPostfix(Studio.FrameList __instance, int _idx) {
+            if (null != cloneCanvas) {
+                cloneCanvas.GetComponent<Studio.FrameCtrl>().Load(((int)__instance.GetField("select") == -1) ? string.Empty : __instance.GetField("listPath").ToList<string>()[_idx]);
             }
         }
     }
