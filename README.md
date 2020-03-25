@@ -50,7 +50,7 @@
 - Koikatu Chara Overlays Based On Coordinate v1.1.0 <br>(Chara Overlays跟著插件了，如果要更改載入與否請至設定修改)
 
 # Studio IK→FK修正插件<br>Studio Reflect FK Fix
-<a href="https://blog.maki0419.com/2019/05/koikatu-studio-reflect-fk-fix.html" target="_blank"><img src="demo/demo5-5.png" width="800" title="Click the image to watch demo"></a><br>
+<a href="https://blog.maki0419.com/2019/05/koikatu-studio-reflect-fk-fix.html" target="_blank"><img src="demo/demo5-5.png" title="Click the image to watch demo"></a><br>
 ↑ 請點選圖片觀看範例影片 ↑ Click the image to watch demo! ↑  (備用載點: [影片1](demo/demo5-1.mp4) [影片2](demo/demo5-2.mp4) )
 
 - 原始的「FKにポーズを反映」功能會複寫身體FK+脖子FK+手指FK<br>
@@ -59,7 +59,7 @@
 → 改成了會複製真實方向。意即可以使用「首操作 カメラ」定位後，再按我的「->FK(首)」按鈕複製至脖子FK
 
 # Studio文字插件<br>Studio Text Plugin
-<a href="https://gfycat.com/frayedsecretiberianbarbel" target="_blank"><img src="demo/demo6-2.JPG" width="800" title="Click the image to watch demo"></a><br>
+<a href="https://gfycat.com/frayedsecretiberianbarbel" target="_blank"><img src="demo/demo6-2.JPG" title="Click the image to watch demo"></a><br>
 ↑ 請點選圖片觀看範例影片 ↑ Click the image to watch demo! ↑  (備用載點: [影片](demo/demo6.mp4))<br>
 - 從「add→アイテム→2D効果→文字Text」加載，右側選中後在anim選單編輯<br>
 - 文字物件可修改字體、大小、樣式、顏色、錨點位置、對齊(換行後顯示選項)<br>
@@ -89,7 +89,7 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 - 重新Enable後會立即倒出當前加載清單
 
 # 開門查水表！<br>FBI Open Up！
-<a href="https://gfycat.com/genuineredindianhare" target="_blank"><img src="demo/demo9.png" width="800" title="Click the image to watch demo"></a><br>
+<a href="https://gfycat.com/genuineredindianhare" target="_blank"><img src="demo/demo9.png" title="Click the image to watch demo"></a><br>
 ↑ 請點選圖片觀看範例影片 ↑ Click the image to watch demo! ↑  (備用載點: [影片](demo/demo9.mp4))<br>
 - 支援替換模板角色，例如: 
     - 若將模板自訂為巨乳姊姊，就可以轉變功能為替換成大姊姊
@@ -100,7 +100,7 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 詳細說明請見 [另一篇Readme](KK_FBIOpenUp/README.md)。如果你想要使用，我很確定你需要閱讀它
 
 # 角色Overlay隨服裝變換<br>Chara Overlays Based On Coordinate
-<a href="https://youtu.be/kGwZ9aLSXZo" target="_blank"><img src="demo/demo10.gif" width="800" title="Click the image to watch full video"></a><br>
+<a href="https://youtu.be/kGwZ9aLSXZo" target="_blank"><img src="demo/demo10.gif" title="Click the image to watch full video"></a><br>
 ↑ 請點選圖片觀看完整影片 ↑ Click the image to watch full video! ↑  (備用載點: [影片](demo/demo10-1.mp4))<br>
 
 - 讓所有角色Overlay(Iris、Face、Body Overlay)隨著服裝變更，反映在人物存檔和服裝存檔上<br>
@@ -159,7 +159,7 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 **總而言之，若非需要不建議更改此設定。**
 
 # Studio 雙螢幕<br>Studio Dual Screen
-<a href="https://youtu.be/zrIIoW44bsQ" target="_blank"><img src="demo/demo14.png" width="800" title="Click the image to watch video"></a><br>
+<a href="https://youtu.be/zrIIoW44bsQ" target="_blank"><img src="demo/demo14.png" title="Click the image to watch video"></a><br>
 ↑ 請點選圖片觀看範例影片 ↑ Click the image to watch video! ↑  (備用載點: [影片](demo/demo14.mp4))<br>
 
 **必需要有實體雙顯示器才能使用**<br>
