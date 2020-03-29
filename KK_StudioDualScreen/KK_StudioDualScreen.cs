@@ -34,8 +34,8 @@ namespace KK_StudioDualScreen {
     public class KK_StudioDualScreen : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Dual Screen";
         internal const string GUID = "com.jim60105.kk.studiodualscreen";
-        internal const string PLUGIN_VERSION = "20.03.24.3";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.2";
+        internal const string PLUGIN_VERSION = "20.03.30.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.3";
 
         public static ConfigEntry<KeyboardShortcut> Hotkey { get; set; }
         internal static new ManualLogSource Logger;
@@ -51,7 +51,7 @@ namespace KK_StudioDualScreen {
     }
 
     class Patches {
-        private static GameObject mainCamera;
+        private static Camera mainCamera;
         private static Camera cloneCamera;
         private static GameObject cloneCanvas;
 
@@ -59,26 +59,46 @@ namespace KK_StudioDualScreen {
             //監聽滑鼠按下
             if (KK_StudioDualScreen.Hotkey.Value.IsDown()) {
                 if (null == mainCamera) {
-                    mainCamera = GameObject.Find("StudioScene/Camera/Main Camera");
+                    mainCamera = GameObject.Find("StudioScene/Camera/Main Camera").GetComponent<Camera>();
+                }
+                Enable();
+            }
+
+            if (null != cloneCamera && null != mainCamera) {
+                if (mainCamera.transform.hasChanged) {
+                    cloneCamera.GetComponent<Studio.CameraControl>().Import(mainCamera.GetComponent<Studio.CameraControl>().Export());
+
+                    mainCamera.transform.hasChanged = false;
+                }
+            }
+        }
+
+        public static void Enable() {
+            if (Display.displays.Length > 1) {
+                //Clean CloneCamera
+                if (null != cloneCamera) {
+                    UnityEngine.Object.Destroy(cloneCamera.gameObject);
+                    cloneCamera = null;
                 }
 
-                if (Display.displays.Length > 1 && null == cloneCamera) {
-                    cloneCamera = UnityEngine.Object.Instantiate(mainCamera.GetComponentInChildren<Camera>());
-                    Studio.CameraControl camCtrl = cloneCamera.GetComponent<Studio.CameraControl>();
-                    camCtrl.ReflectOption();
-                    camCtrl.isOutsideTargetTex = false;
-                    camCtrl.subCamera.gameObject.SetActive(false);
-                    camCtrl.SetField("isInit", false);
+                //Create CloneCamera
+                cloneCamera = UnityEngine.Object.Instantiate(mainCamera);
+                Studio.CameraControl camCtrl = cloneCamera.GetComponent<Studio.CameraControl>();
+                camCtrl.ReflectOption();
+                camCtrl.isOutsideTargetTex = false;
+                camCtrl.subCamera.gameObject.SetActive(false);
+                camCtrl.SetField("isInit", false);
 
-                    //cloneCamera.name = "Camera Clone";
-                    cloneCamera.CopyFrom(mainCamera.GetComponent<Camera>());
-                    cloneCamera.targetDisplay = 1;
-                    cloneCamera.transform.SetParent(mainCamera.transform.parent.transform);
+                //cloneCamera.name = "Main Camera(Clone)";
+                cloneCamera.CopyFrom(mainCamera);
+                cloneCamera.transform.SetParent(mainCamera.transform.parent.transform);
+                cloneCamera.targetDisplay = 1;
 
-                    //Frame
+                //Create Frame
+                if (null == cloneCanvas) {
                     Camera cameraUI = GameObject.Find("StudioScene/Camera/Camera UI").GetComponent<Camera>();
                     Camera cloneCameraUI = UnityEngine.Object.Instantiate(cameraUI);
-                    //cloneCameraUI.name = "Camera UI Clone";
+                    cloneCameraUI.name = "Camera UI Clone";
                     cloneCameraUI.CopyFrom(cameraUI);
                     cloneCameraUI.targetDisplay = 1;
                     cloneCameraUI.transform.SetParent(cameraUI.transform.parent.transform);
@@ -89,48 +109,43 @@ namespace KK_StudioDualScreen {
                     cloneCanvas.GetComponent<Studio.FrameCtrl>().SetField("cameraUI", cloneCameraUI);
                     cloneCanvas.GetComponent<CanvasScaler>().referenceResolution = new Vector2(Display.displays[1].systemWidth, Display.displays[1].systemHeight);
                     cloneCanvas.transform.SetParent(canvas.transform.parent.transform);
-                    //Frame end
+                }
 
+                //Set Neck Look & Eye Look
+                Singleton<Manager.Character>.Instance.GetCharaList(0).Concat(Singleton<Manager.Character>.Instance.GetCharaList(1)).ToList().ForEach((ChaControl chaCtrl) => {
+                    chaCtrl.neckLookCtrl.target = cloneCamera.transform;
+                    if (chaCtrl.fileStatus.eyesLookPtn == 1) {
+                        chaCtrl.eyeLookCtrl.target = cloneCamera.transform;
+                    }
+                });
+
+                //Reset VMD
+                try {
+                    string path = Extension.Extension.TryGetPluginInstance("KKVMDPlayPlugin.KKVMDPlayPlugin")?.Info.Location;
+                    Assembly ass = Assembly.LoadFrom(path);
+                    System.Type VMDAniMgrType = ass.GetType("KKVMDPlayPlugin.VMDAnimationMgr");
+                    if (null != VMDAniMgrType) {
+                        object VMDAniMgr = VMDAniMgrType.GetField("_instance", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null);
+                        VMDAniMgr?.GetField("CameraMgr").SetField("cameraControl", cloneCamera.GetComponent<Studio.CameraControl>());
+                    } else {
+                        throw new System.Exception("Load assembly FAILED: VMDPlayPlugin");
+                    }
+                    //KK_StudioDualScreen.Logger.LogDebug("Reset VMD");
+                } catch (System.Exception ex) {
+                    KK_StudioDualScreen.Logger.LogDebug(ex.Message);
+                }
+
+                //Active Display
+                if (!Display.displays[1].active) {
                     Display.displays[0].SetRenderingResolution(Display.displays[0].renderingWidth, Display.displays[0].renderingHeight);
-                    Display.displays[0].Activate();
+                    //Display.displays[0].Activate();
                     Display.displays[1].SetRenderingResolution(Display.displays[1].renderingWidth, Display.displays[1].renderingHeight);
                     Display.displays[1].Activate();
                 }
-
-                if (null != cloneCamera) {
-                    ResetView();
-                }
             }
         }
 
-        public static void ResetView() {
-            cloneCamera.GetComponent<Studio.CameraControl>().Import(mainCamera.GetComponentInChildren<Camera>().GetComponent<Studio.CameraControl>().Export());
-
-            //Set Neck Look & Eye Look
-            Singleton<Manager.Character>.Instance.GetCharaList(0).Concat(Singleton<Manager.Character>.Instance.GetCharaList(1)).ToList().ForEach((ChaControl chaCtrl) => {
-                chaCtrl.neckLookCtrl.target = cloneCamera.transform;
-                if (chaCtrl.fileStatus.eyesLookPtn == 1) {
-                    chaCtrl.eyeLookCtrl.target = cloneCamera.transform;
-                }
-            });
-
-            //Reset VMD
-            try {
-                string path = Extension.Extension.TryGetPluginInstance("KKVMDPlayPlugin.KKVMDPlayPlugin")?.Info.Location;
-                Assembly ass = Assembly.LoadFrom(path);
-                System.Type VMDAniMgrType = ass.GetType("KKVMDPlayPlugin.VMDAnimationMgr");
-                if (null != VMDAniMgrType) {
-                    object VMDAniMgr = VMDAniMgrType.GetField("_instance", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null);
-                    VMDAniMgr?.GetField("CameraMgr").SetField("cameraControl", cloneCamera.GetComponent<Studio.CameraControl>());
-                } else {
-                    throw new System.Exception("Load assembly FAILED: VMDPlayPlugin");
-                }
-                KK_StudioDualScreen.Logger.LogDebug("Reset VMD");
-            } catch (System.Exception ex) {
-                KK_StudioDualScreen.Logger.LogDebug(ex.Message);
-            }
-        }
-
+        //Renable Display on Scene Load
         private static bool isLoading = false;
         [HarmonyPrefix, HarmonyPatch(typeof(Studio.SceneLoadScene), "OnClickLoad")]
         public static void OnClickLoadPrefix() {
@@ -141,12 +156,12 @@ namespace KK_StudioDualScreen {
             if (isLoading && data.levelName == "StudioNotification") {
                 isLoading = false;
                 if (null != cloneCamera) {
-                    ResetView();
+                    Enable();
                 }
             }
         }
 
-        //Frame
+        //Frame change hook
         [HarmonyPostfix, HarmonyPatch(typeof(Studio.FrameList), "OnClickSelect")]
         public static void OnClickSelectPostfix(Studio.FrameList __instance, int _idx) {
             if (null != cloneCanvas) {
