@@ -103,12 +103,12 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 <a href="https://youtu.be/kGwZ9aLSXZo" target="_blank"><img src="demo/demo10.gif" title="Click the image to watch full video"></a><br>
 ↑ 請點選圖片觀看完整影片 ↑ Click the image to watch full video! ↑  (備用載點: [影片](demo/demo10-1.mp4))<br>
 
-- 讓所有角色Overlay(Iris、Face、Body Overlay)隨著服裝變更，反映在人物存檔和服裝存檔上<br>
+- 讓所有角色Overlay(Iris、Face、Body Overlay)隨著服裝變更，反映在人物存檔(CharaFile)和服裝存檔(CoordinateFile)上<br>
 - 此插件在「讀存」跟「切換服裝」時覆蓋Overlay，依賴KSOX運作<br>
 - v1.2.0起支援資源重用，同樣的貼圖重複使用時只會佔一份空間<br>
 - **產生的存檔可以和「無此插件的遊戲環境」相容**，此時KSOX儲存的Overlay會被載入<br>
 (存檔時，當前套用的Overlay依然會儲存進去，並在無插件環境時被讀取出來)<br>
-- v1.3.0起Iris Overlay可只覆蓋在單一邊
+- v1.3.0起Iris Overlay可只覆蓋在單眼
 
 ### 注意事項:<br>
 - 特別需求 **KKAPI v1.9.5 & Illusion Overlay Mods v5.1.1** 以上版本<br>
@@ -170,9 +170,10 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 - VMD和KK_StudioCharaLightLinkedToCamera會作用在第二畫面
 
 ### 注意:
-- 已知問題: 啟用雙螢幕後F9截圖會造成無回應，請改用F11
-- 預設快捷鍵為「未設定」，到Config設定後才能使用
 - **必需要有實體雙顯示器才能使用**
+- 預設快捷鍵為「未設定」，到Config設定後才能使用
+- 修改畫面設定(濾鏡等)需要再次觸發快捷鍵以進行畫面同步
+- 已知問題: 啟用雙螢幕後F9截圖會造成無回應，請改用F11 (目前沒有計劃深入這部份)
 
 # 需求依賴
 - コイカツ！ ダークネス (Koikatu! Darkness)
