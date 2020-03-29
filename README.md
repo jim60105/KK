@@ -155,11 +155,6 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 調整角色光為「右側背光，左側是面光」然後鎖定<br>
 則不論視角如何旋轉，都會維持是畫面右側背光
 
-### 注意: <br>
-由於KK的角色燈設計，預設模式在垂直往上/往下看時光源會偏移。<br>
-若在Config中關閉UI重整則會改為直接旋轉光源，此模式在任何角度都能正確作動，但光源在其他沒有此插件的環境就不能正確讀出。<br>
-**總而言之，若非需要不建議更改此設定。**
-
 # Studio 雙螢幕<br>Studio Dual Screen
 <a href="https://youtu.be/zrIIoW44bsQ" target="_blank"><img src="demo/demo14.png" title="Click the image to watch video"></a><br>
 ↑ 請點選圖片觀看範例影片 ↑ Click the image to watch video! ↑  (備用載點: [影片](demo/demo14.mp4))<br>
