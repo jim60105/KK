@@ -46,15 +46,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
 
             harmonyInstance.Patch(
                 typeof(Studio.CameraLightCtrl).GetNestedType("LightCalc", BindingFlags.NonPublic).GetMethod("OnValueChangeAxis", AccessTools.all),
-                postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.ReflectAngle))
-            );
-            harmonyInstance.Patch(
-                typeof(Studio.CameraLightCtrl).GetNestedType("LightCalc", BindingFlags.NonPublic).GetMethod("OnEndEditAxis", AccessTools.all),
-                postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.ReflectAngle))
-            );
-            harmonyInstance.Patch(
-                typeof(Studio.CameraLightCtrl).GetNestedType("LightCalc", BindingFlags.NonPublic).GetMethod("OnClickAxis", AccessTools.all),
-                postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.ReflectAngle))
+                postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.OnValueChangeAxisPostfix))
             );
         }
     }
@@ -62,11 +54,11 @@ namespace KK_StudioCharaLightLinkedToCamera {
     class Patches {
         private static readonly ManualLogSource Logger = KK_StudioCharaLightLinkedToCamera.Logger;
         public static bool Locked { get; private set; } = false;
-        private static bool executeState = false;
         private static readonly object studioLightCalc = Singleton<Studio.Studio>.Instance.cameraLightCtrl.GetField("lightChara");
         private static Studio.CameraLightCtrl.LightInfo chaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
         private static Studio.CameraControl cameraControl;
-
+        private static Vector2 preCamEuler = Vector2.zero;
+        
         #region View
         static internal GameObject LockBtn;
 
@@ -118,7 +110,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
             Logger.LogDebug("Locked status: " + Locked);
         }
 
-        internal static void ReflectAngle() {
+        public static void OnValueChangeAxisPostfix() {
             if (Locked) {
                 ComputeAngle.AttachedLightEuler = new Vector2(chaLight.rot[0], chaLight.rot[1]);
                 Vector3 camAngle = cameraControl.cameraAngle;
@@ -178,23 +170,23 @@ namespace KK_StudioCharaLightLinkedToCamera {
 
         [HarmonyPostfix, HarmonyPatch(typeof(Studio.CameraControl), "CameraUpdate")]
         public static void CameraUpdatePostfix(Studio.CameraControl __instance) {
-            if (!Locked || __instance != cameraControl || executeState) return;
-
-            executeState = true;
+            if (!Locked || __instance != cameraControl) return;
+            if (__instance.cameraAngle.x == preCamEuler.x && __instance.cameraAngle.y == preCamEuler.y) return;
+            preCamEuler = __instance.cameraAngle;
+    
             Vector2 vec = ComputeAngle.GetLightEuler(__instance.cameraAngle.x, __instance.cameraAngle.y);
             chaLight.rot[0] = vec.x;
             chaLight.rot[1] = vec.y;
 
             studioLightCalc.Invoke("UpdateUI");
             studioLightCalc.Invoke("Reflect");
-            executeState = false;
         }
     }
 
     //wits-fe@github done these math jobs!
     class ComputeAngle {
         private static float alpha, beta, alphaR, betaR;
-        private static float cosr, agls;
+        private static float cosr, agls, sign;
 
         private static int situ;
         private static bool isInited;
@@ -224,6 +216,12 @@ namespace KK_StudioCharaLightLinkedToCamera {
             preLigEuler = lightEuler;
             preCamEuler = cameraEuler;
 
+            // The direction preset of light must be in zy plane, where zy is z axis and y axis. 
+            // Otherwise post-applied euler rotation with only x and y angle can't reach 
+            // arbitrary direction of light.
+            // Thus, when local euler preset of light with only x and y angle is taken into account,
+            // the y angle must suffice that of y % 180 == 0.
+            sign = lightLocalEuler.y % 360f == 0f ? 1f : (lightLocalEuler.y % 180f == 0f ? -1f : throw new System.Exception("Unsupported rotation preset of light."));
             situ = Init();
         }
 
@@ -233,7 +231,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
             float y = preLigEuler.y + lightLocalEuler.y - preCamEuler.y;
             alpha = (-180f <= y && y <= 180f) ? y : (y < 0 ? (y - 180f) % 360f + 180f : (y + 180f) % 360f - 180f);
 
-            float x = lightLocalEuler.x - preLigEuler.x;
+            float x = lightLocalEuler.x + sign * preLigEuler.x;
             beta = (-90f <= x && x <= 90f) ? x : (x < 0 ? (x - 90f) % 180f + 90f : (x + 90f) % 180f - 90f);
 
             if (alpha == 0f) return 1;
@@ -244,47 +242,50 @@ namespace KK_StudioCharaLightLinkedToCamera {
             betaR = beta * Mathf.Deg2Rad;
 
             float sc = Mathf.Sin(alphaR) * Mathf.Cos(betaR);
-            cosr = Mathf.Sqrt(1f - Mathf.Pow(sc, 2f));
+            cosr = Mathf.Sqrt(1f - sc * sc);
             if (alpha < -90f || alpha > 90f) cosr = -cosr;
-            agls = cosr == 0f ? 0f : Mathf.Asin(Mathf.Sin(betaR) / cosr);
-
+            float bc = cosr == 0f ? 0f : Mathf.Sin(betaR) / cosr;
+            agls = bc > 1f ? Mathf.Asin(1f) : (bc < -1f ? Mathf.Asin(-1f) : Mathf.Asin(bc));
             return 0;
         }
 
-        private static Vector2 GetLightEulerOffset(float curCamEulerX, float curCamEulerY) {
-            float x = curCamEulerX - preCamEuler.x;
-            float y = curCamEulerY - preCamEuler.y;
-            if (situ == 1) return new Vector2(x, y);
-            if (situ == 2) return new Vector2(-x, y);
-            if (situ == 3) {
-                if (alpha <= 90f || alpha >= -90f) return new Vector2(x, y - alpha);
-                if (alpha > 90f) return new Vector2(-x, y + 180f - alpha);
-                if (alpha < -90f) return new Vector2(-x, y - 180f - alpha);
+        private static Vector2 GetLightEulerOffset(float camDeltaX, float camDeltaY) {
+            if (situ == 1) return new Vector2(camDeltaX, camDeltaY);
+            if (situ == 2) return new Vector2(-camDeltaX, camDeltaY);
+            if (situ == 3)
+            {
+                if (alpha <= 90f || alpha >= -90f) return new Vector2(camDeltaX, camDeltaY - alpha);
+                if (alpha > 90f) return new Vector2(-camDeltaX, camDeltaY + 180f - alpha);
+                if (alpha < -90f) return new Vector2(-camDeltaX, camDeltaY - 180f - alpha);
             }
             return Vector2.zero;
         }
 
         public static Vector2 GetLightEuler(float curCamEulerX, float curCamEulerY) {
             if (!isInited) situ = Init();
+
+            float camDeltaX = curCamEulerX - preCamEuler.x;
+            float camDeltaY = curCamEulerY - preCamEuler.y;
+            if (camDeltaX == 0f && camDeltaY == 0f) return preLigEuler;
+
             if (situ > 0) {
-                Vector2 vec = GetLightEulerOffset(curCamEulerX, curCamEulerY);
-                return GetFixedAngle(preLigEuler.x - vec.x, preLigEuler.y + vec.y);
+                Vector2 vec = GetLightEulerOffset(camDeltaX, camDeltaY);
+                return GetFixedAngle(preLigEuler.x + sign * vec.x, preLigEuler.y + vec.y);
             }
 
-            float m = agls + (curCamEulerX - preCamEuler.x) * Mathf.Deg2Rad;
-            float bx = Mathf.Asin(Mathf.Sin(m) * cosr);
+            float m = agls + camDeltaX * Mathf.Deg2Rad;
+            float smc = Mathf.Sin(m) * cosr;
+            float bx = smc > 1f ? Mathf.Asin(1f) : (smc < -1f ? Mathf.Asin(-1f) : Mathf.Asin(smc));
+
             float cbx = Mathf.Cos(bx);
-            float ay = cbx == 0f ? 0f : Mathf.Acos(Mathf.Cos(m) * cosr / cbx);
+            float cmcx = cbx == 0f ? 1f : Mathf.Cos(m) * cosr / cbx;
+            float ay = cmcx > 1f ? Mathf.Acos(1f) : (cmcx < -1f ? Mathf.Acos(-1f) : Mathf.Acos(cmcx));
             if (alpha < 0f) ay = -ay;
 
             float x = bx * Mathf.Rad2Deg - beta;
-            float y = curCamEulerY - preCamEuler.y + ay * Mathf.Rad2Deg - alpha;
-
-            // TODO : Given different local euler preset of light, returns the correct result.
-            //       (The light has its own local rotation preset (40, 180, 0) while
-            //         its direction follows the rotation of "transRoot".)
-            // But I don't think I can do such a math job. --jim60105
-            return GetFixedAngle(preLigEuler.x - x, preLigEuler.y + y);
+            float y = camDeltaY + ay * Mathf.Rad2Deg - alpha;
+            
+            return GetFixedAngle(preLigEuler.x + sign * x, preLigEuler.y + y);
         }
 
         private static Vector2 GetFixedAngle(float px, float py) {
