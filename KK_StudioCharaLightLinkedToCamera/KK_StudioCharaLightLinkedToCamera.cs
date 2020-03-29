@@ -23,6 +23,7 @@ using BepInEx.Logging;
 using ExtensibleSaveFormat;
 using Extension;
 using HarmonyLib;
+using System.Linq;
 using System.Reflection;
 using UILib;
 using UnityEngine;
@@ -35,8 +36,8 @@ namespace KK_StudioCharaLightLinkedToCamera {
     public class KK_StudioCharaLightLinkedToCamera : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Light Linked To Camera";
         internal const string GUID = "com.jim60105.kk.studiocharalightlinkedtocamera";
-        internal const string PLUGIN_VERSION = "20.03.28.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.4";
+        internal const string PLUGIN_VERSION = "20.03.30.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.5";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -45,23 +46,25 @@ namespace KK_StudioCharaLightLinkedToCamera {
 
             harmonyInstance.Patch(
                 typeof(Studio.CameraLightCtrl).GetNestedType("LightCalc", BindingFlags.NonPublic).GetMethod("OnValueChangeAxis", AccessTools.all),
-                postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.OnValueChangeAxisPostfix), null)
+                postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.ReflectAngle))
             );
             harmonyInstance.Patch(
                 typeof(Studio.CameraLightCtrl).GetNestedType("LightCalc", BindingFlags.NonPublic).GetMethod("OnEndEditAxis", AccessTools.all),
-                postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.OnEndEditAxisPostfix), null)
+                postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.ReflectAngle))
             );
             harmonyInstance.Patch(
                 typeof(Studio.CameraLightCtrl).GetNestedType("LightCalc", BindingFlags.NonPublic).GetMethod("OnClickAxis", AccessTools.all),
-                postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.OnClickAxisPostfix), null)
+                postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.ReflectAngle))
             );
         }
     }
 
     class Patches {
         private static readonly ManualLogSource Logger = KK_StudioCharaLightLinkedToCamera.Logger;
-        public static bool locked = false;
+        public static bool Locked { get; private set; } = false;
+        private static bool executeState = false;
         private static readonly object studioLightCalc = Singleton<Studio.Studio>.Instance.cameraLightCtrl.GetField("lightChara");
+        private static Studio.CameraLightCtrl.LightInfo chaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
         private static Studio.CameraControl cameraControl;
 
         #region View
@@ -89,20 +92,19 @@ namespace KK_StudioCharaLightLinkedToCamera {
         }
 
         public static void ToggleLocked(bool? b = null) {
-            cameraControl = Object.FindObjectOfType<Studio.CameraControl>();
+            cameraControl = Object.FindObjectsOfType<Studio.CameraControl>().OrderBy(m => m.transform.GetSiblingIndex()).Last();
             Logger.LogDebug($"Get CameraControl: {cameraControl.gameObject.name}");
 
             if (null == b) {
-                locked = !locked;
+                Locked = !Locked;
             } else {
-                locked = (bool)b;
+                Locked = (bool)b;
             }
 
-            if (locked) {
+            if (Locked) {
                 LockBtn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaLightLinkedToCamera.Resources.lock.png", 36, 36);
 
                 //Set value for calc
-                Studio.CameraLightCtrl.LightInfo chaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
                 Vector3 ligLocal = (studioLightCalc.GetField("light") as Light).transform.localEulerAngles;
                 ComputeAngle.SetAngle(
                     ligLocal,
@@ -113,20 +115,13 @@ namespace KK_StudioCharaLightLinkedToCamera {
                 LockBtn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaLightLinkedToCamera.Resources.lock_open.png", 36, 36);
             }
 
-            Logger.LogDebug("Locked status: " + locked);
+            Logger.LogDebug("Locked status: " + Locked);
         }
 
-        public static void OnValueChangeAxisPostfix() => ReflectAngle();
-
-        public static void OnEndEditAxisPostfix() => ReflectAngle();
-
-        public static void OnClickAxisPostfix() => ReflectAngle();
-
-        private static void ReflectAngle() {
-            if (locked) {
-                Studio.CameraLightCtrl.LightInfo chaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
+        internal static void ReflectAngle() {
+            if (Locked) {
                 ComputeAngle.AttachedLightEuler = new Vector2(chaLight.rot[0], chaLight.rot[1]);
-                Vector3 camAngle = Singleton<Studio.CameraControl>.Instance.cameraAngle;
+                Vector3 camAngle = cameraControl.cameraAngle;
                 ComputeAngle.AttachedCameraEuler = new Vector2(camAngle.x, camAngle.y);
             }
         }
@@ -137,7 +132,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
             ExtendedSave.SceneBeingSaved += path => {
                 ExtendedSave.SetSceneExtendedDataById(KK_StudioCharaLightLinkedToCamera.GUID, new PluginData() {
                     data = new System.Collections.Generic.Dictionary<string, object> {
-                        { "locked", locked ? "true" : "false" },
+                        { "locked", Locked ? "true" : "false" },
                         { "attachedLightAngle", new System.Collections.Generic.Dictionary<string,float>{
                             {"x", ComputeAngle.AttachedLightEuler.x },
                             {"y", ComputeAngle.AttachedLightEuler.y }
@@ -170,6 +165,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
                 } else {
                     ToggleLocked(false);
                 }
+                chaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
             };
         }
 
@@ -178,20 +174,20 @@ namespace KK_StudioCharaLightLinkedToCamera {
             //LoadScene以前先解除Locked狀態
             ToggleLocked(false);
         }
-
         #endregion
 
         [HarmonyPostfix, HarmonyPatch(typeof(Studio.CameraControl), "CameraUpdate")]
         public static void CameraUpdatePostfix(Studio.CameraControl __instance) {
-            if (!locked || __instance != cameraControl) return;
+            if (!Locked || __instance != cameraControl || executeState) return;
 
+            executeState = true;
             Vector2 vec = ComputeAngle.GetLightEuler(__instance.cameraAngle.x, __instance.cameraAngle.y);
-            Studio.CameraLightCtrl.LightInfo chaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
             chaLight.rot[0] = vec.x;
             chaLight.rot[1] = vec.y;
 
             studioLightCalc.Invoke("UpdateUI");
             studioLightCalc.Invoke("Reflect");
+            executeState = false;
         }
     }
 

@@ -44,8 +44,8 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.03.21.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.1";
+        internal const string PLUGIN_VERSION = "20.03.30.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.2";
 
         internal static new ManualLogSource Logger;
         public static ConfigEntry<bool> Enable_Saving_To_Chara { get; private set; }
@@ -58,12 +58,12 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
 
         public void Awake() {
             Logger = base.Logger;
-            Enable_Saving_To_Chara = Config.Bind<bool>("Main Config", "Saving to character outfits (7 outfits)", true);
+            Enable_Saving_To_Chara = Config.Bind<bool>("Main Config", "Saving to character outfits (7 outfits)", true, "Enable this to save the plugin data to the character file");
             Enable_Saving_To_Coordinate = Config.Bind<bool>("Main Config", "Saving to Coordinate files", false, "[Warning] It is highly recommended to enable this ONLY WHEN NEEDED");
             Warning_Message = Config.Bind<bool>("Main Config", "Warning Message", true, "Enable/Disable warning message when saving files");
             Save_Eyes_Overlay = Config.Bind<bool>("Save By Coordinate (Enable Main Config first)", "Eyes Overlay", true, "This setting will only react when main config enabled");
-            Save_Face_Overlay = Config.Bind<bool>("Save By Coordinate (Enable Main Config first)", "Face Overlay", false, "This setting will only react when main config enabled");
-            Save_Body_Overlay = Config.Bind<bool>("Save By Coordinate (Enable Main Config first)", "Body Overlay", false, "This setting will only react when main config enabled");
+            Save_Face_Overlay = Config.Bind<bool>("Save By Coordinate (Enable Main Config first)", "Face Overlay", true, "This setting will only react when main config enabled");
+            Save_Body_Overlay = Config.Bind<bool>("Save By Coordinate (Enable Main Config first)", "Body Overlay", true, "This setting will only react when main config enabled");
             CharacterApi.RegisterExtraBehaviour<CharaOverlaysBasedOnCoordinateController>(GUID);
             HarmonyWrapper.PatchAll(typeof(Patches));
         }
@@ -604,16 +604,19 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
                         return x.ContainsKey(type) && x[type] != 0 && x[type] != currentCoor[type];
                     }
                 }).Any()) {
-                    Logger.LogInfo("There are overlays on other outfits but the saving setting is not enabled.");
+                    Logger.LogWarning("There are overlays on other outfits but the saving setting is not enabled.");
                     ShowMessage("[WARNING] Chara overlays on other outfits are not saved to Chara files.");
+                    ShowMessage($"Please check the [{KK_CharaOverlaysBasedOnCoordinate.PLUGIN_NAME}] section in the config.");
+                    ShowMessage($"If you really don't know what happened, read the readme of [{KK_CharaOverlaysBasedOnCoordinate.PLUGIN_NAME}].");
                 }
                 return KK_CharaOverlaysBasedOnCoordinate.Enable_Saving_To_Chara.Value;
             } else {
                 if (KK_CharaOverlaysBasedOnCoordinate.Enable_Saving_To_Coordinate.Value) {
                     if (!GetOverlayLoaded().Values.Where(x => null != x).Any()) {
-                        Logger.LogInfo("Chara overlay save to coordinate file is enable but no overlay loaded.");
+                        Logger.LogWarning("Chara overlay save to coordinate file is enable but no overlay loaded.");
                         ShowMessage("[WARNING] Chara overlay is saving NOTHING to the Coordinate file.");
-                        ShowMessage("[WARNING] This will cause the chara overlay to BE CLEARED when loading this coordinate file.");
+                        ShowMessage("This will cause the chara overlay to BE CLEARED when loading this coordinate file.");
+                        ShowMessage($"If you don't want to do this, check the [{KK_CharaOverlaysBasedOnCoordinate.PLUGIN_NAME}] section in the config.");
                     }
                 }
                 return KK_CharaOverlaysBasedOnCoordinate.Enable_Saving_To_Coordinate.Value;
