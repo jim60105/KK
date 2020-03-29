@@ -36,8 +36,8 @@ namespace KK_StudioCharaLightLinkedToCamera {
     public class KK_StudioCharaLightLinkedToCamera : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Light Linked To Camera";
         internal const string GUID = "com.jim60105.kk.studiocharalightlinkedtocamera";
-        internal const string PLUGIN_VERSION = "20.03.30.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.5";
+        internal const string PLUGIN_VERSION = "20.03.30.1";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.6";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
