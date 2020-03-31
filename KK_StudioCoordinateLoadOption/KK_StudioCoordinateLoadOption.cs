@@ -46,8 +46,8 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.03.22.0";
-        internal const string PLUGIN_RELEASE_VERSION = "3.1.2";
+        internal const string PLUGIN_VERSION = "20.03.31.0";
+        internal const string PLUGIN_RELEASE_VERSION = "3.1.3";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -134,7 +134,7 @@ namespace KK_StudioCoordinateLoadOption {
         private static Toggle[] tgls;
         private static Image panel2;
         private static RectTransform toggleGroup;
-        internal static bool lockHairAcc = true;
+        internal static bool lockHairAcc = false;
         internal static bool addAccModeFlag = true;
         private static int finishedCount = 0;
 
@@ -402,7 +402,7 @@ namespace KK_StudioCoordinateLoadOption {
             }
 
             OCIChar[] array = (from v in Singleton<GuideObjectManager>.Instance.selectObjectKey
-                               select Studio.Studio.GetCtrlInfo(v)  into v
+                               select Studio.Studio.GetCtrlInfo(v) into v
                                where v is OCIChar
                                select v as OCIChar).ToArray();
             if (isAllTrueFlag && !lockHairAcc && !addAccModeFlag) {
@@ -410,7 +410,7 @@ namespace KK_StudioCoordinateLoadOption {
                 foreach (var ocichar in array) {
                     ocichar.LoadClothesFile(charaFileSort.selectPath);
                 }
-            }else if (array.Length == 0) { 
+            } else if (array.Length == 0) {
                 Logger.LogMessage("No available characters selected");
                 Logger.LogDebug("Studio Coordinate Load Option Finish");
             } else {
@@ -425,8 +425,7 @@ namespace KK_StudioCoordinateLoadOption {
 
         private static OCIChar[] oCICharArray;
         private static bool ReloadCheck1 = true;
-        private static bool ReloadCheck2 = true;
-        private static ChaControl chaCtrl;
+        private static readonly Queue<ChaControl> ReloadCheck2 = new Queue<ChaControl>();
         private static ChaControl tmpChaCtrl;
         private static ChaFileCoordinate backupTmpCoordinate;
         private static int callCount;
@@ -440,7 +439,7 @@ namespace KK_StudioCoordinateLoadOption {
             #endregion
 
             #region ReloadCheck2
-            if (!ReloadCheck2) {
+            if (ReloadCheck2.Count > 0) {
                 callCount--;
                 ReloadCheck2Func();
             }
@@ -472,9 +471,9 @@ namespace KK_StudioCoordinateLoadOption {
 
                 tmpChaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)tmpChaCtrl.fileStatus.coordinateType);
                 HairAccessoryCustomizer_Support.SetExtendedDataFromController(tmpChaCtrl);
+                ReloadCheck2.Clear();
                 foreach (var ocichar in oCICharArray) {
-                    chaCtrl = ocichar.charInfo;
-                    LoadCoordinates();
+                    LoadCoordinates(ocichar.charInfo);
                 }
             } else if (callCount <= 0) {
                 ReloadCheck1 = true;
@@ -489,7 +488,7 @@ namespace KK_StudioCoordinateLoadOption {
             }
         }
 
-        private static void LoadCoordinates() {
+        private static void LoadCoordinates(ChaControl chaCtrl) {
             Queue<int> accQueue = new Queue<int>();
 
             foreach (var tgl in tgls) {
@@ -512,7 +511,7 @@ namespace KK_StudioCoordinateLoadOption {
 
                             ChangeAccessories(tmpChaCtrl, tmpCtrlAccParts, chaCtrl, chaCtrlAccParts, accQueue);
 
-                            ////accQueue內容物太多，報告後捨棄
+                            //accQueue內容物太多，報告後捨棄
                             while (accQueue.Count > 0) {
                                 int slot = accQueue.Dequeue();
                                 ChaFileAccessory.PartsInfo part = tmpCtrlAccParts[slot];
@@ -567,15 +566,15 @@ namespace KK_StudioCoordinateLoadOption {
 
             //Load完畢再Rollback
             callCount = 10;
-            ReloadCheck2 = false;
+            ReloadCheck2.Enqueue(chaCtrl);
             backupTmpCoordinate = new ChaFileCoordinate();
             backupTmpCoordinate.LoadFile(charaFileSort.selectPath);
             //=>Goto ReloadCheck2
         }
 
         internal static void ReloadCheck2Func() {
-            if (HairAccessoryCustomizer_Support.CheckReloadState(chaCtrl, backupTmpCoordinate)) {
-                ReloadCheck2 = true;
+            if (HairAccessoryCustomizer_Support.CheckReloadState(ReloadCheck2.Peek(), backupTmpCoordinate)) {
+                ChaControl chaCtrl = ReloadCheck2.Dequeue();
                 backupTmpCoordinate = null;
                 callCount = 0;
                 //Rollback All MoreAccessories
@@ -653,21 +652,25 @@ namespace KK_StudioCoordinateLoadOption {
                 finishedCount++;
                 if (finishedCount >= oCICharArray.Length) {
                     Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
+                    Logger.LogDebug($"Delete Temp Chara");
                 }
 
                 Logger.LogDebug($"Extended Parts Count : {MoreAccessories_Support.GetAccessoriesAmount(chaCtrl.chaFile)}");
-                Logger.LogDebug("Studio Coordinate Load Option Finish");
+                Logger.LogDebug($"Studio Coordinate Load Option Finish: {finishedCount}/{oCICharArray.Length}");
                 //結束
             } else if (callCount <= 0) {
-                ReloadCheck2 = true;
-                backupTmpCoordinate = null;
-                callCount = 0;
+                ChaControl chaCtrl = ReloadCheck2.Dequeue();
+                if (ReloadCheck2.Count == 0) {
+                    backupTmpCoordinate = null;
+                    callCount = 0;
 
-                Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
-                foreach (var ocichar in oCICharArray) {
-                    ocichar.LoadClothesFile(charaFileSort.selectPath);
+                    Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
+                    Logger.LogDebug($"Delete Temp Chara");
                 }
-                Logger.LogError("Reload chaCtrl ERROR, call original game function instead");
+                Logger.LogError($"Reload {chaCtrl.name} ERROR, call original game function instead");
+                oCICharArray.Where(x => x.charInfo == chaCtrl).ToList().ForEach(x => {
+                    x.LoadClothesFile(charaFileSort.selectPath);
+                });
             }
         }
 

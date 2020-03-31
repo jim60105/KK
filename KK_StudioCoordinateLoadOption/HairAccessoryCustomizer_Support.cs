@@ -199,7 +199,7 @@ namespace KK_StudioCoordinateLoadOption {
                 coordinate = chaCtrl.nowCoordinate;
             }
 
-            Dictionary<int, object> ext = GetExtendedDataFromCoordinate(chaCtrl.nowCoordinate);
+            Dictionary<int, object> ext = GetExtendedDataFromCoordinate(coordinate);
             if (null != ext && ext.Count > 0) {
                 GetExtendedDataFromController(chaCtrl, out Dictionary<int, object> ext2);
                 if (null != ext2 && ext2.Count == ext.Count) {
