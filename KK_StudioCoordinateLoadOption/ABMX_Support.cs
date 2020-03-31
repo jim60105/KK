@@ -15,7 +15,7 @@ namespace KK_StudioCoordinateLoadOption {
 
         public static bool LoadAssembly() {
             try {
-                string path = KK_StudioCoordinateLoadOption.TryGetPluginInstance("KKABMX.Core", new Version(3, 3))?.Info.Location;
+                string path = Extension.Extension.TryGetPluginInstance("KKABMX.Core", new Version(3, 3))?.Info.Location;
                 if (File.Exists(path)) {
                     BoneModifierType = Assembly.LoadFrom(path).GetType("KKABMX.Core.BoneModifier");
                 } else {

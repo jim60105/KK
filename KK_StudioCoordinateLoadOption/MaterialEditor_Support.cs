@@ -12,11 +12,11 @@ namespace KK_StudioCoordinateLoadOption {
         private static Dictionary<int, byte[]> TextureDictionaryBackup = null;
 
         public static bool LoadAssembly() {
-            if (null != KK_StudioCoordinateLoadOption.TryGetPluginInstance("com.deathweasel.bepinex.materialeditor", new Version(1, 7))) {
-                KK_StudioCoordinateLoadOption.Logger.LogDebug("MaterialEditor found");
+            if (null != Extension.Extension.TryGetPluginInstance("com.deathweasel.bepinex.materialeditor", new Version(1, 7))) {
+                Logger.LogDebug("MaterialEditor found");
                 return true;
             } else {
-                KK_StudioCoordinateLoadOption.Logger.LogDebug("Load assembly FAILED: MaterialEditor");
+                Logger.LogDebug("Load assembly FAILED: MaterialEditor");
                 return false;
             }
         }
@@ -49,17 +49,17 @@ namespace KK_StudioCoordinateLoadOption {
         public static void BackupMaterialData(ChaControl chaCtrl) {
             MaterialEditorController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "MaterialEditorCharaController"));
             if (null == MaterialEditorController) {
-                KK_StudioCoordinateLoadOption.Logger.LogDebug("No MaterialEditor Controller found");
+                Logger.LogDebug("No MaterialEditor Controller found");
             } else {
                 TextureDictionaryBackup = MaterialEditorController.GetField("TextureDictionary").ToDictionary<int, byte[]>();
-                KK_StudioCoordinateLoadOption.Logger.LogDebug("TextureDictionaryBackup Count: " + TextureDictionaryBackup.Count);
+                Logger.LogDebug("TextureDictionaryBackup Count: " + TextureDictionaryBackup.Count);
 
                 MaterialBackup = new Dictionary<string, object>();
 
                 foreach (var storedValue in storedValueInfos) {
                     MaterialBackup.Add(storedValue.listName, MaterialEditorController.GetField(storedValue.listName).ToListWithoutType());
                 }
-                KK_StudioCoordinateLoadOption.Logger.LogDebug("Get Original Material Finish");
+                Logger.LogDebug("Get Original Material Finish");
             }
         }
 
@@ -83,16 +83,16 @@ namespace KK_StudioCoordinateLoadOption {
                     if (obj2Add.Count() > 0) {
                         doFlag = true;
                         target.AddRange(obj2Add);
-                        KK_StudioCoordinateLoadOption.Logger.LogDebug($"Rollback {obj2Add.Count()} {storedValue.className} Object");
+                        Logger.LogDebug($"Rollback {obj2Add.Count()} {storedValue.className} Object");
                     }
                     if (doFlag)
                         MaterialEditorController.SetField(storedValue.listName, target);
                 }
                 if (!doFlag) {
                 } else if (objectType == (int)ObjectType.Clothing) {
-                    KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Material Rollback: {Patches.ClothesKindName[Slot]}");
+                    Logger.LogDebug($"->Material Rollback: {Patches.ClothesKindName[Slot]}");
                 } else if (objectType == (int)ObjectType.Accessory) {
-                    KK_StudioCoordinateLoadOption.Logger.LogDebug($"->Material Rollback: Accessory, Slot {Slot}");
+                    Logger.LogDebug($"->Material Rollback: Accessory, Slot {Slot}");
                 }
             }
         }
@@ -100,7 +100,7 @@ namespace KK_StudioCoordinateLoadOption {
         public static void CleanMaterialBackup() {
             if (null != MaterialEditorController) {
                 MaterialEditorController.Invoke("OnCardBeingSaved", new object[] { 1 });
-                KK_StudioCoordinateLoadOption.Logger.LogDebug("TextureDictionary Count: " + MaterialEditorController.GetField("TextureDictionary").ToDictionary<int, byte[]>().Count);
+                Logger.LogDebug("TextureDictionary Count: " + MaterialEditorController.GetField("TextureDictionary").ToDictionary<int, byte[]>().Count);
             }
             MaterialBackup = null;
             TextureDictionaryBackup = null;

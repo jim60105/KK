@@ -18,6 +18,7 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
 using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Harmony;
 using BepInEx.Logging;
 using ExIni;
@@ -49,15 +50,21 @@ namespace KK_StudioCoordinateLoadOption {
         internal const string PLUGIN_VERSION = "20.03.31.0";
         internal const string PLUGIN_RELEASE_VERSION = "3.1.3";
 
+        //public static ConfigEntry<bool> Select_Hair_Acc { get; private set; }
+
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
             UIUtility.Init();
-            var harmonyInstance = HarmonyWrapper.PatchAll(typeof(Patches));
+            Harmony harmonyInstance = HarmonyWrapper.PatchAll(typeof(Patches));
             harmonyInstance.PatchAll(typeof(MoreAccessories_Support));
-            harmonyInstance.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("Init", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(Patches.InitPostfix), null), null);
-            harmonyInstance.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("OnClickLoad", AccessTools.all), new HarmonyMethod(typeof(Patches), nameof(Patches.OnClickLoadPrefix), null), null, null);
-            harmonyInstance.Patch(typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic).GetMethod("OnSelect", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(Patches.OnSelectPostfix), null), null);
+
+            Type CostumeInfoType = typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic);
+            harmonyInstance.Patch(CostumeInfoType.GetMethod("Init", AccessTools.all), postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.InitPostfix)));
+            harmonyInstance.Patch(CostumeInfoType.GetMethod("OnClickLoad", AccessTools.all), prefix: new HarmonyMethod(typeof(Patches), nameof(Patches.OnClickLoadPrefix)));
+            harmonyInstance.Patch(CostumeInfoType.GetMethod("OnSelect", AccessTools.all), postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.OnSelectPostfix)));
+
+            //Select_Hair_Acc = Config.Bind<bool>("Config", "Select Hair acc on default", false);
         }
 
         public static bool _isKCOXExist = false;
@@ -76,21 +83,7 @@ namespace KK_StudioCoordinateLoadOption {
             StringResources.StringResourcesManager.SetUICulture();
         }
 
-        internal static BaseUnityPlugin TryGetPluginInstance(string pluginName, Version minimumVersion = null) {
-            BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue(pluginName, out var target);
-            if (null != target) {
-                if (target.Metadata.Version >= minimumVersion) {
-                    return target.Instance;
-                }
-                Logger.LogMessage($"{pluginName} v{target.Metadata.Version.ToString()} is detacted OUTDATED.");
-                Logger.LogMessage($"Please update {pluginName} to at least v{minimumVersion.ToString()} to enable related feature.");
-            }
-            return null;
-        }
-
-        public void Update() {
-            Patches.Update();
-        }
+        public void Update() => Patches.Update();
     }
 
     class Patches {
@@ -819,7 +812,7 @@ namespace KK_StudioCoordinateLoadOption {
 
         //如果啟動機翻就一律顯示英文，否則機翻會毀了我的文字
         private static void BlockXUATranslate() {
-            if (null != KK_StudioCoordinateLoadOption.TryGetPluginInstance("gravydevsupreme.xunity.autotranslator")) {
+            if (null != Extension.Extension.TryGetPluginInstance("gravydevsupreme.xunity.autotranslator")) {
                 var XUAConfigPath = Path.Combine(Paths.ConfigPath, "AutoTranslatorConfig.ini");
                 if (IniFile.FromFile(XUAConfigPath).GetSection("TextFrameworks").GetKey("EnableUGUI").Value == "True") {
                     StringResources.StringResourcesManager.SetUICulture("en-US");

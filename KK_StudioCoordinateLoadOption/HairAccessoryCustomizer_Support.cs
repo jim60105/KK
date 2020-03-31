@@ -17,7 +17,7 @@ namespace KK_StudioCoordinateLoadOption {
         public static Dictionary<int, object> targetDict = new Dictionary<int, object>();
 
         public static bool LoadAssembly() {
-            if (null != KK_StudioCoordinateLoadOption.TryGetPluginInstance(GUID, new Version(1, 1, 2))) {
+            if (null != Extension.Extension.TryGetPluginInstance(GUID, new Version(1, 1, 2))) {
                 Logger.LogDebug("Hair Accessory Customizer found");
                 return true;
             } else {

@@ -17,7 +17,7 @@ namespace KK_StudioCoordinateLoadOption {
 
         public static bool LoadAssembly() {
             try {
-                string path = KK_StudioCoordinateLoadOption.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories")?.Info.Location;
+                string path = Extension.Extension.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories")?.Info.Location;
                 Assembly ass = Assembly.LoadFrom(path);
                 MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
                 if (null == MoreAccessories) {
