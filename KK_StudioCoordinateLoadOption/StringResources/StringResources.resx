@@ -154,15 +154,18 @@
     <value>Lock Hair Acc.</value>
   </data>
   <data name="replaceMode" xml:space="preserve">
-    <value>"Replace" Mode</value>
+    <value>Replace Mode</value>
   </data>
   <data name="unreconized" xml:space="preserve">
     <value>Unrecognized</value>
   </data>
   <data name="addMode" xml:space="preserve">
-    <value>"Add" Mode</value>
+    <value>Add Mode</value>
   </data>
   <data name="clearAccWord" xml:space="preserve">
     <value>Clear Acc.</value>
+  </data>
+  <data name="reverseHairAcc" xml:space="preserve">
+    <value>Toggle Hair Acc.</value>
   </data>
 </root>

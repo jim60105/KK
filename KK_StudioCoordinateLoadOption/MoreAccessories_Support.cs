@@ -68,7 +68,7 @@ namespace KK_StudioCoordinateLoadOption {
             charAdditionalData.GetField("rawAccessoriesInfos").ToDictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>>()
                 .TryGetValue((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, out List<ChaFileAccessory.PartsInfo> parts);
             for (int i = 0; i < parts.Count; i++) {
-                if (!Patches.IsHairAccessory(chaCtrl, i + 20)) {
+                if (!(Patches.IsHairAccessory(chaCtrl, i + 20) && Patches.lockHairAcc)) {
                     parts[i] = new ChaFileAccessory.PartsInfo();
                 } else {
                     Logger.LogDebug($"Keep HairAcc{i}: {parts[i].id}");

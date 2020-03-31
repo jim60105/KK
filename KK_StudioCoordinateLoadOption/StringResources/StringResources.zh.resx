@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="addMode" xml:space="preserve">
-    <value>「增加」模式</value>
+    <value>增加模式</value>
   </data>
   <data name="clearAccWord" xml:space="preserve">
     <value>清空飾品</value>
@@ -160,9 +160,12 @@
     <value>鎖定頭髮飾品</value>
   </data>
   <data name="replaceMode" xml:space="preserve">
-    <value>「取代」模式</value>
+    <value>取代模式</value>
   </data>
   <data name="unreconized" xml:space="preserve">
     <value>未識別</value>
+  </data>
+  <data name="reverseHairAcc" xml:space="preserve">
+    <value>反選頭髮飾品</value>
   </data>
 </root>

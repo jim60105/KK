@@ -160,9 +160,12 @@
     <value>アクセサリー</value>
   </data>
   <data name="addMode" xml:space="preserve">
-    <value>「追加」モード</value>
+    <value>追加モード</value>
   </data>
   <data name="replaceMode" xml:space="preserve">
-    <value>「置き換え」モード</value>
+    <value>置き換えモード</value>
+  </data>
+  <data name="reverseHairAcc" xml:space="preserve">
+    <value>髪アクセトグル</value>
   </data>
 </root>

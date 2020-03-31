@@ -61,7 +61,7 @@ namespace KK_StudioCoordinateLoadOption.StringResources {
         }
         
         /// <summary>
-        ///   查詢類似 &quot;Add&quot; Mode 的當地語系化字串。
+        ///   查詢類似 Add Mode 的當地語系化字串。
         /// </summary>
         internal static string addMode {
             get {
@@ -187,11 +187,20 @@ namespace KK_StudioCoordinateLoadOption.StringResources {
         }
         
         /// <summary>
-        ///   查詢類似 &quot;Replace&quot; Mode 的當地語系化字串。
+        ///   查詢類似 Replace Mode 的當地語系化字串。
         /// </summary>
         internal static string replaceMode {
             get {
                 return ResourceManager.GetString("replaceMode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Toggle Hair Acc. 的當地語系化字串。
+        /// </summary>
+        internal static string reverseHairAcc {
+            get {
+                return ResourceManager.GetString("reverseHairAcc", resourceCulture);
             }
         }
         

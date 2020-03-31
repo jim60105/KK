@@ -47,10 +47,8 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.03.31.0";
-        internal const string PLUGIN_RELEASE_VERSION = "3.1.3";
-
-        //public static ConfigEntry<bool> Select_Hair_Acc { get; private set; }
+        internal const string PLUGIN_VERSION = "20.03.31.1";
+        internal const string PLUGIN_RELEASE_VERSION = "3.2.0";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -63,8 +61,6 @@ namespace KK_StudioCoordinateLoadOption {
             harmonyInstance.Patch(CostumeInfoType.GetMethod("Init", AccessTools.all), postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.InitPostfix)));
             harmonyInstance.Patch(CostumeInfoType.GetMethod("OnClickLoad", AccessTools.all), prefix: new HarmonyMethod(typeof(Patches), nameof(Patches.OnClickLoadPrefix)));
             harmonyInstance.Patch(CostumeInfoType.GetMethod("OnSelect", AccessTools.all), postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.OnSelectPostfix)));
-
-            //Select_Hair_Acc = Config.Bind<bool>("Config", "Select Hair acc on default", false);
         }
 
         public static bool _isKCOXExist = false;
@@ -154,7 +150,7 @@ namespace KK_StudioCoordinateLoadOption {
             //Draw Panel and ButtonAll
             charaFileSort = (CharaFileSort)__instance.GetField("fileSort");
             Image panel = UIUtility.CreatePanel("CoordinateTooglePanel", charaFileSort.root.parent.parent.parent);
-            panel.transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(405f, -33f), new Vector2(150f, 340f));
+            panel.transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(405f, -59.5f), new Vector2(180f, 340f));
             panel.GetComponent<Image>().color = new Color32(80, 80, 80, 220);
 
             Button btnAll = UIUtility.CreateButton("BtnAll", panel.transform, "All");
@@ -183,7 +179,7 @@ namespace KK_StudioCoordinateLoadOption {
             //分隔線
             Image line = UIUtility.CreateImage("line", panel.transform);
             line.color = Color.gray;
-            line.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -287.5f), new Vector2(140f, -286f));
+            line.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -287.5f), new Vector2(-5f, -286f));
 
             //排除頭髮飾品toggle
             Toggle tglHair = UIUtility.CreateToggle("lockHairAcc", panel.transform, StringResources.StringResourcesManager.GetString("lockHairAcc"));
@@ -196,12 +192,20 @@ namespace KK_StudioCoordinateLoadOption {
                 lockHairAcc = x;
             });
 
+            //反選髮飾品Btn
+            Button btnReverseHairAcc = UIUtility.CreateButton("BtnReverseHairAcc", panel.transform, StringResources.StringResourcesManager.GetString("reverseHairAcc"));
+            btnReverseHairAcc.GetComponentInChildren<Text>(true).color = Color.white;
+            btnReverseHairAcc.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperCenter;
+            btnReverseHairAcc.GetComponent<Image>().color = Color.gray;
+            btnReverseHairAcc.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -342.5f), new Vector2(-5f, -317.5f));
+            btnReverseHairAcc.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
+
             //飾品載入模式btn
             Button btnChangeAccLoadMode = UIUtility.CreateButton("BtnChangeAccLoadMode", panel.transform, "AccModeBtn");
             btnChangeAccLoadMode.GetComponentInChildren<Text>(true).color = Color.white;
             btnChangeAccLoadMode.GetComponentInChildren<Text>(true).alignment = TextAnchor.MiddleCenter;
             btnChangeAccLoadMode.GetComponent<Image>().color = Color.gray;
-            btnChangeAccLoadMode.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -342.5f), new Vector2(140f, -317.5f));
+            btnChangeAccLoadMode.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -369f), new Vector2(-5f, -344f));
             btnChangeAccLoadMode.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
 
             //清空飾品btn
@@ -209,12 +213,12 @@ namespace KK_StudioCoordinateLoadOption {
             btnClearAcc.GetComponentInChildren<Text>(true).color = Color.white;
             btnClearAcc.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperCenter;
             btnClearAcc.GetComponent<Image>().color = Color.gray;
-            btnClearAcc.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -369f), new Vector2(140f, -344f));
+            btnClearAcc.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -395.5f), new Vector2(-5f, -370.5f));
             btnClearAcc.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
 
             //Draw accessories panel
             panel2 = UIUtility.CreatePanel("AccessoriesTooglePanel", panel.transform);
-            panel2.transform.SetRect(Vector2.one, Vector2.one, new Vector2(5f, -537.5f), new Vector2(180f, 0f));
+            panel2.transform.SetRect(Vector2.one, Vector2.one, new Vector2(5f, -537.5f), new Vector2(200f, 0f));
             panel2.GetComponent<Image>().color = new Color32(80, 80, 80, 220);
             panel2.gameObject.SetActive(false);
             Button btnAll2 = UIUtility.CreateButton("BtnAll2", panel2.transform, "All");
@@ -280,7 +284,7 @@ namespace KK_StudioCoordinateLoadOption {
                                    select v).ToArray();
                 foreach (var ocichar in array) {
                     for (int i = 0; i < 20; i++) {
-                        if (!IsHairAccessory(ocichar.charInfo, i)) {
+                        if (!(IsHairAccessory(ocichar.charInfo, i) && lockHairAcc)) {
                             ocichar.charInfo.nowCoordinate.accessory.parts[i] = new ChaFileAccessory.PartsInfo();
                         } else {
                             Logger.LogDebug($"Keep HairAcc{i}: {ocichar.charInfo.nowCoordinate.accessory.parts[i].id}");
@@ -297,6 +301,21 @@ namespace KK_StudioCoordinateLoadOption {
                 }
 
                 Logger.LogDebug("Clear accessories Finish");
+            });
+            btnReverseHairAcc.onClick.RemoveAllListeners();
+            btnReverseHairAcc.onClick.AddListener(() => {
+                MakeTmpChara();
+                for (int i = 0; i < MoreAccessories_Support.GetAccessoriesAmount(tmpChaCtrl.chaFile); i++) {
+                    if (i < tgls2.Length) {
+                        if (IsHairAccessory(tmpChaCtrl,i)) {
+                            tgls2[i].isOn = !tgls2[i].isOn;
+                            Logger.LogDebug($"Reverse Hair Acc.: {i}");
+                        }
+                    }
+                }
+                Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
+                Logger.LogDebug($"Delete Temp Chara");
+                Logger.LogDebug("Reverse Hair Acc. toggles.");
             });
 
             btnChangeAccLoadMode.onClick.RemoveAllListeners();
@@ -411,7 +430,7 @@ namespace KK_StudioCoordinateLoadOption {
                 //然後再呼叫換衣
                 oCICharArray = array;
                 finishedCount = 0;
-                MakeTmpChara();
+                MakeTmpChara(1);
             }
             return false;
         }
@@ -439,8 +458,10 @@ namespace KK_StudioCoordinateLoadOption {
             #endregion
         }
 
-        private static void MakeTmpChara() {
-            ReloadCheck1 = false;
+        private static void MakeTmpChara(int reloadState = 0) {
+            if (reloadState == 1) {
+                ReloadCheck1 = false;
+            }
             callCount = 10;
 
             tmpChaCtrl = Singleton<Manager.Character>.Instance.CreateFemale(Singleton<Manager.Scene>.Instance.commonSpace, -1);
@@ -697,7 +718,7 @@ namespace KK_StudioCoordinateLoadOption {
                         }
                     } else {
                         //取代模式
-                        if (IsHairAccessory(targetChaCtrl, i)) {
+                        if (IsHairAccessory(targetChaCtrl, i) && lockHairAcc) {
                             EnQueue();
                         } else {
                             //如果是取代模式且非髮飾品則取代
@@ -767,12 +788,12 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="index">飾品欄位index</param>
         /// <returns></returns>
         public static bool IsHairAccessory(ChaControl chaCtrl, int index) {
-            if (!lockHairAcc) { return false; }
-            if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
-                return HairAccessoryCustomizer_Support.IsHairAccessory(chaCtrl, index);
-            } else {
+            //if (!lockHairAcc) { return false; }
+            //if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
+            //    return HairAccessoryCustomizer_Support.IsHairAccessory(chaCtrl, index);
+            //} else {
                 return GetChaAccessoryComponent(chaCtrl, index)?.gameObject.GetComponent<ChaCustomHairComponent>() != null;
-            }
+            //}
         }
 
         /// <summary>
