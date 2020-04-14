@@ -9,7 +9,7 @@ namespace KK_StudioCoordinateLoadOption {
         private static object MaterialEditorController;
         private static readonly BepInEx.Logging.ManualLogSource Logger = KK_StudioCoordinateLoadOption.Logger;
         private static Dictionary<string, object> MaterialBackup = null;
-        private static Dictionary<int, byte[]> TextureDictionaryBackup = null;
+        private static Dictionary<int, object> TextureDictionaryBackup = null;
 
         public static bool LoadAssembly() {
             if (null != Extension.Extension.TryGetPluginInstance("com.deathweasel.bepinex.materialeditor", new Version(1, 7))) {
@@ -51,7 +51,7 @@ namespace KK_StudioCoordinateLoadOption {
             if (null == MaterialEditorController) {
                 Logger.LogDebug("No MaterialEditor Controller found");
             } else {
-                TextureDictionaryBackup = MaterialEditorController.GetField("TextureDictionary").ToDictionary<int, byte[]>();
+                TextureDictionaryBackup = MaterialEditorController.GetField("TextureDictionary").ToDictionary<int, object>();
                 Logger.LogDebug("TextureDictionaryBackup Count: " + TextureDictionaryBackup.Count);
 
                 MaterialBackup = new Dictionary<string, object>();
@@ -100,7 +100,7 @@ namespace KK_StudioCoordinateLoadOption {
         public static void CleanMaterialBackup() {
             if (null != MaterialEditorController) {
                 MaterialEditorController.Invoke("OnCardBeingSaved", new object[] { 1 });
-                Logger.LogDebug("TextureDictionary Count: " + MaterialEditorController.GetField("TextureDictionary").ToDictionary<int, byte[]>().Count);
+                Logger.LogDebug("TextureDictionary Count: " + MaterialEditorController.GetField("TextureDictionary").ToDictionary<int, object>().Count);
             }
             MaterialBackup = null;
             TextureDictionaryBackup = null;

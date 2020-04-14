@@ -47,8 +47,8 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.03.31.1";
-        internal const string PLUGIN_RELEASE_VERSION = "3.2.0";
+        internal const string PLUGIN_VERSION = "20.04.14.0";
+        internal const string PLUGIN_RELEASE_VERSION = "3.2.1";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -792,7 +792,7 @@ namespace KK_StudioCoordinateLoadOption {
             //if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
             //    return HairAccessoryCustomizer_Support.IsHairAccessory(chaCtrl, index);
             //} else {
-                return GetChaAccessoryComponent(chaCtrl, index)?.gameObject.GetComponent<ChaCustomHairComponent>() != null;
+            return GetChaAccessoryComponent(chaCtrl, index)?.gameObject.GetComponent<ChaCustomHairComponent>() != null;
             //}
         }
 

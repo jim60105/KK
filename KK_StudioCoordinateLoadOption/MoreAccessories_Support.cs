@@ -31,8 +31,9 @@ namespace KK_StudioCoordinateLoadOption {
             }
         }
 
+        //HarmonyPriority is used to skip the broken prefix in MoreAcc (added in v1.0.9).
         private static bool fakeCopyCall = false;
-        [HarmonyPrefix, HarmonyPatch(typeof(ChaFile), "CopyAll")]
+        [HarmonyPrefix, HarmonyPatch(typeof(ChaFile), "CopyAll", new Type[] { typeof(ChaFile) }), HarmonyPriority(Priority.HigherThanNormal)]
         public static bool CopyAllPrefix() {
             //Logger.LogDebug("Block Origin Copy?:"+fakeCopyCall);
             return !fakeCopyCall;
