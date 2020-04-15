@@ -111,10 +111,9 @@ namespace KK_StudioCharaLightLinkedToCamera {
         }
 
         public static void OnValueChangeAxisPostfix() {
-            if (Locked) {
+            if (Locked && !(bool)studioLightCalc.GetField("isUpdateInfo")) {
                 ComputeAngle.AttachedLightEuler = new Vector2(chaLight.rot[0], chaLight.rot[1]);
-                Vector3 camAngle = cameraControl.cameraAngle;
-                ComputeAngle.AttachedCameraEuler = new Vector2(camAngle.x, camAngle.y);
+                ComputeAngle.AttachedCameraEuler = new Vector2(cameraControl.cameraAngle.x, cameraControl.cameraAngle.y);
             }
         }
         #endregion
@@ -254,9 +253,9 @@ namespace KK_StudioCharaLightLinkedToCamera {
             if (situ == 2) return new Vector2(-camDeltaX, camDeltaY);
             if (situ == 3)
             {
-                if (alpha <= 90f || alpha >= -90f) return new Vector2(camDeltaX, camDeltaY - alpha);
                 if (alpha > 90f) return new Vector2(-camDeltaX, camDeltaY + 180f - alpha);
                 if (alpha < -90f) return new Vector2(-camDeltaX, camDeltaY - 180f - alpha);
+                return new Vector2(camDeltaX, camDeltaY - alpha);
             }
             return Vector2.zero;
         }
@@ -274,8 +273,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
             }
 
             float m = agls + camDeltaX * Mathf.Deg2Rad;
-            float smc = Mathf.Sin(m) * cosr;
-            float bx = smc > 1f ? Mathf.Asin(1f) : (smc < -1f ? Mathf.Asin(-1f) : Mathf.Asin(smc));
+            float bx = Mathf.Asin(Mathf.Sin(m) * cosr);
 
             float cbx = Mathf.Cos(bx);
             float cmcx = cbx == 0f ? 1f : Mathf.Cos(m) * cosr / cbx;
