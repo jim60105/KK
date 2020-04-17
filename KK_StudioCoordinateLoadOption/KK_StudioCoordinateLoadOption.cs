@@ -27,6 +27,7 @@ using HarmonyLib;
 using MessagePack;
 using Studio;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -47,8 +48,8 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.04.14.0";
-        internal const string PLUGIN_RELEASE_VERSION = "3.2.1";
+        internal const string PLUGIN_VERSION = "20.04.18.0";
+        internal const string PLUGIN_RELEASE_VERSION = "3.2.1.2";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -648,7 +649,6 @@ namespace KK_StudioCoordinateLoadOption {
                 //Rollback HairAcc
                 if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
                     if (HairAccessoryCustomizer_Support.CopyAllHairAcc(tmpChaCtrl, chaCtrl)) {
-                        HairAccessoryCustomizer_Support.SetControllerFromExtData(chaCtrl);
                         HairAccessoryCustomizer_Support.GetExtendedDataFromExtData(chaCtrl, out var nowCoor);
                         if (null == nowCoor) {
                             nowCoor = new Dictionary<int, object>();
@@ -661,7 +661,7 @@ namespace KK_StudioCoordinateLoadOption {
                 MaterialEditor_Support.CleanMaterialBackup();
                 KCOX_Support.CleanKCOXBackup();
 
-                chaCtrl.Reload(false, true, true, true);
+                chaCtrl.Reload();
 
                 finishedCount++;
                 if (finishedCount >= oCICharArray.Length) {

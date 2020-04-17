@@ -156,7 +156,6 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="chaCtrl">目標ChaControl</param>
         /// <param name="dict">要存入的dict</param>
         public static void SaveExtendedData(ChaControl chaCtrl, Dictionary<int, object> dict) {
-            MonoBehaviour HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
             PluginData data = new PluginData();
             Dictionary<int, Dictionary<int, object>> allExtData = GetExtendedDataFromExtData(chaCtrl, out _);
             if (dict.Count == 0 && (null == allExtData || allExtData.Count == 0)) {
@@ -236,8 +235,10 @@ namespace KK_StudioCoordinateLoadOption {
             if (null != dict || (null != GetExtendedDataFromExtData(sourceCtrl, out dict) && null != dict)) {
                 for (int i = 0; i < dict.Count; i++) {
                     dict[dict.Keys.ElementAt(i)] = CopyHairInfo(dict.Values.ElementAt(i));
+                    //dict[dict.Keys.ElementAt(i)] = (dict.Values.ElementAt(i));
                 }
                 SaveExtendedData(targetCtrl, dict);
+
                 targetCtrl.ChangeAccessory(true);
                 Logger.LogDebug($"Copy all HairAcc ({dict.Count}): {sourceCtrl.fileParam.fullname} -> {targetCtrl.fileParam.fullname} ");
                 return true;
@@ -276,8 +277,8 @@ namespace KK_StudioCoordinateLoadOption {
                 } else if (targetDict.ContainsKey(targetSlot)) {
                     targetDict.Remove(targetSlot);
                 }
-                //targetDict.Add(targetSlot, CopyHairInfo(sourceHairInfo));
-                targetDict.Add(targetSlot, (sourceHairInfo));
+                targetDict.Add(targetSlot, CopyHairInfo(sourceHairInfo));
+                //targetDict.Add(targetSlot, (sourceHairInfo));
                 sourceDict.Remove(sourceSlot);
 
                 SaveExtendedData(sourceChaCtrl, sourceDict);
