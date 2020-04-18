@@ -31,12 +31,10 @@ namespace KK_StudioCoordinateLoadOption {
             }
         }
 
-        //HarmonyPriority is used to skip the broken prefix in MoreAcc (added in v1.0.9).
-        private static bool fakeCopyCall = false;
-        [HarmonyPrefix, HarmonyPatch(typeof(ChaFile), "CopyAll", new Type[] { typeof(ChaFile) }), HarmonyPriority(Priority.HigherThanNormal)]
+        private static bool fakeCopyFlag_CopyAll = false;
+        [HarmonyPrefix, HarmonyPatch(typeof(ChaFile), "CopyAll")]
         public static bool CopyAllPrefix() {
-            //Logger.LogDebug("Block Origin Copy?:"+fakeCopyCall);
-            return !fakeCopyCall;
+            return !fakeCopyFlag_CopyAll;
         }
 
         /// <summary>
@@ -45,9 +43,12 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="oriChaCtrl">來源對象</param>
         /// <param name="targetChaCtrl">目標對象</param>
         public static void CopyAllMoreAccessoriesData(ChaControl oriChaCtrl, ChaControl targetChaCtrl) {
-            fakeCopyCall = true;
+            //Do a forced clearing to avoid the broken clearing function added in MoreAcc v1.0.9.
+            ClearMoreAccessoriesData(targetChaCtrl, true);
+
+            fakeCopyFlag_CopyAll = true;
             targetChaCtrl.chaFile.CopyAll(oriChaCtrl.chaFile);
-            fakeCopyCall = false;
+            fakeCopyFlag_CopyAll = false;
 
             MoreAccessories.InvokeMember("Update",
                 BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance,
@@ -55,21 +56,21 @@ namespace KK_StudioCoordinateLoadOption {
                 MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null),
                 null);
 
-            Logger.LogDebug("Copy MoreAccessories Finish");
+            Logger.LogDebug($"Copy All MoreAccessories: {oriChaCtrl.fileParam.fullname} -> {targetChaCtrl.fileParam.fullname}");
         }
 
         /// <summary>
         /// 將MoreAccessories飾品清空
         /// </summary>
         /// <param name="chaCtrl">清空對象</param>
-        public static void ClearMoreAccessoriesData(ChaControl chaCtrl) {
+        public static void ClearMoreAccessoriesData(ChaControl chaCtrl, bool force = false) {
             object MoreAccObj = MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null);
             Dictionary<ChaFile, object> _accessoriesByChar = MoreAccObj.GetField("_accessoriesByChar").ToDictionary<ChaFile, object>();
-            _accessoriesByChar.TryGetValue(chaCtrl.chaFile, out var charAdditionalData);
+            _accessoriesByChar.TryGetValue(chaCtrl.chaFile, out object charAdditionalData);
             charAdditionalData.GetField("rawAccessoriesInfos").ToDictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>>()
                 .TryGetValue((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, out List<ChaFileAccessory.PartsInfo> parts);
             for (int i = 0; i < parts.Count; i++) {
-                if (!(Patches.IsHairAccessory(chaCtrl, i + 20) && Patches.lockHairAcc)) {
+                if (force || !(Patches.IsHairAccessory(chaCtrl, i + 20) && Patches.lockHairAcc)) {
                     parts[i] = new ChaFileAccessory.PartsInfo();
                 } else {
                     Logger.LogDebug($"Keep HairAcc{i}: {parts[i].id}");
@@ -94,12 +95,12 @@ namespace KK_StudioCoordinateLoadOption {
             Queue<int> accQueue = new Queue<int>();
             object MoreAccObj = MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null);
             Dictionary<ChaFile, object> _accessoriesByChar = MoreAccObj.GetField("_accessoriesByChar").ToDictionary<ChaFile, object>();
-            _accessoriesByChar.TryGetValue(sourceChaCtrl.chaFile, out var sourceCharAdditionalData);
-            _accessoriesByChar.TryGetValue(targetChaCtrl.chaFile, out var targetCharAdditionalData);
+            _accessoriesByChar.TryGetValue(sourceChaCtrl.chaFile, out object sourceCharAdditionalData);
+            _accessoriesByChar.TryGetValue(targetChaCtrl.chaFile, out object targetCharAdditionalData);
 
             sourceCharAdditionalData.GetField("rawAccessoriesInfos").ToDictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>>()
                 .TryGetValue((ChaFileDefine.CoordinateType)sourceChaCtrl.fileStatus.coordinateType, out List<ChaFileAccessory.PartsInfo> sourceParts);
-            var rawAccInfos = targetCharAdditionalData.GetField("rawAccessoriesInfos").ToDictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>>();
+            Dictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>> rawAccInfos = targetCharAdditionalData.GetField("rawAccessoriesInfos").ToDictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>>();
             rawAccInfos.TryGetValue((ChaFileDefine.CoordinateType)targetChaCtrl.fileStatus.coordinateType, out List<ChaFileAccessory.PartsInfo> targetParts);
 
             while (targetParts.Count < sourceParts.Count) {
@@ -114,7 +115,7 @@ namespace KK_StudioCoordinateLoadOption {
             Patches.ChangeAccessories(sourceChaCtrl, sourcePartsArray, targetChaCtrl, targetPartsArray, accQueue);
 
             targetParts.Clear();
-            foreach (var part in targetPartsArray) {
+            foreach (ChaFileAccessory.PartsInfo part in targetPartsArray) {
                 targetParts.Add(part);
             }
 
@@ -164,7 +165,7 @@ namespace KK_StudioCoordinateLoadOption {
             MoreAccessories.InvokeMember("Update", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
 
             if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
-                HairAccessoryCustomizer_Support.GetExtendedDataFromExtData(targetChaCtrl, out var nowCoor);
+                HairAccessoryCustomizer_Support.GetExtendedDataFromExtData(targetChaCtrl, out Dictionary<int, object> nowCoor);
                 if (null != nowCoor) {
                     Logger.LogDebug($"->Hair Count: {nowCoor.Count} : {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
                 }
@@ -197,7 +198,7 @@ namespace KK_StudioCoordinateLoadOption {
                 Logger.LogDebug("No sideloader extInfo found");
                 extInfoList = null;
             } else {
-                var tmpExtInfo = (object[])sideLoaderExtData.data["info"];
+                object[] tmpExtInfo = (object[])sideLoaderExtData.data["info"];
                 extInfoList = tmpExtInfo.Select(x => MessagePackSerializer.Deserialize<ResolveInfo>((byte[])x)).ToList();
             }
 
@@ -297,7 +298,7 @@ namespace KK_StudioCoordinateLoadOption {
             (MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null))
             .GetField("_accessoriesByChar")
             .ToDictionary<ChaFile, object>()
-            .TryGetValue(chaFile, out var charAdditionalData);
+            .TryGetValue(chaFile, out object charAdditionalData);
             return charAdditionalData?.GetField("nowAccessories").ToList<ChaFileAccessory.PartsInfo>().Count + 20 ?? 20;
         }
     }
