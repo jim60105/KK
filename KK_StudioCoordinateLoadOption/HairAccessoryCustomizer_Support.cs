@@ -35,8 +35,8 @@ namespace KK_StudioCoordinateLoadOption {
         public static Dictionary<int, Dictionary<int, object>> GetExtendedDataFromExtData(ChaControl chaCtrl, out Dictionary<int, object> nowcoordinateExtData) {
             nowcoordinateExtData = null;
             PluginData data = ExtendedSave.GetExtendedDataById(chaCtrl.chaFile, GUID);
-            if (data != null && data.data.TryGetValue("HairAccessories", out object loadedHairAccessories) && loadedHairAccessories != null) {
-                Dictionary<int, Dictionary<int, object>> result = MessagePackSerializer.Deserialize<Dictionary<int, Dictionary<int, object>>>((byte[])loadedHairAccessories);
+            if (data != null && data.data.TryGetValue("HairAccessories", out object loadedHairAccessories) && loadedHairAccessories is byte[] loadedBA) {
+                Dictionary<int, Dictionary<int, object>> result = MessagePackSerializer.Deserialize<Dictionary<int, Dictionary<int, object>>>(loadedBA);
                 result?.TryGetValue(chaCtrl.fileStatus.coordinateType, out nowcoordinateExtData);
                 if (null != nowcoordinateExtData) {
                     Logger.LogDebug($"Get {chaCtrl.fileParam.fullname} Hair Accessories From ExtData: {nowcoordinateExtData.Count}");
@@ -164,7 +164,7 @@ namespace KK_StudioCoordinateLoadOption {
             Dictionary<int, Dictionary<int, object>> allExtData = GetExtendedDataFromExtData(chaCtrl, out _);
             int coorType = chaCtrl.fileStatus.coordinateType;
             if ((null == dict || dict.Count == 0) && (null == allExtData || allExtData.Count == 0)) {
-                data.data.Add("HairAccessories", new Dictionary<int, Dictionary<int, object>>());
+                data = null;
             } else {
                 if (null == allExtData) {
                     allExtData = new Dictionary<int, Dictionary<int, object>>();

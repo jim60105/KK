@@ -46,8 +46,8 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.04.19.1";
-        internal const string PLUGIN_RELEASE_VERSION = "3.2.1.4";
+        internal const string PLUGIN_VERSION = "20.04.19.2";
+        internal const string PLUGIN_RELEASE_VERSION = "3.2.1.5";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -477,11 +477,12 @@ namespace KK_StudioCoordinateLoadOption {
             }
             callCount = 10;
 
-            tmpChaCtrl = Singleton<Manager.Character>.Instance.CreateFemale(Singleton<Manager.Scene>.Instance.commonSpace, -1);
+            //tmpChaCtrl = Singleton<Manager.Character>.Instance.CreateFemale(Singleton<Manager.Scene>.Instance.commonSpace, -1);
+            tmpChaCtrl = Singleton<Manager.Character>.Instance.CreateFemale(Camera.main.gameObject, -1);
             tmpChaCtrl.Load();
-            tmpChaCtrl.fileParam.lastname = "大";
-            tmpChaCtrl.fileParam.firstname = "中天";
-            tmpChaCtrl.gameObject.transform.position = new Vector3(1000, 1000, 1000);   //丟到看不見的遠處
+            tmpChaCtrl.fileParam.lastname = "黑肉";
+            tmpChaCtrl.fileParam.firstname = "舔舔";
+            tmpChaCtrl.gameObject.transform.localPosition = new Vector3(0,0,-10);   //丟到看不見的Camera後面
             backupTmpCoordinate = new ChaFileCoordinate();
             backupTmpCoordinate.LoadFile(charaFileSort.selectPath);
             tmpChaCtrl.nowCoordinate.LoadFile(charaFileSort.selectPath);
