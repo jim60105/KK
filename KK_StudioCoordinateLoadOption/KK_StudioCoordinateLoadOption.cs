@@ -46,8 +46,8 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.04.19.0";
-        internal const string PLUGIN_RELEASE_VERSION = "3.2.1.3";
+        internal const string PLUGIN_VERSION = "20.04.19.1";
+        internal const string PLUGIN_RELEASE_VERSION = "3.2.1.4";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -481,6 +481,7 @@ namespace KK_StudioCoordinateLoadOption {
             tmpChaCtrl.Load();
             tmpChaCtrl.fileParam.lastname = "大";
             tmpChaCtrl.fileParam.firstname = "中天";
+            tmpChaCtrl.gameObject.transform.position = new Vector3(1000, 1000, 1000);   //丟到看不見的遠處
             backupTmpCoordinate = new ChaFileCoordinate();
             backupTmpCoordinate.LoadFile(charaFileSort.selectPath);
             tmpChaCtrl.nowCoordinate.LoadFile(charaFileSort.selectPath);
@@ -654,6 +655,8 @@ namespace KK_StudioCoordinateLoadOption {
                         }
                     }
                 }
+
+                //TODO: 飾品ME要改為在DoChange的時候更改位置，然後這裡要全部Backup Rollback
 
                 //Rollback Accessories Material
                 if (KK_StudioCoordinateLoadOption._isMaterialEditorExist) {

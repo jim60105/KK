@@ -76,13 +76,16 @@ namespace KK_StudioCoordinateLoadOption {
                     Logger.LogDebug($"Keep HairAcc{i}: {parts[i].id}");
                 }
             }
+            RemoveEmptyFromBackToFront(parts);
             //charAdditionalData.SetField("rawAccessoriesInfos", rawAccessoriesInfos);
             //charAdditionalData.SetField("nowAccessories", rawAccessoriesInfos[(ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType]);
 
             //MoreAccObj.SetField("_accessoriesByChar", _accessoriesByChar);
-            MoreAccessories.InvokeMember("UpdateStudioUI", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
 
-            chaCtrl.ChangeAccessory(true);
+            try {
+                MoreAccessories.InvokeMember("UpdateStudioUI", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
+                chaCtrl.ChangeAccessory(true);
+            } catch { }
             Logger.LogDebug("Clear MoreAccessories Finish");
         }
 

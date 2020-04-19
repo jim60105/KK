@@ -164,7 +164,7 @@ namespace KK_StudioCoordinateLoadOption {
             Dictionary<int, Dictionary<int, object>> allExtData = GetExtendedDataFromExtData(chaCtrl, out _);
             int coorType = chaCtrl.fileStatus.coordinateType;
             if ((null == dict || dict.Count == 0) && (null == allExtData || allExtData.Count == 0)) {
-                data.data.Add("HairAccessories", null);
+                data.data.Add("HairAccessories", new Dictionary<int, Dictionary<int, object>>());
             } else {
                 if (null == allExtData) {
                     allExtData = new Dictionary<int, Dictionary<int, object>>();
@@ -174,7 +174,9 @@ namespace KK_StudioCoordinateLoadOption {
                     allExtData[coorType].Clear();
                     allExtData.Remove(coorType);
                 }
-                allExtData[coorType] = dict;
+                if (null != dict) {
+                    allExtData[coorType] = dict;
+                }
                 data.data.Add("HairAccessories", MessagePackSerializer.Serialize(allExtData));
             }
             ExtendedSave.SetExtendedDataById(chaCtrl.chaFile, GUID, data);
@@ -193,7 +195,7 @@ namespace KK_StudioCoordinateLoadOption {
             if (null == coordinate) {
                 coordinate = chaCtrl.nowCoordinate;
             }
-            bool flag = true;
+            bool? flag = true;
 
             Dictionary<int, object> dataFromCoorExt = GetExtendedDataFromCoordinate(coordinate);
             GetExtendedDataFromController(chaCtrl, out Dictionary<int, object> dataFromCon);
@@ -207,12 +209,16 @@ namespace KK_StudioCoordinateLoadOption {
                 } else { flag = false; }
             } else {
                 //No data from coordinate extData 
-                if (null != dataFromCon || dataFromCon.Count != 0) {
+                if (null != dataFromCon && dataFromCon.Count != 0) {
                     flag = false;
+                } else {
+                    flag = null;
                 }
             }
 
-            if (flag) {
+            if (null == flag) {
+                return true;
+            } else if (true == flag) {
                 MonoBehaviour HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
                 HairAccCusController.Invoke("UpdateAccessories", new object[] { true });
                 return true;
@@ -231,7 +237,7 @@ namespace KK_StudioCoordinateLoadOption {
             if (!KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
                 return true;
             }
-            bool flag = true;
+            bool? flag = true;
 
             Dictionary<int, Dictionary<int, object>> dataFromCon = GetExtendedDataFromController(chaCtrl, out _);
             Dictionary<int, Dictionary<int, object>> dataFromExt = GetExtendedDataFromExtData(chaCtrl, out _);
@@ -249,12 +255,16 @@ namespace KK_StudioCoordinateLoadOption {
                 } else { flag = false; }
             } else {
                 //No data from controller
-                if (null != dataFromExt || dataFromExt.Count != 0) {
+                if (null != dataFromExt && dataFromExt.Count != 0) {
                     flag = false;
+                } else {
+                    flag = null;
                 }
             }
 
-            if (flag) {
+            if (null == flag) {
+                return true;
+            } else if (true == flag) {
                 MonoBehaviour HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
                 HairAccCusController.Invoke("UpdateAccessories", new object[] { true });
                 return true;
