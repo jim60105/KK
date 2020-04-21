@@ -168,7 +168,7 @@ namespace KK_StudioCoordinateLoadOption {
             MoreAccessories.InvokeMember("Update", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
 
             if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
-                HairAccessoryCustomizer_Support.GetExtendedDataFromExtData(targetChaCtrl, out Dictionary<int, object> nowCoor);
+                HairAccessoryCustomizer_Support.GetDataFromExtData(targetChaCtrl, out Dictionary<int, object> nowCoor);
                 if (null != nowCoor) {
                     Logger.LogDebug($"->Hair Count: {nowCoor.Count} : {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
                 }

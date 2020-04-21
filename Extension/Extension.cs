@@ -29,7 +29,7 @@ namespace Extension {
 
         private static readonly Dictionary<FieldKey, FieldInfo> _fieldCache = new Dictionary<FieldKey, FieldInfo>();
 
-        public static object GetField(this object self, string name,Type type = null) {
+        public static object GetField(this object self, string name, Type type = null) {
             if (null == type) {
                 type = self.GetType();
             }
@@ -45,7 +45,7 @@ namespace Extension {
             return info.GetValue(self);
         }
 
-        public static bool SetField(this object self, string name, object value,Type type = null) {
+        public static bool SetField(this object self, string name, object value, Type type = null) {
             if (null == type) {
                 type = self.GetType();
             }
@@ -54,18 +54,25 @@ namespace Extension {
                 return false;
             }
             FieldKey fieldKey = new FieldKey(type, name);
-            if (!_fieldCache.TryGetValue(fieldKey, out FieldInfo field)) {
+            if (_fieldCache.TryGetValue(fieldKey, out FieldInfo field) == false) {
                 field = fieldKey.type.GetField(fieldKey.name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
                 if (null != field) {
                     _fieldCache.Add(fieldKey, field);
-                    field.SetValue(self, value);
-                    return true;
                 } else {
                     Console.WriteLine("[KK_Extension] Set Field Not Found: " + name);
+                    return false;
                 }
             }
-            return false;
+            try {
+                field.SetValue(self, value);
+                return true;
+            } catch (ArgumentException ae) {
+                Console.WriteLine("[KK_Extension] Set Field is not the same type as input: " + name);
+                Console.WriteLine("[KK_Extension] " + ae.Message);
+                return false;
+            }
         }
+
         public static bool SetProperty(this object self, string name, object value) {
             if (!self.SearchForProperties(name)) {
                 Console.WriteLine("[KK_Extension] Field Not Found: " + name);
@@ -96,9 +103,9 @@ namespace Extension {
             } catch (MissingMethodException e) {
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.InnerException);
-                var members = self?.GetType().GetMembers(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod);
+                MemberInfo[] members = self?.GetType().GetMembers(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod);
                 List<string> printArray = new List<string>();
-                foreach (var me in members) {
+                foreach (MemberInfo me in members) {
                     if (me.Name == name) {
                         return true;
                     }
@@ -116,7 +123,7 @@ namespace Extension {
         public static bool SearchForFields(this object self, string name) {
             FieldInfo[] fieldInfos = self.GetType().GetFields(AccessTools.all);
             List<string> printArray = new List<string>();
-            foreach (var fi in fieldInfos) {
+            foreach (FieldInfo fi in fieldInfos) {
                 if (fi.Name == name) {
                     return true;
                 }
@@ -134,7 +141,7 @@ namespace Extension {
         public static bool SearchForProperties(this object self, string name) {
             PropertyInfo[] propertyInfos = self.GetType().GetProperties(AccessTools.all);
             List<string> printArray = new List<string>();
-            foreach (var pi in propertyInfos) {
+            foreach (PropertyInfo pi in propertyInfos) {
                 if (pi.Name == name) {
                     return true;
                 }
@@ -379,7 +386,7 @@ namespace Extension {
                     }
                 }
                 if (null != selfItemType && selfItemType == addItemType) {
-                    foreach (var o in listToAdd) {
+                    foreach (object o in listToAdd) {
                         oriList.Add(o);
                     }
                     //Console.WriteLine($"[KK_Extension] AddRange: Add {listToAdd.Count} item.");
@@ -388,11 +395,30 @@ namespace Extension {
                 }
             }
         }
+
+        public static object Select(this object self, Func<object, object> func) {
+            if (self is IList oriList) {
+                for(int i = 0; i < oriList.Count; i++) { 
+                    oriList[i] = func(oriList[i]);
+                }
+                return oriList;
+            } else {
+                Console.WriteLine($"[KK_Extension] Select: Input Object is not type of List<unknown>!");
+                return null;
+            }
+        }
+
+        public static object ForEach(this object self, Action<object> action) {
+            return self.Select(x => {
+                action(x);
+                return x;
+            });
+        }
         #endregion
 
 
         public static BaseUnityPlugin TryGetPluginInstance(string pluginName, Version minimumVersion = null) {
-            BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue(pluginName, out var target);
+            BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue(pluginName, out PluginInfo target);
             if (null != target) {
                 if (target.Metadata.Version >= minimumVersion) {
                     return target.Instance;
