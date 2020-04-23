@@ -70,6 +70,24 @@ namespace KK_StudioCoordinateLoadOption.StringResources {
         }
         
         /// <summary>
+        ///   查詢類似 Body Overlay 的當地語系化字串。
+        /// </summary>
+        internal static string bodyOverlay {
+            get {
+                return ResourceManager.GetString("bodyOverlay", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Chara Overlays 的當地語系化字串。
+        /// </summary>
+        internal static string charaOverlay {
+            get {
+                return ResourceManager.GetString("charaOverlay", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Clear Acc. 的當地語系化字串。
         /// </summary>
         internal static string clearAccWord {
@@ -174,6 +192,24 @@ namespace KK_StudioCoordinateLoadOption.StringResources {
         internal static string empty {
             get {
                 return ResourceManager.GetString("empty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Face Overlay 的當地語系化字串。
+        /// </summary>
+        internal static string faceOverlay {
+            get {
+                return ResourceManager.GetString("faceOverlay", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   查詢類似 Iris Overlay 的當地語系化字串。
+        /// </summary>
+        internal static string irisOverlay {
+            get {
+                return ResourceManager.GetString("irisOverlay", resourceCulture);
             }
         }
         

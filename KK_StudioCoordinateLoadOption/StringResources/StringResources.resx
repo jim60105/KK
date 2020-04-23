@@ -168,4 +168,16 @@
   <data name="reverseHairAcc" xml:space="preserve">
     <value>Toggle Hair Acc.</value>
   </data>
+  <data name="charaOverlay" xml:space="preserve">
+    <value>Chara Overlays</value>
+  </data>
+  <data name="irisOverlay" xml:space="preserve">
+    <value>Iris Overlay</value>
+  </data>
+  <data name="faceOverlay" xml:space="preserve">
+    <value>Face Overlay</value>
+  </data>
+  <data name="bodyOverlay" xml:space="preserve">
+    <value>Body Overlay</value>
+  </data>
 </root>

@@ -43,11 +43,12 @@ namespace KK_StudioCoordinateLoadOption {
     [BepInDependency("com.joan6694.illusionplugins.moreaccessories", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.deathweasel.bepinex.materialeditor", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.deathweasel.bepinex.hairaccessorycustomizer", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("com.jim60105.kk.charaoverlaysbasedoncoordinate", BepInDependency.DependencyFlags.SoftDependency)]
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.04.22.0";
-        internal const string PLUGIN_RELEASE_VERSION = "3.2.2";
+        internal const string PLUGIN_VERSION = "20.04.23.0";
+        internal const string PLUGIN_RELEASE_VERSION = "3.2.2.1";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -71,6 +72,7 @@ namespace KK_StudioCoordinateLoadOption {
         public static bool _isMoreAccessoriesExist = false;
         public static bool _isMaterialEditorExist = false;
         public static bool _isHairAccessoryCustomizerExist = false;
+        public static bool _isCharaOverlayBasedOnCoordinateExist = false;
 
         public void Start() {
             _isKCOXExist = KCOX_Support.LoadAssembly();
@@ -78,6 +80,7 @@ namespace KK_StudioCoordinateLoadOption {
             _isMoreAccessoriesExist = MoreAccessories_Support.LoadAssembly();
             _isMaterialEditorExist = MaterialEditor_Support.LoadAssembly();
             _isHairAccessoryCustomizerExist = HairAccessoryCustomizer_Support.LoadAssembly();
+            _isCharaOverlayBasedOnCoordinateExist = COBOC_Support.LoadAssembly();
 
             StringResources.StringResourcesManager.SetUICulture();
         }
@@ -153,7 +156,7 @@ namespace KK_StudioCoordinateLoadOption {
             //Draw Panel and ButtonAll
             charaFileSort = (CharaFileSort)__instance.GetField("fileSort");
             Image panel = UIUtility.CreatePanel("CoordinateTooglePanel", charaFileSort.root.parent.parent.parent);
-            panel.transform.SetRect(Vector2.zero, new Vector2(1f, 0f), new Vector2(405f, -59.5f), new Vector2(180f, 340f));
+            panel.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(170f, -667.5f), new Vector2(-55f, -345f));
             panel.GetComponent<Image>().color = new Color32(80, 80, 80, 220);
 
             Button btnAll = UIUtility.CreateButton("BtnAll", panel.transform, "All");
@@ -164,76 +167,137 @@ namespace KK_StudioCoordinateLoadOption {
 
             //Draw Toggles
             tgls = new Toggle[ClothesKindArray.Length];
-            for (int i = 0; i < ClothesKindArray.Length; i++) {
+            for (int i = 0; i < ClothesKindArray.Length - 1; i++) {
                 tgls[i] = UIUtility.CreateToggle(ClothesKindArray.GetValue(i).ToString(), panel.transform, ClothesKindName.GetValue(i).ToString());
                 tgls[i].GetComponentInChildren<Text>(true).alignment = TextAnchor.MiddleLeft;
                 tgls[i].GetComponentInChildren<Text>(true).color = Color.white;
                 tgls[i].transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -60f - 25f * i), new Vector2(-5f, -35f - 25f * i));
                 tgls[i].GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
-                if (i == (int)ClothesKind.accessories) {
-                    tgls[i].onValueChanged.AddListener((x) => {
-                        if (tgls2.Length != 0 && null != panel2) {
-                            panel2.gameObject.SetActive(x);
-                        }
-                    });
-                }
             }
 
             //分隔線
             Image line = UIUtility.CreateImage("line", panel.transform);
             line.color = Color.gray;
-            line.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -287.5f), new Vector2(-5f, -286f));
+            line.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -262.5f), new Vector2(-5f, -261f));
 
-            //排除頭髮飾品toggle
-            Toggle tglHair = UIUtility.CreateToggle("lockHairAcc", panel.transform, StringResources.StringResourcesManager.GetString("lockHairAcc"));
-            tglHair.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
-            tglHair.GetComponentInChildren<Text>(true).color = Color.yellow;
-            tglHair.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -317.5f), new Vector2(-5f, -292.5f));
-            tglHair.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
-            tglHair.isOn = lockHairAcc;
-            tglHair.onValueChanged.AddListener((x) => {
-                lockHairAcc = x;
+            //AccToggle
+            tgls[9] = UIUtility.CreateToggle(ClothesKindArray.GetValue(9).ToString(), panel.transform, ClothesKindName.GetValue(9).ToString());
+            tgls[9].GetComponentInChildren<Text>(true).alignment = TextAnchor.MiddleLeft;
+            tgls[9].GetComponentInChildren<Text>(true).color = Color.white;
+            tgls[9].transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -292.5f), new Vector2(-5f, -267.5f));
+            tgls[9].GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
+            tgls[9].onValueChanged.AddListener((x) => {
+                if (tgls2.Length != 0 && null != panel2) {
+                    panel2.gameObject.SetActive(x);
+                }
             });
-
-            //反選髮飾品Btn
-            Button btnReverseHairAcc = UIUtility.CreateButton("BtnReverseHairAcc", panel.transform, StringResources.StringResourcesManager.GetString("reverseHairAcc"));
-            btnReverseHairAcc.GetComponentInChildren<Text>(true).color = Color.white;
-            btnReverseHairAcc.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperCenter;
-            btnReverseHairAcc.GetComponent<Image>().color = Color.gray;
-            btnReverseHairAcc.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -342.5f), new Vector2(-5f, -317.5f));
-            btnReverseHairAcc.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
-
-            //飾品載入模式btn
-            Button btnChangeAccLoadMode = UIUtility.CreateButton("BtnChangeAccLoadMode", panel.transform, "AccModeBtn");
-            btnChangeAccLoadMode.GetComponentInChildren<Text>(true).color = Color.white;
-            btnChangeAccLoadMode.GetComponentInChildren<Text>(true).alignment = TextAnchor.MiddleCenter;
-            btnChangeAccLoadMode.GetComponent<Image>().color = Color.gray;
-            btnChangeAccLoadMode.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -369f), new Vector2(-5f, -344f));
-            btnChangeAccLoadMode.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
 
             //清空飾品btn
             Button btnClearAcc = UIUtility.CreateButton("BtnClearAcc", panel.transform, StringResources.StringResourcesManager.GetString("clearAccWord"));
             btnClearAcc.GetComponentInChildren<Text>(true).color = Color.white;
             btnClearAcc.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperCenter;
             btnClearAcc.GetComponent<Image>().color = Color.gray;
-            btnClearAcc.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -395.5f), new Vector2(-5f, -370.5f));
+            btnClearAcc.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -317.5f), new Vector2(-5f, -292.5f));
             btnClearAcc.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
+
+            if (KK_StudioCoordinateLoadOption._isCharaOverlayBasedOnCoordinateExist) {
+                panel.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(170f, -436.5f), new Vector2(-55f, -345f));
+                //分隔線
+                Image line2 = UIUtility.CreateImage("line", panel.transform);
+                line2.color = Color.gray;
+                line2.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -324f), new Vector2(-5f, -322.5f));
+
+                //Chara Overlay toggle
+                Toggle tglCharaOverlay = UIUtility.CreateToggle("TglCharaOverlay", panel.transform, StringResources.StringResourcesManager.GetString("charaOverlay"));
+                tglCharaOverlay.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
+                tglCharaOverlay.GetComponentInChildren<Text>(true).color = Color.white;
+                tglCharaOverlay.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -354f), new Vector2(-5f, -329f));
+                tglCharaOverlay.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
+                //tglCharaOverlay.isOn = lockHairAcc;
+
+                //Eye Overlay toggle
+                Toggle tglEyeOverlay = UIUtility.CreateToggle("TglIrisOverlay", panel.transform, StringResources.StringResourcesManager.GetString("irisOverlay"));
+                tglEyeOverlay.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
+                tglEyeOverlay.GetComponentInChildren<Text>(true).color = Color.white;
+                tglEyeOverlay.transform.SetRect(Vector2.up, Vector2.one, new Vector2(25f, -379f), new Vector2(-5f, -354f));
+                tglEyeOverlay.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
+                //tglEyeOverlay.isOn = lockHairAcc;
+                //tglEyeOverlay.onValueChanged.AddListener((x) => {
+                //    lockHairAcc = x;
+                //});
+
+                //Face Overlay toggle
+                Toggle tglFaceOverlay = UIUtility.CreateToggle("TglFaceOverlay", panel.transform, StringResources.StringResourcesManager.GetString("faceOverlay"));
+                tglFaceOverlay.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
+                tglFaceOverlay.GetComponentInChildren<Text>(true).color = Color.white;
+                tglFaceOverlay.transform.SetRect(Vector2.up, Vector2.one, new Vector2(25f, -404f), new Vector2(-5f, -379f));
+                tglFaceOverlay.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
+                //tglFaceOverlay.isOn = lockHairAcc;
+                //tglFaceOverlay.onValueChanged.AddListener((x) => {
+                //    lockHairAcc = x;
+                //});
+
+                //Body Overlay toggle
+                Toggle tglBodyOverlay = UIUtility.CreateToggle("TglBodyOverlay", panel.transform, StringResources.StringResourcesManager.GetString("bodyOverlay"));
+                tglBodyOverlay.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
+                tglBodyOverlay.GetComponentInChildren<Text>(true).color = Color.white;
+                tglBodyOverlay.transform.SetRect(Vector2.up, Vector2.one, new Vector2(25f, -429f), new Vector2(-5f, -404f));
+                tglBodyOverlay.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
+                //tglBodyOverlay.isOn = lockHairAcc;
+                //tglBodyOverlay.onValueChanged.AddListener((x) => {
+                //    lockHairAcc = x;
+                //});
+
+                tglCharaOverlay.onValueChanged.AddListener((x) => {
+                    tglEyeOverlay.isOn = x;
+                    tglFaceOverlay.isOn = x;
+                    tglBodyOverlay.isOn = x;
+                });
+            }
 
             //Draw accessories panel
             panel2 = UIUtility.CreatePanel("AccessoriesTooglePanel", panel.transform);
-            panel2.transform.SetRect(Vector2.one, Vector2.one, new Vector2(5f, -537.5f), new Vector2(200f, 0f));
+            panel2.transform.SetRect(Vector2.one, Vector2.one, new Vector2(5f, -612.5f), new Vector2(200f, 0f));
             panel2.GetComponent<Image>().color = new Color32(80, 80, 80, 220);
-            panel2.gameObject.SetActive(false);
+
             Button btnAll2 = UIUtility.CreateButton("BtnAll2", panel2.transform, "All");
             btnAll2.GetComponentInChildren<Text>(true).color = Color.white;
             btnAll2.GetComponent<Image>().color = Color.gray;
             btnAll2.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -30), new Vector2(-5f, -5f));
             btnAll2.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
 
+            //反選髮飾品Btn
+            Button btnReverseHairAcc = UIUtility.CreateButton("BtnReverseHairAcc", panel2.transform, StringResources.StringResourcesManager.GetString("reverseHairAcc"));
+            btnReverseHairAcc.GetComponentInChildren<Text>(true).color = Color.white;
+            btnReverseHairAcc.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperCenter;
+            btnReverseHairAcc.GetComponent<Image>().color = Color.gray;
+            btnReverseHairAcc.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -55f), new Vector2(-5f, -30f));
+            btnReverseHairAcc.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
+
+            //飾品載入模式btn
+            Button btnChangeAccLoadMode = UIUtility.CreateButton("BtnChangeAccLoadMode", panel2.transform, "AccModeBtn");
+            btnChangeAccLoadMode.GetComponentInChildren<Text>(true).color = Color.white;
+            btnChangeAccLoadMode.GetComponentInChildren<Text>(true).alignment = TextAnchor.MiddleCenter;
+            btnChangeAccLoadMode.GetComponent<Image>().color = Color.gray;
+            btnChangeAccLoadMode.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -80), new Vector2(-5f, -55f));
+            btnChangeAccLoadMode.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
+            panel2.gameObject.SetActive(false);
+
+            //Lock頭髮飾品toggle
+            Toggle tglHair = UIUtility.CreateToggle("lockHairAcc", panel2.transform, StringResources.StringResourcesManager.GetString("lockHairAcc"));
+            tglHair.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
+            tglHair.GetComponentInChildren<Text>(true).color = Color.yellow;
+            tglHair.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -110f), new Vector2(-5f, -85f));
+            tglHair.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
+            tglHair.isOn = lockHairAcc;
+            tglHair.onValueChanged.AddListener((x) => {
+                lockHairAcc = x;
+            });
+
             //滾動元件
             ScrollRect scrollRect = UIUtility.CreateScrollView("scroll", panel2.transform);
             toggleGroup = scrollRect.content;
-            scrollRect.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(0f, 5f), new Vector2(0, -35f));
+            scrollRect.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(0f, 5f), new Vector2(0, -110f));
             scrollRect.GetComponent<Image>().color = new Color32(0, 0, 0, 0);
             foreach (Image img in scrollRect.verticalScrollbar.GetComponentsInChildren<Image>()) {
                 img.color = Color.Lerp(img.color, Color.black, 0.6f);
@@ -442,6 +506,7 @@ namespace KK_StudioCoordinateLoadOption {
         }
 
         private static OCIChar[] oCICharArray;
+        private static readonly Dictionary<OCIChar, float> mouthOpen = new Dictionary<OCIChar, float>();
         private static bool ReloadCheck1 = true;
         private static readonly Queue<ChaControl> ReloadCheck2 = new Queue<ChaControl>();
         private static readonly Queue<ChaControl> ReloadCheck3 = new Queue<ChaControl>();
@@ -505,11 +570,12 @@ namespace KK_StudioCoordinateLoadOption {
                 }
                 ReloadCheck2.Clear();
                 ReloadCheck3.Clear();
+                callCount = 10;
                 foreach (OCIChar ocichar in oCICharArray) {
+                    mouthOpen.Add(ocichar, ocichar.oiCharInfo.mouthOpen);
                     if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
                         HairAccessoryCustomizer_Support.SetExtDataFromController(ocichar.charInfo);
                     }
-                    callCount = 10;
                     ReloadCheck2.Enqueue(ocichar.charInfo);
                     //=>Goto ReloadCheck2
                 }
@@ -685,6 +751,13 @@ namespace KK_StudioCoordinateLoadOption {
 
                 //全false的Reload才會觸發KKAPI的hook!!!
                 chaCtrl.Reload();
+
+                //修正嘴開
+                KeyValuePair<OCIChar, float> kv = mouthOpen.Where(x => x.Key.charInfo == chaCtrl).SingleOrDefault();
+                if (!kv.Equals(default(KeyValuePair<OCIChar, float>))) {
+                    kv.Key.ChangeMouthOpen(kv.Value);
+                    mouthOpen.Remove(kv.Key);
+                }
 
                 finishedCount++;
 

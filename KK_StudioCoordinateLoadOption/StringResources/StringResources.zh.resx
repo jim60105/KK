@@ -168,4 +168,16 @@
   <data name="reverseHairAcc" xml:space="preserve">
     <value>反選頭髮飾品</value>
   </data>
+  <data name="charaOverlay" xml:space="preserve">
+    <value>角色 Overlay</value>
+  </data>
+  <data name="irisOverlay" xml:space="preserve">
+    <value>虹膜 Overlay</value>
+  </data>
+  <data name="faceOverlay" xml:space="preserve">
+    <value>臉部 Overlay</value>
+  </data>
+  <data name="bodyOverlay" xml:space="preserve">
+    <value>身體 Overlay</value>
+  </data>
 </root>
