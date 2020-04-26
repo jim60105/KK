@@ -38,8 +38,8 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "20.02.19.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.4";
+        internal const string PLUGIN_VERSION = "20.04.27.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.5";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -447,7 +447,7 @@ namespace KK_StudioTextPlugin {
                 Logger.LogDebug($"Rot:{_info.changeAmount.rot.ToString()}");
                 Logger.LogDebug($"Scale:{_info.changeAmount.scale.ToString()}");
 
-                Logger.LogInfo("Load Text:" + t.text);
+                Logger.LogDebug("Load Text: " + t.text);
             }
 
             //處理Folder未定義OnVisible造成的不隱藏
@@ -507,7 +507,7 @@ namespace KK_StudioTextPlugin {
                 __instance.ociFolder.objectItem.GetComponentInChildren<TextMesh>(true).text = _value;
                 EditDemoText(_value);
                 CheckAlignSettingActive();
-                Logger.LogInfo("Edit Text: " + _value);
+                Logger.LogDebug("Edit Text: " + _value);
                 return false;
             }
             return true;

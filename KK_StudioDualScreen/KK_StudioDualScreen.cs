@@ -34,8 +34,8 @@ namespace KK_StudioDualScreen {
     public class KK_StudioDualScreen : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Dual Screen";
         internal const string GUID = "com.jim60105.kk.studiodualscreen";
-        internal const string PLUGIN_VERSION = "20.03.30.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.3";
+        internal const string PLUGIN_VERSION = "20.04.27.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.4";
 
         public static ConfigEntry<KeyboardShortcut> Hotkey { get; set; }
         internal static new ManualLogSource Logger;

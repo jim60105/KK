@@ -254,7 +254,7 @@ namespace KK_StudioTextPlugin {
             SetAlignment(folder, KK_StudioTextPlugin.Default_Alignment.Value);
             SetAnchor(folder, KK_StudioTextPlugin.Default_Anchor.Value);
 
-            Logger.LogInfo("Create Text");
+            Logger.LogDebug("Create Text");
             return t;
         }
 
