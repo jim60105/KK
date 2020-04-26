@@ -47,8 +47,8 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.04.23.0";
-        internal const string PLUGIN_RELEASE_VERSION = "3.2.2.1";
+        internal const string PLUGIN_VERSION = "20.04.27.0";
+        internal const string PLUGIN_RELEASE_VERSION = "3.2.2.2";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -132,6 +132,7 @@ namespace KK_StudioCoordinateLoadOption {
         internal static bool lockHairAcc = false;
         internal static bool addAccModeFlag = true;
         private static int finishedCount = 0;
+        internal static bool[] charaOverlay = new bool[] { true, true, true };  //順序: Iris、Face、Body
 
         public static void InitPostfix(object __instance) {
             BlockAnotherPlugin();
@@ -213,7 +214,6 @@ namespace KK_StudioCoordinateLoadOption {
                 tglCharaOverlay.GetComponentInChildren<Text>(true).color = Color.white;
                 tglCharaOverlay.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -354f), new Vector2(-5f, -329f));
                 tglCharaOverlay.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
-                //tglCharaOverlay.isOn = lockHairAcc;
 
                 //Eye Overlay toggle
                 Toggle tglEyeOverlay = UIUtility.CreateToggle("TglIrisOverlay", panel.transform, StringResources.StringResourcesManager.GetString("irisOverlay"));
@@ -221,10 +221,6 @@ namespace KK_StudioCoordinateLoadOption {
                 tglEyeOverlay.GetComponentInChildren<Text>(true).color = Color.white;
                 tglEyeOverlay.transform.SetRect(Vector2.up, Vector2.one, new Vector2(25f, -379f), new Vector2(-5f, -354f));
                 tglEyeOverlay.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
-                //tglEyeOverlay.isOn = lockHairAcc;
-                //tglEyeOverlay.onValueChanged.AddListener((x) => {
-                //    lockHairAcc = x;
-                //});
 
                 //Face Overlay toggle
                 Toggle tglFaceOverlay = UIUtility.CreateToggle("TglFaceOverlay", panel.transform, StringResources.StringResourcesManager.GetString("faceOverlay"));
@@ -232,10 +228,6 @@ namespace KK_StudioCoordinateLoadOption {
                 tglFaceOverlay.GetComponentInChildren<Text>(true).color = Color.white;
                 tglFaceOverlay.transform.SetRect(Vector2.up, Vector2.one, new Vector2(25f, -404f), new Vector2(-5f, -379f));
                 tglFaceOverlay.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
-                //tglFaceOverlay.isOn = lockHairAcc;
-                //tglFaceOverlay.onValueChanged.AddListener((x) => {
-                //    lockHairAcc = x;
-                //});
 
                 //Body Overlay toggle
                 Toggle tglBodyOverlay = UIUtility.CreateToggle("TglBodyOverlay", panel.transform, StringResources.StringResourcesManager.GetString("bodyOverlay"));
@@ -243,16 +235,28 @@ namespace KK_StudioCoordinateLoadOption {
                 tglBodyOverlay.GetComponentInChildren<Text>(true).color = Color.white;
                 tglBodyOverlay.transform.SetRect(Vector2.up, Vector2.one, new Vector2(25f, -429f), new Vector2(-5f, -404f));
                 tglBodyOverlay.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
-                //tglBodyOverlay.isOn = lockHairAcc;
-                //tglBodyOverlay.onValueChanged.AddListener((x) => {
-                //    lockHairAcc = x;
-                //});
+
+                tglEyeOverlay.onValueChanged.AddListener((x) => {
+                    charaOverlay[0] = x;
+                    tglCharaOverlay.isOn |= x;
+                });
+                tglFaceOverlay.onValueChanged.AddListener((x) => {
+                    charaOverlay[1] = x;
+                    tglCharaOverlay.isOn |= x;
+                });
+                tglBodyOverlay.onValueChanged.AddListener((x) => {
+                    charaOverlay[2] = x;
+                    tglCharaOverlay.isOn |= x;
+                });
 
                 tglCharaOverlay.onValueChanged.AddListener((x) => {
-                    tglEyeOverlay.isOn = x;
-                    tglFaceOverlay.isOn = x;
-                    tglBodyOverlay.isOn = x;
+                    if (!x) {
+                        tglEyeOverlay.isOn = x;
+                        tglFaceOverlay.isOn = x;
+                        tglBodyOverlay.isOn = x;
+                    }
                 });
+                tglCharaOverlay.isOn = false;
             }
 
             //Draw accessories panel
@@ -477,6 +481,10 @@ namespace KK_StudioCoordinateLoadOption {
             foreach (Toggle tgl in tgls2) {
                 isAllTrueFlag &= tgl.isOn;
             }
+            foreach (bool b in charaOverlay) {
+                isAllTrueFlag &= b;
+                isAllFalseFlag &= !b;
+            }
             if (isAllFalseFlag) {
                 Logger.LogInfo("No Toggle selected, skip loading coordinate");
                 Logger.LogDebug("Studio Coordinate Load Option Finish");
@@ -651,6 +659,28 @@ namespace KK_StudioCoordinateLoadOption {
                     MaterialEditor_Support.SetCoordinateExtDataFromController(chaCtrl, backupTmpCoordinate);
                 }
 
+                //KK_COBOC
+                if (KK_StudioCoordinateLoadOption._isCharaOverlayBasedOnCoordinateExist) {
+                    if (charaOverlay.ToList().Where((x) => x).Count() > 0) {
+                        COBOC_Support.CopyCurrentCharaOverlayByController(tmpChaCtrl, chaCtrl, charaOverlay);
+                    } else {
+                        Logger.LogDebug("Skip load CharaOverlay");
+                    }
+
+                    //Backup Chara Overlays
+                    COBOC_Support.SetCoordinateExtDataFromController(chaCtrl, backupTmpCoordinate);
+                }
+
+                //Backup KCOX
+                if (KK_StudioCoordinateLoadOption._isKCOXExist) {
+                    KCOX_Support.BackupKCOXData(chaCtrl, chaCtrl.nowCoordinate.clothes);
+                }
+
+                //Backup ABMX
+                if (KK_StudioCoordinateLoadOption._isABMXExist) {
+                    ABMX_Support.BackupABMXData(chaCtrl);
+                }
+
                 //Backup KCOX
                 if (KK_StudioCoordinateLoadOption._isKCOXExist) {
                     KCOX_Support.BackupKCOXData(chaCtrl, chaCtrl.nowCoordinate.clothes);
@@ -696,6 +726,7 @@ namespace KK_StudioCoordinateLoadOption {
         internal static void ReloadCheck3Func() {
             if (HairAccessoryCustomizer_Support.CheckHairLoadStateByCoordinate(ReloadCheck3.Peek(), backupTmpCoordinate)) {
                 ChaControl chaCtrl = ReloadCheck3.Dequeue();
+                chaCtrl.StopAllCoroutines();
                 //Rollback All MoreAccessories
                 if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
                     MoreAccessories_Support.CopyAllMoreAccessoriesData(tmpChaCtrl, chaCtrl);
@@ -749,8 +780,10 @@ namespace KK_StudioCoordinateLoadOption {
                     MaterialEditor_Support.SetControllerFromCoordinate(chaCtrl, backupTmpCoordinate);
                 }
 
-                //全false的Reload才會觸發KKAPI的hook!!!
-                chaCtrl.Reload();
+                if (KK_StudioCoordinateLoadOption._isCharaOverlayBasedOnCoordinateExist) {
+                    COBOC_Support.SetControllerFromCoordinate(chaCtrl, backupTmpCoordinate);
+                    COBOC_Support.SetExtDataFromController(chaCtrl);
+                }
 
                 //修正嘴開
                 KeyValuePair<OCIChar, float> kv = mouthOpen.Where(x => x.Key.charInfo == chaCtrl).SingleOrDefault();
@@ -758,6 +791,9 @@ namespace KK_StudioCoordinateLoadOption {
                     kv.Key.ChangeMouthOpen(kv.Value);
                     mouthOpen.Remove(kv.Key);
                 }
+
+                //全false的Reload會觸發KKAPI的hook
+                chaCtrl.Reload(false, true, true, true);
 
                 finishedCount++;
 

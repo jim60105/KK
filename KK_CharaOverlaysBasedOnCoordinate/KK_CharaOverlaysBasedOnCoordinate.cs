@@ -44,8 +44,8 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.03.30.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.2";
+        internal const string PLUGIN_VERSION = "20.04.27.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.3";
 
         internal static new ManualLogSource Logger;
         public static ConfigEntry<bool> Enable_Saving_To_Chara { get; private set; }
@@ -163,7 +163,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             if (toCompare == __instance) return;
 
             __state = true;
-            foreach(var kvp in controller.GetOverlayLoaded(new TexType[] { TexType.EyeOver, TexType.EyeUnder })) {
+            foreach (KeyValuePair<TexType, byte[]> kvp in controller.GetOverlayLoaded(new TexType[] { TexType.EyeOver, TexType.EyeUnder })) {
                 EyeTexture[kvp.Key] = kvp.Value;
                 controller.OverwriteOverlayWithoutUpdate(kvp.Key, new byte[] { });
             }
@@ -175,7 +175,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
 
             CharaOverlaysBasedOnCoordinateController controller = __instance.trfParent?.GetComponent<CharaOverlaysBasedOnCoordinateController>();
             if (null != controller) {
-                foreach (var kvp in EyeTexture) {
+                foreach (KeyValuePair<TexType, byte[]> kvp in EyeTexture) {
                     controller.OverwriteOverlayWithoutUpdate(kvp.Key, kvp.Value);
                 }
                 Extension.Extension.TryGetPluginInstance("KSOX_GUI").Invoke("OnChaFileLoaded");
@@ -318,17 +318,15 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
         //保存此插件資料
         public void SavePluginData(bool SaveNothing = false) {
             if (SaveNothing) {
-                ExtendedSave.SetExtendedDataById(ChaControl.chaFile, KK_CharaOverlaysBasedOnCoordinate.GUID, null);
+                SetExtendedData(null);
             } else {
                 PluginData pd = new PluginData();
                 pd.data.Add("AllCharaOverlayTable", PrepareOverlayTableToSave());
                 pd.data.Add("AllCharaResources", Resources.Select((x, i) => new { i, x }).ToDictionary(y => y.i, y => y.x));
                 pd.data.Add("IrisDisplaySideList", MessagePack.MessagePackSerializer.Serialize<int[]>(IrisDisplaySide));
                 pd.version = 3;
-                ExtendedSave.SetExtendedDataById(ChaControl.chaFile, KK_CharaOverlaysBasedOnCoordinate.GUID, pd);
 
-                //不知道為什麼這條會跳錯誤
-                //SetExtedndedData(SaveNothing ? null : pd);
+                SetExtendedData(pd);
             }
         }
 
@@ -342,7 +340,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             UpdateOldGUIDSaveData((ChaFile)ChaFileControl);
             OverlayTable.Clear();
             IrisDisplaySide = new int[] { 0, 0, 0, 0, 0, 0, 0 };
-            PluginData data = GetExtendedData(true);
+            PluginData data = GetExtendedData();
             if (null != data && data.version != 3) {
                 UpdateOldVersionSaveData(data);
             } else {
@@ -404,8 +402,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             pd.data.Add("IrisDisplaySide", IrisDisplaySide[(int)CurrentCoordinate.Value]);
             pd.version = 3;
 
-            ExtendedSave.SetExtendedDataById(coordinate, KK_CharaOverlaysBasedOnCoordinate.GUID, pd);
-            //SetCoordinateExtendedData(coordinate, pd);
+            SetCoordinateExtendedData(coordinate, pd);
             Logger.LogDebug("Save Coordinate data");
         }
 
@@ -623,6 +620,8 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             }
 
             void ShowMessage(string message) {
+                if (KKAPI.Studio.StudioAPI.InsideStudio) return;
+
                 if (KK_CharaOverlaysBasedOnCoordinate.Warning_Message.Value) {
                     Logger.LogMessage(message);
                 } else {
