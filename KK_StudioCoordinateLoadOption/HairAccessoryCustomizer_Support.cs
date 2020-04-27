@@ -196,14 +196,8 @@ namespace KK_StudioCoordinateLoadOption {
                 HairAccCusController.SetField("HairAccessories", h);
                 Logger.LogDebug($"Remove {chaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.CoordinateType), coordinateIndex)} Hair Accessories From Controller");
             } else {
-                Logger.LogDebug($"{chaCtrl.fileParam.fullname}'s Hair Accessories  already empty in Controller");
+                Logger.LogDebug($"{chaCtrl.fileParam.fullname}'s Hair Accessories already empty in Controller");
             }
-            //if (null != HairAccessories && HairAccessories.Count != 0 && HairAccessories.ContainsKey((int)coordinateIndex)) {
-            //    HairAccessories.Remove((int)coordinateIndex);
-
-            //    HairAccCusController.SetField("HairAccessories", HairAccessories);
-            //    Logger.LogDebug($"Remove {chaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.CoordinateType), coordinateIndex)} Hair Accessories From Controller");
-            //}
         }
 
         /// <summary>

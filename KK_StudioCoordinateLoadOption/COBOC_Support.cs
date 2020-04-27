@@ -25,10 +25,10 @@ namespace KK_StudioCoordinateLoadOption {
             object sourceOverlays = sourceController.GetProperty("CurrentOverlay").ToDictionaryWithoutType();
             object targetOverlays = targetController.GetProperty("CurrentOverlay").ToDictionaryWithoutType();
 
-            object result = targetOverlays.ToDictionaryWithoutType();   //Clone it to use the structure
+            object result = sourceOverlays.ToDictionaryWithoutType();   //Clone it to use the structure
             result.RemoveAll(x => true);
 
-            sourceOverlays.ForEach((x) => {
+            _ = sourceOverlays.ForEach((x) => {
                 DictionaryEntry d = (DictionaryEntry)x;
                 int checkCase = -1;
                 switch (Convert.ToInt32(d.Key)) {
@@ -52,9 +52,9 @@ namespace KK_StudioCoordinateLoadOption {
                 }
                 if (checkCase >= 0 && checkCase < isChecked.Length) {
                     if (isChecked[checkCase]) {
-                        result.Add(d.Key, ((byte[])d.Value).ToArray());
+                        result.Add(d.Key, ((byte[])d.Value).Clone());
                     } else if (targetOverlays.TryGetValue(d.Key, out object val)) {
-                        result.Add(d.Key, ((byte[])val).ToArray());
+                        result.Add(d.Key, ((byte[])val).Clone());
                     } else {
                         result.Add(d.Key, new byte[] { });
                     }
@@ -67,10 +67,10 @@ namespace KK_StudioCoordinateLoadOption {
                     int[] sourceIris = (int[])sourceController.GetField("IrisDisplaySide");
                     int[] targetIris = (int[])targetController.GetField("IrisDisplaySide");
                     int coor = targetChaCtrl.fileStatus.coordinateType;
-                    if (sourceIris.Length > coor && targetIris.Length>coor) {
+                    if (sourceIris.Length > coor && targetIris.Length > coor) {
                         targetIris[coor] = sourceIris[coor];
                     }
-                    targetController.SetField("IrisDisplaySide",targetIris);
+                    targetController.SetField("IrisDisplaySide", targetIris);
                 }
                 targetController.Invoke("OverwriteOverlay");
                 Logger.LogDebug($"Copy Current CharaOverlay {sourceChaCtrl.fileParam.fullname} -> {targetChaCtrl.fileParam.fullname}: {isChecked[0]} {isChecked[1]} {isChecked[2]}");
@@ -80,8 +80,7 @@ namespace KK_StudioCoordinateLoadOption {
         public static void SetExtDataFromController(ChaControl chaCtrl) {
             MonoBehaviour COBOCController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "CharaOverlaysBasedOnCoordinateController"));
 
-            COBOCController.Invoke("OnCardBeingSaved", new object[] { 2 });
-            //COBOCController.GetProperty("ControllerRegistration").SetProperty("MaintainState", true);
+            COBOCController.Invoke("SavePluginData", new object[] { false });
         }
 
         public static void SetCoordinateExtDataFromController(ChaControl chaCtrl, ChaFileCoordinate coordinate = null) {
@@ -101,5 +100,10 @@ namespace KK_StudioCoordinateLoadOption {
             return true;
         }
 
+        public static void SetControllerFromExtData(ChaControl chaCtrl) {
+            MonoBehaviour COBOCController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "CharaOverlaysBasedOnCoordinateController"));
+            COBOCController.Invoke("OnReload", new object[] { 2, false });
+            return;
+        }
     }
 }

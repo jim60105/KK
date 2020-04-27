@@ -13,7 +13,8 @@ using ResolveInfo = Sideloader.AutoResolver.ResolveInfo;
 namespace KK_StudioCoordinateLoadOption {
     class MoreAccessories_Support {
         private static readonly BepInEx.Logging.ManualLogSource Logger = KK_StudioCoordinateLoadOption.Logger;
-        internal static Type MoreAccessories = null;
+        private static Type MoreAccessories = null;
+        private static object MoreAccObj;
 
         public static bool LoadAssembly() {
             try {
@@ -23,6 +24,7 @@ namespace KK_StudioCoordinateLoadOption {
                 if (null == MoreAccessories) {
                     throw new Exception("Load assembly FAILED: MoreAccessories");
                 }
+                MoreAccObj = MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null);
                 Logger.LogDebug("MoreAccessories found");
                 return true;
             } catch (Exception ex) {
@@ -50,11 +52,7 @@ namespace KK_StudioCoordinateLoadOption {
             targetChaCtrl.chaFile.CopyAll(oriChaCtrl.chaFile);
             fakeCopyFlag_CopyAll = false;
 
-            MoreAccessories.InvokeMember("Update",
-                BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance,
-                null,
-                MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null),
-                null);
+            MoreAccessories.InvokeMember("Update", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
 
             Logger.LogDebug($"Copy All MoreAccessories: {oriChaCtrl.fileParam.fullname} -> {targetChaCtrl.fileParam.fullname}");
         }
@@ -64,7 +62,6 @@ namespace KK_StudioCoordinateLoadOption {
         /// </summary>
         /// <param name="chaCtrl">清空對象</param>
         public static void ClearMoreAccessoriesData(ChaControl chaCtrl, bool force = false) {
-            object MoreAccObj = MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null);
             Dictionary<ChaFile, object> _accessoriesByChar = MoreAccObj.GetField("_accessoriesByChar").ToDictionary<ChaFile, object>();
             _accessoriesByChar.TryGetValue(chaCtrl.chaFile, out object charAdditionalData);
             charAdditionalData.GetField("rawAccessoriesInfos").ToDictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>>()
@@ -96,7 +93,6 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="targetChaCtrl">目標</param>
         public static void CopyMoreAccessories(ChaControl sourceChaCtrl, ChaControl targetChaCtrl) {
             Queue<int> accQueue = new Queue<int>();
-            object MoreAccObj = MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null);
             Dictionary<ChaFile, object> _accessoriesByChar = MoreAccObj.GetField("_accessoriesByChar").ToDictionary<ChaFile, object>();
             _accessoriesByChar.TryGetValue(sourceChaCtrl.chaFile, out object sourceCharAdditionalData);
             _accessoriesByChar.TryGetValue(targetChaCtrl.chaFile, out object targetCharAdditionalData);
@@ -288,7 +284,7 @@ namespace KK_StudioCoordinateLoadOption {
             return (ChaAccessoryComponent)MoreAccessories.InvokeMember("GetChaAccessoryComponent",
                 BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance,
                 null,
-                MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null),
+                MoreAccObj,
                 new object[] { chaCtrl, index });
         }
 
@@ -298,11 +294,12 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="chaFile"></param>
         /// <returns></returns>
         public static int GetAccessoriesAmount(ChaFile chaFile) {
-            (MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null))
-            .GetField("_accessoriesByChar")
-            .ToDictionary<ChaFile, object>()
-            .TryGetValue(chaFile, out object charAdditionalData);
+            MoreAccObj.GetField("_accessoriesByChar").ToDictionary<ChaFile, object>().TryGetValue(chaFile, out object charAdditionalData);
             return charAdditionalData?.GetField("nowAccessories").ToList<ChaFileAccessory.PartsInfo>().Count + 20 ?? 20;
+        }
+
+        public static void Update() {
+            MoreAccessories.InvokeMember("Update", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
         }
     }
 }
