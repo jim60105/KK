@@ -39,19 +39,19 @@ namespace KK_StudioCoordinateLoadOption {
             //Logger.LogDebug("BoneController Get");
             List<object> Modifiers = new List<object>();
             foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames")) {
-                var tmpModifier = BoneController.Invoke("GetModifier", new object[] { boneName });
+                object tmpModifier = BoneController.Invoke("GetModifier", new object[] { boneName });
                 if (null != tmpModifier) {
                     Modifiers.Add(tmpModifier);
                 }
             }
-            var toSave = Modifiers
+            Dictionary<string, object> toSave = Modifiers
                 .Where(x => (bool)x.Invoke("IsCoordinateSpecific"))
                 .Where(x => !(bool)x.Invoke("IsEmpty"))
                 .ToDictionary(
                     x => (string)x.GetProperty("BoneName"), //x.BoneName,
                     x => {
                         Logger.LogDebug("Get original ABMX BoneData: " + (string)x.GetProperty("BoneName"));
-                        var y = x.Invoke("GetModifier", new object[] { (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType });
+                        object y = x.Invoke("GetModifier", new object[] { (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType });
                         return y.Invoke("Clone");
                     }
                 );
@@ -71,21 +71,21 @@ namespace KK_StudioCoordinateLoadOption {
             // Clear previous data for this coordinate from coord specific modifiers
             List<object> Modifiers = new List<object>();
             foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames")) {
-                var tmpModifier = BoneController.Invoke("GetModifier", new object[] { boneName });
+                object tmpModifier = BoneController.Invoke("GetModifier", new object[] { boneName });
                 if (null != tmpModifier) {
                     Modifiers.Add(tmpModifier);
                 }
             }
             //Logger.LogDebug("Get Modifiers by AllBoneName");
-            foreach (var modifier in Modifiers.Where(x => (bool)x.Invoke("IsCoordinateSpecific"))) {
-                var y = modifier.Invoke("GetModifier", new object[] { (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType });
+            foreach (object modifier in Modifiers.Where(x => (bool)x.Invoke("IsCoordinateSpecific"))) {
+                object y = modifier.Invoke("GetModifier", new object[] { (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType });
                 y.Invoke("Clear");
             }
             //Logger.LogDebug("Clear all Modifiers");
 
             if (null != BoneController && null != ABMXDataBackup) {
-                foreach (var modifierDict in ABMXDataBackup) {
-                    var target = BoneController.Invoke("GetModifier", new object[] { modifierDict.Key });
+                foreach (KeyValuePair<string, object> modifierDict in ABMXDataBackup) {
+                    object target = BoneController.Invoke("GetModifier", new object[] { modifierDict.Key });
                     if (target == null) {
                         // Add any missing modifiers
                         target = Activator.CreateInstance(BoneModifierType, new object[] { modifierDict.Key });
@@ -93,7 +93,7 @@ namespace KK_StudioCoordinateLoadOption {
                         BoneController.Invoke("AddModifier", new object[] { target });
                     }
                     target.Invoke("MakeCoordinateSpecific");
-                    var tmp = (object[])target.GetProperty("CoordinateModifiers");
+                    object[] tmp = (object[])target.GetProperty("CoordinateModifiers");
                     tmp[chaCtrl.fileStatus.coordinateType] = modifierDict.Value;
                     target.SetProperty("CoordinateModifiers", tmp);
                     Logger.LogDebug("->Insert Modifier: " + modifierDict.Key);
@@ -102,12 +102,17 @@ namespace KK_StudioCoordinateLoadOption {
                     BoneController.Invoke("OnDataChangedCo")
                 }); //StartCoroutine(OnDataChangedCo());
                 Logger.LogDebug("->ABMX Bone Rollback complete");
+                SetExtDataFromController(chaCtrl);
                 ABMXDataBackup = null;
-                return;
+            } else {
+                Logger.LogDebug("->ABMX Bone not found");
+                ABMXDataBackup = null;
             }
-            Logger.LogDebug("->ABMX Bone not found");
-            ABMXDataBackup = null;
-            return;
+        }
+
+        public static void SetExtDataFromController(ChaControl chaCtrl) {
+            MonoBehaviour BoneController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
+            BoneController.Invoke("OnCardBeingSaved", new object[] { 1 });
         }
     }
 }

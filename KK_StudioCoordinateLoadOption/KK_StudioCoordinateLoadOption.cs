@@ -47,8 +47,8 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.04.29.0";
-        internal const string PLUGIN_RELEASE_VERSION = "3.2.4";
+        internal const string PLUGIN_VERSION = "20.04.29.1";
+        internal const string PLUGIN_RELEASE_VERSION = "3.3.0";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -135,6 +135,7 @@ namespace KK_StudioCoordinateLoadOption {
         internal static bool addAccModeFlag = true;
         private static int finishedCount = 0;
         internal static bool[] charaOverlay = new bool[] { true, true, true };  //順序: Iris、Face、Body
+        internal static bool readABMX = true;
 
         private static OCIChar[] oCICharArray;
         private static Queue<OCIChar> oCICharQueue = new Queue<OCIChar>();
@@ -170,7 +171,7 @@ namespace KK_StudioCoordinateLoadOption {
             //Draw Panel and ButtonAll
             charaFileSort = (CharaFileSort)__instance.GetField("fileSort");
             Image panel = UIUtility.CreatePanel("CoordinateTooglePanel", charaFileSort.root.parent.parent.parent);
-            panel.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(170f, -667.5f), new Vector2(-55f, -345f));
+            //panel.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(170f, -667.5f), new Vector2(-55f, -345f));
             panel.GetComponent<Image>().color = new Color32(80, 80, 80, 220);
 
             Button btnAll = UIUtility.CreateButton("BtnAll", panel.transform, "All");
@@ -214,56 +215,65 @@ namespace KK_StudioCoordinateLoadOption {
             btnClearAcc.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -317.5f), new Vector2(-5f, -292.5f));
             btnClearAcc.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
 
+            float baseY = -322;
             if (KK_StudioCoordinateLoadOption._isCharaOverlayBasedOnCoordinateExist) {
-                panel.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(170f, -436.5f), new Vector2(-55f, -345f));
+                bool onFromChildFlag = false;
                 //分隔線
                 Image line2 = UIUtility.CreateImage("line", panel.transform);
                 line2.color = Color.gray;
-                line2.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -324f), new Vector2(-5f, -322.5f));
+                line2.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, baseY - 2f), new Vector2(-5f, baseY - 0.5f));
 
                 //Chara Overlay toggle
                 Toggle tglCharaOverlay = UIUtility.CreateToggle("TglCharaOverlay", panel.transform, StringResources.StringResourcesManager.GetString("charaOverlay"));
                 tglCharaOverlay.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
                 tglCharaOverlay.GetComponentInChildren<Text>(true).color = Color.white;
-                tglCharaOverlay.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -354f), new Vector2(-5f, -329f));
+                tglCharaOverlay.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, baseY - 32f), new Vector2(-5f, baseY - 6.5f));
                 tglCharaOverlay.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
 
                 //Eye Overlay toggle
                 Toggle tglEyeOverlay = UIUtility.CreateToggle("TglIrisOverlay", panel.transform, StringResources.StringResourcesManager.GetString("irisOverlay"));
                 tglEyeOverlay.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
                 tglEyeOverlay.GetComponentInChildren<Text>(true).color = Color.white;
-                tglEyeOverlay.transform.SetRect(Vector2.up, Vector2.one, new Vector2(25f, -379f), new Vector2(-5f, -354f));
+                tglEyeOverlay.transform.SetRect(Vector2.up, Vector2.one, new Vector2(25f, baseY - 57f), new Vector2(-5f, baseY - 32f));
                 tglEyeOverlay.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
 
                 //Face Overlay toggle
                 Toggle tglFaceOverlay = UIUtility.CreateToggle("TglFaceOverlay", panel.transform, StringResources.StringResourcesManager.GetString("faceOverlay"));
                 tglFaceOverlay.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
                 tglFaceOverlay.GetComponentInChildren<Text>(true).color = Color.white;
-                tglFaceOverlay.transform.SetRect(Vector2.up, Vector2.one, new Vector2(25f, -404f), new Vector2(-5f, -379f));
+                tglFaceOverlay.transform.SetRect(Vector2.up, Vector2.one, new Vector2(25f, baseY - 82f), new Vector2(-5f, baseY - 57f));
                 tglFaceOverlay.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
 
                 //Body Overlay toggle
                 Toggle tglBodyOverlay = UIUtility.CreateToggle("TglBodyOverlay", panel.transform, StringResources.StringResourcesManager.GetString("bodyOverlay"));
                 tglBodyOverlay.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
                 tglBodyOverlay.GetComponentInChildren<Text>(true).color = Color.white;
-                tglBodyOverlay.transform.SetRect(Vector2.up, Vector2.one, new Vector2(25f, -429f), new Vector2(-5f, -404f));
+                tglBodyOverlay.transform.SetRect(Vector2.up, Vector2.one, new Vector2(25f, baseY - 107f), new Vector2(-5f, baseY - 82f));
                 tglBodyOverlay.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
+
+                baseY -= 107f;
 
                 tglEyeOverlay.onValueChanged.AddListener((x) => {
                     charaOverlay[0] = x;
+                    onFromChildFlag = true;
                     tglCharaOverlay.isOn |= x;
+                    onFromChildFlag = false;
                 });
                 tglFaceOverlay.onValueChanged.AddListener((x) => {
                     charaOverlay[1] = x;
+                    onFromChildFlag = true;
                     tglCharaOverlay.isOn |= x;
+                    onFromChildFlag = false;
                 });
                 tglBodyOverlay.onValueChanged.AddListener((x) => {
                     charaOverlay[2] = x;
+                    onFromChildFlag = true;
                     tglCharaOverlay.isOn |= x;
+                    onFromChildFlag = false;
                 });
 
                 tglCharaOverlay.onValueChanged.AddListener((x) => {
-                    if (!x) {
+                    if (!onFromChildFlag) {
                         tglEyeOverlay.isOn = x;
                         tglFaceOverlay.isOn = x;
                         tglBodyOverlay.isOn = x;
@@ -271,6 +281,29 @@ namespace KK_StudioCoordinateLoadOption {
                 });
                 tglCharaOverlay.isOn = false;
             }
+
+            if (KK_StudioCoordinateLoadOption._isABMXExist) {
+                //分隔線
+                Image line3 = UIUtility.CreateImage("line", panel.transform);
+                line3.color = Color.gray;
+                line3.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, baseY - 2f), new Vector2(-5f, baseY - 0.5f));
+
+                //Chara Overlay toggle
+                Toggle tglReadABMX = UIUtility.CreateToggle("TglReadABMX", panel.transform, StringResources.StringResourcesManager.GetString("readABMX"));
+                tglReadABMX.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
+                tglReadABMX.GetComponentInChildren<Text>(true).color = Color.white;
+                tglReadABMX.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, baseY - 32f), new Vector2(-5f, baseY - 6.5f));
+                tglReadABMX.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
+
+                baseY -= 32f;
+
+                tglReadABMX.onValueChanged.AddListener((x) => {
+                    readABMX = x;
+                });
+                tglReadABMX.isOn = true;
+            }
+
+            panel.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(170f, baseY - 7.5f), new Vector2(-55f, -345f));
 
             //Draw accessories panel
             panel2 = UIUtility.CreatePanel("AccessoriesTooglePanel", panel.transform);
@@ -460,6 +493,8 @@ namespace KK_StudioCoordinateLoadOption {
                 isAllTrueFlag &= b;
                 isAllFalseFlag &= !b;
             }
+            isAllTrueFlag &= readABMX;
+            isAllFalseFlag &= !readABMX;
             if (isAllFalseFlag) {
                 Logger.LogInfo("No Toggle selected, skip loading coordinate");
                 Logger.LogDebug("Studio Coordinate Load Option Finish");
@@ -635,10 +670,10 @@ namespace KK_StudioCoordinateLoadOption {
                     KCOX_Support.BackupKCOXData(chaCtrl, chaCtrl.nowCoordinate.clothes);
                 }
 
-                //Backup ABMX
-                if (KK_StudioCoordinateLoadOption._isABMXExist) {
-                    ABMX_Support.BackupABMXData(chaCtrl);
-                }
+                ////Backup ABMX
+                //if (KK_StudioCoordinateLoadOption._isABMXExist) {
+                //    ABMX_Support.BackupABMXData(chaCtrl);
+                //}
 
                 //Backup MoreAcc
                 if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
@@ -687,17 +722,17 @@ namespace KK_StudioCoordinateLoadOption {
                     MoreAccessories_Support.Update();
                 }
 
-                foreach (Toggle tgl in tgls) {
-                    int kind;
-                    try {
-                        kind = Convert.ToInt32(Enum.Parse(typeof(ClothesKind), tgl.name));
-                    } catch (ArgumentException) {
-                        kind = -1;
-                    }
+                //Rollback KCOX
+                if (KK_StudioCoordinateLoadOption._isKCOXExist) {
+                    foreach (Toggle tgl in tgls) {
+                        int kind;
+                        try {
+                            kind = Convert.ToInt32(Enum.Parse(typeof(ClothesKind), tgl.name));
+                        } catch (ArgumentException) {
+                            kind = -1;
+                        }
 
-                    if (!tgl.isOn && kind >= 0 && kind < 9) {
-                        //Rollback KCOX
-                        if (KK_StudioCoordinateLoadOption._isKCOXExist) {
+                        if (!tgl.isOn && kind >= 0 && kind < 9) {
                             KCOX_Support.RollbackOverlay(true, kind, chaCtrl);
                             if (kind == 0) {
                                 for (int j = 0; j < SubClothesNames.Length; j++) {
@@ -708,18 +743,19 @@ namespace KK_StudioCoordinateLoadOption {
                                 }
                             }
                         }
-
-                        //Rollback ABMX
-                        if (KK_StudioCoordinateLoadOption._isABMXExist) {
-                            if (kind == 1) {
-                                ABMX_Support.RollbackABMXBone(chaCtrl);
-                            }
-                        }
                     }
+                    KCOX_Support.SetExtDataFromController(chaCtrl);
                 }
 
                 //HairAcc和COBOC不需要Rollback，因為Load Coordinate時是直接從存檔->Controller
                 //沒有修改chaCtrl上的ExtData，故只需Reload就會再覆蓋回來
+
+                //Rollback ABMX
+                if (KK_StudioCoordinateLoadOption._isABMXExist) {
+                    if (readABMX) {
+                        ABMX_Support.SetExtDataFromController(chaCtrl);
+                    }
+                }
 
                 //顯示HairAcc狀態
                 if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {

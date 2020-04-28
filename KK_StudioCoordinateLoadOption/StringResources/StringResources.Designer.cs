@@ -223,6 +223,15 @@ namespace KK_StudioCoordinateLoadOption.StringResources {
         }
         
         /// <summary>
+        ///   查詢類似 ABMX 的當地語系化字串。
+        /// </summary>
+        internal static string readABMX {
+            get {
+                return ResourceManager.GetString("readABMX", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Replace Mode 的當地語系化字串。
         /// </summary>
         internal static string replaceMode {

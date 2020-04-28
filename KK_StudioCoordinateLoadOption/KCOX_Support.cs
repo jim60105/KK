@@ -11,7 +11,7 @@ namespace KK_StudioCoordinateLoadOption {
 
         internal static string[] MaskKind = { "BodyMask", "InnerMask", "InnerMask" };
         public static bool LoadAssembly() {
-            if(null != Extension.Extension.TryGetPluginInstance("KCOX", new System.Version(5, 0))) {
+            if (null != Extension.Extension.TryGetPluginInstance("KCOX", new System.Version(5, 0))) {
                 Logger.LogDebug("KCOX found");
                 return true;
             } else {
@@ -33,7 +33,7 @@ namespace KK_StudioCoordinateLoadOption {
                 for (int j = 0; j < clothes.subPartsId.Length; j++) {
                     cnt += GetOverlay(Patches.SubClothesNames[j]) ? 1 : 0;
                 }
-                foreach (var maskKind in MaskKind) {
+                foreach (string maskKind in MaskKind) {
                     cnt += GetOverlay(maskKind) ? 1 : 0;
                 }
                 Logger.LogDebug("Get Original Overlay/Mask Total: " + cnt);
@@ -59,12 +59,12 @@ namespace KK_StudioCoordinateLoadOption {
             }
 
             if (null != KCOXController && null != KCOXTexDataBackup) {
-                bool exist = KCOXTexDataBackup.TryGetValue(name, out var tex);
+                bool exist = KCOXTexDataBackup.TryGetValue(name, out object tex);
 
                 //KCOXController.Invoke("SetOverlayTex", new object[] { tex, name });
-                var coordinateType = (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType;
+                ChaFileDefine.CoordinateType coordinateType = (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType;
                 Dictionary<ChaFileDefine.CoordinateType, object> _allOverlayTextures = KCOXController.GetField("_allOverlayTextures").ToDictionary<ChaFileDefine.CoordinateType, object>();
-                if (KCOXController.GetProperty("CurrentOverlayTextures").ToDictionary<string, object>().TryGetValue(name, out var clothesTexData)) {
+                if (KCOXController.GetProperty("CurrentOverlayTextures").ToDictionary<string, object>().TryGetValue(name, out object clothesTexData)) {
                     clothesTexData.Invoke("Clear");
                     clothesTexData.SetField("Override", false);
                     if (!exist || tex == null || (bool)tex.Invoke("IsEmpty")) {
@@ -83,8 +83,12 @@ namespace KK_StudioCoordinateLoadOption {
                         Logger.LogDebug($"->Overlay/Mask Rollback: {name} (Add)");
                     }
                 }
-                KCOXController.Invoke("OnCardBeingSaved", new object[] { 1 });
             }
+        }
+
+        public static void SetExtDataFromController(ChaControl chaCtrl) {
+            MonoBehaviour KCOXController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KoiClothesOverlayX"));
+            KCOXController.Invoke("OnCardBeingSaved", new object[] { 1 });
         }
 
         public static void CleanKCOXBackup() {

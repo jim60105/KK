@@ -180,4 +180,7 @@
   <data name="bodyOverlay" xml:space="preserve">
     <value>Body Overlay</value>
   </data>
+  <data name="readABMX" xml:space="preserve">
+    <value>ABMX</value>
+  </data>
 </root>
