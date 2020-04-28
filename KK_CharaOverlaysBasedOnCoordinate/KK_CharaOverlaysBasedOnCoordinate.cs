@@ -44,7 +44,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.04.28.0";
+        internal const string PLUGIN_VERSION = "20.04.29.0";
         internal const string PLUGIN_RELEASE_VERSION = "1.3.4";
 
         internal static new ManualLogSource Logger;
@@ -370,7 +370,9 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
                         Dictionary<TexType, byte[]> coordinate = new Dictionary<TexType, byte[]>();
                         foreach (KeyValuePair<TexType, int> kvp2 in kvp.Value.ToDictionary<TexType, int>()) {
                             coordinate.Add(kvp2.Key, resourceList[kvp2.Value]);
-                            Logger.LogDebug($"->{kvp.Key.ToString()}: {kvp2.Key.ToString()}, {kvp2.Value}");
+                            if (kvp2.Value != 0) {
+                                Logger.LogDebug($"->{kvp.Key.ToString()}: {kvp2.Key.ToString()}, {kvp2.Value}");
+                            }
                         }
                         overlays.Add(kvp.Key, coordinate);
                     }

@@ -61,21 +61,21 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="targetChaCtrl">目標ChaControl</param>
         public static void GetControllerAndBackupData(ChaControl sourceChaCtrl, ChaControl targetChaCtrl = null) {
             if (null != sourceChaCtrl) {
-                Logger.LogDebug("Source-----");
+                //Logger.LogDebug("Source-----");
                 MaterialEditor_Support.sourceChaCtrl = sourceChaCtrl;
                 SourceMaterialEditorController = GetExtDataFromController(sourceChaCtrl, out SourceMaterialBackup, out SourceTextureDictionaryBackup);
                 if (null == SourceMaterialEditorController) {
-                    Logger.LogDebug("No Source Material Editor Controller found");
+                    Logger.LogDebug($"No Source Material Editor Controller found on {sourceChaCtrl.fileParam.fullname}");
                     return;
                 }
             }
 
             if (null != targetChaCtrl) {
-                Logger.LogDebug("Target-----");
+                //Logger.LogDebug("Target-----");
                 MaterialEditor_Support.targetChaCtrl = targetChaCtrl;
                 TargetMaterialEditorController = GetExtDataFromController(targetChaCtrl, out TargetMaterialBackup, out TargetTextureDictionaryBackup);
                 if (null == TargetMaterialEditorController) {
-                    Logger.LogDebug("No Target Material Editor Controller found");
+                    Logger.LogDebug($"No Target Material Editor Controller found on {targetChaCtrl.fileParam.fullname}");
                     return;
                 }
             }
@@ -244,51 +244,93 @@ namespace KK_StudioCoordinateLoadOption {
                 object target = TargetMaterialBackup[storedValue.listName].ToListWithoutType();
 
                 //移除
-                doFlag2 = target.RemoveAll(x =>
+                object objRemoved = target.Where((x) =>
                     (int)x.GetField("ObjectType") == (int)objectType &&
                     (int)x.GetField("CoordinateIndex") == targetChaCtrl.fileStatus.coordinateType &&
                     (int)x.GetField("Slot") == targetSlot
-                ) > 0;
+                ).ForEach((x) => {
+                    doFlag2 = true;
+                    switch (i) {
+                        case 0: //MaterialShader
+                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName") });
+                            if (null != x.GetField("RenderQueueOriginal")) {
+                                TargetMaterialEditorController.Invoke("RemoveMaterialShaderRenderQueue", new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName") });
+                            }
+                            break;
+                        case 1: //RendererProperty
+                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("RendererName"), x.GetField("Property") });
+                            break;
+                        case 2: //MaterialFloatProperty
+                        case 3: //MaterialColorProperty
+                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property") });
+                            break;
+                        case 4: //MaterialTextureProperty
+                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 0 });
+                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 1 });
+                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 2 });
+                            Logger.LogMessage("⇈⇈⇈Don't mind this message when changing coordinates.⇈⇈⇈");
+                            break;
+                    }
+                });
 
                 //加入
-                object obj2Add = SourceMaterialBackup[storedValue.listName].ToListWithoutType().Where(x =>
+                object objAdded = SourceMaterialBackup[storedValue.listName].ToListWithoutType().Where(x =>
                     (int)x.GetField("ObjectType") == (int)objectType &&
                     (int)x.GetField("CoordinateIndex") == sourceChaCtrl.fileStatus.coordinateType &&
                     (int)x.GetField("Slot") == sourceSlot
-                );
-
-                if (obj2Add.Count() > 0) {
+                ).ForEach((x) => {
                     doFlag2 = true;
-
-                    //對原資料修改Slot和CoordinateIndex
-                    obj2Add.ForEach((x) => {
-                        x.SetField("CoordinateIndex", targetChaCtrl.fileStatus.coordinateType);
-                        x.SetField("Slot", targetSlot);
-                    });
-
-                    //修改MaterialTexture TexID
-                    if (storedValue.className == "MaterialTextureProperty") {
-                        obj2Add = obj2Add.ForEach((texprop) => {
-                            int? texID = (int?)texprop.GetField("TexID");
-                            int? newTexID = null;
-                            if (texID.HasValue && SourceTextureDictionaryBackup.TryGetValue(texID.Value, out object textureHolder) && textureHolder.GetProperty("Data") is byte[] BA) {
-                                //對TargetController塞來自Source的byte[] texture，並取得他在target的TexID
-                                newTexID = (int)TargetMaterialEditorController.Invoke("SetAndGetTextureID", new object[] { BA });
-                                if (newTexID.HasValue) {
-                                    TargetTextureDictionaryBackup = GetTextureDictionaryFromController(targetChaCtrl);
-                                    texprop.SetField("TexID", newTexID.Value);
-                                }
-                                Logger.LogDebug($"-->Copy Material Editor Texture: {sourceChaCtrl.fileParam.fullname} Tex{texID} -> {targetChaCtrl.fileParam.fullname} Tex{newTexID}");
+                    switch (i) {
+                        case 0: //MaterialShader
+                            TargetMaterialEditorController.Invoke(storedValue.addFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("ShaderName"), x.GetField("ShaderNameOriginal") });
+                            if (null != x.GetField("RenderQueueOriginal")) {
+                                TargetMaterialEditorController.Invoke(storedValue.addFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("RenderQueue"), x.GetField("RenderQueueOriginal") });
                             }
-                        });
-                    }
+                            break;
+                        case 1: //RendererProperty
+                        case 2: //MaterialFloatProperty
+                        case 3: //MaterialColorProperty
+                            TargetMaterialEditorController.Invoke(storedValue.addFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), x.GetField("Value"), x.GetField("ValueOriginal") });
+                            break;
+                        case 4: //MaterialTextureProperty
+                            //Texture
+                            int? texID = (int?)x.GetField("TexID");
+                            if (texID.HasValue && SourceTextureDictionaryBackup.TryGetValue(texID.Value, out object textureHolder) && textureHolder.GetProperty("Data") is byte[] BA) {
+                                TargetMaterialEditorController.SetField("ObjectTypeToSet", (int)objectType);
+                                TargetMaterialEditorController.SetField("CoordinateIndexToSet", targetChaCtrl.fileStatus.coordinateType);
+                                TargetMaterialEditorController.SetField("SlotToSet", targetSlot);
+                                TargetMaterialEditorController.SetField("TexBytes", BA);
+                                TargetMaterialEditorController.SetField("MatToSet", x.GetField("MaterialName"));
+                                TargetMaterialEditorController.SetField("PropertyToSet", x.GetField("Property"));
+                                if (objectType == ObjectType.Clothing) {
+                                    TargetMaterialEditorController.SetField("GameObjectToSet", targetChaCtrl.objClothes[targetSlot]);
+                                } else if (objectType == ObjectType.Accessory) {
+                                    TargetMaterialEditorController.SetField("GameObjectToSet", Patches.GetChaAccessoryComponent(targetChaCtrl, targetSlot)?.gameObject);
+                                }
 
-                    target.AddRange(obj2Add);
-                }
+                                TargetMaterialEditorController.Invoke("Update");
+                            }
+                            //Offset
+                            if (null != x.GetField("OffsetOriginal")) {
+                                TargetMaterialEditorController.Invoke(storedValue.addFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 0 });
+                            }
+                            //Scale
+                            if (null != x.GetField("ScaleOriginal")) {
+                                TargetMaterialEditorController.Invoke(storedValue.addFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 0 });
+                            }
+                            break;
+                    }
+                });
 
                 if (doFlag2) {
-                    TargetMaterialBackup[storedValue.listName] = target;
-                    Logger.LogDebug($"-->Change {obj2Add.Count()} {storedValue.className}");
+                    if (objRemoved.Count() > 0) {
+                        GetExtDataFromController(targetChaCtrl, out TargetMaterialBackup, out TargetTextureDictionaryBackup);
+                        Logger.LogDebug($"-->Remove {objRemoved.Count()} {storedValue.className}");
+                    }
+                    if (objAdded.Count() > 0) {
+                        GetExtDataFromController(targetChaCtrl, out TargetMaterialBackup, out TargetTextureDictionaryBackup);
+                        Logger.LogDebug($"-->Change {objAdded.Count()} {storedValue.className}");
+                    }
                 }
                 doFlag |= doFlag2;
             }

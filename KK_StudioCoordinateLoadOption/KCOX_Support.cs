@@ -83,13 +83,11 @@ namespace KK_StudioCoordinateLoadOption {
                         Logger.LogDebug($"->Overlay/Mask Rollback: {name} (Add)");
                     }
                 }
+                KCOXController.Invoke("OnCardBeingSaved", new object[] { 1 });
             }
         }
 
         public static void CleanKCOXBackup() {
-            if (null != KCOXController) {
-                KCOXController.Invoke("OnCardBeingSaved", new object[] { 1 });
-            }
             KCOXTexDataBackup = null;
             return;
         }
