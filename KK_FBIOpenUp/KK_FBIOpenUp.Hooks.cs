@@ -2,6 +2,7 @@
 using HarmonyLib;
 using Studio;
 using System;
+using System.Linq;
 
 namespace KK_FBIOpenUp {
     internal static class Hooks {
@@ -51,9 +52,14 @@ namespace KK_FBIOpenUp {
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaFileControl), "LoadFileLimited", new Type[] { typeof(string), typeof(byte), typeof(bool), typeof(bool), typeof(bool), typeof(bool), typeof(bool) })]
-        public static void LoadFileLimitedPostfix() {
+        public static void LoadFileLimitedPostfix(ChaFileControl __instance) {
             if (KK_FBIOpenUp._isenabled) {
-                Patches.ChangeChara(Singleton<CustomBase>.Instance.chaCtrl);
+                if (KK_FBIOpenUp.nowGameMode == KK_FBIOpenUp.GameMode.Studio) {
+                    ChaControl chaCtrl = Singleton<Manager.Character>.Instance.dictEntryChara.Where((x) => x.Value.chaFile == __instance).Single().Value;
+                    if (null != chaCtrl) Patches.ChangeChara(chaCtrl);
+                } else {
+                    Patches.ChangeChara(Singleton<CustomBase>.Instance.chaCtrl);
+                }
             }
         }
         #endregion

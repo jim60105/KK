@@ -37,8 +37,8 @@ namespace KK_FBIOpenUp {
     public class KK_FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "20.03.22.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.1";
+        internal const string PLUGIN_VERSION = "20.04.29.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.2";
 
         internal static bool _isenabled = false;
         internal static bool _isABMXExist = false;
