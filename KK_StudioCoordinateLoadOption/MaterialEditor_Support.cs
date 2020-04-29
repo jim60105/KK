@@ -17,7 +17,7 @@ namespace KK_StudioCoordinateLoadOption {
         internal static Dictionary<int, object> TargetTextureDictionaryBackup = null;
 
         public static bool LoadAssembly() {
-            if (null != Extension.Extension.TryGetPluginInstance("com.deathweasel.bepinex.materialeditor", new Version(1, 7))) {
+            if (null != Extension.Extension.TryGetPluginInstance("com.deathweasel.bepinex.materialeditor", new Version(1, 10))) {
                 Logger.LogDebug("MaterialEditor found");
                 return true;
             } else {
@@ -265,10 +265,9 @@ namespace KK_StudioCoordinateLoadOption {
                             TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property") });
                             break;
                         case 4: //MaterialTextureProperty
-                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 0 });
-                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 1 });
-                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 2 });
-                            Logger.LogMessage("⇈⇈⇈Don't mind this message when changing coordinates.⇈⇈⇈");
+                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 0, false });
+                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 1, false });
+                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 2, false });
                             break;
                     }
                 });

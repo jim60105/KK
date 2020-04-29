@@ -10,13 +10,12 @@
 - **將「鎖定頭髮飾品」以外的選項全勾，並使用飾品「取代模式」即會調用遊戲原始程式碼**<br>
 
 目前確定支援Plugin:<br>
-- Koikatu Overlay Mods v5.0.2
-- Koikatu ABMX V3.3
-- Koikatu More Accessories v1.0.6
-- Koikatu MaterialEditor v1.8
-
-目前確定不支援Plugin:<br>
-- Koikatu HairAccessoryCustomizer
+- Koikatu Overlay Mods v5.1.2
+- Koikatu ABMX V4.2
+- Koikatu More Accessories v1.0.9
+- Koikatu MaterialEditor v1.10
+- Koikatu HairAccessoryCustomizer v1.1.3
+- Koikatu Chara Overlays Based On Coordinate v1.3.4
 
 # Studio全是妹子插件<br>Studio All Girls Plugin
 ![image](demo/demo2.gif)<br>
