@@ -47,8 +47,8 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.04.29.1";
-        internal const string PLUGIN_RELEASE_VERSION = "3.3.0";
+        internal const string PLUGIN_VERSION = "20.04.29.2";
+        internal const string PLUGIN_RELEASE_VERSION = "3.3.1";
 
         internal static new ManualLogSource Logger;
         public void Awake() {

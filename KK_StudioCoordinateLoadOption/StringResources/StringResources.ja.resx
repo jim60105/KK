@@ -169,16 +169,16 @@
     <value>髪アクセトグル</value>
   </data>
   <data name="charaOverlay" xml:space="preserve">
-    <value>Chara Overlays</value>
+    <value>キャラオーバーレイ</value>
   </data>
   <data name="irisOverlay" xml:space="preserve">
-    <value>Iris Overlay</value>
+    <value>瞳オーバーレイ</value>
   </data>
   <data name="faceOverlay" xml:space="preserve">
-    <value>Face Overlay</value>
+    <value>顔オーバーレイ</value>
   </data>
   <data name="bodyOverlay" xml:space="preserve">
-    <value>Body Overlay</value>
+    <value>体オーバーレイ</value>
   </data>
   <data name="readABMX" xml:space="preserve">
     <value>ABMX</value>
