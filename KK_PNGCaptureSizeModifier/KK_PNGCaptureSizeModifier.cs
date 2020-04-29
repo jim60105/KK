@@ -36,7 +36,7 @@ namespace KK_PNGCaptureSizeModifier {
     public class KK_PNGCaptureSizeModifier : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "PNG Capture Size Modifier";
         internal const string GUID = "com.jim60105.kk.pngcapturesizemodifier";
-        internal const string PLUGIN_VERSION = "20.04.30.0";
+        internal const string PLUGIN_VERSION = "20.04.30.1";
         internal const string PLUGIN_RELEASE_VERSION = "1.3.0";
 
         public static ConfigEntry<float> TimesOfMaker { get; private set; }
@@ -53,6 +53,10 @@ namespace KK_PNGCaptureSizeModifier {
             StudioSceneWatermark = Config.Bind<bool>("Config", "Use Studio Scene Watermark", true, "It is extremely NOT recommended to disable the watermark function, which is for distinguishing between scene data and normal image.");
             CharaMakerWatermark = Config.Bind<bool>("Config", "Use Character Watermark", true);
             HarmonyWrapper.PatchAll(typeof(Patches));
+
+            if (TimesOfMaker.Value == 0) TimesOfMaker.Value = (float)TimesOfMaker.DefaultValue;
+            if (TimesOfStudio.Value == 0) TimesOfStudio.Value = (float)TimesOfStudio.DefaultValue;
+            if (PNGColumnCount.Value == 0) PNGColumnCount.Value = (int)PNGColumnCount.DefaultValue;
         }
     }
 
