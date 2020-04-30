@@ -34,10 +34,11 @@ namespace KK_StudioDualScreen {
     public class KK_StudioDualScreen : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Dual Screen";
         internal const string GUID = "com.jim60105.kk.studiodualscreen";
-        internal const string PLUGIN_VERSION = "20.04.27.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.4";
+        internal const string PLUGIN_VERSION = "20.05.01.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
 
         public static ConfigEntry<KeyboardShortcut> Hotkey { get; set; }
+        public static ConfigEntry<KeyboardShortcut> LockHotkey { get; set; }
         internal static new ManualLogSource Logger;
 
         public void Start() {
@@ -45,6 +46,7 @@ namespace KK_StudioDualScreen {
             HarmonyWrapper.PatchAll(typeof(Patches));
 
             Hotkey = Config.Bind<KeyboardShortcut>("Hotkey", "Active Key", new KeyboardShortcut(KeyCode.None), "You must have two monitors to make it work.");
+            LockHotkey = Config.Bind<KeyboardShortcut>("Hotkey", "Lock Key", new KeyboardShortcut(KeyCode.None), "Trigger this to lock/unlock the sub camera.");
         }
 
         public void Update() => Patches.Update();
@@ -54,6 +56,7 @@ namespace KK_StudioDualScreen {
         private static Camera mainCamera;
         private static Camera cloneCamera;
         private static GameObject cloneCanvas;
+        private static float? backRateAddSpeed;
 
         public static void Update() {
             //監聽滑鼠按下
@@ -64,12 +67,27 @@ namespace KK_StudioDualScreen {
                 Enable();
             }
 
-            if (null != cloneCamera && null != mainCamera) {
-                if (mainCamera.transform.hasChanged) {
-                    cloneCamera.GetComponent<Studio.CameraControl>().Import(mainCamera.GetComponent<Studio.CameraControl>().Export());
+            //鎖定Camera
+            if (KK_StudioDualScreen.LockHotkey.Value.IsDown()) {
+                SetLock(null == backRateAddSpeed);
+                KK_StudioDualScreen.Logger.LogMessage("Lock second screen camera: " + (null != backRateAddSpeed));
+            }
 
-                    mainCamera.transform.hasChanged = false;
-                }
+            if (null != cloneCamera && null != mainCamera && mainCamera.transform.hasChanged && null == backRateAddSpeed) {
+                mainCamera.transform.hasChanged = false;
+
+                cloneCamera.GetComponent<Studio.CameraControl>().Import(mainCamera.GetComponent<Studio.CameraControl>().Export());
+            }
+        }
+
+        private static void SetLock(bool b) {
+            Studio.CameraControl camCtrl = cloneCamera.GetComponent<Studio.CameraControl>();
+            if (b) {
+                backRateAddSpeed = (float)camCtrl.GetField("rateAddSpeed");
+                camCtrl.SetField("rateAddSpeed", 0);
+            } else {
+                camCtrl.SetField("rateAddSpeed", backRateAddSpeed);
+                backRateAddSpeed = null;
             }
         }
 
@@ -89,10 +107,17 @@ namespace KK_StudioDualScreen {
                 camCtrl.subCamera.gameObject.SetActive(false);
                 camCtrl.SetField("isInit", false);
 
-                //cloneCamera.name = "Main Camera(Clone)";
+                cloneCamera.name = "Main Camera(Clone)";
                 cloneCamera.CopyFrom(mainCamera);
                 cloneCamera.transform.SetParent(mainCamera.transform.parent.transform);
                 cloneCamera.targetDisplay = 1;
+                camCtrl.GetField("cameraData").SetField("rotate", mainCamera.GetComponent<Studio.CameraControl>().GetField("cameraData").GetField("rotate"));
+
+                //Hide Specter guide object, it binds on the camera.
+                Transform SpecterMove = cloneCamera.GetComponentsInChildren<Transform>().Where(x => x.gameObject.layer == 5).FirstOrDefault();
+                if (null != SpecterMove) {
+                    SpecterMove.gameObject.SetActive(false);
+                }
 
                 //Create Frame
                 if (null == cloneCanvas) {
@@ -134,6 +159,8 @@ namespace KK_StudioDualScreen {
                 } catch (System.Exception ex) {
                     KK_StudioDualScreen.Logger.LogDebug(ex.Message);
                 }
+
+                SetLock(null != backRateAddSpeed);
 
                 //Active Display
                 if (!Display.displays[1].active) {
