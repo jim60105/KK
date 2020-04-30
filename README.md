@@ -1,4 +1,4 @@
-<a rel="license" href="LICENSE.html"><img alt="創用 CC 授權條款" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/3.0/tw/88x31.png" /></a><br />本<span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/InteractiveResource" rel="dct:type">著作</span>係採用<a rel="license" href="LICENSE.html">創用 CC 姓名標示-**非商業性**-相同方式分享 3.0 台灣 授權條款</a>授權.
+<a rel="license" href="LICENSE.html"><img alt="創用 CC 授權條款" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/3.0/tw/88x31.png" /><br />本著作係採用創用 CC 姓名標示-**非商業性**-相同方式分享 3.0 台灣 授權條款授權.</a>
 
 # Studio服裝卡選擇性載入插件<br>Studio Coordinate Load Option
 ![image](demo/demo1.gif)<br>
@@ -7,7 +7,7 @@
 - 配合ABMX V4.0起的服裝儲存功能，新增ABMX的獨立選擇項
 - Chara Overlays Based On Coordinate的獨立選擇項
 - 飾品:<br>
-    - 取代模式: 複寫同欄位的飾品
+    - 取代模式: 複寫同一欄位的飾品
     - 增加模式: 往空欄位依序附加上去
     - 清除飾品: 一鍵清除角色當前服裝的所有飾品
     - 鎖定頭髮飾品: 可將頭髮飾品鎖定，使之不會受到清除和複寫
@@ -129,15 +129,15 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 # 存檔尺寸調整工具<br>PNG Capture Size Modifier
 ![image](demo/demo11.gif)<br>
 
-- 可調角色存檔、服裝存檔、Studio存檔的拍照尺寸<br>
-- 可調CharaMaker中角色、服裝檔案選擇器的顯示列數<br>
+- 可調角色存檔(ChaFile)、服裝存檔(CoordinateFile)、Studio存檔(Scene)的圖片分辨率<br>
+- CharaMaker中，角色、服裝檔案選擇器的顯示列數可調整<br>
 - 放大Studio SceneData選擇器的選中預覧<br>
-- (可選)給角色存檔、Studio存檔加上浮水印角標<br>
+- (可選)給角色存檔(ChaFile)、Studio存檔(Scene)加上浮水印角標<br>
 
 **請至設定中調整這些功能**<br>
 因為改變了存檔圖片尺寸，**強烈建議不要禁用Studio SceneData浮水印**，以利區分存檔PNG和普通截圖PNG<br>
 **產生的存檔可以在「無此插件的遊戲環境」讀取**<br>
-如果你不需要拍攝大圖，請至Config調整拍照倍數為1倍
+如果你不需要拍攝大圖，請至Config調整截圖倍率為1倍
 
 # Studio千佳替換器<br>Studio Chika Replacer
 ![image](demo/demo12.gif)<br>
@@ -165,24 +165,24 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 <a href="https://youtu.be/zrIIoW44bsQ" target="_blank"><img src="demo/demo14.png" title="Click the image to watch video"></a><br>
 ↑ 請點選圖片觀看範例影片 ↑ Click the image to watch video! ↑  (備用載點: [影片](demo/demo14.mp4))<br>
 - 在VMD錄屏的同時操作UI或調整物件
-- 讓第二顯示器固定視角後，在主顯示器調整物件
+- 第二顯示器固定視角，並在主顯示器調整物件
 
 功能:
 - 啟用Studio的第二顯示器功能
 - UI只會顯示在主顯示畫面
 - Frame會顯示在雙畫面
 - VMD和KK_StudioCharaLightLinkedToCamera會作用在第二畫面
-- 脖子和目光注視朝向第二畫面
-- 可固定住副顯示器的視角，使滑鼠操作和Camera1~10不會移動副顯示器<br>(鍵盤操作仍會反應)
+- 脖子和目光朝向第二畫面
+- 可固定副顯示器的視角，使滑鼠操作和Camera1~10不會移動副顯示器<br>(鍵盤操作仍會反應)
 
 ### 注意:
-- **必需要有實體雙顯示器才能使用**
+- **必需要有雙實體顯示器才能使用**
 - 兩個預設快捷鍵皆為「未設定」，到Config設定後才能使用
 - 副顯示器固定後，或修改畫面設定(濾鏡等)後，需要再次觸發啟動快捷鍵以進行畫面同步
 - 已知問題: 啟用雙螢幕後F9截圖會造成無回應，請改用F11 (目前沒有計劃深入這部份)
 
 # 需求依賴
-- コイカツ！ ダークネス (Koikatu! Darkness)
+- コイカツ！ ダークネス (Koikatu! Darkness)<br>不相容於Steam Koikatsu Party
 - **BepInEx v5.0.1**<br>
 - BepisPlugins r13.1.1<br>
 
