@@ -9,7 +9,7 @@ namespace KK_StudioCoordinateLoadOption {
         private static readonly BepInEx.Logging.ManualLogSource Logger = KK_StudioCoordinateLoadOption.Logger;
 
         public static bool LoadAssembly() {
-            if (null != Extension.Extension.TryGetPluginInstance("com.jim60105.kk.charaoverlaysbasedoncoordinate", new System.Version(20, 3, 21, 0))) {
+            if (null != Extension.Extension.TryGetPluginInstance("com.jim60105.kk.charaoverlaysbasedoncoordinate", new System.Version(20, 4, 28, 0))) {
                 Logger.LogDebug("KK_CharaOverlayBasedOnCoordinate found");
                 return true;
             } else {

@@ -1,21 +1,27 @@
-<a rel="license" href="LICENSE.html"><img alt="創用 CC 授權條款" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/3.0/tw/88x31.png" /></a><br />本<span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/InteractiveResource" rel="dct:type">著作</span>係採用<a rel="license" href="LICENSE.html">創用 CC 姓名標示-非商業性-相同方式分享 3.0 台灣 授權條款</a>授權.
+<a rel="license" href="LICENSE.html"><img alt="創用 CC 授權條款" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/3.0/tw/88x31.png" /></a><br />本<span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/InteractiveResource" rel="dct:type">著作</span>係採用<a rel="license" href="LICENSE.html">創用 CC 姓名標示-**非商業性**-相同方式分享 3.0 台灣 授權條款</a>授權.
 
 # Studio服裝卡選擇性載入插件<br>Studio Coordinate Load Option
 ![image](demo/demo1.gif)<br>
 
-- Studio的服裝卡讀取處，多一個選項盤可以選擇性載入服裝<br>
-- 飾品可選擇「取代模式」和「增加模式」<br>
-(取代模式會複寫同欄位的飾品，而增加模式會往空欄位一直附加上去)
-- 「鎖定頭髮飾品」可將頭髮飾品鎖定，使之不會受到清除和複寫<br>
-- **將「鎖定頭髮飾品」以外的選項全勾，並使用飾品「取代模式」即會調用遊戲原始程式碼**<br>
+- Studio的服裝卡讀取處，多一個選項盤可以選擇性載入服裝
+- 配合ABMX V4.0起的服裝儲存功能，新增ABMX的獨立選擇項
+- Chara Overlays Based On Coordinate的獨立選擇項
+- 飾品:<br>
+    - 取代模式: 複寫同欄位的飾品
+    - 增加模式: 往空欄位依序附加上去
+    - 清除飾品: 一鍵清除角色當前服裝的所有飾品
+    - 鎖定頭髮飾品: 可將頭髮飾品鎖定，使之不會受到清除和複寫
+    - 反選頭髮飾品: 一鍵反向選擇所有頭髮飾品
 
-目前確定支援Plugin:<br>
+**將「鎖定頭髮飾品」以外的鈎選項全勾，並使用飾品「取代模式」即會調用遊戲原始程式**
+
+確定支援Plugin:<br>
 - Koikatu Overlay Mods v5.1.2
 - Koikatu ABMX V4.2
 - Koikatu More Accessories v1.0.9
-- Koikatu MaterialEditor v1.10
+- Koikatu MaterialEditor **v1.10** (不支援v1.9)
 - Koikatu HairAccessoryCustomizer v1.1.3
-- Koikatu Chara Overlays Based On Coordinate v1.3.4
+- Koikatu Chara Overlays Based On Coordinate **v1.3.4** (不支援v1.3.3)
 
 # Studio全是妹子插件<br>Studio All Girls Plugin
 ![image](demo/demo2.gif)<br>
@@ -28,7 +34,7 @@
 例: 讀取一般的男女Scene，將男角色替換成女角色，就變成了百合Scene!<br>
 
 ### **警語**:<br>
-1. 所有角色將以女性載入<br>
+1. 所有角色將以女性載入，大胸肌會變成大奶子<br>
 1. 此插件所產生之存檔，**所有角色皆會以女性存檔**<br>
 1. POSE解鎖性別限制，男女都可讀取，寫入以女性寫入<br>
 
@@ -44,13 +50,13 @@
 
 保留衣服和飾品，只替換人物<br>
 目前確定支援Plugin:<br>
-- Koikatu Overlay Mods v5.0.2
-- Koikatu More Accessories v1.0.7
-- Koikatu KK_UncensorSelector v3.8.3
-- Koikatu KKABMX v3.3
-- Koikatu Chara Overlays Based On Coordinate v1.1.0 <br>(Chara Overlays跟著插件了，如果要更改載入與否請至設定修改)
+- Koikatu Overlay Mods v5.1.2
+- Koikatu More Accessories v1.0.9
+- Koikatu KK_UncensorSelector v3.9
+- Koikatu KKABMX v4.2
+- Koikatu Chara Overlays Based On Coordinate v1.3.4<br>(Chara Overlays跟著插件了，如果要更改載入與否請至設定修改)
 
-# Studio IK→FK修正插件<br>Studio Reflect FK Fix
+# Studio IK→FK修正<br>Studio Reflect FK Fix
 <a href="https://blog.maki0419.com/2019/05/koikatu-studio-reflect-fk-fix.html" target="_blank"><img src="demo/demo5-5.png" title="Click the image to watch demo"></a><br>
 ↑ 請點選圖片觀看範例影片 ↑ Click the image to watch demo! ↑  (備用載點: [影片1](demo/demo5-1.mp4) [影片2](demo/demo5-2.mp4) )
 
@@ -66,7 +72,7 @@
 - 文字物件可修改字體、大小、樣式、顏色、錨點位置、對齊(換行後顯示選項)<br>
 - 可保存文字設定，以作為NewText的預設參數<br>
 
-建議分享Scene時一併分享使用的Fonts (It is recommended to share the Fonts used when sharing Scene.)<br>
+建議分享Scene時一併分享使用的Font<br>(It is recommended to share the Fonts used when sharing Scene.)<br>
 
 ### 注意事項:<br>
 - Fonts會列出OS內安裝，支援Unity動態生成的所有字體，字體總數在500以下時可以顯示預覽<br>
@@ -106,10 +112,10 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 
 - 讓所有角色Overlay(Iris、Face、Body Overlay)隨著服裝變更，反映在人物存檔(CharaFile)和服裝存檔(CoordinateFile)上<br>
 - 此插件在「讀存」跟「切換服裝」時覆蓋Overlay，依賴KSOX運作<br>
-- v1.2.0起支援資源重用，同樣的貼圖重複使用時只會佔一份空間<br>
+- **Iris Overlay可選只覆蓋在單眼**，可用此功能做異色瞳
+- 支援資源重用，同樣的貼圖重複使用時只會佔一份空間<br>
 - **產生的存檔可以和「無此插件的遊戲環境」相容**，此時KSOX儲存的Overlay會被載入<br>
 (存檔時，當前套用的Overlay依然會儲存進去，並在無插件環境時被讀取出來)<br>
-- v1.3.0起Iris Overlay可只覆蓋在單眼
 
 ### 注意事項:<br>
 - 特別需求 **KKAPI v1.9.5 & Illusion Overlay Mods v5.1.1** 以上版本<br>
@@ -126,11 +132,12 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 - 可調角色存檔、服裝存檔、Studio存檔的拍照尺寸<br>
 - 可調CharaMaker中角色、服裝檔案選擇器的顯示列數<br>
 - 放大Studio SceneData選擇器的選中預覧<br>
-- 給角色存檔、Studio存檔加上浮水印角標<br>
+- (可選)給角色存檔、Studio存檔加上浮水印角標<br>
 
-請至設定中調整這些功能<br>
+**請至設定中調整這些功能**<br>
 因為改變了存檔圖片尺寸，**強烈建議不要禁用Studio SceneData浮水印**，以利區分存檔PNG和普通截圖PNG<br>
-**產生的存檔可以和「無此插件的遊戲環境」相容**<br>
+**產生的存檔可以在「無此插件的遊戲環境」讀取**<br>
+如果你不需要拍攝大圖，請至Config調整拍照倍數為1倍
 
 # Studio千佳替換器<br>Studio Chika Replacer
 ![image](demo/demo12.gif)<br>
@@ -157,24 +164,27 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 # Studio 雙螢幕<br>Studio Dual Screen
 <a href="https://youtu.be/zrIIoW44bsQ" target="_blank"><img src="demo/demo14.png" title="Click the image to watch video"></a><br>
 ↑ 請點選圖片觀看範例影片 ↑ Click the image to watch video! ↑  (備用載點: [影片](demo/demo14.mp4))<br>
+- 在VMD錄屏的同時操作UI或調整物件
+- 讓第二顯示器固定視角後，在主顯示器調整物件
 
-**必需要有實體雙顯示器才能使用**<br>
-這是為了在VMD錄屏的同時操作UI而設計的插件<br>
+功能:
 - 啟用Studio的第二顯示器功能
 - UI只會顯示在主顯示畫面
 - Frame會顯示在雙畫面
 - VMD和KK_StudioCharaLightLinkedToCamera會作用在第二畫面
+- 脖子和目光注視朝向第二畫面
+- 可固定住副顯示器的視角，使滑鼠操作和Camera1~10不會移動副顯示器<br>(鍵盤操作仍會反應)
 
 ### 注意:
 - **必需要有實體雙顯示器才能使用**
-- 預設快捷鍵為「未設定」，到Config設定後才能使用
-- 修改畫面設定(濾鏡等)需要再次觸發快捷鍵以進行畫面同步
+- 兩個預設快捷鍵皆為「未設定」，到Config設定後才能使用
+- 副顯示器固定後，或修改畫面設定(濾鏡等)後，需要再次觸發啟動快捷鍵以進行畫面同步
 - 已知問題: 啟用雙螢幕後F9截圖會造成無回應，請改用F11 (目前沒有計劃深入這部份)
 
 # 需求依賴
 - コイカツ！ ダークネス (Koikatu! Darkness)
 - **BepInEx v5.0.1**<br>
-- BepisPlugins r13.0.3<br>
+- BepisPlugins r13.1.1<br>
 
 # 安裝方式
 - 參考壓縮檔結構，將文件放進「BepInEx/plugins/jim60105」資料夾之下<br>
