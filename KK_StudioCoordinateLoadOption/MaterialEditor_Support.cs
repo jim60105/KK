@@ -265,9 +265,9 @@ namespace KK_StudioCoordinateLoadOption {
                             TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property") });
                             break;
                         case 4: //MaterialTextureProperty
-                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 0, false });
-                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 1, false });
-                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 2, false });
+                            for (int j = 0; j < 3; j++) {
+                                TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), j, false });
+                            }
                             break;
                     }
                 });
@@ -311,11 +311,11 @@ namespace KK_StudioCoordinateLoadOption {
                             }
                             //Offset
                             if (null != x.GetField("OffsetOriginal")) {
-                                TargetMaterialEditorController.Invoke(storedValue.addFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 0 });
+                                TargetMaterialEditorController.Invoke(storedValue.addFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 1 , x.GetField("Offset"), x.GetField("OffsetOriginal") });
                             }
                             //Scale
                             if (null != x.GetField("ScaleOriginal")) {
-                                TargetMaterialEditorController.Invoke(storedValue.addFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 0 });
+                                TargetMaterialEditorController.Invoke(storedValue.addFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 2 , x.GetField("Scale"), x.GetField("ScaleOriginal") });
                             }
                             break;
                     }
