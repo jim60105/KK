@@ -287,6 +287,8 @@ namespace KK_StudioCoordinateLoadOption {
                             }
                             break;
                         case 1: //RendererProperty
+                            TargetMaterialEditorController.Invoke(storedValue.addFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("RendererName"), x.GetField("Property"), x.GetField("Value"), x.GetField("ValueOriginal") });
+                            break;
                         case 2: //MaterialFloatProperty
                         case 3: //MaterialColorProperty
                             TargetMaterialEditorController.Invoke(storedValue.addFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), x.GetField("Value"), x.GetField("ValueOriginal") });
