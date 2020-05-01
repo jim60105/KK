@@ -86,6 +86,7 @@
 
 Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 可以使用Configuration Manager個別設定Import/Load是否啟用 (預設皆啟用)<br>
+**經確認可直接移植轉用至AI少女**，增加StudioNEOV2進入點
 
 # 插件清單工具<br>Plugin List Tool
 ![image](demo/demo8.png)<br>
