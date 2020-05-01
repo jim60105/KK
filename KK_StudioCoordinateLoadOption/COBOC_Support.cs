@@ -66,9 +66,10 @@ namespace KK_StudioCoordinateLoadOption {
                 if (isChecked[0]) {
                     int[] sourceIris = (int[])sourceController.GetField("IrisDisplaySide");
                     int[] targetIris = (int[])targetController.GetField("IrisDisplaySide");
-                    int coor = targetChaCtrl.fileStatus.coordinateType;
-                    if (sourceIris.Length > coor && targetIris.Length > coor) {
-                        targetIris[coor] = sourceIris[coor];
+                    int sourceType = sourceChaCtrl.fileStatus.coordinateType;
+                    int targetType = targetChaCtrl.fileStatus.coordinateType;
+                    if (sourceIris.Length > sourceType && targetIris.Length > targetType) {
+                        targetIris[targetType] = sourceIris[sourceType];
                     }
                     targetController.SetField("IrisDisplaySide", targetIris);
                 }

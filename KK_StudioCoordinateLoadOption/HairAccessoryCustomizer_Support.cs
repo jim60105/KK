@@ -206,7 +206,7 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="chaCtrl">檢核的ChaControl</param>
         /// <param name="coordinate">判斷基礎的Coordinate，留空取chaCtrl.nowCoordinate</param>
         /// <returns>檢核通過</returns>
-        public static bool CheckHairLoadStateByCoordinate(ChaControl chaCtrl, ChaFileCoordinate coordinate = null) {
+        public static bool CheckHairLoadStateByCoordinate(ChaControl chaCtrl, ChaFileCoordinate coordinate = null,bool doReload = false) {
             if (!KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
                 return true;
             }
@@ -241,11 +241,11 @@ namespace KK_StudioCoordinateLoadOption {
                 HairAccCusController.Invoke("UpdateAccessories", new object[] { true });
                 return true;
             } else {
-                Dictionary<int, object> data = GetDataFromCoordinate(coordinate);
-                if (null == data || data.Count == 0) {
+                if (null == dataFromCoorExt|| dataFromCoorExt.Count == 0) {
                     ClearHairAccOnController(chaCtrl);
-                } else {
-                    SetControllerFromCoordinate(chaCtrl, coordinate);
+                } else if(doReload){
+                    //SetControllerFromCoordinate(chaCtrl, coordinate);
+                    Patches.DressChara(chaCtrl);
                 }
                 return false;
             }

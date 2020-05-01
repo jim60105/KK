@@ -52,9 +52,17 @@ namespace KK_StudioCoordinateLoadOption {
             targetChaCtrl.chaFile.CopyAll(oriChaCtrl.chaFile);
             fakeCopyFlag_CopyAll = false;
 
-            MoreAccessories.InvokeMember("Update", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
+            //MoreAccessories.InvokeMember("Update", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
 
             Logger.LogDebug($"Copy All MoreAccessories: {oriChaCtrl.fileParam.fullname} -> {targetChaCtrl.fileParam.fullname}");
+        }
+
+        public static void GetExtDataFromPlugin(ChaFile chafile) {
+            MoreAccObj.Invoke("OnActualCharaLoad", new object[] { chafile });
+        }
+
+        public static void SetExtDataFromPlugin(ChaFile chafile) {
+            MoreAccObj.Invoke("OnActualCharaSave", new object[] { chafile });
         }
 
         /// <summary>
@@ -80,7 +88,8 @@ namespace KK_StudioCoordinateLoadOption {
             //MoreAccObj.SetField("_accessoriesByChar", _accessoriesByChar);
 
             try {
-                MoreAccessories.InvokeMember("UpdateStudioUI", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
+                //MoreAccessories.InvokeMember("UpdateStudioUI", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
+                Update();
                 chaCtrl.ChangeAccessory(true);
             } catch { }
             Logger.LogDebug("Clear MoreAccessories Finish");
@@ -114,9 +123,7 @@ namespace KK_StudioCoordinateLoadOption {
             Patches.ChangeAccessories(sourceChaCtrl, sourcePartsArray, targetChaCtrl, targetPartsArray, accQueue);
 
             targetParts.Clear();
-            foreach (ChaFileAccessory.PartsInfo part in targetPartsArray) {
-                targetParts.Add(part);
-            }
+            targetParts.AddRange(targetPartsArray);
 
             //遍歷空欄dequeue accQueue
             while (accQueue.Count > 0) {
@@ -153,15 +160,15 @@ namespace KK_StudioCoordinateLoadOption {
                 showAccessories.Add(true);
 
             //targetCharAdditionalData.SetField("nowAccessories", targetParts);
-            //targetCharAdditionalData.SetField("infoAccessory", infoAccessory);
-            //targetCharAdditionalData.SetField("objAccessory", objAccessory);
-            //targetCharAdditionalData.SetField("objAcsMove", objAcsMove);
-            //targetCharAdditionalData.SetField("cusAcsCmp", cusAcsCmp);
-            //targetCharAdditionalData.SetField("showAccessories", showAccessories);
+            targetCharAdditionalData.SetField("infoAccessory", infoAccessory);
+            targetCharAdditionalData.SetField("objAccessory", objAccessory);
+            targetCharAdditionalData.SetField("objAcsMove", objAcsMove);
+            targetCharAdditionalData.SetField("cusAcsCmp", cusAcsCmp);
+            targetCharAdditionalData.SetField("showAccessories", showAccessories);
 
             //_accessoriesByChar[targetChaCtrl.chaFile] = targetCharAdditionalData;
             //MoreAccObj.SetField("_accessoriesByChar", _accessoriesByChar);
-            MoreAccessories.InvokeMember("Update", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
+            //Update();
 
             if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
                 HairAccessoryCustomizer_Support.GetDataFromExtData(targetChaCtrl, out Dictionary<int, object> nowCoor);
@@ -175,6 +182,7 @@ namespace KK_StudioCoordinateLoadOption {
         }
 
         private static PluginData sideLoaderExtData;
+
         /// <summary>
         /// 讀取MoreAccessories
         /// </summary>
@@ -298,6 +306,9 @@ namespace KK_StudioCoordinateLoadOption {
             return charAdditionalData?.GetField("nowAccessories").ToList<ChaFileAccessory.PartsInfo>().Count + 20 ?? 20;
         }
 
+        /// <summary>
+        /// 對Studio Work Control選擇中的項目更新UI
+        /// </summary>
         public static void Update() {
             MoreAccessories.InvokeMember("Update", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
         }
