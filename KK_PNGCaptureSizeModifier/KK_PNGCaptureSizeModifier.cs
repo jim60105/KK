@@ -36,8 +36,8 @@ namespace KK_PNGCaptureSizeModifier {
     public class KK_PNGCaptureSizeModifier : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "PNG Capture Size Modifier";
         internal const string GUID = "com.jim60105.kk.pngcapturesizemodifier";
-        internal const string PLUGIN_VERSION = "20.04.30.1";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.0";
+        internal const string PLUGIN_VERSION = "20.05.14.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.4.0";
 
         public static ConfigEntry<float> TimesOfMaker { get; private set; }
         public static ConfigEntry<float> TimesOfStudio { get; private set; }
@@ -123,7 +123,7 @@ namespace KK_PNGCaptureSizeModifier {
 
         //Studio預覽放大
         [HarmonyPostfix, HarmonyPatch(typeof(Studio.SceneLoadScene), "Awake")]
-        public static void AwakePostFix() => 
+        public static void AwakePostFix() =>
             GameObject.Find("SceneLoadScene/Canvas Load Work/root").transform.localScale = new Vector3(2, 2, 1);
 
         //加浮水印
@@ -132,24 +132,32 @@ namespace KK_PNGCaptureSizeModifier {
         public static void SavePrefix() => AddSDWatermarkFlag = KK_PNGCaptureSizeModifier.StudioSceneWatermark.Value;
 
         [HarmonyPostfix, HarmonyPatch(typeof(Studio.GameScreenShot), "CreatePngScreen")]
-        public static void CreatePngScreenPostfix(ref byte[] __result) => AddWatermark(ref AddSDWatermarkFlag, ref __result, "sd_watermark.png",KK_PNGCaptureSizeModifier.TimesOfStudio);
+        public static void CreatePngScreenPostfix(ref byte[] __result) => AddWatermark(ref AddSDWatermarkFlag, ref __result, "sd_watermark.png", KK_PNGCaptureSizeModifier.TimesOfStudio);
 
         private static bool AddCharaWatermarkFlag = false;
         [HarmonyPrefix, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CapCharaCard")]
         public static void CapCharaCardPrefix() => AddCharaWatermarkFlag = KK_PNGCaptureSizeModifier.CharaMakerWatermark.Value;
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CreatePng")]
-        public static void CreatePngPostfix(ref byte[] pngData) => AddWatermark(ref AddCharaWatermarkFlag, ref pngData, "chara_watermark.png",KK_PNGCaptureSizeModifier.TimesOfMaker);
+        public static void CreatePngPostfix(ref byte[] pngData) => AddWatermark(ref AddCharaWatermarkFlag, ref pngData, "chara_watermark.png", KK_PNGCaptureSizeModifier.TimesOfMaker);
 
-        private static void AddWatermark(ref bool doFlag, ref byte[] basePng,string wmFileName,ConfigEntry<float> times) {
+        private static void AddWatermark(ref bool doFlag, ref byte[] basePng, string wmFileName, ConfigEntry<float> times) {
             if (doFlag) {
                 doFlag = false;
                 Texture2D screenshot = new Texture2D(2, 2);
                 screenshot.LoadImage(basePng);
+
+                //浮水印
                 Texture2D watermark = Extension.Extension.LoadDllResource($"KK_PNGCaptureSizeModifier.Resources.{wmFileName}", 230, 230);
-                TextureScaler.scale(watermark, Convert.ToInt32(230f / (float)times.DefaultValue * times.Value), Convert.ToInt32(230f /(float) times.DefaultValue * times.Value));
+                TextureScaler.scale(watermark, Convert.ToInt32(230f / (float)times.DefaultValue * times.Value), Convert.ToInt32(230f / (float)times.DefaultValue * times.Value));
+                //圖片分辨率
+                string text = $"{screenshot.width}x{screenshot.height}";
+                int textureSize = TextToTexture.CalcTextWidthPlusTrailingBuffer(text, 1);
+                Texture2D capsize = TextToTexture.CreateTextToTexture(text, 0, 0, textureSize, 1, 1);
+                TextureScaler.scale(capsize, Convert.ToInt32(textureSize / (float)times.DefaultValue * times.Value), Convert.ToInt32(textureSize / (float)times.DefaultValue * times.Value));
 
                 screenshot = Extension.Extension.AddWatermark(screenshot, watermark, 0, screenshot.height - watermark.height);
+                screenshot = Extension.Extension.AddWatermark(screenshot, capsize, screenshot.width - capsize.width, 0);
                 basePng = screenshot.EncodeToPNG();
                 KK_PNGCaptureSizeModifier.Logger.LogDebug($"Add Watermark:{wmFileName}");
             }

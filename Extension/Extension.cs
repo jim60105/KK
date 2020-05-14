@@ -338,12 +338,12 @@ namespace Extension {
         }
 
         public static object ForEach(this object self, Action<object> action) {
-            if(self is IList list) {
+            if (self is IList list) {
                 foreach (object l in list) {
                     action(l);
                 }
-            }else if (self is IDictionary dic) {
-                foreach (DictionaryEntry  d in dic) {
+            } else if (self is IDictionary dic) {
+                foreach (DictionaryEntry d in dic) {
                     action(d);
                 }
             } else {
@@ -439,9 +439,10 @@ namespace Extension {
 
         public static Texture2D LoadDllResource(string FilePath, int width, int height) {
             Assembly myAssembly = Assembly.GetExecutingAssembly();
-            Stream myStream = myAssembly.GetManifestResourceStream(FilePath);
             Texture2D texture = new Texture2D(width, height, TextureFormat.ARGB32, false);
-            texture.LoadImage(ReadToEnd(myStream));
+            using (Stream myStream = myAssembly.GetManifestResourceStream(FilePath)) {
+                texture.LoadImage(ReadToEnd(myStream));
+            }
 
             if (texture == null) {
                 Console.WriteLine("Missing Dll resource: " + FilePath);
@@ -494,11 +495,13 @@ namespace Extension {
                         Color bgColor = background.GetPixel(x, y);
                         Color wmColor = watermark.GetPixel(x - startX, y - startY);
 
-                        Color final_color = Color.Lerp(bgColor, wmColor, wmColor.a / 1.0f);
+                        Color final_color = Color.Lerp(bgColor, wmColor, wmColor.a);
+                        final_color.a = bgColor.a + wmColor.a;
 
                         newTex.SetPixel(x, y, final_color);
-                    } else
+                    } else {
                         newTex.SetPixel(x, y, background.GetPixel(x, y));
+                    }
                 }
             }
 
