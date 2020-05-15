@@ -233,13 +233,14 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 
 # Studio 角色覆寫腳本<br>Studio Body Overwrite Script
 ![image](demo/demo15.jpg)<br>
-這個不是Plugin而是Script，請用[ScriptLoader](https://github.com/denikson/BepInEx.ScriptLoader)載入執行<br>
+這個不是Plugin而是Script，**請用[ScriptLoader](https://github.com/denikson/BepInEx.ScriptLoader)載入執行**<br>
 請手動編輯.cs檔，將內容修改為你要覆寫的數值<br>
 數值等於Maker中的數字除以100 (即遊戲內數值89 = 0.89f)；Color為Color(r, g, b, a)<br>
 不需覆寫的項目請在開頭加上「//」做行註解<br>
+**Studio中以O鍵觸發**
 <details><summary>安裝方式</summary>
-- 安裝[ScriptLoader](https://github.com/denikson/BepInEx.ScriptLoader)
-- 將*.cs置於「Koikatu/scripts」下
+1. 安裝[ScriptLoader](https://github.com/denikson/BepInEx.ScriptLoader)<br>
+2. 將*.cs置於「Koikatu/scripts」下
 </details>
 
 # 需求依賴
@@ -248,7 +249,7 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 - BepisPlugins r13.1.1<br>
 
 # 安裝方式
-- 參考壓縮檔結構，將文件放進「根目錄/BepInEx/plugins/jim60105」資料夾之下<br>
+- 參考壓縮檔結構，將文件放進「BepInEx/plugins/jim60105」資料夾之下<br>
 
 # 下載位置
 [Latest Release](https://github.com/jim60105/KK/releases/latest "Latest Release")
