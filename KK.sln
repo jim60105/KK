@@ -34,7 +34,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BEA015AE-BB02-4641-8DAE-CEF9BB0A2191}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
-		KK_FBIOpenUp\README.md = KK_FBIOpenUp\README.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_CharaOverlaysBasedOnCoordinate", "KK_CharaOverlaysBasedOnCoordinate\KK_CharaOverlaysBasedOnCoordinate.csproj", "{94DDA10B-7A91-4F59-9C62-4AA363E1C36F}"
@@ -48,6 +47,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioDualScreen", "KK_StudioDualScreen\KK_StudioDualScreen.csproj", "{E70886B9-0AEC-444B-90A1-95E47C4FE03F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioSaveWorkspaceOrderFix", "KK_StudioSaveWorkspaceOrderFix\KK_StudioSaveWorkspaceOrderFix.csproj", "{4F3E6D68-D3B2-4A0F-817A-272EAAFB91AA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScriptLoaderScript", "ScriptLoaderScript\ScriptLoaderScript.csproj", "{3ED29578-EACC-48A8-8130-906469544508}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -190,6 +191,14 @@ Global
 		{4F3E6D68-D3B2-4A0F-817A-272EAAFB91AA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4F3E6D68-D3B2-4A0F-817A-272EAAFB91AA}.Release|x64.ActiveCfg = Release|x64
 		{4F3E6D68-D3B2-4A0F-817A-272EAAFB91AA}.Release|x64.Build.0 = Release|x64
+		{3ED29578-EACC-48A8-8130-906469544508}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3ED29578-EACC-48A8-8130-906469544508}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3ED29578-EACC-48A8-8130-906469544508}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3ED29578-EACC-48A8-8130-906469544508}.Debug|x64.Build.0 = Debug|Any CPU
+		{3ED29578-EACC-48A8-8130-906469544508}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3ED29578-EACC-48A8-8130-906469544508}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3ED29578-EACC-48A8-8130-906469544508}.Release|x64.ActiveCfg = Release|Any CPU
+		{3ED29578-EACC-48A8-8130-906469544508}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
