@@ -257,8 +257,8 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 **Studio中以O鍵觸發**<br>
 **衝突: Koikatu PushUp** 因其內部自己存了一份胸部數據，並會在儲存和切換時回寫
 <details><summary>Script安裝方式</summary>
-1. 安裝[ScriptLoader](https://github.com/denikson/BepInEx.ScriptLoader)<br>
-2. 將*.cs置於「Koikatu/scripts」下
+    1. 安裝<a href="https://github.com/denikson/BepInEx.ScriptLoader" target="_blank">ScriptLoader</a><br>
+    2. 將*.cs置於「Koikatu/scripts」下
 </details>
 
 # 需求依賴
