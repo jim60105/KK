@@ -239,9 +239,9 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 → 修改為以實際順序儲存
 
 <details><summary>邏輯</summary>
-因為存這些TreeNode的時候是塞在一個Dictionary裡面，Save&Load的時候依序讀
-而Dictionary之排序順序就是Add進去的順序，也就是所有物件建立的順序
-這插件做的事就是在Save前按照實際TreeNode順序重新建立這個Dictionary
+因為存這些TreeNode的時候是塞在一個Dictionary裡面，Save&Load的時候依序讀<br>
+而Dictionary之排序順序就是Add進去的順序，也就是所有物件建立的順序<br>
+這插件做的事就是在Save前按照實際TreeNode順序重新建立這個Dictionary<br>
 </details>
 
 # Studio 角色覆寫腳本<br>Studio Body Overwrite Script
