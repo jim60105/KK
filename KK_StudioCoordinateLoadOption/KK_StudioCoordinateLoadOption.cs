@@ -47,8 +47,8 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.05.04.1";
-        internal const string PLUGIN_RELEASE_VERSION = "3.3.3.2";
+        internal const string PLUGIN_VERSION = "20.05.16.0";
+        internal const string PLUGIN_RELEASE_VERSION = "3.3.4";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -590,6 +590,7 @@ namespace KK_StudioCoordinateLoadOption {
                 }
                 OCIChar ocichar = oCICharQueue.Dequeue();
                 mouthOpen = ocichar.oiCharInfo.mouthOpen;
+                Logger.LogDebug($"Mouth: {mouthOpen}");
 
                 //Load Coordinate
                 ChaControl chaCtrl = ocichar.charInfo;
@@ -770,15 +771,16 @@ namespace KK_StudioCoordinateLoadOption {
                 chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
                 chaCtrl.Reload();   //全false的Reload會觸發KKAPI的hook
 
+                //修正嘴開
+                Logger.LogDebug($"Mouth: {mouthOpen}");
+                ocichar?.ChangeMouthOpen(mouthOpen);
+
                 //Reload()後除了skirt也要重置hair，否則PoseCtrl會有問題
                 chaCtrl.UpdateBustSoftnessAndGravity();
                 ocichar.hairDynamic = AddObjectFemale.GetHairDynamic(ocichar.charInfo.objHair);
                 ocichar.skirtDynamic = AddObjectFemale.GetSkirtDynamic(ocichar.charInfo.objClothes);
                 ocichar.ActiveFK(OIBoneInfo.BoneGroup.Hair, ocichar.oiCharInfo.activeFK[0], ocichar.oiCharInfo.enableFK);
                 ocichar.ActiveFK(OIBoneInfo.BoneGroup.Skirt, ocichar.oiCharInfo.activeFK[6], ocichar.oiCharInfo.enableFK);
-
-                //修正嘴開
-                ocichar?.ChangeMouthOpen(mouthOpen);
 
                 finishedCount++;
 
