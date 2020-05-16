@@ -32,7 +32,7 @@ namespace KK_StudioSaveWorkspaceOrderFix {
         internal const string PLUGIN_NAME = "Studio Save Workspace Order Fix";
         internal const string GUID = "com.jim60105.kk.studiosaveworkspaceorderfix";
         internal const string PLUGIN_VERSION = "20.05.15.0";
-        internal const string PLUGIN_RELEASE_VERSION = "0.0.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.0";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
