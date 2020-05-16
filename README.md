@@ -15,7 +15,7 @@
 
 **將「鎖定頭髮飾品」以外的鈎選項全勾，並使用飾品「取代模式」即會調用遊戲原始程式**
 
-確定支援Plugin:<br>
+支援:<br>
 - Koikatu Overlay Mods v5.1.2
 - Koikatu ABMX V4.2
 - Koikatu More Accessories v1.0.9
@@ -23,6 +23,8 @@
 - Koikatu HairAccessoryCustomizer v1.1.3
 - Koikatu Chara Overlays Based On Coordinate **v1.3.4** (不支援v1.3.3)
 
+衝突:
+- Koikatu Pushup
 # Studio全是妹子插件<br>Studio All Girls Plugin
 ![image](demo/demo2.gif)<br>
 
@@ -182,7 +184,7 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 - 可調角色存檔(ChaFile)、服裝存檔(CoordinateFile)、Studio存檔(Scene)的圖片分辨率<br>
 - CharaMaker中，角色、服裝檔案選擇器的顯示列數可調整<br>
 - 放大Studio SceneData選擇器的選中預覧<br>
-- (可選)給角色存檔(ChaFile)、Studio存檔(Scene)加上浮水印角標<br>
+- (可選)給角色存檔(ChaFile)、Studio存檔(Scene)加上浮水印角標和圖片分辨率標示<br>
 
 **請至設定中調整這些功能**<br>
 因為改變了存檔圖片尺寸，**強烈建議不要禁用Studio SceneData浮水印**，以利區分存檔PNG和普通截圖PNG<br>
@@ -231,20 +233,36 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 - 副顯示器固定後，或修改畫面設定(濾鏡等)後，需要再次觸發啟動快捷鍵以進行畫面同步
 - 已知問題: 啟用雙螢幕後F9截圖會造成無回應，請改用F11 (目前沒有計劃深入這部份)
 
+# Studio 儲存工作區順序修正<br>Studio Save Workspace Order Fix
+![image](demo/demo16.png)<br>
+- 以Studio的存檔邏輯，工作區中，在第一層之物件排序是以加入順序儲存<br>
+→ 修改為以實際順序儲存
+
+<details><summary>邏輯</summary>
+因為存這些TreeNode的時候是塞在一個Dictionary裡面，Save&Load的時候依序讀
+而Dictionary之排序順序就是Add進去的順序，也就是所有物件建立的順序
+這插件做的事就是在Save前按照實際TreeNode順序重新建立這個Dictionary
+</details>
+
 # Studio 角色覆寫腳本<br>Studio Body Overwrite Script
-![image](demo/demo15.jpg)<br>
+<a href="https://www.youtube.com/watch?v=UGPeI6vZ3_w" target="_blank"><img src="demo/demo15.jpg" title="Click the image to watch demo"></a><br>
+↑ 請點選圖片觀看範例影片 ↑ Click the image to watch demo! ↑  (備用載點: [影片](demo/demo15.mp4))<br>
 這個不是Plugin而是Script，**請用[ScriptLoader](https://github.com/denikson/BepInEx.ScriptLoader)載入執行**<br>
-請手動編輯.cs檔，將內容修改為你要覆寫的數值<br>
-數值等於Maker中的數字除以100 (即遊戲內數值89 = 0.89f)；Color為Color(r, g, b, a)<br>
-不需覆寫的項目請在開頭加上「//」做行註解<br>
-**Studio中以O鍵觸發**
-<details><summary>安裝方式</summary>
+
+請手動編輯.cs檔，將內容修改為你要覆寫的數值
+- 數值等於Maker中的數字除以100 (即遊戲內數值89 = 0.89f)
+- Color為Color(r, g, b, a)，請參閱[UnityDoc](https://docs.unity3d.com/ScriptReference/Color-ctor.html)
+- 不需覆寫的項目請在開頭加上「//」做行註解
+
+**Studio中以O鍵觸發**<br>
+**衝突: Koikatu PushUp** 因其內部自己存了一份胸部數據，並會在儲存和切換時回寫
+<details><summary>Script安裝方式</summary>
 1. 安裝[ScriptLoader](https://github.com/denikson/BepInEx.ScriptLoader)<br>
 2. 將*.cs置於「Koikatu/scripts」下
 </details>
 
 # 需求依賴
-- コイカツ！ ダークネス (Koikatu! Darkness)<br>不相容於Steam Koikatsu Party
+- コイカツ！ ダークネス (Koikatu! Darkness)<br>不保證相容於Steam Koikatsu Party
 - **BepInEx v5.0.1**<br>
 - BepisPlugins r13.1.1<br>
 
