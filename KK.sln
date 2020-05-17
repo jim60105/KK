@@ -50,6 +50,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioSaveWorkspaceOrder
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScriptLoaderScript", "ScriptLoaderScript\ScriptLoaderScript.csproj", "{3ED29578-EACC-48A8-8130-906469544508}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_Sample", "KK_Sample\KK_Sample.csproj", "{957DEC7D-0D10-41E5-9CF6-A72902355CCC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_TransparentBackground", "KK_TransparentBackground\KK_TransparentBackground.csproj", "{8ABC8100-D514-4B28-BCFB-67B040250D35}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Extension\Extension.projitems*{0646be09-f599-4edb-b115-de4043c8d3be}*SharedItemsImports = 13
@@ -61,7 +65,9 @@ Global
 		Extension\Extension.projitems*{670a8493-10c7-4071-8fc8-a49ace4ccfdb}*SharedItemsImports = 4
 		Extension\Extension.projitems*{82c2994c-24eb-4df4-a367-2f33ec849978}*SharedItemsImports = 4
 		Extension\Extension.projitems*{85268fd6-a1fd-41aa-84d9-71f18815c034}*SharedItemsImports = 4
+		Extension\Extension.projitems*{8abc8100-d514-4b28-bcfb-67b040250d35}*SharedItemsImports = 4
 		Extension\Extension.projitems*{94dda10b-7a91-4f59-9c62-4aa363e1c36f}*SharedItemsImports = 4
+		Extension\Extension.projitems*{957dec7d-0d10-41e5-9cf6-a72902355ccc}*SharedItemsImports = 4
 		Extension\Extension.projitems*{a5f430a2-ae7a-4bcd-a380-0f73add7a4a3}*SharedItemsImports = 4
 		Extension\Extension.projitems*{ac89e605-c385-4e44-b781-5ee60c7bc70a}*SharedItemsImports = 4
 		Extension\Extension.projitems*{d02e90af-be20-4eae-a462-5efda36095a9}*SharedItemsImports = 4
@@ -197,15 +203,31 @@ Global
 		{3ED29578-EACC-48A8-8130-906469544508}.Debug|x64.Build.0 = Debug|Any CPU
 		{3ED29578-EACC-48A8-8130-906469544508}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3ED29578-EACC-48A8-8130-906469544508}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3ED29578-EACC-48A8-8130-906469544508}.Release|x64.ActiveCfg = Release|Any CPU
-		{3ED29578-EACC-48A8-8130-906469544508}.Release|x64.Build.0 = Release|Any CPU
+		{3ED29578-EACC-48A8-8130-906469544508}.Release|x64.ActiveCfg = Release|x64
+		{3ED29578-EACC-48A8-8130-906469544508}.Release|x64.Build.0 = Release|x64
+		{957DEC7D-0D10-41E5-9CF6-A72902355CCC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{957DEC7D-0D10-41E5-9CF6-A72902355CCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{957DEC7D-0D10-41E5-9CF6-A72902355CCC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{957DEC7D-0D10-41E5-9CF6-A72902355CCC}.Debug|x64.Build.0 = Debug|Any CPU
+		{957DEC7D-0D10-41E5-9CF6-A72902355CCC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{957DEC7D-0D10-41E5-9CF6-A72902355CCC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{957DEC7D-0D10-41E5-9CF6-A72902355CCC}.Release|x64.ActiveCfg = Release|x64
+		{957DEC7D-0D10-41E5-9CF6-A72902355CCC}.Release|x64.Build.0 = Release|x64
+		{8ABC8100-D514-4B28-BCFB-67B040250D35}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8ABC8100-D514-4B28-BCFB-67B040250D35}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8ABC8100-D514-4B28-BCFB-67B040250D35}.Debug|x64.ActiveCfg = Debug|x64
+		{8ABC8100-D514-4B28-BCFB-67B040250D35}.Debug|x64.Build.0 = Debug|x64
+		{8ABC8100-D514-4B28-BCFB-67B040250D35}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8ABC8100-D514-4B28-BCFB-67B040250D35}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8ABC8100-D514-4B28-BCFB-67B040250D35}.Release|x64.ActiveCfg = Release|x64
+		{8ABC8100-D514-4B28-BCFB-67B040250D35}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		RESX_Rules = {"EnabledRules":["StringFormat","WhiteSpaceLead","WhiteSpaceTail"]}
-		RESX_NeutralResourcesLanguage = en-US
 		SolutionGuid = {9C634E2C-489D-470F-94E5-72383D9364B5}
+		RESX_NeutralResourcesLanguage = en-US
+		RESX_Rules = {"EnabledRules":["StringFormat","WhiteSpaceLead","WhiteSpaceTail"]}
 	EndGlobalSection
 EndGlobal
