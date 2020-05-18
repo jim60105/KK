@@ -5,13 +5,11 @@
  * License: CC0 https://creativecommons.org/publicdomain/zero/1.0/
  */
 
+using ActionGame;
+using Manager;
 using System;
 using System.Collections;
 using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-using System.Reflection;
-#endif
 
 namespace Kirurobo {
 
@@ -82,39 +80,21 @@ namespace Kirurobo {
             get { return ((uniWin == null) ? _isMinimized : _isMinimized = uniWin.IsMinimized); }
             set { SetMinimized(value); }
         }
+
+        public Material TransparentMaterial;
+
         [SerializeField, BoolProperty, Tooltip("Check to set minimized on startup")]
         private bool _isMinimized = false;
-
-        ///// <summary>
-        ///// ファイルドロップを有効にするならば最初からtrueにしておく
-        ///// </summary>
-        //public bool enableFileDrop
-        //{
-        //    get { return _enableFileDrop; }
-        //    set
-        //    {
-        //        if (value) { BeginFileDrop(); }
-        //        else { EndFileDrop(); }
-        //    }
-        //}
-        //[SerializeField, BoolProperty, Tooltip("Check to set enable file-drop on startup")]
-        //private bool _enableFileDrop = false;
-
-        ///// <summary>
-        ///// マウスドラッグでウィンドウを移動させるか
-        ///// </summary>
-        //[Tooltip("Make the window draggable while a left mouse button is pressed")]
-        //public bool enableDragMove = true;
-
 
         // カメラの背景をアルファゼロの黒に置き換えるため、本来の背景を保存しておく変数
         private CameraClearFlags originalCameraClearFlags;
         private Color originalCameraBackground;
+        private int originalCameraCullingmask;
 
         /// <summary>
         /// Is the mouse pointer on an opaque pixel
         /// </summary>
-        //[SerializeField, Tooltip("Is the mouse pointer on an opaque pixel? (Read only)")]
+        [SerializeField, Tooltip("Is the mouse pointer on an opaque pixel? (Read only)")]
         private bool onOpaquePixel = true;
 
         /// <summary>
@@ -127,28 +107,6 @@ namespace Kirurobo {
         /// </summary>
         [ReadOnly, Tooltip("Pixel color under the mouse pointer. (Read only)")]
         public Color pickedColor;
-
-        ///// <summary>
-        ///// 現在ドラッグ処理中ならばtrue
-        ///// </summary>
-        //private bool isDragging = false;
-
-        ///// <summary>
-        ///// ドラッグ開始時のウィンドウ内座標[px]
-        ///// </summary>
-        //private Vector2 dragStartedPosition;
-
-        ///// <summary>
-        ///// 描画の上にタッチがあればそのfingerIdが入る
-        ///// </summary>
-        //[SerializeField]
-        //private int activeFingerId = -1;
-
-        ///// <summary>
-        ///// 最後のドラッグはマウスによるものか、タッチによるものか
-        ///// </summary>
-        //[SerializeField]
-        //private bool wasUsingMouse;
 
         /// <summary>
         /// 現在対象としているウィンドウが自分自身らしいと確認できたらtrueとする
@@ -166,16 +124,6 @@ namespace Kirurobo {
         /// </summary>
         private Touch? firstTouch = null;
 
-
-        ///// <summary>
-        ///// ファイルドロップ時のイベントハンドラー。 UniWinApiの OnFilesDropped にそのまま渡す。
-        ///// </summary>
-        //public event UniWinApi.FilesDropped OnFilesDropped
-        //{
-        //    add { if (uniWin != null) { uniWin.OnFilesDropped += value; } }
-        //    remove { if (uniWin != null) { uniWin.OnFilesDropped -= value; } }
-        //}
-
         /// <summary>
         /// ウィンドウ状態が変化したときに発生するイベント
         /// </summary>
@@ -187,10 +135,8 @@ namespace Kirurobo {
         /// </summary>
         private Texture2D colorPickerTexture = null;
 
-
         // Use this for initialization
         void Awake() {
-            DontDestroyOnLoad(this);
             Input.simulateMouseWithTouches = false;
 
             if (!currentCamera) {
@@ -207,7 +153,7 @@ namespace Kirurobo {
             if (currentCamera) {
                 originalCameraClearFlags = currentCamera.clearFlags;
                 originalCameraBackground = currentCamera.backgroundColor;
-
+                originalCameraCullingmask = currentCamera.cullingMask;
             }
 
             // マウス下描画色抽出用テクスチャを準備
@@ -218,13 +164,6 @@ namespace Kirurobo {
 
             // 自分のウィンドウを取得
             FindMyWindow();
-            //#if UNITY_EDITOR
-            //            // エディタのウィンドウ配置が変化した際の呼び出し
-            //            EditorApplicationUtility.windowsReordered += () => {
-            //                this.isWindowChecked = false;   // ウィンドウが不確かであるとする
-            //                //Debug.Log("Editor windows reordered");
-            //            };
-            //#endif
         }
 
         void Start() {
@@ -262,31 +201,21 @@ namespace Kirurobo {
         void Update() {
             // 自ウィンドウ取得状態が不確かなら探しなおす
             //  マウス押下が取れるのはすなわちフォーカスがあるとき
-            //if (Input.anyKey)
-            //{
+            //if (Input.anyKey) {
             //    UpdateWindow();
             //}
 
-            // マウスドラッグでウィンドウ移動
-            //DragMove();
-
             // キー、マウス操作の下ウィンドウへの透過状態を更新
             UpdateClickThrough();
-
-
-            //if (uniWin != null)
-            //{
-            //    if (Input.GetKeyDown(KeyCode.Space))
-            //    {
-            //        Debug.Log(Screen.width + " : " + Screen.height);
-            //        uniWin.SetPosition(Vector2.zero);
-            //    }
-            //}
 
             // ウィンドウ枠が復活している場合があるので監視するため、呼ぶ
             if (uniWin != null) {
                 uniWin.Update();
             }
+        }
+
+        void OnRenderImage(RenderTexture from, RenderTexture to) {
+            Graphics.Blit(from, to, TransparentMaterial);
         }
 
         /// <summary>
@@ -297,126 +226,6 @@ namespace Kirurobo {
                 OnStateChanged();
             }
         }
-
-        //        /// <summary>
-        //        /// 最大化時以外なら、マウスドラッグによってウィンドウを移動
-        //        /// </summary>
-        //        void DragMove()
-        //        {
-        //            if (uniWin == null) return;
-
-        //            // ドラッグでの移動が無効化されていた場合
-        //            if (!enableDragMove)
-        //            {
-        //                isDragging = false;
-        //                return;
-        //            }
-
-        //            //Debug.Log(Input.touchCount);
-
-        //            // 最大化状態ならウィンドウ移動は行わないようにする
-        //            bool isFullScreen = uniWin.IsMaximized;
-
-        //            // フルスクリーンならウィンドウ移動は行わない
-        //#if !UNITY_EDITOR
-        //            //  エディタだと true になってしまうようなので、エディタ以外でのみ確認
-        //            if (Screen.fullScreen) isFullScreen = true;
-        //#endif
-        //            if (isFullScreen)
-        //            {
-        //                isDragging = false;
-        //                return;
-        //            }
-
-        //            // マウスによるドラッグ開始の判定
-        //            if (Input.GetMouseButtonDown(0) && !Input.GetMouseButton(1) && !Input.GetMouseButton(2))
-        //            {
-        //                dragStartedPosition = Input.mousePosition;
-        //                isDragging = true;
-        //                wasUsingMouse = true;
-        //                Debug.Log("Start mouse dragging");
-        //            }
-
-        //            bool touching = (activeFingerId >= 0);
-
-        //            int targetTouchIndex = -1;
-        //            if (activeFingerId < 0)
-        //            {
-        //                // まだ追跡中の指が無かった場合、Beganとなるタッチがあればそれを追跡候補に挙げる
-        //                for (int i = 0; i < Input.touchCount; i++)
-        //                {
-        //                    if (Input.GetTouch(i).phase == TouchPhase.Began)
-        //                    {
-        //                        Debug.Log("Touch began");
-        //                        //targetTouchIndex = i;
-        //                        firstTouch = Input.GetTouch(i);     // まだドラッグ開始とはせず、透過画素判定に回す。
-        //                        break;
-        //                    }
-        //                }
-        //            }
-        //            else
-        //            {
-        //                // 追跡中の指がある場合
-        //                for (int i = 0; i < Input.touchCount; i++)
-        //                {
-        //                    if (activeFingerId == Input.GetTouch(i).fingerId)
-        //                    {
-        //                        targetTouchIndex = i;
-        //                        break;
-        //                    }
-        //                }
-        //            }
-
-        //            // タッチによるドラッグ開始の判定
-        //            if (targetTouchIndex >= 0 && !isDragging)
-        //            {
-        //                dragStartedPosition = Input.GetTouch(targetTouchIndex).position;
-        //                //activeFingerId = Input.GetTouch(targetTouchIndex).fingerId;
-        //                isDragging = true;
-        //                wasUsingMouse = false;
-        //                //Debug.Log("Start touch dragging");
-        //            }
-
-        //            // ドラッグ終了の判定
-        //            if (wasUsingMouse && !Input.GetMouseButton(0))
-        //            {
-        //                //Debug.Log("End mouse dragging");
-        //                activeFingerId = -1;
-        //                isDragging = false;
-        //            }
-        //            else if (!wasUsingMouse && targetTouchIndex < 0)
-        //            {
-        //                //if (touching) Debug.Log("End touch dragging");
-        //                activeFingerId = -1;
-        //                isDragging = false;
-        //            }
-
-        //            // ドラッグ中ならば、ウィンドウ位置を更新
-        //            if (isDragging)
-        //            {
-        //                Vector2 mousePos;
-        //                if (wasUsingMouse)
-        //                {
-        //                    mousePos = Input.mousePosition;
-        //                    Vector2 delta = mousePos - dragStartedPosition;
-        //                    delta.y = -delta.y;     // Y座標は反転
-
-        //                    Vector2 windowPosition = uniWin.GetPosition();  // 現在のウィンドウ位置を取得
-        //                    windowPosition += delta; // ウィンドウ位置に上下左右移動分を加える
-        //                    uniWin.SetPosition(windowPosition);   // ウィンドウ位置を設定
-        //                }
-        //                else
-        //                {
-        //                    Touch touch = Input.GetTouch(targetTouchIndex);
-        //                    Vector2 delta = touch.position - dragStartedPosition;
-        //                    delta.y = -delta.y;     // Y座標は反転
-
-        //                    Vector2 windowPosition = uniWin.GetPosition();  // 現在のウィンドウ位置を取得
-        //                    windowPosition += delta; // ウィンドウ位置に上下左右移動分を加える
-        //                    uniWin.SetPosition(windowPosition);   // ウィンドウ位置を設定
-        //                }
-        //            }
-        //        }
 
         /// <summary>
         /// 画素の色を基に操作受付を切り替える
@@ -516,7 +325,6 @@ namespace Kirurobo {
             }
         }
 
-
         /// <summary>
         /// 自分のウィンドウハンドルを見つける
         /// </summary>
@@ -539,7 +347,6 @@ namespace Kirurobo {
             SetMaximized(_isMaximized);
             SetMinimized(_isMinimized);
             SetTransparent(_isTransparent);
-            //if (_enableFileDrop) BeginFileDrop();
         }
 
         /// <summary>
@@ -574,32 +381,41 @@ namespace Kirurobo {
         /// <param name="focus"></param>
         private void OnApplicationFocus(bool focus) {
             //Debug.Log("Focus:" + focus);
-
             if (focus) {
                 UpdateWindow();
             }
-
         }
 
         /// <summary>
         /// ウィンドウ透過状態になった際、自動的に背景を透明単色に変更する
         /// </summary>
         /// <param name="isTransparent"></param>
-        void SetCameraBackground(bool isTransparent) {
-            // カメラが特定できていなければ何もしない
-            if (!currentCamera) return;
+        void SetCamera(bool isTransparent) {
+            if (null == currentCamera) return;
 
             if (isTransparent) {
                 currentCamera.clearFlags = CameraClearFlags.SolidColor;
                 currentCamera.backgroundColor = Color.clear;
+
+                //H scene會在HSceneProc.Update()->HSceneProc.SetConfig()重寫Camera.main.backgroundColor
+                //這EtcData是重寫的來源
+                Manager.Config.EtcData.BackColor = Color.clear;
+
+                //Only display chara layer
+                //為了把地圖等東西不顯示，若有其它什麼沒顯示出來要修改這裡
+                currentCamera.cullingMask = 1 << LayerMask.NameToLayer("Chara");
             } else {
                 currentCamera.clearFlags = originalCameraClearFlags;
                 currentCamera.backgroundColor = originalCameraBackground;
+
+                Manager.Config.EtcData.BackColor = originalCameraBackground;
+                currentCamera.cullingMask = originalCameraCullingmask;
             }
 
             try {
-                GameObject.Find("BackGroundCamera").GetComponent<Camera>().enabled  = !isTransparent;
-                Camera.main.gameObject.GetComponent<UnityStandardAssets.ImageEffects.BloomAndFlares>().enabled = !isTransparent ;
+                //These only work in Maker
+                GameObject.Find("BackGroundCamera").GetComponent<Camera>().enabled = !isTransparent;
+                Camera.main.gameObject.GetComponent<UnityStandardAssets.ImageEffects.BloomAndFlares>().enabled = !isTransparent;
             } catch (NullReferenceException) { }
         }
 
@@ -608,10 +424,8 @@ namespace Kirurobo {
         /// </summary>
         /// <param name="transparent"></param>
         public void SetTransparent(bool transparent) {
-            //if (_isTransparent == transparent) return;
-
             _isTransparent = transparent;
-            SetCameraBackground(transparent);
+            SetCamera(transparent);
 
             if (uniWin != null) {
                 uniWin.EnableTransparent(transparent);
@@ -670,44 +484,6 @@ namespace Kirurobo {
             StateChangedEvent();
         }
 
-        ///// <summary>
-        ///// Begin to accept file drop.
-        ///// </summary>
-        //public void BeginFileDrop()
-        //{
-        //    if (uniWin != null)
-        //    {
-        //        uniWin.BeginFileDrop();
-        //    }
-        //    _enableFileDrop = true;
-        //}
-
-        ///// <summary>
-        ///// End to accept file drop.
-        ///// </summary>
-        //public void EndFileDrop()
-        //{
-        //    if (uniWin != null)
-        //    {
-        //        uniWin.EndFileDrop();
-        //    }
-        //    _enableFileDrop = false;
-        //}
-
-
-        ///// <summary>
-        ///// Show open file dialog.
-        ///// </summary>
-        ///// <returns></returns>
-        //public string ShowOpenFileDialog(string filter = "All files|*.*")
-        //{
-        //    if (uniWin != null)
-        //    {
-        //        return uniWin.ShowOpenFileDialog(filter);
-        //    }
-        //    return null;
-        //}
-
         /// <summary>
         /// 終了時にはウィンドウプロシージャを戻す処理が必要
         /// </summary>
@@ -728,37 +504,4 @@ namespace Kirurobo {
             }
         }
     }
-
-
-    //#if UNITY_EDITOR
-    //    // エディタ実行時専用
-    //    // ゲームビューが閉じたり開いたりされたときの対応
-
-    //    // 参考 http://baba-s.hatenablog.com/entry/2017/12/04/090000#Unity-%E3%82%A8%E3%83%87%E3%82%A3%E3%82%BF%E3%81%AE%E5%90%84%E3%82%A6%E3%82%A3%E3%83%B3%E3%83%89%E3%82%A6%E3%81%AE%E4%BD%8D%E7%BD%AE%E3%81%8C%E5%A4%89%E6%9B%B4%E3%81%95%E3%82%8C%E3%81%9F%E6%99%82
-    //    [InitializeOnLoad]
-    //    public static class EditorApplicationUtility
-    //    {
-    //        private const BindingFlags BINDING_ATTR = BindingFlags.Static | BindingFlags.Instance | BindingFlags.NonPublic;
-
-    //        private static readonly FieldInfo m_info = typeof(EditorApplication).GetField("windowsReordered", BINDING_ATTR);
-
-    //        /// <summary>
-    //        /// エディタウィンドウ配置変化時に呼ばれる
-    //        /// </summary>
-    //        public static EditorApplication.CallbackFunction windowsReordered
-    //        {
-    //            get
-    //            {
-    //                return m_info.GetValue(null) as EditorApplication.CallbackFunction;
-    //            }
-    //            set
-    //            {
-    //                var functions = m_info.GetValue(null) as EditorApplication.CallbackFunction;
-    //                functions += value;
-    //                m_info.SetValue(null, functions);
-    //            }
-    //        }
-    //    }
-    //#endif
-
 }

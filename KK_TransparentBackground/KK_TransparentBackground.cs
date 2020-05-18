@@ -30,18 +30,28 @@ namespace KK_TransparentBackground {
     public class KK_TransparentBackground : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Transparent Background";
         internal const string GUID = "com.jim60105.kk.transparentbackground";
-        internal const string PLUGIN_VERSION = "20.05.17.0";
-        internal const string PLUGIN_RELEASE_VERSION = "0.0.0";
+        internal const string PLUGIN_VERSION = "20.05.19.0";
+        internal const string PLUGIN_RELEASE_VERSION = "0.0.1";
 
         public static ConfigEntry<KeyboardShortcut> Hotkey { get; set; }
         internal static new ManualLogSource Logger;
+        private static Material m_Material;
         public void Awake() {
             Logger = base.Logger;
             Hotkey = Config.Bind<KeyboardShortcut>("Config", "Enable", new KeyboardShortcut(KeyCode.None));
+
+            //TransparentMaterial
+            if (AssetBundle.LoadFromMemory(Properties.Resources.transparent) is AssetBundle assetBundle) {
+                m_Material = assetBundle.LoadAsset<Material>("TransparentWindowMaterial");
+                m_Material.color = new Color(255, 255, 255, 255);
+
+                assetBundle.Unload(false);
+            } else {
+                Logger.LogError("Load assetBundle faild");
+            }
         }
 
         private WindowController Window;
-        private GameObject Go;
 
         public void Update() {
             if (Hotkey.Value.IsDown()) {
@@ -52,14 +62,12 @@ namespace KK_TransparentBackground {
         private IEnumerator TransparentCoroutine() {
             while (Screen.fullScreen) {
                 Screen.fullScreen = false;
+
                 yield return null;
             }
 
-            if (null == Go) {
-                Go = GameObject.Find("TransparentBackground") ?? new GameObject("TransparentBackground");
-            }
-            Window = Go.GetComponent<WindowController>() ?? Go.AddComponent<WindowController>();
-            //Screen.SetResolution((int)(Screen.currentResolution.width / 3.5f), Screen.currentResolution.height - 20, false);
+            Window = Camera.main.gameObject.GetComponent<WindowController>() ?? Camera.main.gameObject.AddComponent<WindowController>();
+            Window.TransparentMaterial = m_Material;
             Window.isTopmost ^= true;
             Window.isTransparent ^= true;
 
@@ -67,3 +75,4 @@ namespace KK_TransparentBackground {
         }
     }
 }
+

@@ -518,6 +518,9 @@ namespace Kirurobo
                 //// 枠無しウィンドウにする
                 EnableBorderless(true);
 
+                // 不確定這是否需要
+                WinApi.SetLayeredWindowAttributes(hWnd, new WinApi.COLORREF(0), 255, 2);// Transparency=51=20%, LWA_ALPHA=2
+
                 EnableTransparentByDWM();
 
                 //// ウィンドウ再描画
