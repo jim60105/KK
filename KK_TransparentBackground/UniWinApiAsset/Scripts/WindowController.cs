@@ -5,8 +5,12 @@
  * License: CC0 https://creativecommons.org/publicdomain/zero/1.0/
  */
 
-using ActionGame;
-using Manager;
+ /* 20200519 -jim60105
+  * Remove drag file & move window related code
+  * Add TransparentMaterial
+  * Add Koikatu stuff
+  */ 
+
 using System;
 using System.Collections;
 using UnityEngine;
@@ -34,6 +38,15 @@ namespace Kirurobo {
         /// Window controller
         /// </summary>
         public UniWinApi uniWin;
+
+        public bool blockClickThrough {
+            get => _blockClickThrough;
+            set {
+                _blockClickThrough = value;
+                UpdateClickThrough(!value);
+            }
+        }
+        private bool _blockClickThrough = false;
 
         /// <summary>
         /// 操作を透過する状態か
@@ -149,12 +162,7 @@ namespace Kirurobo {
                 }
             }
 
-            // カメラの元の背景を記憶
-            if (currentCamera) {
-                originalCameraClearFlags = currentCamera.clearFlags;
-                originalCameraBackground = currentCamera.backgroundColor;
-                originalCameraCullingmask = currentCamera.cullingMask;
-            }
+            StoreOriginalCameraSetting();
 
             // マウス下描画色抽出用テクスチャを準備
             colorPickerTexture = new Texture2D(1, 1, TextureFormat.ARGB32, false);
@@ -215,7 +223,11 @@ namespace Kirurobo {
         }
 
         void OnRenderImage(RenderTexture from, RenderTexture to) {
-            Graphics.Blit(from, to, TransparentMaterial);
+            if (_isTransparent && null != TransparentMaterial) {
+                Graphics.Blit(from, to, TransparentMaterial);
+            } else {
+                Graphics.Blit(from, to);
+            }
         }
 
         /// <summary>
@@ -230,7 +242,14 @@ namespace Kirurobo {
         /// <summary>
         /// 画素の色を基に操作受付を切り替える
         /// </summary>
-        void UpdateClickThrough() {
+        public void UpdateClickThrough(bool? clickThrough = null) {
+            // Force set Click through
+            if (null != clickThrough) {
+                if (uniWin != null) uniWin.EnableClickThrough((bool)clickThrough);
+                _isClickThrough = (bool)clickThrough;
+                return;
+            }
+
             // マウスカーソル非表示状態ならば透明画素上と同扱い
             bool opaque = (onOpaquePixel && !UniWinApi.GetCursorVisible());
 
@@ -240,10 +259,19 @@ namespace Kirurobo {
                     _isClickThrough = false;
                 }
             } else {
-                if (isTransparent && !opaque /*&& !isDragging*/) {
+                if (isTransparent && !opaque && !blockClickThrough) {
                     if (uniWin != null) uniWin.EnableClickThrough(true);
                     _isClickThrough = true;
                 }
+            }
+        }
+
+        public void StoreOriginalCameraSetting() {
+            // カメラの元の背景を記憶
+            if (currentCamera) {
+                originalCameraClearFlags = currentCamera.clearFlags;
+                originalCameraBackground = currentCamera.backgroundColor;
+                originalCameraCullingmask = currentCamera.cullingMask;
             }
         }
 
@@ -288,7 +316,6 @@ namespace Kirurobo {
             if (GetOnOpaquePixel(mousePos)) {
                 //Debug.Log("Mouse " + mousePos);
                 onOpaquePixel = true;
-                //activeFingerId = -1;    // タッチ追跡は解除
                 return;
             } else {
                 onOpaquePixel = false;
@@ -424,8 +451,20 @@ namespace Kirurobo {
         /// </summary>
         /// <param name="transparent"></param>
         public void SetTransparent(bool transparent) {
+            if (transparent && !_isTransparent) StoreOriginalCameraSetting();
+
             _isTransparent = transparent;
             SetCamera(transparent);
+
+            //隱藏Map
+            //因為某些Map物件是在CharaLayer，所以除了cullingMask以外也要做這個
+            var go = GameObject.Find("/Map");
+            if (null != go) {
+                //Go through children
+                foreach(Transform t in go.transform) {
+                    t.gameObject.SetActive(!transparent);
+                }
+            }
 
             if (uniWin != null) {
                 uniWin.EnableTransparent(transparent);
