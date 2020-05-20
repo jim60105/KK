@@ -89,6 +89,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="TransparentUI.cs" />
     <Compile Include="UniWinApiAsset\Scripts\UniWinApi.cs" />
     <Compile Include="UniWinApiAsset\Scripts\WindowController.cs" />
     <Compile Include="UniWinApiAsset\Scripts\Wrappers\DwmApi.cs" />

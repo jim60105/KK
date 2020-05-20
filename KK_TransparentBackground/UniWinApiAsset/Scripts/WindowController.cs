@@ -94,8 +94,6 @@ namespace Kirurobo {
             set { SetMinimized(value); }
         }
 
-        public Material TransparentMaterial;
-
         [SerializeField, BoolProperty, Tooltip("Check to set minimized on startup")]
         private bool _isMinimized = false;
 
@@ -113,7 +111,7 @@ namespace Kirurobo {
         /// <summary>
         /// The cut off threshold of alpha value.
         /// </summary>
-        private float opaqueThreshold = 0.1f;
+        private float opaqueThreshold = 0.05f;
 
         /// <summary>
         /// Pixel color under the mouse pointer. (Read only)
@@ -130,12 +128,6 @@ namespace Kirurobo {
         /// カメラのインスタンス
         /// </summary>
         private Camera currentCamera;
-
-        /// <summary>
-        /// タッチがBeganとなったものを受け渡すためのリスト
-        /// PickColorCoroutine()実行のタイミングではどうもtouch.phaseがうまくとれないようなのでこれで渡してみる
-        /// </summary>
-        private Touch? firstTouch = null;
 
         /// <summary>
         /// ウィンドウ状態が変化したときに発生するイベント
@@ -222,14 +214,6 @@ namespace Kirurobo {
             }
         }
 
-        void OnRenderImage(RenderTexture from, RenderTexture to) {
-            if (_isTransparent && null != TransparentMaterial) {
-                Graphics.Blit(from, to, TransparentMaterial);
-            } else {
-                Graphics.Blit(from, to);
-            }
-        }
-
         /// <summary>
         /// ウィンドウ状態が変わったときに呼ぶイベントを処理
         /// </summary>
@@ -297,20 +281,6 @@ namespace Kirurobo {
 
             //// コルーチン & WaitForEndOfFrame ではなく、OnPostRenderで呼ぶならば、MSAAによって上下反転しないといけない？
             //if (QualitySettings.antiAliasing > 1) mousePos.y = camRect.height - mousePos.y;
-
-            // タッチ開始点が指定されれば、それを調べる
-            if (firstTouch != null) {
-                Touch touch = (Touch)firstTouch;
-                Vector2 pos = touch.position;
-
-                firstTouch = null;
-
-                if (GetOnOpaquePixel(pos)) {
-                    onOpaquePixel = true;
-                    //activeFingerId = touch.fingerId;
-                    return;
-                }
-            }
 
             // マウス座標を調べる
             if (GetOnOpaquePixel(mousePos)) {
