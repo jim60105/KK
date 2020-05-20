@@ -142,8 +142,6 @@ namespace Kirurobo {
 
         // Use this for initialization
         void Awake() {
-            Input.simulateMouseWithTouches = false;
-
             if (!currentCamera) {
                 // メインカメラを探す
                 currentCamera = Camera.main;
@@ -153,8 +151,6 @@ namespace Kirurobo {
                     currentCamera = FindObjectOfType<Camera>();
                 }
             }
-
-            StoreOriginalCameraSetting();
 
             // マウス下描画色抽出用テクスチャを準備
             colorPickerTexture = new Texture2D(1, 1, TextureFormat.ARGB32, false);
@@ -341,8 +337,8 @@ namespace Kirurobo {
 
             // 初期状態を反映
             SetTopmost(_isTopmost);
-            SetMaximized(_isMaximized);
-            SetMinimized(_isMinimized);
+            //SetMinimized(_isMinimized);
+            //SetMaximized(_isMaximized);
             SetTransparent(_isTransparent);
         }
 
