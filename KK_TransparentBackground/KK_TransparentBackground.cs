@@ -29,27 +29,23 @@ namespace KK_TransparentBackground {
     public class KK_TransparentBackground : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Transparent Background";
         internal const string GUID = "com.jim60105.kk.transparentbackground";
-        internal const string PLUGIN_VERSION = "20.05.20.0";
-        internal const string PLUGIN_RELEASE_VERSION = "0.1.0";
+        internal const string PLUGIN_VERSION = "20.05.20.1";
+        internal const string PLUGIN_RELEASE_VERSION = "0.1.1";
 
         internal static new ManualLogSource Logger;
         public static ConfigEntry<KeyboardShortcut> Hotkey { get; set; }
         public static ConfigEntry<bool> ClickThrough { get; set; }
-        //public static ConfigEntry<float> TransparentOnCamera { get; set; }
         public static ConfigEntry<float> AlphaOnUI { get; set; }
 
         private WindowController Window;
-        //private TransparentCameraController MainCameraTC;
 
         public void Awake() {
             Logger = base.Logger;
             Hotkey = Config.Bind<KeyboardShortcut>("Config", "Enable", new KeyboardShortcut(KeyCode.None));
             ClickThrough = Config.Bind<bool>("Config", "Click Through", true, "If you don’t want to click to the back, set to False");
-            //TransparentOnCamera = Config.Bind<float>("Config", "Transparency on main camera", 0f, new ConfigDescription("0 = opaque. This is not the correct Transparent, but the effect of blending with a black background and Alpha.", new AcceptableValueRange<float>(0, 1f)));
             AlphaOnUI = Config.Bind<float>("Config", "Alpha transparent on UI display", 0.8f, new ConfigDescription("0% = Transparent to 100% = Opaque", new AcceptableValueRange<float>(0, 1f)));
 
             ClickThrough.SettingChanged += delegate { if (null != Window) Window.blockClickThrough = !ClickThrough.Value; };
-            //TransparentOnCamera.SettingChanged += delegate { if (null != MainCameraTC) MainCameraTC.Transparency = TransparentOnCamera.Value; };
             AlphaOnUI.SettingChanged += delegate {  TransparentUI.Alpha = AlphaOnUI.Value; };
         }
 
@@ -67,8 +63,6 @@ namespace KK_TransparentBackground {
                 yield return null;
             }
 
-            //MainCameraTC = Camera.main.gameObject.GetComponent<TransparentCameraController>() ?? Camera.main.gameObject.AddComponent<TransparentCameraController>();
-            //MainCameraTC.Transparency = TransparentOnCamera.Value;
             TransparentUI.BuildCamvasGroup();   //Force rebuild
             TransparentUI.Alpha = AlphaOnUI.Value;
 
@@ -76,7 +70,6 @@ namespace KK_TransparentBackground {
             if (null == Window) {
                 Window = Camera.main.gameObject.AddComponent<WindowController>();
                 Window.OnStateChanged += delegate {
-                    //if (null != MainCameraTC) MainCameraTC.Enable = Window.isTransparent;
                     TransparentUI.Enable = Window.isTransparent;
                 };
                 Window.blockClickThrough = !ClickThrough.Value;

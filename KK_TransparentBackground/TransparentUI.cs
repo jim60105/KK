@@ -10,7 +10,7 @@ namespace KK_TransparentBackground {
         //https://github.com/IllusionMods/HideAllUI/blob/v2.1/src/HideAllUI.Koikatu/HideStudioUI.cs#L10
         private static readonly string[] gameCanviNames = { "Canvas", "CustomRoot", "InfomationH", "FrontUIGroup" }; //用於String.Contain()的關鍵字
         private static readonly string[] pluginCanviNames = { "KKPECanvas(Clone)", "BepInEx_Manager/MaterialEditorCanvas", "QuickAccessBoxCanvas(Clone)" };
-        private static List<Canvas> canvasList;
+        private static List<GameObject> canvasList;
 
         private static readonly List<CanvasGroup> canvasGroups = new List<CanvasGroup>();
 
@@ -46,15 +46,23 @@ namespace KK_TransparentBackground {
         public static void BuildCamvasGroup() {
             canvasList = Object.FindObjectsOfType<Canvas>()
                                .Where(x => gameCanviNames.Where(y => x.gameObject.name.Contains(y)).Any())
+                               .Select(x=>x.gameObject)
                                .ToList();
+
+            #region 例外處理
             //Studio "CvsColor", "Canvas Pattern"已經是用CanvasGroup alpha控制顯示與否，放棄透明它們
-            canvasList.RemoveAll(x => x.gameObject.name == "Canvas Pattern");
+            canvasList.RemoveAll(x => x.name == "Canvas Pattern");
+
+            //Maker中的UI上層不是Canvas
+            var g = GameObject.Find("CustomRoot");
+            if (null != g) canvasList.Add(g);
+            #endregion
 
             canvasGroups.Clear();
 
-            foreach (Canvas canvas in canvasList.Where(x => null != x)) {
+            foreach (GameObject go in canvasList.Where(x => null != x)) {
                 canvasGroups.Add(
-                    canvas.gameObject.GetComponentInChildren<CanvasGroup>() ?? canvas.gameObject.AddComponent<CanvasGroup>()
+                    go.gameObject.GetComponentInChildren<CanvasGroup>() ?? go.gameObject.AddComponent<CanvasGroup>()
                 );
             }
 
