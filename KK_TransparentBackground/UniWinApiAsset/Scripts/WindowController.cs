@@ -5,11 +5,10 @@
  * License: CC0 https://creativecommons.org/publicdomain/zero/1.0/
  */
 
- /* 20200519 -jim60105
-  * Remove drag file & move window related code
-  * Add TransparentMaterial
-  * Add Koikatu stuff
-  */ 
+/**20200519 -jim60105
+ * Remove drag file & move window related code
+ * Add Koikatu stuff
+ */
 
 using System;
 using System.Collections;
@@ -39,6 +38,11 @@ namespace Kirurobo {
         /// </summary>
         public UniWinApi uniWin;
 
+        /// <summary>
+        /// 操作を透過する状態か
+        /// </summary>
+        public bool ClickThrough { get; private set; } = true;
+
         public bool blockClickThrough {
             get => _blockClickThrough;
             set {
@@ -47,14 +51,6 @@ namespace Kirurobo {
             }
         }
         private bool _blockClickThrough = false;
-
-        /// <summary>
-        /// 操作を透過する状態か
-        /// </summary>
-        public bool isClickThrough {
-            get { return _isClickThrough; }
-        }
-        private bool _isClickThrough = true;
 
         /// <summary>
         /// Is this window transparent
@@ -158,6 +154,9 @@ namespace Kirurobo {
             // ウィンドウ制御用のインスタンス作成
             uniWin = new UniWinApi();
 
+            //在呼叫FindMyWindow()前必須儲存一次
+            StoreOriginalCameraSetting();
+
             // 自分のウィンドウを取得
             FindMyWindow();
         }
@@ -168,29 +167,13 @@ namespace Kirurobo {
         }
 
         void OnDestroy() {
+            if (_isTransparent) SetTransparent(!_isTransparent);
+            if (_isTopmost) SetTopmost(!_isTopmost);
+
             if (uniWin != null) {
                 uniWin.Dispose();
             }
-        }
-
-        void OnGUI() {
-            float buttonWidth = 140f;
-            float buttonHeight = 40f;
-            float margin = 20f;
-            if (
-                GUI.Button(
-                    new Rect(
-                        Screen.width - buttonWidth - margin,
-                        Screen.height - buttonHeight - margin,
-                        buttonWidth,
-                        buttonHeight),
-                    "Toggle transparency"
-                    )
-                ) {
-                // 透過の ON/OFF ボタン
-                isTransparent ^= true;
-                isTopmost ^= true;
-            }
+            Console.WriteLine("Destroyed: " + _isTransparent);
         }
 
         // Update is called once per frame
@@ -214,9 +197,7 @@ namespace Kirurobo {
         /// ウィンドウ状態が変わったときに呼ぶイベントを処理
         /// </summary>
         private void StateChangedEvent() {
-            if (OnStateChanged != null) {
-                OnStateChanged();
-            }
+            OnStateChanged?.Invoke();
         }
 
         /// <summary>
@@ -226,33 +207,37 @@ namespace Kirurobo {
             // Force set Click through
             if (null != clickThrough) {
                 if (uniWin != null) uniWin.EnableClickThrough((bool)clickThrough);
-                _isClickThrough = (bool)clickThrough;
+                ClickThrough = (bool)clickThrough;
                 return;
             }
 
             // マウスカーソル非表示状態ならば透明画素上と同扱い
             bool opaque = (onOpaquePixel && !UniWinApi.GetCursorVisible());
 
-            if (_isClickThrough) {
+            if (ClickThrough) {
                 if (opaque) {
                     if (uniWin != null) uniWin.EnableClickThrough(false);
-                    _isClickThrough = false;
+                    ClickThrough = false;
                 }
             } else {
-                if (isTransparent && !opaque && !blockClickThrough) {
+                if (isTransparent && !opaque && !_blockClickThrough) {
                     if (uniWin != null) uniWin.EnableClickThrough(true);
-                    _isClickThrough = true;
+                    ClickThrough = true;
                 }
             }
         }
 
         public void StoreOriginalCameraSetting() {
             // カメラの元の背景を記憶
-            if (currentCamera) {
-                originalCameraClearFlags = currentCamera.clearFlags;
-                originalCameraBackground = currentCamera.backgroundColor;
-                originalCameraCullingmask = currentCamera.cullingMask;
+            if (null == currentCamera) currentCamera = Camera.main;
+            if (null == currentCamera) {
+                Console.WriteLine("Failed to get Camera.main");
             }
+
+            originalCameraClearFlags = currentCamera.clearFlags;
+            originalCameraBackground = currentCamera.backgroundColor;
+            originalCameraCullingmask = currentCamera.cullingMask;
+            Console.WriteLine($"Camera status store:{originalCameraClearFlags} {originalCameraBackground.ToString()} {originalCameraCullingmask}");
         }
 
         /// <summary>
@@ -384,14 +369,14 @@ namespace Kirurobo {
         /// </summary>
         /// <param name="isTransparent"></param>
         void SetCamera(bool isTransparent) {
-            if (null == currentCamera) return;
+            if (null == currentCamera) currentCamera = Camera.main;
 
             if (isTransparent) {
                 currentCamera.clearFlags = CameraClearFlags.SolidColor;
                 currentCamera.backgroundColor = Color.clear;
 
                 //H scene會在HSceneProc.Update()->HSceneProc.SetConfig()重寫Camera.main.backgroundColor
-                //這EtcData是重寫的來源
+                //此EtcData是重寫的來源
                 Manager.Config.EtcData.BackColor = Color.clear;
 
                 //Only display chara layer
@@ -407,6 +392,7 @@ namespace Kirurobo {
 
             try {
                 //These only work in Maker
+                //應該不會影響到別處，直接做Catch省去判斷
                 GameObject.Find("BackGroundCamera").GetComponent<Camera>().enabled = !isTransparent;
                 Camera.main.gameObject.GetComponent<UnityStandardAssets.ImageEffects.BloomAndFlares>().enabled = !isTransparent;
             } catch (NullReferenceException) { }
@@ -417,17 +403,17 @@ namespace Kirurobo {
         /// </summary>
         /// <param name="transparent"></param>
         public void SetTransparent(bool transparent) {
-            if (transparent && !_isTransparent) StoreOriginalCameraSetting();
+            //if (transparent && !_isTransparent) StoreOriginalCameraSetting();
 
             _isTransparent = transparent;
             SetCamera(transparent);
 
             //隱藏Map
             //因為某些Map物件是在CharaLayer，所以除了cullingMask以外也要做這個
-            var go = GameObject.Find("/Map");
+            GameObject go = GameObject.Find("/Map");
             if (null != go) {
                 //Go through children
-                foreach(Transform t in go.transform) {
+                foreach (Transform t in go.transform) {
                     t.gameObject.SetActive(!transparent);
                 }
             }
@@ -493,6 +479,9 @@ namespace Kirurobo {
         /// 終了時にはウィンドウプロシージャを戻す処理が必要
         /// </summary>
         void OnApplicationQuit() {
+            if (_isTransparent) SetTransparent(!_isTransparent);
+            if (_isTopmost) SetTopmost(!_isTopmost);
+
             if (Application.isPlaying) {
                 if (uniWin != null) {
                     uniWin.Dispose();
