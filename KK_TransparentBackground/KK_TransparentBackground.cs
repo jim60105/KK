@@ -30,7 +30,7 @@ namespace KK_TransparentBackground {
     public class KK_TransparentBackground : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Transparent Background";
         internal const string GUID = "com.jim60105.kk.transparentbackground";
-        internal const string PLUGIN_VERSION = "20.05.23.0";
+        internal const string PLUGIN_VERSION = "20.05.23.1";
         internal const string PLUGIN_RELEASE_VERSION = "1.0.0";
 
         internal static new ManualLogSource Logger;
@@ -50,7 +50,7 @@ namespace KK_TransparentBackground {
             Hotkey = Config.Bind<KeyboardShortcut>("Config", "Enable", new KeyboardShortcut(KeyCode.None));
             ClickThrough = Config.Bind<bool>("Config", "Click Through", true, "If you don’t want to click through to the back, set to False");
             AlphaOnUI = Config.Bind<float>("Config", "Alpha transparent on UI display", 0.8f, new ConfigDescription("0% = Transparent to 100% = Opaque", new AcceptableValueRange<float>(0, 1f)));
-            BackColor = Config.Bind<Color>("Config", "Backup Color", Color.black, new ConfigDescription("", null, new ConfigurationManagerAttributes { Browsable = false }));
+            BackColor = Config.Bind<Color>("Config", "Backup Color", Color.clear, new ConfigDescription("", null, new ConfigurationManagerAttributes { Browsable = false }));
             TransparentUI.Alpha = AlphaOnUI.Value;
 
             ClickThrough.SettingChanged += delegate { if (null != Window) Window.blockClickThrough = !ClickThrough.Value; };
@@ -59,7 +59,7 @@ namespace KK_TransparentBackground {
 
         public void Start() {
             SceneManager.sceneUnloaded += OnSceneUnloaded;
-            if (Application.productName == "CharaStudio" && BackColor.Value != Color.black) {
+            if (Application.productName == "CharaStudio" && BackColor.Value != Color.clear) {
                 StartCoroutine(RestoreCameraConfig());
             }
         }
@@ -127,8 +127,10 @@ namespace KK_TransparentBackground {
             //每次透明化前都保存CameraSetting
             if (!Window.isTransparent) {
                 Window.StoreOriginalCameraSetting();
-                if (Application.productName == "CharaStudio") BackColor.Value = Camera.main.backgroundColor;
             }
+
+            //為免強制關閉丟失而保存至外部
+            if (Application.productName == "CharaStudio") BackColor.Value = Camera.main.backgroundColor;
 
             while (Screen.fullScreen) {
                 isOriginalFullScreen = true;
@@ -157,7 +159,7 @@ namespace KK_TransparentBackground {
             while (null == Manager.Config.EtcData?.BackColor) yield return null;
 
             Manager.Config.EtcData.BackColor = BackColor.Value;
-            BackColor.Value = Color.black;
+            BackColor.Value = Color.clear;
             Logger.LogDebug("Restore background color:" + Manager.Config.EtcData.BackColor.ToString());
         }
     }
