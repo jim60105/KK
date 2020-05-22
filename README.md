@@ -261,6 +261,51 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
     2. 將*.cs置於「Koikatu/scripts」下
 </details>
 
+# 透明背景<br>Transparent Background
+↓此圖沒有經過PhotoShop↓這是Studio透明化後播放PowerPoint的截圖↓
+<a href="https://youtu.be/BE7dZgxMs8I" target="_blank"><img src="demo/demo17.jpg" title="Click the image to watch demo"></a><br>
+↑ 請點選圖片觀看範例影片 ↑ Click the image to watch demo! ↑  (備用載點: [影片](https://drive.google.com/open?id=1u1wyDb92acyQvCVPsD_kdeti8HC2w-TR))<br>
+
+- 透明視窗和背景，可顯示和點擊視窗下的東西
+- 可以在Maker、H Scene、MainGame和Studio使用
+- 有Coinfig選項可以禁用「Click Through」功能，用在像捏人對照這種只須看的場合
+- 會隱藏不是CharaLayer的東西(像官方Map和某些Studio中的家具)
+- UI可調透明功能
+
+### 注意:
+- 預設快捷鍵為「未設定」，到Config設定後才能使用
+- 限制:
+  - 必須在顯示卡設定中禁用MFAA和FXAA功能，否則會導致黑背景
+  - 不能在Studio中啟用「被寫界深度」(景深)功能
+  - Graphics Settings Config中，此兩項必須設定:
+    - Optimize in background: Disabled
+    - Run in background: Enabled
+  - 在啟用插件功能後，將遮蓋非CharaLayer(10)層。也就是說，像內建Map和某些傢俱將會隱藏
+<details><summary>小技巧</summary>
+    - 在點擊前**留意一下遊標之狀態**
+    - 在按鍵盤前先在遊戲內點擊一次
+    - 因為遊戲的高負載，不建議讓其常駐桌面
+    - 若遇到視窗調整錯誤，請重啟遊戲
+    - 推薦搭配 HideAllUI 插件使用
+    - 使用遊戲外程式來拍攝截圖，像是PrtScn或其它螢幕攝影程式<br>(F9和F11只會給你黑畫面)
+    - 在創作時請多加儲存，我沒有辦法為遊戲異常負責
+</details>
+<details><summary>其它提醒</summary>
+    - Studio:
+        - 多數的「畫面效果」都會導致問題，請小心啟用
+        - 「2D效果」中有一部份的物件不會運筰
+        - 某些不在CharaLayer(10)層的物品會被隱藏(多數是傢俱)
+        - 透明模式啟用時，若遇到非正常關閉程式(包括由Console強制關閉)，則背景色設定會被換為黑色<br>因視窗透明必須改變背景色為黑色。若直接關閉，程式就沒有機會將之替換回原本的顏色<br>簡而言之，**請退出透明背景模式再關閉**。
+    - Maker:
+        - Outline邊線無法正常顯示出來
+        - **我無法保證所有的顯示效果都會和平常的表現相同**
+</details>
+<details><summary>銘謝</summary>
+kirurobo @ Github: <br>感謝他寫的 **UniWinApi** 和 **CSharpWinApi**<br>這些是透明視窗所用到的核心技術<br>https://github.com/kirurobo/UniWinApiAsset<br>https://github.com/kirurobo/CSharpWinApi
+
+サバカン: <br>將這個酷炫的主意帶進Koikatu的日本人，我是看到了他的作品才受到的啟發<br>他原本是透過GOL將此制作為了DesktopMascot(桌面竉物) Script
+</details>
+
 # 需求依賴
 - コイカツ！ ダークネス (Koikatu! Darkness)<br>不保證相容於Steam Koikatsu Party
 - **BepInEx v5.0.1**<br>
