@@ -82,6 +82,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConfigurationManagerAttributes.cs" />
     <Compile Include="KK_TransparentBackground.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TransparentUI.cs" />

@@ -30,24 +30,27 @@ namespace KK_TransparentBackground {
     public class KK_TransparentBackground : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Transparent Background";
         internal const string GUID = "com.jim60105.kk.transparentbackground";
-        internal const string PLUGIN_VERSION = "20.05.21.0";
-        internal const string PLUGIN_RELEASE_VERSION = "0.1.3";
+        internal const string PLUGIN_VERSION = "20.05.23.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.0";
 
         internal static new ManualLogSource Logger;
         public static ConfigEntry<KeyboardShortcut> Hotkey { get; set; }
         public static ConfigEntry<bool> ClickThrough { get; set; }
         public static ConfigEntry<float> AlphaOnUI { get; set; }
+        public static ConfigEntry<Color> BackColor { get; set; } //用來檢查前次Studio不正常關閉的問題
+
 
         private WindowController Window;
         private bool isOriginalFullScreen = false;
         private bool isTransparent = false; //為了做Window Destroy後的全螢幕處理
-        private string SceneName ="";   //SceneUnloaded時比對用
+        private string SceneName = "";   //SceneUnloaded時比對用
 
         public void Awake() {
             Logger = base.Logger;
             Hotkey = Config.Bind<KeyboardShortcut>("Config", "Enable", new KeyboardShortcut(KeyCode.None));
             ClickThrough = Config.Bind<bool>("Config", "Click Through", true, "If you don’t want to click through to the back, set to False");
             AlphaOnUI = Config.Bind<float>("Config", "Alpha transparent on UI display", 0.8f, new ConfigDescription("0% = Transparent to 100% = Opaque", new AcceptableValueRange<float>(0, 1f)));
+            BackColor = Config.Bind<Color>("Config", "Backup Color", Color.black, new ConfigDescription("", null, new ConfigurationManagerAttributes { Browsable = false }));
             TransparentUI.Alpha = AlphaOnUI.Value;
 
             ClickThrough.SettingChanged += delegate { if (null != Window) Window.blockClickThrough = !ClickThrough.Value; };
@@ -56,6 +59,9 @@ namespace KK_TransparentBackground {
 
         public void Start() {
             SceneManager.sceneUnloaded += OnSceneUnloaded;
+            if (Application.productName == "CharaStudio" && BackColor.Value != Color.black) {
+                StartCoroutine(RestoreCameraConfig());
+            }
         }
 
         public void Update() {
@@ -119,7 +125,10 @@ namespace KK_TransparentBackground {
             }
 
             //每次透明化前都保存CameraSetting
-            if (!Window.isTransparent) Window.StoreOriginalCameraSetting();
+            if (!Window.isTransparent) {
+                Window.StoreOriginalCameraSetting();
+                if (Application.productName == "CharaStudio") BackColor.Value = Camera.main.backgroundColor;
+            }
 
             while (Screen.fullScreen) {
                 isOriginalFullScreen = true;
@@ -138,9 +147,18 @@ namespace KK_TransparentBackground {
             yield break;
         }
 
-        void SetFullScreen(bool fullScreen) {
+        private void SetFullScreen(bool fullScreen) {
             Window.isMaximized = !fullScreen;
             Screen.fullScreen = fullScreen;
+        }
+
+        private IEnumerator RestoreCameraConfig() {
+            //Wait until init
+            while (null == Manager.Config.EtcData?.BackColor) yield return null;
+
+            Manager.Config.EtcData.BackColor = BackColor.Value;
+            BackColor.Value = Color.black;
+            Logger.LogDebug("Restore background color:" + Manager.Config.EtcData.BackColor.ToString());
         }
     }
 }
