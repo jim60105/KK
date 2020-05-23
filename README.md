@@ -307,8 +307,8 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 </details>
 <details><summary>銘謝</summary>
 <b>kirurobo @ Github</b>: <br>感謝他的 <b>UniWinApi</b> 和 <b>CSharpWinApi</b> 專案<br>這些是透明視窗所用到的核心技術<br>https://github.com/kirurobo/UniWinApiAsset<br>https://github.com/kirurobo/CSharpWinApi<br><br>
-<b>サバカン</b>: <br>將這個酷炫的主意帶進Koikatu的日本人，我是看到了他的作品才受到的啟發<br>他透過GOL將此制作為了<b>DesktopMascot</b>(桌面寵物) Script
-</details>
+<b>一位2ch的匿名者</b>: <br>將這個酷炫的主意帶進Koikatu的人，透過GOL將此制作為了<b>デスクトップマスコット</b>(桌面寵物)<br><br>
+<b>サバカン</b>: <br>編輯了前述的script為<b>DesktopMascot</b>(桌面寵物)並在Discord公開<br>我是因他而受到了啟發</details>
 
 # 需求依賴
 - コイカツ！ ダークネス (Koikatu! Darkness)<br>不保證相容於Steam Koikatsu Party
