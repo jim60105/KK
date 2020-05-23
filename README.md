@@ -263,8 +263,8 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 
 # 透明背景<br>Transparent Background
 ↓此圖沒有經過PhotoShop↓這是Studio透明化後播放PowerPoint的截圖↓
-<a href="https://youtu.be/BE7dZgxMs8I" target="_blank"><img src="demo/demo17.jpg" title="Click the image to watch demo"></a><br>
-↑ 請點選圖片觀看範例影片 ↑ Click the image to watch demo! ↑  (備用載點: [影片](https://drive.google.com/open?id=1u1wyDb92acyQvCVPsD_kdeti8HC2w-TR))<br>
+<a href="https://youtu.be/1ooTUL_F4_s" target="_blank"><img src="demo/demo17.jpg" title="Click the image to watch demo video"></a><br>
+↑ 請點選圖片觀看範例影片 ↑ Click the image to watch demo video! ↑  (備用載點: [影片](https://drive.google.com/open?id=1u1wyDb92acyQvCVPsD_kdeti8HC2w-TR))<br>
 
 - 透明視窗和背景，可顯示和點擊視窗下的東西 (Click Through功能)
 - 可以在Maker、H Scene、MainGame和Studio使用
