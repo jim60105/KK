@@ -15,9 +15,9 @@
 * [存檔尺寸調整工具 PNG Capture Size Modifier](#%E5%AD%98%E6%AA%94%E5%B0%BA%E5%AF%B8%E8%AA%BF%E6%95%B4%E5%B7%A5%E5%85%B7png-capture-size-modifier)
 * [Studio千佳替換器 Studio Chika Replacer](#studio%E5%8D%83%E4%BD%B3%E6%9B%BF%E6%8F%9B%E5%99%A8studio-chika-replacer)
 * [Studio角色光綁定視角 Studio Chara Light Linked To Camera](#studio%E8%A7%92%E8%89%B2%E5%85%89%E7%B6%81%E5%AE%9A%E8%A6%96%E8%A7%92studio-chara-light-linked-to-camera)
-* [Studio 雙螢幕 Studio Dual Screen](#studio-%E9%9B%99%E8%9E%A2%E5%B9%95studio-dual-screen)
-* [Studio 儲存工作區順序修正 Studio Save Workspace Order Fix](#studio-%E5%84%B2%E5%AD%98%E5%B7%A5%E4%BD%9C%E5%8D%80%E9%A0%86%E5%BA%8F%E4%BF%AE%E6%AD%A3studio-save-workspace-order-fix)
-* [Studio 角色覆寫腳本 Studio Body Overwrite Script](#studio-%E8%A7%92%E8%89%B2%E8%A6%86%E5%AF%AB%E8%85%B3%E6%9C%ACstudio-body-overwrite-script)
+* [Studio雙螢幕 Studio Dual Screen](#studio%E9%9B%99%E8%9E%A2%E5%B9%95studio-dual-screen)
+* [Studio儲存工作區順序修正 Studio Save Workspace Order Fix](#studio%E5%84%B2%E5%AD%98%E5%B7%A5%E4%BD%9C%E5%8D%80%E9%A0%86%E5%BA%8F%E4%BF%AE%E6%AD%A3studio-save-workspace-order-fix)
+* [Studio角色覆寫腳本 Studio Body Overwrite Script](#studio%E8%A7%92%E8%89%B2%E8%A6%86%E5%AF%AB%E8%85%B3%E6%9C%ACstudio-body-overwrite-script)
 * [透明背景 Transparent Background](#%E9%80%8F%E6%98%8E%E8%83%8C%E6%99%AFtransparent-background)
 ------------
 * [需求依賴](#%E9%9C%80%E6%B1%82%E4%BE%9D%E8%B3%B4-1)
@@ -238,7 +238,7 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 調整角色光為「右側背光，左側是面光」然後鎖定<br>
 則不論視角如何旋轉，都會維持是畫面右側背光
 
-# Studio 雙螢幕<br>Studio Dual Screen
+# Studio雙螢幕<br>Studio Dual Screen
 <a href="https://youtu.be/zrIIoW44bsQ" target="_blank"><img src="demo/demo14.png" title="Click the image to watch video"></a><br>
 ↑ 請點選圖片觀看範例影片 ↑ Click the image to watch video! ↑  (備用載點: [影片](demo/demo14.mp4))<br>
 - 在VMD錄屏的同時操作UI或調整物件
@@ -258,7 +258,7 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 - 副顯示器固定後，或修改畫面設定(濾鏡等)後，需要再次觸發啟動快捷鍵以進行畫面同步
 - 已知問題: 啟用雙螢幕後F9截圖會造成無回應，請改用F11 (目前沒有計劃深入這部份)
 
-# Studio 儲存工作區順序修正<br>Studio Save Workspace Order Fix
+# Studio儲存工作區順序修正<br>Studio Save Workspace Order Fix
 ![image](demo/demo16.png)<br>
 - 以Studio的存檔邏輯，工作區中，在第一層之物件排序是以加入順序儲存<br>
 → 修改為以實際順序儲存
@@ -269,7 +269,7 @@ Load Scene視窗處，在Import或Load後自動關閉視窗<br>
 這插件做的事就是在Save前按照實際TreeNode順序重新建立這個Dictionary<br>
 </details>
 
-# Studio 角色覆寫腳本<br>Studio Body Overwrite Script
+# Studio角色覆寫腳本<br>Studio Body Overwrite Script
 <a href="https://www.youtube.com/watch?v=UGPeI6vZ3_w" target="_blank"><img src="demo/demo15.jpg" title="Click the image to watch demo"></a><br>
 ↑ 請點選圖片觀看範例影片 ↑ Click the image to watch demo! ↑  (備用載點: [影片](demo/demo15.mp4))<br>
 這個不是Plugin而是Script，**請用[ScriptLoader](https://github.com/denikson/BepInEx.ScriptLoader)載入執行**<br>
