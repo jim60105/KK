@@ -44,8 +44,8 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.04.29.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.4";
+        internal const string PLUGIN_VERSION = "20.05.30.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.5";
 
         internal static new ManualLogSource Logger;
         public static ConfigEntry<bool> Enable_Saving_To_Chara { get; private set; }
@@ -295,11 +295,12 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             KoiSkinOverlayGui = Extension.Extension.TryGetPluginInstance("KSOX_GUI") as KoiSkinOverlayGui;
             CurrentCoordinate.Subscribe(onNext: delegate { ChangeCoordinate(); });
 
-            if (KKAPI.Studio.StudioAPI.StudioLoaded) {
-                KKAPI.Studio.SaveLoad.StudioSaveLoadApi.SceneSave += new EventHandler(delegate (object sender, EventArgs e) {
-                    OnCardBeingSaved(GameMode.Studio);
-                });
-            }
+            //// The card save events are always fired before the scene is saved
+            //if (KKAPI.Studio.StudioAPI.StudioLoaded) {
+            //    KKAPI.Studio.SaveLoad.StudioSaveLoadApi.SceneSave += new EventHandler(delegate (object sender, EventArgs e) {
+            //        OnCardBeingSaved(GameMode.Studio);
+            //    });
+            //}
 
             base.Start();
         }
