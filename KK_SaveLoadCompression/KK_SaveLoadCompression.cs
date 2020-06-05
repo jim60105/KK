@@ -18,6 +18,7 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
 using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Harmony;
 using BepInEx.Logging;
 using HarmonyLib;
@@ -26,6 +27,7 @@ using Studio;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine;
 
 namespace KK_SaveLoadCompression {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
@@ -33,38 +35,95 @@ namespace KK_SaveLoadCompression {
     public class KK_SaveLoadCompression : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Save Load Compression";
         internal const string GUID = "com.jim60105.kk.saveloadcompression";
-        internal const string PLUGIN_VERSION = "20.06.05.0";
+        internal const string PLUGIN_VERSION = "20.06.06.0";
         internal const string PLUGIN_RELEASE_VERSION = "0.0.0";
+        public static ConfigEntry<DictionarySize> DictionarySize { get; private set; }
+        public static ConfigEntry<bool> Enable { get; private set; }
+        public static ConfigEntry<bool> Notice { get; private set; }
+        public static ConfigEntry<bool> DeleteTheOri { get; private set; }
 
         internal static new ManualLogSource Logger;
+        internal static string Path;
         public void Awake() {
             Logger = base.Logger;
+            DictionarySize = Config.Bind<DictionarySize>("Settings", "Compress Dictionary Size", SevenZip.DictionarySize.VeryLarge, "If compression FAILs, try changing it to a smaller size.");
+            Enable = Config.Bind<bool>("Config", "Enable", false, "!!!NOTICE!!!");
+            Notice = Config.Bind<bool>("Config", "I do realize that without this plugin, the archive will not be readable.", false, "!!!NOTICE!!!");
             HarmonyWrapper.PatchAll(typeof(Patches));
         }
+        public void Start() => Path = BepInEx.Paths.CachePath;
     }
 
     class Patches {
         private static ManualLogSource Logger = KK_SaveLoadCompression.Logger;
         [HarmonyPostfix, HarmonyPatch(typeof(SceneInfo), "Save", new Type[] { typeof(string) })]
         public static void SavePostfix(string _path) {
+            if (!KK_SaveLoadCompression.Enable.Value || !KK_SaveLoadCompression.Notice.Value) return;
+
             using (FileStream fileStreamReader = new FileStream(_path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
                 using (BinaryReader binaryReader = new BinaryReader(fileStreamReader)) {
                     Logger.LogWarning("Start Compress");
-                    using (FileStream fileStreamWriter = new FileStream(_path.Substring(0, _path.Length - 4) + "_compressed.png", FileMode.Create, FileAccess.Write)) {
+                    string FileName = Path.GetFileNameWithoutExtension(_path);
+                    string TempPath = Path.GetTempFileName();
+                    bool success = true;
+
+                    using (FileStream fileStreamWriter = new FileStream(TempPath, FileMode.Create, FileAccess.Write)) {
                         using (BinaryWriter binaryWriter = new BinaryWriter(fileStreamWriter)) {
-                            binaryWriter.Write(PngFile.LoadPngBytes(binaryReader));
+                            byte[] pngData = PngFile.LoadPngBytes(binaryReader);
+                            Texture2D png = new Texture2D(2, 2);
+                            png.LoadImage(pngData);
+
+                            Texture2D watermark = Extension.Extension.LoadDllResource($"KK_SaveLoadCompression.Resources.zip_watermark.png");
+                            watermark = Extension.Extension.Scale(watermark, Convert.ToInt32(png.width * .14375f), Convert.ToInt32(png.width * .14375f));
+                            png = Extension.Extension.OverwriteTexture(
+                                png,
+                                watermark,
+                                0,
+                                png.height - watermark.height
+                            );
+                            //Logger.LogDebug($"Add Watermark: zip");
+
+                            binaryWriter.Write(png.EncodeToPNG());
                             binaryWriter.Write(new Version(2, 0, 0, 0).ToString());
 
-                            LZMA.Compress(fileStreamReader, fileStreamWriter, LzmaSpeed.Fastest, DictionarySize.Larger/*, Action<long, long> onProgress*/);
+                            using (MemoryStream msCompressed = new MemoryStream()) {
+                                long fileStreamPos = fileStreamReader.Position;
+                                LZMA.Compress(fileStreamReader, msCompressed, LzmaSpeed.Fastest, KK_SaveLoadCompression.DictionarySize.Value,
+                                    delegate(long inSize,long _) { 
+                                        Logger.LogInfo($"Compressed Progress: {inSize}/{fileStreamReader.Length - fileStreamPos}"); 
+                                    }
+                                );
 
-                            //// LZ4MessagePack
-                            //binaryWriter.Write(MessagePack.LZ4MessagePackSerializer.Serialize(allData));
+                                Logger.LogDebug("Start compression test...");
+                                using (MemoryStream msDecompressed = new MemoryStream()) {
+                                    msCompressed.Seek(0, SeekOrigin.Begin);
+                                    LZMA.Decompress(msCompressed, msDecompressed);
 
-                            //// C# LZF - Fast but poor compress ratio
-                            //byte[] compressed = CLZF2.Compress(allData);
-                            //binaryWriter.Write(compressed);
+                                    fileStreamReader.Seek(fileStreamPos, SeekOrigin.Begin);
+                                    msDecompressed.Seek(0, SeekOrigin.Begin);
+
+                                    for (int i = 0; i < msDecompressed.Length; i++) {
+                                        int aByte = fileStreamReader.ReadByte();
+                                        int bByte = msDecompressed.ReadByte();
+                                        if (aByte.CompareTo(bByte) != 0) {
+                                            success = false;
+                                            break;
+                                        }
+                                    }
+                                    if (success) {
+                                        binaryWriter.Write(msCompressed.ToArray());
+                                        Logger.LogDebug($"Compression test SUCCESS");
+                                    } else {
+                                        Logger.LogError($"Compression test FAILED");
+                                    }
+                                }
+                            }
                         }
                     }
+                    if (success) {
+                        File.Copy(TempPath, _path.Substring(0, _path.Length - 4) + "_compressed.png");
+                    }
+                    File.Delete(TempPath);
                 }
             }
         }
@@ -80,7 +139,7 @@ namespace KK_SaveLoadCompression {
                     Version dataVersion = new Version(binaryReader.ReadString());
                     if (!dataVersion.Equals(new Version(2, 0, 0, 0))) return;
 
-                    Logger.LogWarning("Start Decompress");
+                    Logger.LogWarning("Start Decompress...");
                     _path = _path.Substring(0, _path.Length - 4) + "_decompressed.png";
                     using (FileStream fileStreamWriter = new FileStream(_path, FileMode.Create, FileAccess.Write)) {
                         using (BinaryWriter binaryWriter = new BinaryWriter(fileStreamWriter)) {
@@ -90,6 +149,8 @@ namespace KK_SaveLoadCompression {
                             ___listPath[___select] = _path;
                         }
                     }
+
+                    Logger.LogDebug($"Decompression FINISH");
                 }
             }
         }

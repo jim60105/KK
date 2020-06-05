@@ -471,9 +471,9 @@ namespace Extension {
             return null;
         }
 
-        static byte[] ReadToEnd(Stream stream) {
+        public static byte[] ReadToEnd(Stream stream) {
             long originalPosition = stream.Position;
-            stream.Position = 0;
+            //stream.Position = 0;
 
             try {
                 byte[] readBuffer = new byte[4096];
