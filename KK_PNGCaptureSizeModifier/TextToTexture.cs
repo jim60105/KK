@@ -38,7 +38,7 @@ using UnityEngine;
 public class TextToTexture {
     private const int ASCII_START_OFFSET = 32;
     //private Font customFont;
-    private static Texture2D fontTexture = Extension.Extension.LoadDllResource($"KK_PNGCaptureSizeModifier.Resources.ArialFont.png", 1024, 1024);
+    internal static Texture2D fontTexture;
     private static int fontCountX = 10;
     private static int fontCountY = 10;
     private static float[] kerningValues = new float[] {
@@ -140,7 +140,7 @@ public class TextToTexture {
     };
 
     //placementX and Y - placement within texture size, texture size = textureWidth and textureHeight (square)
-    public static Texture2D CreateTextToTexture(string text, int textPlacementX, int textPlacementY, int textureSize, float characterSize, float lineSpacing) {
+    public static Texture2D CreateTextToTexture(string text, int textPlacementX, int textPlacementY, int textureSize, float characterSize/*, float lineSpacing*/) {
         Texture2D txtTexture = CreatefillTexture2D(Color.clear, textureSize, textureSize);
         int fontGridCellWidth = (int)(fontTexture.width / fontCountX);
         int fontGridCellHeight = (int)(fontTexture.height / fontCountY);
@@ -159,12 +159,17 @@ public class TextToTexture {
             charTexturePos.x *= fontGridCellWidth;
             charTexturePos.y *= fontGridCellHeight;
             charPixels = fontTexture.GetPixels((int)charTexturePos.x, fontTexture.height - (int)charTexturePos.y - fontGridCellHeight, fontGridCellWidth, fontGridCellHeight);
-            charPixels = changeDimensions(charPixels, fontGridCellWidth, fontGridCellHeight, fontItemWidth, fontItemHeight);
+            Texture2D temp = new Texture2D(fontGridCellWidth, fontGridCellHeight);
+            temp.SetPixels(charPixels);
+            temp = Extension.Extension.Scale(temp, fontItemWidth, fontItemHeight);
 
-            txtTexture.SetPixels((int)textPosX, (int)textPosY, fontItemWidth, fontItemHeight, charPixels);
+            //charPixels = changeDimensions(charPixels, fontGridCellWidth, fontGridCellHeight, fontItemWidth, fontItemHeight);
+
+            //txtTexture.SetPixels((int)textPosX, (int)textPosY, fontItemWidth, fontItemHeight, charPixels);
+            txtTexture = Extension.Extension.OverwriteTexture(txtTexture, temp, (int)textPosX, (int)textPosY);
+
             charKerning = GetKerningValue(letter);
             textPosX += (fontItemWidth * charKerning); //add kerning here
-
         }
         txtTexture.Apply();
         return txtTexture;
@@ -179,18 +184,17 @@ public class TextToTexture {
 
         for (int n = 0; n < text.Length; n++) {
             letter = text[n];
-            if (n < text.Length - 1) {
+            //if (n < text.Length - 1) {
                 width += fontItemWidth * GetKerningValue(letter);
-            } else {
-                //last letter ignore kerning for buffer
-                width += fontItemWidth;
-            }
+            //} else {
+            //    //last letter ignore kerning for buffer
+            //    width += fontItemWidth;
+            //}
         }
 
-        return (int)width + 1;
+        return (int)width;
     }
 
-    //look for a faster way of calculating this
     private static Color[] changeDimensions(Color[] originalColors, int originalWidth, int originalHeight, int newWidth, int newHeight) {
         Color[] newColors;
         Texture2D originalTexture;
