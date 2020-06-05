@@ -37,7 +37,7 @@ namespace KK_PNGCaptureSizeModifier {
     public class KK_PNGCaptureSizeModifier : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "PNG Capture Size Modifier";
         internal const string GUID = "com.jim60105.kk.pngcapturesizemodifier";
-        internal const string PLUGIN_VERSION = "20.06.05.0";
+        internal const string PLUGIN_VERSION = "20.06.05.1";
         internal const string PLUGIN_RELEASE_VERSION = "1.5.0";
 
         public static ConfigEntry<float> TimesOfMaker { get; private set; }
@@ -45,6 +45,7 @@ namespace KK_PNGCaptureSizeModifier {
         public static ConfigEntry<int> PNGColumnCount { get; private set; }
         public static ConfigEntry<bool> StudioSceneWatermark { get; private set; }
         public static ConfigEntry<bool> CharaMakerWatermark { get; private set; }
+        public static ConfigEntry<bool> ResolutionWaterMark { get; private set; }
 
         public static ConfigEntry<string> PathToTheFontResource { get; private set; }
         public static ConfigEntry<float> CharacterSize { get; private set; }
@@ -59,6 +60,7 @@ namespace KK_PNGCaptureSizeModifier {
             PNGColumnCount = Config.Bind<int>("Config", "Number of PNG rows in File List View", 3, "Must be a natural number");
             StudioSceneWatermark = Config.Bind<bool>("Config", "Use Studio Scene Watermark", true, "It is extremely NOT recommended to disable the watermark function, which is for distinguishing between scene data and normal image.");
             CharaMakerWatermark = Config.Bind<bool>("Config", "Use Character Watermark", true);
+            ResolutionWaterMark = Config.Bind<bool>("Config", "Use Resolution Watermark", true, "When the StudioScene/Character watermark is enabled, the resolution watermark will be forced to use.");
 
             PathToTheFontResource = Config.Bind<String>("WaterMark", "Path of the font picture", "", "Full path to the font resource picture, must be a PNG or JPG.");
             PathToTheFontResource.SettingChanged += delegate { SetFontPic(); };
@@ -77,13 +79,18 @@ namespace KK_PNGCaptureSizeModifier {
             fontTexture = null;
             if (PathToTheFontResource.Value.Length != 0 && File.Exists(PathToTheFontResource.Value)) {
                 fontTexture = Extension.Extension.LoadTexture(PathToTheFontResource.Value);
+                if (null != fontTexture) {
+                    Logger.LogDebug($"Load font pic: {PathToTheFontResource.Value}");
+                } else {
+                    Logger.LogError("Load font picture FAILED: " + PathToTheFontResource.Value);
+                }
             }
-            if (null != fontTexture) {
-                Logger.LogDebug($"Load font pic: {PathToTheFontResource.Value}");
-            } else {
+
+            if (null == fontTexture) {
                 fontTexture = Extension.Extension.LoadDllResource($"KK_PNGCaptureSizeModifier.Resources.ArialFont.png", 1024, 1024);
                 Logger.LogDebug($"Load original font pic");
             }
+
             TextToTexture.fontTexture = fontTexture;
         }
     }
@@ -156,50 +163,66 @@ namespace KK_PNGCaptureSizeModifier {
             GameObject.Find("SceneLoadScene/Canvas Load Work/root").transform.localScale = new Vector3(2, 2, 1);
 
         //加浮水印
-        private static bool AddSDWatermarkFlag = false;
+        private static bool SDFlag = false;
+        private static bool CMFlag = false;
+
         [HarmonyPrefix, HarmonyPatch(typeof(Studio.SceneInfo), "Save", new Type[] { typeof(string) })]
-        public static void SavePrefix() => AddSDWatermarkFlag = KK_PNGCaptureSizeModifier.StudioSceneWatermark.Value;
+        public static void SavePrefix() => SDFlag = true;
 
         [HarmonyPostfix, HarmonyPatch(typeof(Studio.GameScreenShot), "CreatePngScreen")]
-        public static void CreatePngScreenPostfix(ref byte[] __result) => AddWatermark(ref AddSDWatermarkFlag, ref __result, "sd_watermark.png", KK_PNGCaptureSizeModifier.TimesOfStudio);
+        public static void CreatePngScreenPostfix(ref byte[] __result) {
+            if (SDFlag) {
+                AddWatermark(KK_PNGCaptureSizeModifier.StudioSceneWatermark.Value, ref __result, "sd_watermark.png", KK_PNGCaptureSizeModifier.TimesOfStudio);
+                SDFlag = false;
+            }
+        }
 
-        private static bool AddCharaWatermarkFlag = false;
         [HarmonyPrefix, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CapCharaCard")]
-        public static void CapCharaCardPrefix() => AddCharaWatermarkFlag = KK_PNGCaptureSizeModifier.CharaMakerWatermark.Value;
+        public static void CapCharaCardPrefix() => CMFlag = true;
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CreatePng")]
-        public static void CreatePngPostfix(ref byte[] pngData) => AddWatermark(ref AddCharaWatermarkFlag, ref pngData, "chara_watermark.png", KK_PNGCaptureSizeModifier.TimesOfMaker);
+        public static void CreatePngPostfix(ref byte[] pngData) {
+            if (CMFlag) {
+                AddWatermark(CMFlag, ref pngData, "chara_watermark.png", KK_PNGCaptureSizeModifier.TimesOfMaker);
+                CMFlag = false;
+            }
+        }
 
-        private static void AddWatermark(ref bool doFlag, ref byte[] basePng, string wmFileName, ConfigEntry<float> times) {
-            if (doFlag) {
-                doFlag = false;
-                Texture2D screenshot = new Texture2D(2, 2);
-                screenshot.LoadImage(basePng);
+        private static void AddWatermark(bool doWatermarkFlag, ref byte[] basePng, string wmFileName, ConfigEntry<float> times) {
+            if (!doWatermarkFlag && !KK_PNGCaptureSizeModifier.ResolutionWaterMark.Value) return;
 
-                //浮水印
-                Texture2D watermark = Extension.Extension.LoadDllResource($"KK_PNGCaptureSizeModifier.Resources.{wmFileName}");
-                Extension.Extension.Scale(watermark, Convert.ToInt32(230f / (float)times.DefaultValue * times.Value), Convert.ToInt32(230f / (float)times.DefaultValue * times.Value));
-                //圖片分辨率
+            Texture2D screenshot = new Texture2D(2, 2);
+            screenshot.LoadImage(basePng);
+
+            //圖片分辨率
+            if (KK_PNGCaptureSizeModifier.ResolutionWaterMark.Value || doWatermarkFlag) {
                 string text = $"{screenshot.width}x{screenshot.height}";
                 int textureWidth = TextToTexture.CalcTextWidthPlusTrailingBuffer(text, KK_PNGCaptureSizeModifier.CharacterSize.Value);
                 Texture2D capsize = TextToTexture.CreateTextToTexture(text, 0, 0, textureWidth, KK_PNGCaptureSizeModifier.CharacterSize.Value);
                 Extension.Extension.Scale(capsize, Convert.ToInt32(textureWidth / (float)times.DefaultValue * times.Value), Convert.ToInt32(textureWidth / (float)times.DefaultValue * times.Value));
-
-                screenshot = Extension.Extension.OverwriteTexture(
-                    screenshot,
-                    watermark,
-                    0,
-                    screenshot.height - watermark.height
-                );
                 screenshot = Extension.Extension.OverwriteTexture(
                     screenshot,
                     capsize,
                     screenshot.width * KK_PNGCaptureSizeModifier.PositionX.Value / 100 - capsize.width,
                     screenshot.height * KK_PNGCaptureSizeModifier.PositionY.Value / 100
                 );
-                basePng = screenshot.EncodeToPNG();
+                KK_PNGCaptureSizeModifier.Logger.LogDebug($"Add Resolution: {wmFileName}");
+            }
+
+            //浮水印
+            if (doWatermarkFlag) {
+                Texture2D watermark = Extension.Extension.LoadDllResource($"KK_PNGCaptureSizeModifier.Resources.{wmFileName}");
+                Extension.Extension.Scale(watermark, Convert.ToInt32(230f / (float)times.DefaultValue * times.Value), Convert.ToInt32(230f / (float)times.DefaultValue * times.Value));
+                screenshot = Extension.Extension.OverwriteTexture(
+                    screenshot,
+                    watermark,
+                    0,
+                    screenshot.height - watermark.height
+                );
                 KK_PNGCaptureSizeModifier.Logger.LogDebug($"Add Watermark: {wmFileName}");
             }
+
+            basePng = screenshot.EncodeToPNG();
         }
     }
 }
