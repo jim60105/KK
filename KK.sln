@@ -56,6 +56,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_TransparentBackground", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_SaveLoadCompression", "KK_SaveLoadCompression\KK_SaveLoadCompression.csproj", "{8321A574-1480-41B6-A4F8-52069703F1CD}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_CoordinateCapturePoseUnlock", "KK_CoordinateCapturePoseUnlock\KK_CoordinateCapturePoseUnlock.csproj", "{7AAC6224-8071-4198-818B-5F18A6FBC4B4}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Extension\Extension.projitems*{0646be09-f599-4edb-b115-de4043c8d3be}*SharedItemsImports = 13
@@ -65,6 +67,7 @@ Global
 		Extension\Extension.projitems*{4f3e6d68-d3b2-4a0f-817a-272eaafb91aa}*SharedItemsImports = 4
 		Extension\Extension.projitems*{661b77ce-d337-49d2-a359-ad85e68986b2}*SharedItemsImports = 4
 		Extension\Extension.projitems*{670a8493-10c7-4071-8fc8-a49ace4ccfdb}*SharedItemsImports = 4
+		Extension\Extension.projitems*{7aac6224-8071-4198-818b-5f18a6fbc4b4}*SharedItemsImports = 4
 		Extension\Extension.projitems*{82c2994c-24eb-4df4-a367-2f33ec849978}*SharedItemsImports = 4
 		Extension\Extension.projitems*{8321a574-1480-41b6-a4f8-52069703f1cd}*SharedItemsImports = 4
 		Extension\Extension.projitems*{85268fd6-a1fd-41aa-84d9-71f18815c034}*SharedItemsImports = 4
@@ -231,13 +234,21 @@ Global
 		{8321A574-1480-41B6-A4F8-52069703F1CD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8321A574-1480-41B6-A4F8-52069703F1CD}.Release|x64.ActiveCfg = Release|x64
 		{8321A574-1480-41B6-A4F8-52069703F1CD}.Release|x64.Build.0 = Release|x64
+		{7AAC6224-8071-4198-818B-5F18A6FBC4B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7AAC6224-8071-4198-818B-5F18A6FBC4B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7AAC6224-8071-4198-818B-5F18A6FBC4B4}.Debug|x64.ActiveCfg = Debug|x64
+		{7AAC6224-8071-4198-818B-5F18A6FBC4B4}.Debug|x64.Build.0 = Debug|x64
+		{7AAC6224-8071-4198-818B-5F18A6FBC4B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7AAC6224-8071-4198-818B-5F18A6FBC4B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7AAC6224-8071-4198-818B-5F18A6FBC4B4}.Release|x64.ActiveCfg = Release|x64
+		{7AAC6224-8071-4198-818B-5F18A6FBC4B4}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		RESX_Rules = {"EnabledRules":["StringFormat","WhiteSpaceLead","WhiteSpaceTail"]}
-		RESX_NeutralResourcesLanguage = en-US
 		SolutionGuid = {9C634E2C-489D-470F-94E5-72383D9364B5}
+		RESX_NeutralResourcesLanguage = en-US
+		RESX_Rules = {"EnabledRules":["StringFormat","WhiteSpaceLead","WhiteSpaceTail"]}
 	EndGlobalSection
 EndGlobal

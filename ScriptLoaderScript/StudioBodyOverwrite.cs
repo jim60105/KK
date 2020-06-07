@@ -28,7 +28,7 @@ public static class BodyOverwrite {
         }
 
         void Update() {
-            if (Input.GetKeyDown(KeyCode.O)) {  //Áä½LºÊÅ¥
+            if (Input.GetKeyDown(KeyCode.O)) {  //éµç›¤ç›£è½
                 ChangeAll();
             }
         }
@@ -39,25 +39,25 @@ public static class BodyOverwrite {
             charList = Studio.Studio.Instance.dicInfo.Values.OfType<Studio.OCIChar>().Select(x => x.charInfo).ToList();
             foreach (ChaControl chaCtrl in charList) {
                 ChaFileCustom chaFileCustom = chaCtrl.chaFile.custom;
-                chaFileCustom.body.shapeValueBody[4] = 1.000f;   //¯İ¤j¤p
-                chaFileCustom.body.shapeValueBody[5] = 0.008f;   //¯İ¤W¤U¦ì¸m
-                chaFileCustom.body.shapeValueBody[6] = 0.733f;   //¯İ¥ª¥k¶}
-                chaFileCustom.body.shapeValueBody[7] = 0.696f;   //¯İ¥ª¥k¦ì¸m
-                chaFileCustom.body.shapeValueBody[8] = 0.486f;   //¯İ¤W¤U¨¤«×
-                chaFileCustom.body.shapeValueBody[9] = 0.303f;   //¯İ¦y
-                chaFileCustom.body.shapeValueBody[10] = 1.000f;  //¯İ§Îª¬
-                chaFileCustom.body.bustSoftness = 1.100f;        //¯İ¬X
-                chaFileCustom.body.bustWeight = 0.260f;          //¯İ­«
-                chaFileCustom.body.shapeValueBody[11] = 0.016f;  //¨Å½ü¿±
-                chaFileCustom.body.shapeValueBody[12] = 0.506f;  //¨Å­º¤Ó
-                chaFileCustom.body.shapeValueBody[13] = 0.620f;  //¨Å­º¥ß
-                chaFileCustom.body.areolaSize = 1.022f;          //¨Å½ü¤j
+                chaFileCustom.body.shapeValueBody[4] = 1.000f;   //èƒ¸å¤§å°
+                chaFileCustom.body.shapeValueBody[5] = 0.008f;   //èƒ¸ä¸Šä¸‹ä½ç½®
+                chaFileCustom.body.shapeValueBody[6] = 0.733f;   //èƒ¸å·¦å³é–‹
+                chaFileCustom.body.shapeValueBody[7] = 0.696f;   //èƒ¸å·¦å³ä½ç½®
+                chaFileCustom.body.shapeValueBody[8] = 0.486f;   //èƒ¸ä¸Šä¸‹è§’åº¦
+                chaFileCustom.body.shapeValueBody[9] = 0.303f;   //èƒ¸å°–
+                chaFileCustom.body.shapeValueBody[10] = 1.000f;  //èƒ¸å½¢ç‹€
+                chaFileCustom.body.bustSoftness = 1.100f;        //èƒ¸æŸ”
+                chaFileCustom.body.bustWeight = 0.260f;          //èƒ¸é‡
+                chaFileCustom.body.shapeValueBody[11] = 0.016f;  //ä¹³è¼ªè†¨
+                chaFileCustom.body.shapeValueBody[12] = 0.506f;  //ä¹³é¦–å¤ª
+                chaFileCustom.body.shapeValueBody[13] = 0.620f;  //ä¹³é¦–ç«‹
+                chaFileCustom.body.areolaSize = 1.022f;          //ä¹³è¼ªå¤§
 
-                chaFileCustom.body.skinMainColor = new Color(0.72f, 0.61f, 0.54f, 1f);  //½§¦â
-                chaFileCustom.body.skinSubColor = new Color(0.44f, 0.38f, 0.29f, 1f);   //¦¸½§¦â
-                chaFileCustom.body.skinGlossPower = 0.203f; //¥Ö½§°ª¥ú
-                chaFileCustom.body.nipColor = new Color(0.52f, 0.45f, 0.44f, 0.69f);    //¨Å­º¦â
-                chaFileCustom.body.nipGlossPower = 0.210f;  //¨Å­º°ª¥ú
+                chaFileCustom.body.skinMainColor = new Color(0.72f, 0.61f, 0.54f, 1f);  //è†šè‰²
+                chaFileCustom.body.skinSubColor = new Color(0.44f, 0.38f, 0.29f, 1f);   //æ¬¡è†šè‰²
+                chaFileCustom.body.skinGlossPower = 0.203f; //çš®è†šé«˜å…‰
+                chaFileCustom.body.nipColor = new Color(0.52f, 0.45f, 0.44f, 0.69f);    //ä¹³é¦–è‰²
+                chaFileCustom.body.nipGlossPower = 0.210f;  //ä¹³é¦–é«˜å…‰
 
                 chaCtrl.Reload(true, true, true);
             }
