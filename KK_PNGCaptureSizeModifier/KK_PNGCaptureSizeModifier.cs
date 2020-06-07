@@ -37,8 +37,8 @@ namespace KK_PNGCaptureSizeModifier {
     public class KK_PNGCaptureSizeModifier : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "PNG Capture Size Modifier";
         internal const string GUID = "com.jim60105.kk.pngcapturesizemodifier";
-        internal const string PLUGIN_VERSION = "20.06.05.1";
-        internal const string PLUGIN_RELEASE_VERSION = "1.5.0";
+        internal const string PLUGIN_VERSION = "20.06.07.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.5.1";
 
         public static ConfigEntry<float> TimesOfMaker { get; private set; }
         public static ConfigEntry<float> TimesOfStudio { get; private set; }
@@ -65,7 +65,7 @@ namespace KK_PNGCaptureSizeModifier {
             PathToTheFontResource = Config.Bind<String>("WaterMark", "Path of the font picture", "", "Full path to the font resource picture, must be a PNG or JPG.");
             PathToTheFontResource.SettingChanged += delegate { SetFontPic(); };
             SetFontPic();
-            CharacterSize = Config.Bind<float>("WaterMark", "Character Size", 1.0f);
+            CharacterSize = Config.Bind<float>("WaterMark", "Font Size", 1.0f);
             PositionX = Config.Bind<int>("WaterMark", "Position X", 97, new ConfigDescription("0 = left, 100 = right", new AcceptableValueRange<int>(0, 100)));
             PositionY = Config.Bind<int>("WaterMark", "Position Y", 0, new ConfigDescription("0 = bottom, 100 = top", new AcceptableValueRange<int>(0, 100)));
 
@@ -199,20 +199,20 @@ namespace KK_PNGCaptureSizeModifier {
                 string text = $"{screenshot.width}x{screenshot.height}";
                 int textureWidth = TextToTexture.CalcTextWidthPlusTrailingBuffer(text, KK_PNGCaptureSizeModifier.CharacterSize.Value);
                 Texture2D capsize = TextToTexture.CreateTextToTexture(text, 0, 0, textureWidth, KK_PNGCaptureSizeModifier.CharacterSize.Value);
-                Extension.Extension.Scale(capsize, Convert.ToInt32(textureWidth / (float)times.DefaultValue * times.Value), Convert.ToInt32(textureWidth / (float)times.DefaultValue * times.Value));
+                capsize = Extension.Extension.Scale(capsize, (int)(capsize.width * times.Value / (float)times.DefaultValue), (int)(capsize.height * times.Value / (float)times.DefaultValue));
                 screenshot = Extension.Extension.OverwriteTexture(
                     screenshot,
                     capsize,
                     screenshot.width * KK_PNGCaptureSizeModifier.PositionX.Value / 100 - capsize.width,
                     screenshot.height * KK_PNGCaptureSizeModifier.PositionY.Value / 100
                 );
-                KK_PNGCaptureSizeModifier.Logger.LogDebug($"Add Resolution: {wmFileName}");
+                KK_PNGCaptureSizeModifier.Logger.LogDebug($"Add Resolution: {text}");
             }
 
             //浮水印
             if (doWatermarkFlag) {
                 Texture2D watermark = Extension.Extension.LoadDllResource($"KK_PNGCaptureSizeModifier.Resources.{wmFileName}");
-                Extension.Extension.Scale(watermark, Convert.ToInt32(230f / (float)times.DefaultValue * times.Value), Convert.ToInt32(230f / (float)times.DefaultValue * times.Value));
+                watermark = Extension.Extension.Scale(watermark, (int)(watermark.width * times.Value / (float)times.DefaultValue), (int)(watermark.height * times.Value / (float)times.DefaultValue));
                 screenshot = Extension.Extension.OverwriteTexture(
                     screenshot,
                     watermark,
