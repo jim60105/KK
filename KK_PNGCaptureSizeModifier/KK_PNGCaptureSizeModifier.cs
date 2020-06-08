@@ -37,8 +37,8 @@ namespace KK_PNGCaptureSizeModifier {
     public class KK_PNGCaptureSizeModifier : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "PNG Capture Size Modifier";
         internal const string GUID = "com.jim60105.kk.pngcapturesizemodifier";
-        internal const string PLUGIN_VERSION = "20.06.07.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.5.1";
+        internal const string PLUGIN_VERSION = "20.06.08.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.5.2";
 
         public static ConfigEntry<float> TimesOfMaker { get; private set; }
         public static ConfigEntry<float> TimesOfStudio { get; private set; }
@@ -183,7 +183,7 @@ namespace KK_PNGCaptureSizeModifier {
         [HarmonyPostfix, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CreatePng")]
         public static void CreatePngPostfix(ref byte[] pngData) {
             if (CMFlag) {
-                AddWatermark(CMFlag, ref pngData, "chara_watermark.png", KK_PNGCaptureSizeModifier.TimesOfMaker);
+                AddWatermark(KK_PNGCaptureSizeModifier.CharaMakerWatermark.Value, ref pngData, "chara_watermark.png", KK_PNGCaptureSizeModifier.TimesOfMaker);
                 CMFlag = false;
             }
         }
