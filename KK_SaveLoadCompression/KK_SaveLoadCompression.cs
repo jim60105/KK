@@ -25,6 +25,7 @@ using HarmonyLib;
 using SevenZip;
 using Studio;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using UnityEngine;
@@ -34,8 +35,8 @@ namespace KK_SaveLoadCompression {
     public class KK_SaveLoadCompression : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Save Load Compression";
         internal const string GUID = "com.jim60105.kk.saveloadcompression";
-        internal const string PLUGIN_VERSION = "20.06.07.1";
-        internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
+        internal const string PLUGIN_VERSION = "20.06.08.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.0";
         public static ConfigEntry<DictionarySize> DictionarySize { get; private set; }
         public static ConfigEntry<bool> Enable { get; private set; }
         public static ConfigEntry<bool> Notice { get; private set; }
@@ -44,18 +45,22 @@ namespace KK_SaveLoadCompression {
         public static ConfigEntry<bool> SkipSaveCheck { get; private set; }
 
         internal static new ManualLogSource Logger;
+        internal static DirectoryInfo CacheDirectory;
         public void Awake() {
             Logger = base.Logger;
+            CleanCacheFolder();
+
             Enable = Config.Bind<bool>("Config", "Enable", false, "!!!NOTICE!!!");
             Notice = Config.Bind<bool>("Config", "I do realize that without this plugin, the save files will not be readable!!", false, "!!!NOTICE!!!");
             DeleteTheOri = Config.Bind<bool>("Settings", "Delete the original file", false, "The original saved file will be automatically overwritten.");
             DisplayMessage = Config.Bind<bool>("Settings", "Display compression message on screen", true);
-            SkipSaveCheck = Config.Bind<bool>("Settings", "Skip bytes compare when saving", false, "Use it at your own risk!!!!");
+            SkipSaveCheck = Config.Bind<bool>("Settings", "Skip bytes compare when saving", false, "!!!Use this at your own risk!!!!");
             DictionarySize = Config.Bind<DictionarySize>("Settings", "Compress Dictionary Size", SevenZip.DictionarySize.VeryLarge, "If compression FAILs, try changing it to a smaller size.");
             Harmony harmonyInstance = HarmonyWrapper.PatchAll(typeof(Patches));
             harmonyInstance.Patch(
                 typeof(SceneInfo).GetMethod(nameof(SceneInfo.Load), new[] { typeof(string), typeof(Version).MakeByRefType() }),
-                prefix: new HarmonyMethod(typeof(Patches), nameof(Patches.LoadPrefix)));
+                prefix: new HarmonyMethod(typeof(Patches), nameof(Patches.LoadPrefix))
+            );
         }
 
         internal static string Progress = "";
@@ -77,6 +82,16 @@ namespace KK_SaveLoadCompression {
                 content,
                 style
             );
+        }
+
+        void OnApplicationQuit() => CleanCacheFolder();
+        void OnDestroy() => CleanCacheFolder();
+
+        private static void CleanCacheFolder() {
+            CacheDirectory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), GUID));
+            foreach (FileInfo file in CacheDirectory.GetFiles()) file.Delete();
+            foreach (DirectoryInfo subDirectory in CacheDirectory.GetDirectories()) subDirectory.Delete(true);
+            Logger.LogDebug("Clean cache folder");
         }
     }
 
@@ -109,12 +124,11 @@ namespace KK_SaveLoadCompression {
         private static void Save(string path, string token) {
             if (!KK_SaveLoadCompression.Enable.Value || !KK_SaveLoadCompression.Notice.Value) return;
             byte[] pngData;
-            string TempPath;
+            string TempPath = Path.Combine(KK_SaveLoadCompression.CacheDirectory.CreateSubdirectory("Compressed").FullName, Path.GetFileName(path));
 
             using (FileStream fileStreamReader = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
                 using (BinaryReader binaryReader = new BinaryReader(fileStreamReader)) {
                     Logger.LogInfo("Start Compress");
-                    TempPath = Path.GetTempFileName();
                     pngData = PngFile.LoadPngBytes(binaryReader);
                     Texture2D png = new Texture2D(2, 2);
                     png.LoadImage(pngData);
@@ -137,9 +151,9 @@ namespace KK_SaveLoadCompression {
             newThread.Start();
 
             void doMain() {
+                bool success = true;
                 try {
                     using (FileStream fileStreamReader = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-                        bool success = true;
                         float startTime = Time.time;
                         using (FileStream fileStreamWriter = new FileStream(TempPath, FileMode.Create, FileAccess.Write)) {
                             using (BinaryWriter binaryWriter = new BinaryWriter(fileStreamWriter)) {
@@ -182,6 +196,7 @@ namespace KK_SaveLoadCompression {
                                     using (MemoryStream msDecompressed = new MemoryStream()) {
                                         if (!KK_SaveLoadCompression.SkipSaveCheck.Value) {
                                             msCompressed.Seek(0, SeekOrigin.Begin);
+
                                             LZMA.Decompress(msCompressed, msDecompressed,
                                                 delegate (long inSize, long _) {
                                                     KK_SaveLoadCompression.Progress = $"Decompressing: {Convert.ToInt32(inSize * 100 / (fileStreamReader.Length - fileStreamPos))}%";
@@ -219,6 +234,10 @@ namespace KK_SaveLoadCompression {
                         }
                         //在完成後才Copy或Overwrite檔案
                         if (success) {
+                            //拷貝原檔至Cache
+                            string decompressPath = Path.Combine(KK_SaveLoadCompression.CacheDirectory.CreateSubdirectory("Decompressed").FullName, Path.GetFileName(path));
+                            File.Copy(path, decompressPath, true);
+
                             if (KK_SaveLoadCompression.DeleteTheOri.Value) {
                                 File.Copy(TempPath, path, true);
                             } else {
@@ -228,10 +247,24 @@ namespace KK_SaveLoadCompression {
                         File.Delete(TempPath);
                     }
                 } catch (Exception e) {
-                    //發生任何異常時刪除TempFile
-                    if (File.Exists(TempPath)) File.Delete(TempPath);
-                    Logger.LogError("An error occurred while compressing the data.");
-                    Logger.LogError($"{e.GetType().Name}: {e.Message}");
+                    if (e is IOException && success) {
+                        //Retry Again
+                        try {
+                            if (File.Exists(TempPath)) {
+                                if (KK_SaveLoadCompression.DeleteTheOri.Value) {
+                                    File.Copy(TempPath, path, true);
+                                }
+                                File.Delete(TempPath);
+                            }
+                        } catch (Exception) {
+                            //Copy to a new name if failed twice
+                            File.Copy(TempPath, path.Substring(0, path.Length - 4) + "_compressed2.png");
+                        }
+                    } else {
+                        //發生其它異常時刪除TempFile
+                        if (File.Exists(TempPath)) File.Delete(TempPath);
+                        throw;
+                    }
                 }
             }
         }
@@ -240,46 +273,42 @@ namespace KK_SaveLoadCompression {
         #region Load
         //Studio Load
         [HarmonyPriority(Priority.First)]
-        public static void LoadPrefix(ref string _path) {
-            if (Load(_path, out string tmp, StudioToken)) { _path = tmp; }
-        }
+        public static void LoadPrefix(ref string _path)
+            => Load(ref _path, StudioToken);
 
         //Studio Import
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        [HarmonyPatch(typeof(SceneInfo), "Import", new Type[] { typeof(string) })]
-        public static void ImportPrefix(ref string _path) {
-            if (Load(_path, out string tmp, StudioToken)) { _path = tmp; }
-        }
+        [HarmonyPrefix, HarmonyPriority(Priority.First), HarmonyPatch(typeof(SceneInfo), "Import", new Type[] { typeof(string) })]
+        public static void ImportPrefix(ref string _path)
+            => Load(ref _path, StudioToken);
 
         //Chara Load
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        [HarmonyPatch(typeof(ChaFile), "LoadFile", new Type[] { typeof(string), typeof(bool), typeof(bool) })]
-        public static void LoadFilePrefix(ref string path) {
-            if (Load(path, out string tmp, CharaToken)) { path = tmp; }
-        }
+        [HarmonyPrefix, HarmonyPriority(Priority.First), HarmonyPatch(typeof(ChaFile), "LoadFile", new Type[] { typeof(string), typeof(bool), typeof(bool) })]
+        public static void LoadFilePrefix(ref string path)
+            => Load(ref path, CharaToken);
 
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        [HarmonyPatch(typeof(ChaFileControl), "LoadCharaFile", new Type[] { typeof(string), typeof(byte), typeof(bool), typeof(bool) })]
+        [HarmonyPrefix, HarmonyPriority(Priority.First), HarmonyPatch(typeof(ChaFileControl), "LoadCharaFile", new Type[] { typeof(string), typeof(byte), typeof(bool), typeof(bool) })]
         public static void LoadCharaFilePostfix(ChaFileControl __instance, ref string filename, byte sex) {
             filename = __instance.ConvertCharaFilePath(filename, sex);
-            if (Load(filename, out string tmp, CharaToken)) { filename = tmp; }
+            Load(ref filename, CharaToken);
         }
 
         //Coordinate Load
-        [HarmonyPrefix]
-        [HarmonyPriority(Priority.First)]
-        [HarmonyPatch(typeof(ChaFileCoordinate), "LoadFile", new Type[] { typeof(string) })]
-        public static void LoadFilePrefix(ChaFileCoordinate __instance, ref string path) {
-            if (Load(path, out string tmp, CoordinateToken)) { path = tmp; }
-        }
+        [HarmonyPrefix, HarmonyPriority(Priority.First), HarmonyPatch(typeof(ChaFileCoordinate), "LoadFile", new Type[] { typeof(string) })]
+        public static void LoadFilePrefix(ChaFileCoordinate __instance, ref string path)
+            => Load(ref path, CoordinateToken);
 
+        private static void Load(ref string path, string token) {
+            string n = Path.GetFileName(path);
+            DirectoryInfo d = KK_SaveLoadCompression.CacheDirectory.CreateSubdirectory("Decompressed");
+            string tmpPath = Path.Combine(d.FullName, n);
+            if (File.Exists(tmpPath)) {
+                path = tmpPath;
+                Logger.LogInfo("Load from cache: " + path);
+                Logger.LogInfo("If this should not happen, please restart the game to clear the cache.");
+                return;
+            }
 
-        private static bool Load(string inputPath, out string outputPath, string token) {
-            outputPath = "";
-            using (FileStream fileStreamReader = new FileStream(inputPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+            using (FileStream fileStreamReader = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
                 using (BinaryReader binaryReader = new BinaryReader(fileStreamReader)) {
                     byte[] pngData = PngFile.LoadPngBytes(binaryReader);
                     bool checkfail = false;
@@ -295,16 +324,15 @@ namespace KK_SaveLoadCompression {
                     }
 
                     if (checkfail) {
-                        inputPath = null;
-                        return false;
+                        return;
                     }
 
                     //Discard token string
                     binaryReader.ReadString();
 
                     Logger.LogDebug("Start Decompress...");
-                    outputPath = Path.GetTempFileName();
-                    using (FileStream fileStreamWriter = new FileStream(outputPath, FileMode.Create, FileAccess.Write)) {
+                    //KK_Fix_CharacterListOptimizations依賴檔名做比對
+                    using (FileStream fileStreamWriter = new FileStream(tmpPath, FileMode.Create, FileAccess.Write)) {
                         using (BinaryWriter binaryWriter = new BinaryWriter(fileStreamWriter)) {
                             binaryWriter.Write(pngData);
 
@@ -317,8 +345,9 @@ namespace KK_SaveLoadCompression {
                             KK_SaveLoadCompression.Progress = "";
                         }
                     }
+
+                    path = tmpPath;
                     Logger.LogDebug($"Decompression FINISH");
-                    return true;
                 }
             }
         }
