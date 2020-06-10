@@ -34,8 +34,8 @@ namespace KK_SaveLoadCompression {
     public class KK_SaveLoadCompression : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Save Load Compression";
         internal const string GUID = "com.jim60105.kk.saveloadcompression";
-        internal const string PLUGIN_VERSION = "20.06.09.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.1";
+        internal const string PLUGIN_VERSION = "20.06.10.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.2";
         public static ConfigEntry<DictionarySize> DictionarySize { get; private set; }
         public static ConfigEntry<bool> Enable { get; private set; }
         public static ConfigEntry<bool> Notice { get; private set; }
@@ -330,44 +330,57 @@ namespace KK_SaveLoadCompression {
 
             using (FileStream fileStreamReader = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
                 using (BinaryReader binaryReader = new BinaryReader(fileStreamReader)) {
-                    byte[] pngData = PngFile.LoadPngBytes(binaryReader);
-                    bool checkfail = false;
+                    byte[] pngData;
+                    try {
+                        bool checkfail = false;
+                        pngData = PngFile.LoadPngBytes(binaryReader);
 
-                    switch (token) {
-                        case StudioToken:
-                            checkfail = !new Version(binaryReader.ReadString()).Equals(new Version(101, 0, 0, 0));
-                            break;
-                        case CoordinateToken:
-                        case CharaToken:
-                            checkfail = 101 != binaryReader.ReadInt32();
-                            break;
+                        switch (token) {
+                            case StudioToken:
+                                checkfail = !new Version(binaryReader.ReadString()).Equals(new Version(101, 0, 0, 0));
+                                break;
+                            case CoordinateToken:
+                            case CharaToken:
+                                checkfail = 101 != binaryReader.ReadInt32();
+                                break;
+                        }
+
+                        if (checkfail) {
+                            return;
+                        }
+                    } catch (Exception) {
+                        //在這裡發生讀取錯誤，那大概不是個正確的存檔
+                        //因為已經有其它檢核的plugin存在，直接拋給他處理
+                        Logger.Log(LogLevel.Error | LogLevel.Message,"Corrupted file: " + path);
+                        return; 
                     }
+                    try { 
+                        //Discard token string
+                        binaryReader.ReadString();
 
-                    if (checkfail) {
+                        Logger.LogDebug("Start Decompress...");
+                        //KK_Fix_CharacterListOptimizations依賴檔名做比對
+                        using (FileStream fileStreamWriter = new FileStream(tmpPath, FileMode.Create, FileAccess.Write)) {
+                            using (BinaryWriter binaryWriter = new BinaryWriter(fileStreamWriter)) {
+                                binaryWriter.Write(pngData);
+
+                                long fileStreamPos = fileStreamReader.Position;
+                                LZMA.Decompress(fileStreamReader, fileStreamWriter,
+                                    delegate (long inSize, long _) {
+                                        KK_SaveLoadCompression.Progress = $"Decompressing: {Convert.ToInt32(inSize * 100 / (fileStreamReader.Length - fileStreamPos))}%";
+                                    }
+                                );
+                                KK_SaveLoadCompression.Progress = "";
+                            }
+                        }
+
+                        path = tmpPath;
+                        Logger.LogDebug($"Decompression FINISH");
+                    } catch (Exception) {
+                        Logger.LogError($"Decompression FAILDED. The file was damaged during compression.");
+                        Logger.LogError($"Do not disable the byte comparison setting next time to avoid this.");
                         return;
                     }
-
-                    //Discard token string
-                    binaryReader.ReadString();
-
-                    Logger.LogDebug("Start Decompress...");
-                    //KK_Fix_CharacterListOptimizations依賴檔名做比對
-                    using (FileStream fileStreamWriter = new FileStream(tmpPath, FileMode.Create, FileAccess.Write)) {
-                        using (BinaryWriter binaryWriter = new BinaryWriter(fileStreamWriter)) {
-                            binaryWriter.Write(pngData);
-
-                            long fileStreamPos = fileStreamReader.Position;
-                            LZMA.Decompress(fileStreamReader, fileStreamWriter,
-                                delegate (long inSize, long _) {
-                                    KK_SaveLoadCompression.Progress = $"Decompressing: {Convert.ToInt32(inSize * 100 / (fileStreamReader.Length - fileStreamPos))}%";
-                                }
-                            );
-                            KK_SaveLoadCompression.Progress = "";
-                        }
-                    }
-
-                    path = tmpPath;
-                    Logger.LogDebug($"Decompression FINISH");
                 }
             }
         }
