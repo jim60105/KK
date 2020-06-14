@@ -17,19 +17,17 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using BepInEx;
+using BepInEx.Harmony;
 using BepInEx.Logging;
 using Extension;
-using BepInEx.Harmony;
-using Manager;
-using Studio;
-using UniRx;
-using UnityEngine;
 using HarmonyLib;
+using StrayTech;
+using Studio;
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using UnityEngine;
 
 namespace KK_StudioSimpleColorOnGirls {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
@@ -37,13 +35,13 @@ namespace KK_StudioSimpleColorOnGirls {
     public class KK_StudioSimpleColorOnGirls : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Simple Color On Girls";
         internal const string GUID = "com.jim60105.kk.studiosimplecolorongirls";
-        internal const string PLUGIN_VERSION = "19.11.02.1";
-		internal const string PLUGIN_RELEASE_VERSION = "1.0.5";
+        internal const string PLUGIN_VERSION = "20.06.15.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.6";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
-            var harmonyInstance = HarmonyWrapper.PatchAll(typeof(Patches));
+            Harmony harmonyInstance = HarmonyWrapper.PatchAll(typeof(Patches));
             harmonyInstance.Patch(typeof(MPCharCtrl).GetNestedType("StateInfo", BindingFlags.NonPublic).GetMethod("OnValueChangedSimple", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(Patches.OnValueChangedSimplePostfix), null), null);
             harmonyInstance.Patch(typeof(MPCharCtrl).GetNestedType("StateInfo", BindingFlags.NonPublic).GetMethod("OnValueChangeSimpleColor", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(Patches.OnValueChangeSimpleColorPostfix), null), null);
             harmonyInstance.Patch(typeof(MPCharCtrl).GetNestedType("OtherInfo", BindingFlags.Public).GetMethod("UpdateInfo", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(Patches.UpdateInfoPostfix), null), null);
@@ -55,6 +53,33 @@ namespace KK_StudioSimpleColorOnGirls {
             }
         }
     }
+
+    class FindAssistCopy {
+        public Dictionary<string, GameObject> dictObjName { get; private set; }
+
+        public void Initialize(Transform trf) {
+            dictObjName = new Dictionary<string, GameObject>();
+            FindAll(trf);
+        }
+
+        private void FindAll(Transform trf) {
+            if (!dictObjName.ContainsKey(trf.name)) {
+                dictObjName[trf.name] = trf.gameObject;
+            }
+            for (int i = 0; i < trf.childCount; i++) {
+                FindAll(trf.GetChild(i));
+            }
+        }
+
+        public GameObject GetObjectFromName(string objName) {
+            if (dictObjName == null) {
+                return null;
+            }
+            dictObjName.TryGetValue(objName, out GameObject result);
+            return result;
+        }
+    }
+
     class Patches {
         //Copy Simple Color Functions to Female
         private static MPCharCtrl.StateButtonInfo colorBtn;
@@ -62,16 +87,16 @@ namespace KK_StudioSimpleColorOnGirls {
 
         public static void UpdateInfoPostfix(MPCharCtrl.OtherInfo __instance, OCIChar _char) {
             FieldInfo[] fieldInfo = __instance.GetType().GetFields();
-            foreach (var fi in fieldInfo) {
+            foreach (FieldInfo fi in fieldInfo) {
                 //KK_StudioSimpleColorOnGirls.Logger.LogDebug("Name: " + fi.Name);
                 //KK_StudioSimpleColorOnGirls.Logger.LogDebug("FieldType: " + fi.FieldType);
                 try {
                     if (fi.Name == "single") {
-                        var o = (MPCharCtrl.StateToggleInfo)fi.GetValue(__instance);
+                        MPCharCtrl.StateToggleInfo o = (MPCharCtrl.StateToggleInfo)fi.GetValue(__instance);
                         o.active = true;
                         o.toggle.isOn = _char.GetVisibleSimple();
                     } else if (fi.Name == "color") {
-                        var o2 = (MPCharCtrl.StateButtonInfo)fi.GetValue(__instance);
+                        MPCharCtrl.StateButtonInfo o2 = (MPCharCtrl.StateButtonInfo)fi.GetValue(__instance);
                         o2.active = true;
                         o2.buttons[0].image.color = _char.oiCharInfo.simpleColor;
                         colorBtn = o2;
@@ -102,117 +127,43 @@ namespace KK_StudioSimpleColorOnGirls {
             //ChangeSimpleBodyColorPrefix(_color);  //Debug logging
             KK_StudioSimpleColorOnGirls.Logger.LogDebug("Set Simple Color:" + ociChar.oiCharInfo.simpleColor.ToString());
 
-            //this.otherInfo.SetSimpleColor(_color);
+            //otherInfo.SetSimpleColor(_color);
             if (null != colorBtn) {
                 colorBtn.buttons[0].image.color = _color;
             }
         }
 
-        ////For Debug Only
-        //[HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "ChangeSimpleBodyColor")]
-        //public static bool ChangeSimpleBodyColorPrefix(Color color)
-        //{
-        //    ociChar.charInfo.fileStatus.simpleColor = color;
-        //    if (ociChar.charInfo.rendSimpleBody)
-        //    {
-        //        Material material = ociChar.charInfo.rendSimpleBody.material;
-        //        if (material)
-        //        {
-        //            material.SetColor(ChaShader._Color, color);
-        //            KK_StudioSimpleColorOnGirls.Logger.LogDebug("Set Body Simple Color:" + color);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        KK_StudioSimpleColorOnGirls.Logger.LogDebug("No Simple Body Rendered");
-        //    }
-        //    if (ociChar.charInfo.rendSimpleTongue)
-        //    {
-        //        Material material2 = ociChar.charInfo.rendSimpleTongue.material;
-        //        if (material2)
-        //        {
-        //            material2.SetColor(ChaShader._Color, color);
-        //            KK_StudioSimpleColorOnGirls.Logger.LogDebug("Set Tongue Simple Color:" + color);
-        //        }
-        //    }
-        //    return false;
-        //}
-        //[HarmonyPostfix, HarmonyPatch(typeof(ChaControl), "ChangeSimpleBodyDraw")]
-        //public static void ChangeSimpleBodyDrawPostfix(bool drawSimple)
-        //{
-        //    KK_StudioSimpleColorOnGirls.Logger.LogDebug("Change Simple visible:" + drawSimple);
-        //}
-        //public static void ChangeSimpleBodyColorPostfix(Color color)
-        //{
-        //    KK_StudioSimpleColorOnGirls.Logger.LogDebug("Change Simple Color:" + color);
-        //}
-
-
         //When loading body, also load unity gameobjects of simply body from male asset 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaReference), "CreateReferenceInfo")]
         public static void CreateReferenceInfoPostfix(ChaReference __instance, ulong flags, GameObject objRef) {
             if (flags >= 1UL && flags <= 15UL && (int)(flags - 1UL) == 2) {
-                GameObject simpleBodyGameObject = CommonLib.LoadAsset<GameObject>("chara/oo_base.unity3d", "p_cm_body_00", true, Singleton<Character>.Instance.mainManifestName);
-                FindAssist findAssist2 = new FindAssist();
-                findAssist2.Initialize(simpleBodyGameObject.transform);
-                if (
-                    typeof(ChaReference).GetFields(AccessTools.all).Where(x => x.Name == "dictRefObj")
-                    .FirstOrDefault().GetValue(__instance)
-                    is Dictionary<ChaReference.RefObjKey, GameObject> dic
-                    ) {
-                    simpleBodyGameObject.isStatic = true;
-                    dic.TryGetValue(ChaReference.RefObjKey.S_SimpleTop, out GameObject go);
-                    go?.SetActive(false);
-                    dic.TryGetValue(ChaReference.RefObjKey.S_SimpleBody, out go);
-                    go?.SetActive(false);
-                    dic.TryGetValue(ChaReference.RefObjKey.S_SimpleTongue, out go);
-                    go?.SetActive(false);
-                    dic.Remove(ChaReference.RefObjKey.S_SimpleTop);
-                    dic.Remove(ChaReference.RefObjKey.S_SimpleBody);
-                    dic.Remove(ChaReference.RefObjKey.S_SimpleTongue);
-                    dic[ChaReference.RefObjKey.S_SimpleTop] = findAssist2.GetObjectFromName("n_silhouetteTop");
-                    dic[ChaReference.RefObjKey.S_SimpleBody] = findAssist2.GetObjectFromName("n_body_silhouette");
-                    dic[ChaReference.RefObjKey.S_SimpleTongue] = findAssist2.GetObjectFromName("n_tang_silhouette");
-                    simpleBodyGameObject.transform.SetParent(objRef.transform);
+                GameObject simpleBodyGameObject = CommonLib.LoadAsset<GameObject>("chara/oo_base.unity3d", "p_cm_body_00", true, Singleton<Manager.Character>.Instance.mainManifestName);
+                FindAssistCopy findAssist = new FindAssistCopy();
+                findAssist.Initialize(simpleBodyGameObject.transform);
+                Dictionary<ChaReference.RefObjKey, GameObject> dicRefObj = __instance.GetField("dictRefObj").ToDictionary<ChaReference.RefObjKey, GameObject>();
+                //simpleBodyGameObject.isStatic = true;
+                GameObject SimpleTop = findAssist.GetObjectFromName("n_silhouetteTop");
+                doMain(dicRefObj, ChaReference.RefObjKey.S_SimpleTop, SimpleTop);
+                SimpleTop.transform.SetParent(objRef.FindChild("cf_o_root").transform);
+                doMain(dicRefObj, ChaReference.RefObjKey.S_SimpleBody, findAssist.GetObjectFromName("n_body_silhouette"));
+                SimpleTop.transform.SetParent(SimpleTop.transform);
+                doMain(dicRefObj, ChaReference.RefObjKey.S_SimpleTongue, findAssist.GetObjectFromName("n_tang_silhouette"));
+                SimpleTop.transform.SetParent(SimpleTop.transform);
 
-                    //Hide objects that are not using in simplyBodyGameObject
-                    HideGameObj(simpleBodyGameObject, new string[] {
-                        "o_body_a",
-                        "o_nip",
-                        "o_tang",
-                        "n_dankon",
-                        "o_mnpa",
-                        "o_mnpb",
-                        "n_mnpb",
-                        "o_gomu"
-                    });
+                GameObject.Destroy(simpleBodyGameObject);
+                //simpleBodyGameObject.SetActive(false);
+                __instance.SetField("dictRefObj", dicRefObj);
+            }
+            return;
 
-                    return;
+            void doMain(Dictionary<ChaReference.RefObjKey, GameObject> dic, ChaReference.RefObjKey key, GameObject newGameObject) {
+                dic.TryGetValue(key, out GameObject go);
+                if (null != go) {
+                    newGameObject.transform.SetParent(go.transform.parent);
+                    GameObject.Destroy(go);
+                } else {
                 }
-            }
-        }
-
-        private static Dictionary<string, GameObject> goList = new Dictionary<string, GameObject>();
-        private static void HideGameObj(GameObject go, string[] mrNameList) {
-            goList.Clear();
-            FindAll(go.transform);
-            foreach (string st in mrNameList) {
-                if (goList.ContainsKey(st)) {
-                    //KK_StudioSimpleColorOnGirls.Logger.LogDebug("Hide GameObj Name: " + st);
-                    GameObject g = null;
-                    if (goList.TryGetValue(st, out g)) {
-                        g.SetActive(false);
-                    }
-                }
-            }
-        }
-        private static void FindAll(Transform trf) {
-            if (!goList.ContainsKey(trf.name)) {
-                goList.Remove(trf.name);
-            }
-            goList[trf.name] = trf.gameObject;
-            for (int i = 0; i < trf.childCount; i++) {
-                FindAll(trf.GetChild(i));
+                dic[key] = newGameObject;
             }
         }
 
