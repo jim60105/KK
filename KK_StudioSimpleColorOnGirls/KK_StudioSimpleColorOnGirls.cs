@@ -35,48 +35,22 @@ namespace KK_StudioSimpleColorOnGirls {
     public class KK_StudioSimpleColorOnGirls : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Simple Color On Girls";
         internal const string GUID = "com.jim60105.kk.studiosimplecolorongirls";
-        internal const string PLUGIN_VERSION = "20.06.15.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.6";
+        internal const string PLUGIN_VERSION = "20.06.16.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.7";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
             Harmony harmonyInstance = HarmonyWrapper.PatchAll(typeof(Patches));
-            harmonyInstance.Patch(typeof(MPCharCtrl).GetNestedType("StateInfo", BindingFlags.NonPublic).GetMethod("OnValueChangedSimple", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(Patches.OnValueChangedSimplePostfix), null), null);
-            harmonyInstance.Patch(typeof(MPCharCtrl).GetNestedType("StateInfo", BindingFlags.NonPublic).GetMethod("OnValueChangeSimpleColor", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(Patches.OnValueChangeSimpleColorPostfix), null), null);
-            harmonyInstance.Patch(typeof(MPCharCtrl).GetNestedType("OtherInfo", BindingFlags.Public).GetMethod("UpdateInfo", AccessTools.all), null, new HarmonyMethod(typeof(Patches), nameof(Patches.UpdateInfoPostfix), null), null);
-
-            //Workaround for EC Yoyaku Build
-            if (null == typeof(ChaFileParameter).GetProperty("exType")) {
-                Logger.LogMessage("This Plugin is not working without EC yoyaku tokuten, which released at 2019/04/26.");
-                return;
-            }
-        }
-    }
-
-    class FindAssistCopy {
-        public Dictionary<string, GameObject> dictObjName { get; private set; }
-
-        public void Initialize(Transform trf) {
-            dictObjName = new Dictionary<string, GameObject>();
-            FindAll(trf);
-        }
-
-        private void FindAll(Transform trf) {
-            if (!dictObjName.ContainsKey(trf.name)) {
-                dictObjName[trf.name] = trf.gameObject;
-            }
-            for (int i = 0; i < trf.childCount; i++) {
-                FindAll(trf.GetChild(i));
-            }
-        }
-
-        public GameObject GetObjectFromName(string objName) {
-            if (dictObjName == null) {
-                return null;
-            }
-            dictObjName.TryGetValue(objName, out GameObject result);
-            return result;
+            harmonyInstance.Patch(
+                typeof(MPCharCtrl).GetNestedType("StateInfo", BindingFlags.NonPublic).GetMethod("OnValueChangedSimple", AccessTools.all),
+                postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.OnValueChangedSimplePostfix)));
+            harmonyInstance.Patch(
+                typeof(MPCharCtrl).GetNestedType("StateInfo", BindingFlags.NonPublic).GetMethod("OnValueChangeSimpleColor", AccessTools.all),
+                postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.OnValueChangeSimpleColorPostfix)));
+            harmonyInstance.Patch(
+                typeof(MPCharCtrl).GetNestedType("OtherInfo", BindingFlags.Public).GetMethod("UpdateInfo", AccessTools.all),
+                postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.UpdateInfoPostfix)));
         }
     }
 
@@ -138,31 +112,28 @@ namespace KK_StudioSimpleColorOnGirls {
         public static void CreateReferenceInfoPostfix(ChaReference __instance, ulong flags, GameObject objRef) {
             if (flags >= 1UL && flags <= 15UL && (int)(flags - 1UL) == 2) {
                 GameObject simpleBodyGameObject = CommonLib.LoadAsset<GameObject>("chara/oo_base.unity3d", "p_cm_body_00", true, Singleton<Manager.Character>.Instance.mainManifestName);
-                FindAssistCopy findAssist = new FindAssistCopy();
+                FindAssist findAssist = new FindAssist();
                 findAssist.Initialize(simpleBodyGameObject.transform);
                 Dictionary<ChaReference.RefObjKey, GameObject> dicRefObj = __instance.GetField("dictRefObj").ToDictionary<ChaReference.RefObjKey, GameObject>();
-                //simpleBodyGameObject.isStatic = true;
+
+                /* cf_o_root
+                 * └ n_silhouetteTop
+                 *   └ n_body_silhouette
+                 *   └ n_tang_silhouette
+                 */
                 GameObject SimpleTop = findAssist.GetObjectFromName("n_silhouetteTop");
-                doMain(dicRefObj, ChaReference.RefObjKey.S_SimpleTop, SimpleTop);
-                SimpleTop.transform.SetParent(objRef.FindChild("cf_o_root").transform);
-                doMain(dicRefObj, ChaReference.RefObjKey.S_SimpleBody, findAssist.GetObjectFromName("n_body_silhouette"));
-                SimpleTop.transform.SetParent(SimpleTop.transform);
-                doMain(dicRefObj, ChaReference.RefObjKey.S_SimpleTongue, findAssist.GetObjectFromName("n_tang_silhouette"));
-                SimpleTop.transform.SetParent(SimpleTop.transform);
+                doMain(dicRefObj, ChaReference.RefObjKey.S_SimpleTop, SimpleTop, objRef.FindChild("cf_o_root"));
+                doMain(dicRefObj, ChaReference.RefObjKey.S_SimpleBody, findAssist.GetObjectFromName("n_body_silhouette"), SimpleTop);
+                doMain(dicRefObj, ChaReference.RefObjKey.S_SimpleTongue, findAssist.GetObjectFromName("n_tang_silhouette"), SimpleTop);
 
                 GameObject.Destroy(simpleBodyGameObject);
-                //simpleBodyGameObject.SetActive(false);
                 __instance.SetField("dictRefObj", dicRefObj);
             }
             return;
 
-            void doMain(Dictionary<ChaReference.RefObjKey, GameObject> dic, ChaReference.RefObjKey key, GameObject newGameObject) {
-                dic.TryGetValue(key, out GameObject go);
-                if (null != go) {
-                    newGameObject.transform.SetParent(go.transform.parent);
-                    GameObject.Destroy(go);
-                } else {
-                }
+            void doMain(Dictionary<ChaReference.RefObjKey, GameObject> dic, ChaReference.RefObjKey key, GameObject newGameObject, GameObject newParent) {
+                if (dic.TryGetValue(key, out GameObject go) && null != go) { GameObject.Destroy(go); }
+                newGameObject.transform.SetParent(newParent.transform);
                 dic[key] = newGameObject;
             }
         }
