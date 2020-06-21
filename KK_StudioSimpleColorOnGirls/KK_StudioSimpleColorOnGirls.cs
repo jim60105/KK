@@ -26,6 +26,7 @@ using StrayTech;
 using Studio;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
@@ -35,12 +36,20 @@ namespace KK_StudioSimpleColorOnGirls {
     public class KK_StudioSimpleColorOnGirls : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Simple Color On Girls";
         internal const string GUID = "com.jim60105.kk.studiosimplecolorongirls";
-        internal const string PLUGIN_VERSION = "20.06.16.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.7";
+        internal const string PLUGIN_VERSION = "20.06.21.1";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.7.2";
 
         internal static new ManualLogSource Logger;
-        public void Awake() {
+        public void Start() {
             Logger = base.Logger;
+            if (!Extension.Extension.IsDarkness()) {
+                Logger.LogError("This Plugin is not working without Darkness.");
+                return;
+            }
+            if (!OobaseCheck()) {
+                return;
+            }
+
             Harmony harmonyInstance = HarmonyWrapper.PatchAll(typeof(Patches));
             harmonyInstance.Patch(
                 typeof(MPCharCtrl).GetNestedType("StateInfo", BindingFlags.NonPublic).GetMethod("OnValueChangedSimple", AccessTools.all),
@@ -52,9 +61,35 @@ namespace KK_StudioSimpleColorOnGirls {
                 typeof(MPCharCtrl).GetNestedType("OtherInfo", BindingFlags.Public).GetMethod("UpdateInfo", AccessTools.all),
                 postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.UpdateInfoPostfix)));
         }
+
+        /// <summary>
+        /// Check whether oo_base/p_cm_body_00 can be used.
+        /// </summary>
+        /// <returns>True if usable</returns>
+        private static bool OobaseCheck() {
+            GameObject simpleBodyGameObject = null;
+            try {
+                simpleBodyGameObject = CommonLib.LoadAsset<GameObject>("chara/oo_base.unity3d", "p_cm_body_00", true, Singleton<Manager.Character>.Instance.mainManifestName);
+                simpleBodyGameObject.SetActive(false);
+                FindAssist findAssist = new FindAssist();
+                findAssist.Initialize(simpleBodyGameObject.transform);
+
+                if ((new string[] { "n_silhouetteTop", "n_body_silhouette", "n_tang_silhouette" }).Any(str => null == findAssist.GetObjectFromName(str))) {
+                    throw new Exception();
+                }
+            } catch (Exception) {
+                Logger.LogError("Your chara/oo_base/p_cm_body_00 is damaged or not a supported version.");
+                return false;
+            } finally {
+                GameObject.Destroy(simpleBodyGameObject);
+            }
+
+            return true;
+        }
     }
 
     class Patches {
+        private static readonly ManualLogSource Logger = KK_StudioSimpleColorOnGirls.Logger;
         //Copy Simple Color Functions to Female
         private static MPCharCtrl.StateButtonInfo colorBtn;
         private static OCIChar ociChar;
@@ -62,8 +97,8 @@ namespace KK_StudioSimpleColorOnGirls {
         public static void UpdateInfoPostfix(MPCharCtrl.OtherInfo __instance, OCIChar _char) {
             FieldInfo[] fieldInfo = __instance.GetType().GetFields();
             foreach (FieldInfo fi in fieldInfo) {
-                //KK_StudioSimpleColorOnGirls.Logger.LogDebug("Name: " + fi.Name);
-                //KK_StudioSimpleColorOnGirls.Logger.LogDebug("FieldType: " + fi.FieldType);
+                //Logger.LogDebug("Name: " + fi.Name);
+                //Logger.LogDebug("FieldType: " + fi.FieldType);
                 try {
                     if (fi.Name == "single") {
                         MPCharCtrl.StateToggleInfo o = (MPCharCtrl.StateToggleInfo)fi.GetValue(__instance);
@@ -76,14 +111,14 @@ namespace KK_StudioSimpleColorOnGirls {
                         colorBtn = o2;
                     }
                 } catch (Exception e) {
-                    KK_StudioSimpleColorOnGirls.Logger.LogError("Exception: " + e);
-                    KK_StudioSimpleColorOnGirls.Logger.LogError("Exception: " + e.Message);
+                    Logger.LogError("Exception: " + e);
+                    Logger.LogError("Exception: " + e.Message);
                 }
             }
             MethodInfo methodInfo = __instance.GetType().GetMethod("SetSimpleColor");
             methodInfo.Invoke(__instance, new object[] { _char.oiCharInfo.simpleColor });
             ociChar = _char;
-            KK_StudioSimpleColorOnGirls.Logger.LogDebug("Chara Status Info Updated");
+            Logger.LogDebug("Chara Status Info Updated");
         }
 
         public static void OnValueChangedSimplePostfix(object __instance, bool _value) {
@@ -92,14 +127,14 @@ namespace KK_StudioSimpleColorOnGirls {
             }
             ociChar.oiCharInfo.visibleSimple = _value;
             ociChar.charInfo.fileStatus.visibleSimple = _value;
-            KK_StudioSimpleColorOnGirls.Logger.LogDebug("Set Visible Simple:" + ociChar.oiCharInfo.visibleSimple);
+            Logger.LogDebug("Set Visible Simple:" + ociChar.oiCharInfo.visibleSimple);
         }
 
         public static void OnValueChangeSimpleColorPostfix(MPCharCtrl __instance, Color _color) {
             //base.ociChar.SetSimpleColor(_color);
             ociChar.charInfo.ChangeSimpleBodyColor(_color);
             //ChangeSimpleBodyColorPrefix(_color);  //Debug logging
-            KK_StudioSimpleColorOnGirls.Logger.LogDebug("Set Simple Color:" + ociChar.oiCharInfo.simpleColor.ToString());
+            Logger.LogDebug("Set Simple Color:" + ociChar.oiCharInfo.simpleColor.ToString());
 
             //otherInfo.SetSimpleColor(_color);
             if (null != colorBtn) {
@@ -122,16 +157,20 @@ namespace KK_StudioSimpleColorOnGirls {
                  *   └ n_tang_silhouette
                  */
                 GameObject SimpleTop = findAssist.GetObjectFromName("n_silhouetteTop");
+                GameObject SimpleBody = findAssist.GetObjectFromName("n_body_silhouette");
+                GameObject SimpleTang = findAssist.GetObjectFromName("n_tang_silhouette");
+
                 doMain(dicRefObj, ChaReference.RefObjKey.S_SimpleTop, SimpleTop, objRef.FindChild("cf_o_root"));
-                doMain(dicRefObj, ChaReference.RefObjKey.S_SimpleBody, findAssist.GetObjectFromName("n_body_silhouette"), SimpleTop);
-                doMain(dicRefObj, ChaReference.RefObjKey.S_SimpleTongue, findAssist.GetObjectFromName("n_tang_silhouette"), SimpleTop);
+                doMain(dicRefObj, ChaReference.RefObjKey.S_SimpleBody, SimpleBody, SimpleTop);
+                doMain(dicRefObj, ChaReference.RefObjKey.S_SimpleTongue, SimpleTang, SimpleTop);
+                __instance.SetField("dictRefObj", dicRefObj);
 
                 GameObject.Destroy(simpleBodyGameObject);
-                __instance.SetField("dictRefObj", dicRefObj);
             }
             return;
 
             void doMain(Dictionary<ChaReference.RefObjKey, GameObject> dic, ChaReference.RefObjKey key, GameObject newGameObject, GameObject newParent) {
+                if (null == newGameObject || null == newParent) return;
                 if (dic.TryGetValue(key, out GameObject go) && null != go) { GameObject.Destroy(go); }
                 newGameObject.transform.SetParent(newParent.transform);
                 dic[key] = newGameObject;
@@ -151,9 +190,9 @@ namespace KK_StudioSimpleColorOnGirls {
             __result.charInfo.ChangeSimpleBodyColor(_info.simpleColor);
             if (null != tempStatus) {
                 AddObjectAssist.UpdateState(__result, tempStatus);
-                KK_StudioSimpleColorOnGirls.Logger.LogDebug("Simple Color Patch Finish");
+                //Logger.LogDebug("Simple Color Patch Finish");
             } else {
-                KK_StudioSimpleColorOnGirls.Logger.LogError("Update State FAILD: Can't get charFileStatus!");
+                Logger.LogError("Update State FAILD: Can't get charFileStatus!");
             }
             return;
         }
