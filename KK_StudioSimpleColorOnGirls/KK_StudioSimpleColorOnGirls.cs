@@ -36,8 +36,8 @@ namespace KK_StudioSimpleColorOnGirls {
     public class KK_StudioSimpleColorOnGirls : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Simple Color On Girls";
         internal const string GUID = "com.jim60105.kk.studiosimplecolorongirls";
-        internal const string PLUGIN_VERSION = "20.06.22.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.7.3";
+        internal const string PLUGIN_VERSION = "20.06.23.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.8";
 
         internal static new ManualLogSource Logger;
         public void Start() {
@@ -47,6 +47,7 @@ namespace KK_StudioSimpleColorOnGirls {
                 return;
             }
 
+            //oo_base test
             GameObject go = null;
             try {
                 go = Patches.CreateSilhouetteGameObjects();
@@ -71,7 +72,7 @@ namespace KK_StudioSimpleColorOnGirls {
 
     class Patches {
         //private static readonly ManualLogSource Logger = KK_StudioSimpleColorOnGirls.Logger;
-        //Copy Simple Color Functions to Female
+        #region Add Simple Color Functions to Female
         private static MPCharCtrl.StateButtonInfo colorBtn;
         private static OCIChar ociChar;
 
@@ -115,8 +116,9 @@ namespace KK_StudioSimpleColorOnGirls {
             __result.charInfo.fileStatus.visibleSimple = _info.visibleSimple;
             __result.charInfo.ChangeSimpleBodyColor(_info.simpleColor);
         }
+        #endregion
 
-        //When loading body, also load unity gameobjects of simply body from male asset 
+        //加載身體時，從male assets中加載SimpleBody的Unity GameObjects
         [HarmonyPostfix, HarmonyPatch(typeof(ChaReference), "CreateReferenceInfo")]
         public static void CreateReferenceInfoPostfix(ChaReference __instance, ulong flags, GameObject objRef) {
             if (flags >= 1UL && flags <= 15UL && (int)(flags - 1UL) == 2) {
@@ -148,6 +150,7 @@ namespace KK_StudioSimpleColorOnGirls {
         static internal GameObject CreateSilhouetteGameObjects() {
             GameObject simpleBodyGameObject = null;
             try {
+                //不能緩存後拷貝，必須每次都LoadAsset來用
                 simpleBodyGameObject = CommonLib.LoadAsset<GameObject>("chara/oo_base.unity3d", "p_cm_body_00", true, Singleton<Manager.Character>.Instance.mainManifestName);
                 simpleBodyGameObject.SetActive(false);
                 FindAssist findAssist = new FindAssist();
