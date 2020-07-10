@@ -19,7 +19,6 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 
 using BepInEx;
 using BepInEx.Configuration;
-using BepInEx.Harmony;
 using BepInEx.Logging;
 using Extension;
 using HarmonyLib;
@@ -37,8 +36,8 @@ namespace KK_PNGCaptureSizeModifier {
     public class KK_PNGCaptureSizeModifier : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "PNG Capture Size Modifier";
         internal const string GUID = "com.jim60105.kk.pngcapturesizemodifier";
-        internal const string PLUGIN_VERSION = "20.06.08.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.5.2";
+        internal const string PLUGIN_VERSION = "20.07.11.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.5.3";
 
         public static ConfigEntry<float> TimesOfMaker { get; private set; }
         public static ConfigEntry<float> TimesOfStudio { get; private set; }
@@ -72,7 +71,7 @@ namespace KK_PNGCaptureSizeModifier {
             if (TimesOfMaker.Value == 0) TimesOfMaker.Value = (float)TimesOfMaker.DefaultValue;
             if (TimesOfStudio.Value == 0) TimesOfStudio.Value = (float)TimesOfStudio.DefaultValue;
             if (PNGColumnCount.Value == 0) PNGColumnCount.Value = (int)PNGColumnCount.DefaultValue;
-            HarmonyWrapper.PatchAll(typeof(Patches));
+            Harmony.CreateAndPatchAll(typeof(Patches));
         }
 
         private void SetFontPic() {
@@ -169,7 +168,7 @@ namespace KK_PNGCaptureSizeModifier {
         [HarmonyPrefix, HarmonyPatch(typeof(Studio.SceneInfo), "Save", new Type[] { typeof(string) })]
         public static void SavePrefix() => SDFlag = true;
 
-        [HarmonyPostfix, HarmonyPatch(typeof(Studio.GameScreenShot), "CreatePngScreen")]
+        [HarmonyPriority(Priority.Last), HarmonyPostfix, HarmonyPatch(typeof(Studio.GameScreenShot), "CreatePngScreen")]
         public static void CreatePngScreenPostfix(ref byte[] __result) {
             if (SDFlag) {
                 AddWatermark(KK_PNGCaptureSizeModifier.StudioSceneWatermark.Value, ref __result, "sd_watermark.png", KK_PNGCaptureSizeModifier.TimesOfStudio);
@@ -177,10 +176,10 @@ namespace KK_PNGCaptureSizeModifier {
             }
         }
 
-        [HarmonyPrefix, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CapCharaCard")]
+        [HarmonyPriority(Priority.Last), HarmonyPrefix, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CapCharaCard")]
         public static void CapCharaCardPrefix() => CMFlag = true;
 
-        [HarmonyPostfix, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CreatePng")]
+        [HarmonyPriority(Priority.Last), HarmonyPostfix, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CreatePng")]
         public static void CreatePngPostfix(ref byte[] pngData) {
             if (CMFlag) {
                 AddWatermark(KK_PNGCaptureSizeModifier.CharaMakerWatermark.Value, ref pngData, "chara_watermark.png", KK_PNGCaptureSizeModifier.TimesOfMaker);
