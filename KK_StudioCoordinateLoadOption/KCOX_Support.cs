@@ -9,7 +9,7 @@ namespace KK_StudioCoordinateLoadOption {
         private static object KCOXController;
         private static Dictionary<string, object> KCOXTexDataBackup = null;
 
-        internal static string[] MaskKind = { "BodyMask", "InnerMask", "InnerMask" };
+        internal static string[] MaskKind = { "BodyMask", "InnerMask", "BraMask" };
         public static bool LoadAssembly() {
             if (null != Extension.Extension.TryGetPluginInstance("KCOX", new System.Version(5, 0))) {
                 Logger.LogDebug("KCOX found");
@@ -65,9 +65,9 @@ namespace KK_StudioCoordinateLoadOption {
                 ChaFileDefine.CoordinateType coordinateType = (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType;
                 Dictionary<ChaFileDefine.CoordinateType, object> _allOverlayTextures = KCOXController.GetField("_allOverlayTextures").ToDictionary<ChaFileDefine.CoordinateType, object>();
                 if (KCOXController.GetProperty("CurrentOverlayTextures").ToDictionary<string, object>().TryGetValue(name, out object clothesTexData)) {
+                    if (!exist || tex == null || (bool)tex.Invoke("IsEmpty")) {
                     clothesTexData.Invoke("Clear");
                     clothesTexData.SetField("Override", false);
-                    if (!exist || tex == null || (bool)tex.Invoke("IsEmpty")) {
                         _allOverlayTextures[coordinateType].Invoke("Remove", new object[] { name });
                         Logger.LogDebug($"->Clear Overlay/Mask: {name}");
                     } else {

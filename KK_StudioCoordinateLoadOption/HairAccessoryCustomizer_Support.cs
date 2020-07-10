@@ -190,8 +190,8 @@ namespace KK_StudioCoordinateLoadOption {
 
             MonoBehaviour HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
             //Dictionary<int, object> HairAccessories = HairAccCusController?.GetField("HairAccessories").ToDictionary<int, object>();
-            var HairAccessories = HairAccCusController?.GetField("HairAccessories");
-            if(HairAccessories is IDictionary h) {
+            object HairAccessories = HairAccCusController?.GetField("HairAccessories");
+            if (HairAccessories is IDictionary h) {
                 h.Remove(coordinateIndex);
                 HairAccCusController.SetField("HairAccessories", h);
                 Logger.LogDebug($"Remove {chaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.CoordinateType), coordinateIndex)} Hair Accessories From Controller");
@@ -206,17 +206,25 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="chaCtrl">檢核的ChaControl</param>
         /// <param name="coordinate">判斷基礎的Coordinate，留空取chaCtrl.nowCoordinate</param>
         /// <returns>檢核通過</returns>
-        public static bool CheckHairLoadStateByCoordinate(ChaControl chaCtrl, ChaFileCoordinate coordinate = null,bool doReload = false) {
+        public static bool CheckHairLoadStateByCoordinate(ChaControl chaCtrl, bool doReload = false) {
             if (!KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
                 return true;
             }
-            if (null == coordinate) {
-                coordinate = chaCtrl.nowCoordinate;
-            }
+            ChaFileCoordinate coordinate = chaCtrl.nowCoordinate;
             bool? flag = true;
 
             Dictionary<int, object> dataFromCoorExt = GetDataFromCoordinate(coordinate);
             GetDataFromController(chaCtrl, out Dictionary<int, object> dataFromCon);
+            if(null != dataFromCoorExt && null!= dataFromCon) {
+                //過濾假的HairAccInfo
+                foreach (KeyValuePair<int, object> rk in dataFromCoorExt.Where(x => null == Patches.GetChaAccessoryComponent(chaCtrl, x.Key)).ToList()) {
+                    dataFromCoorExt.Remove(rk.Key);
+                }
+                foreach (KeyValuePair<int, object> rk in dataFromCon.Where(x => null == Patches.GetChaAccessoryComponent(chaCtrl, x.Key)).ToList()) {
+                    dataFromCon.Remove(rk.Key);
+                }
+            }
+
             if (null != dataFromCoorExt && dataFromCoorExt.Count > 0) {
                 if (null != dataFromCon && dataFromCon.Count == dataFromCoorExt.Count) {
                     foreach (KeyValuePair<int, object> kv in dataFromCoorExt) {
@@ -241,11 +249,11 @@ namespace KK_StudioCoordinateLoadOption {
                 HairAccCusController.Invoke("UpdateAccessories", new object[] { true });
                 return true;
             } else {
-                if (null == dataFromCoorExt|| dataFromCoorExt.Count == 0) {
-                    ClearHairAccOnController(chaCtrl);
-                } else if(doReload){
+                if (doReload) {
                     //SetControllerFromCoordinate(chaCtrl, coordinate);
                     Patches.DressChara(chaCtrl);
+                } else if (null == dataFromCoorExt || dataFromCoorExt.Count == 0) {
+                    ClearHairAccOnController(chaCtrl);
                 }
                 return false;
             }

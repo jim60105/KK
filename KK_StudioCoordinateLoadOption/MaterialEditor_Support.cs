@@ -1,7 +1,9 @@
 ﻿using Extension;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 namespace KK_StudioCoordinateLoadOption {
@@ -15,13 +17,26 @@ namespace KK_StudioCoordinateLoadOption {
         internal static ChaControl targetChaCtrl = null;
         internal static Dictionary<string, object> TargetMaterialBackup = null;
         internal static Dictionary<int, object> TargetTextureDictionaryBackup = null;
+        internal static DirectoryInfo CacheDirectory;
 
+        private static Type MaterialAPI = null;
         public static bool LoadAssembly() {
-            if (null != Extension.Extension.TryGetPluginInstance("com.deathweasel.bepinex.materialeditor", new Version(1, 10))) {
+            try {
+                string path = Extension.Extension.TryGetPluginInstance("com.deathweasel.bepinex.materialeditor", new Version(2, 0, 7))?.Info.Location;
+                Assembly ass = Assembly.LoadFrom(path);
+                MaterialAPI = ass.GetType("KK_Plugins.MaterialEditor.MaterialAPI");
+                if (null == MaterialAPI) {
+                    throw new Exception("Load assembly FAILED: MaterialEditor");
+                }
                 Logger.LogDebug("MaterialEditor found");
+
+                CacheDirectory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), KK_StudioCoordinateLoadOption.GUID));
+                foreach (FileInfo file in CacheDirectory.GetFiles()) file.Delete();
+                foreach (DirectoryInfo subDirectory in CacheDirectory.GetDirectories()) subDirectory.Delete(true);
+                Logger.LogDebug("Clean cache folder");
                 return true;
-            } else {
-                Logger.LogDebug("Load assembly FAILED: MaterialEditor");
+            } catch (Exception ex) {
+                Logger.LogDebug(ex.Message);
                 return false;
             }
         }
@@ -29,37 +44,37 @@ namespace KK_StudioCoordinateLoadOption {
         public class StoredValueInfo {
             public string className;
             public string removeFunctionName;
-            public string addFunctionName;
+            public string setFunctionName;
             public string listName;
-            public StoredValueInfo(string className, string listName, string removeFunctionName, string addFunctionName) {
+            public StoredValueInfo(string className, string listName, string removeFunctionName, string setFunctionName) {
                 this.className = className;
                 this.listName = listName;
                 this.removeFunctionName = removeFunctionName;
-                this.addFunctionName = addFunctionName;
+                this.setFunctionName = setFunctionName;
             }
         }
 
         //若MaterialEditor改版不運作時，優先確認這部分
         //KK_MaterialEditor.KK_MaterialEditor.MaterialEditorCharaController
         private static StoredValueInfo[] storedValueInfos = {
-            new StoredValueInfo("MaterialShader","MaterialShaderList","RemoveMaterialShaderName","AddMaterialShader"),
-            new StoredValueInfo("RendererProperty","RendererPropertyList","RemoveRendererProperty","AddRendererProperty"),
-            new StoredValueInfo("MaterialFloatProperty","MaterialFloatPropertyList","RemoveMaterialFloatProperty","AddMaterialFloatProperty"),
-            new StoredValueInfo("MaterialColorProperty","MaterialColorPropertyList","RemoveMaterialColorProperty","AddMaterialColorProperty"),
-            new StoredValueInfo("MaterialTextureProperty","MaterialTexturePropertyList","RemoveMaterialTextureProperty","AddMaterialTextureProperty")
+            new StoredValueInfo("MaterialShader","MaterialShaderList","RemoveMaterialShader","SetMaterialShader"),
+            new StoredValueInfo("RendererProperty","RendererPropertyList","RemoveRendererProperty","SetRendererProperty"),
+            new StoredValueInfo("MaterialFloatProperty","MaterialFloatPropertyList","RemoveMaterialFloatProperty","SetMaterialFloatProperty"),
+            new StoredValueInfo("MaterialColorProperty","MaterialColorPropertyList","RemoveMaterialColorProperty","SetMaterialColorProperty"),
+            new StoredValueInfo("MaterialTextureProperty","MaterialTexturePropertyList","RemoveMaterialTexture","")
         };
 
         /// <summary>
         /// KK_MaterialEditor.KK_MaterialEditor.ObjectType的複製
         /// </summary>
-        public enum ObjectType { StudioItem, Clothing, Accessory, Hair, Character, Other };
+        public enum ObjectType { Unknown, Clothing, Accessory, Hair, Character };
 
         /// <summary>
         /// Copy前準備Source和Target資料
         /// </summary>
         /// <param name="sourceChaCtrl">來源ChaControl</param>
         /// <param name="targetChaCtrl">目標ChaControl</param>
-        public static void GetControllerAndBackupData(ChaControl sourceChaCtrl, ChaControl targetChaCtrl = null) {
+        public static void GetControllerAndBackupData(ChaControl sourceChaCtrl = null, ChaControl targetChaCtrl = null) {
             if (null != sourceChaCtrl) {
                 //Logger.LogDebug("Source-----");
                 MaterialEditor_Support.sourceChaCtrl = sourceChaCtrl;
@@ -225,16 +240,34 @@ namespace KK_StudioCoordinateLoadOption {
         /// <summary>
         /// 拷貝Material Editor資料
         /// </summary>
-        /// <param name="objectType">對象分類</param>
         /// <param name="sourceChaCtrl"></param>
         /// <param name="sourceSlot"></param>
         /// <param name="targetChaCtrl"></param>
         /// <param name="targetSlot"></param>
-        public static void CopyMaterialEditorData(ObjectType objectType, ChaControl sourceChaCtrl, int sourceSlot, ChaControl targetChaCtrl, int targetSlot) {
+        /// <param name="gameObject">對象GameObject</param>
+        /// <param name="objectType">對象分類</param>
+        public static void CopyMaterialEditorData(ChaControl sourceChaCtrl, int sourceSlot, ChaControl targetChaCtrl, int targetSlot, GameObject gameObject, ObjectType objectType) {
             if (sourceChaCtrl != MaterialEditor_Support.sourceChaCtrl || targetChaCtrl != MaterialEditor_Support.targetChaCtrl) {
                 GetControllerAndBackupData(sourceChaCtrl, targetChaCtrl);
             }
 
+            //Make fake gameObject for MaterialEditorCharaController.FindGameObjectType
+            if (objectType == ObjectType.Clothing && null != gameObject.GetComponentInChildren<ChaClothesComponent>() ||
+                objectType == ObjectType.Accessory && (null != gameObject && null != gameObject?.GetComponent<ChaAccessoryComponent>())
+                ) {
+                RemoveMaterialEditorData(targetChaCtrl, targetSlot, gameObject, objectType);
+                SetMaterialEditorData(sourceChaCtrl, sourceSlot, targetChaCtrl, targetSlot, gameObject, objectType);
+            }
+        }
+
+        /// <summary>
+        /// 移除Material Editor資料
+        /// </summary>
+        /// <param name="targetChaCtrl"></param>
+        /// <param name="targetSlot"></param>
+        /// <param name="gameObject">對象GameObject</param>
+        /// <param name="objectType">對象分類</param>
+        public static void RemoveMaterialEditorData(ChaControl targetChaCtrl, int targetSlot, GameObject gameObject, ObjectType objectType) {
             //是否有執行到
             bool doFlag = false;
 
@@ -242,6 +275,7 @@ namespace KK_StudioCoordinateLoadOption {
                 bool doFlag2 = false;
                 StoredValueInfo storedValue = storedValueInfos[i];
                 object target = TargetMaterialBackup[storedValue.listName].ToListWithoutType();
+                BindingFlags bf = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod;
 
                 //移除
                 object objRemoved = target.Where((x) =>
@@ -250,75 +284,59 @@ namespace KK_StudioCoordinateLoadOption {
                     (int)x.GetField("Slot") == targetSlot
                 ).ForEach((x) => {
                     doFlag2 = true;
-                    switch (i) {
-                        case 0: //MaterialShader
-                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName") });
-                            if (null != x.GetField("RenderQueueOriginal")) {
-                                TargetMaterialEditorController.Invoke("RemoveMaterialShaderRenderQueue", new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName") });
-                            }
-                            break;
-                        case 1: //RendererProperty
-                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("RendererName"), x.GetField("Property") });
-                            break;
-                        case 2: //MaterialFloatProperty
-                        case 3: //MaterialColorProperty
-                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property") });
-                            break;
-                        case 4: //MaterialTextureProperty
-                            for (int j = 0; j < 3; j++) {
-                                TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), j, false });
-                            }
-                            break;
+                    Renderer r = null;
+                    Material m = null;
+
+                    if (i == 1) {
+                        r = MaterialAPI.InvokeMember("GetRendererList", bf, null, null, new object[] { gameObject })?.ToList<Renderer>().Where(y => y.name == (string)x.GetField("RendererName"))?.First();
+                    } else {
+                        m = MaterialAPI.InvokeMember("GetMaterials", bf, null, null, new object[] { gameObject, (string)x.GetField("MaterialName") })?.ToList<Material>()?.FirstOrDefault();
                     }
-                });
 
-                //加入
-                object objAdded = SourceMaterialBackup[storedValue.listName].ToListWithoutType().Where(x =>
-                    (int)x.GetField("ObjectType") == (int)objectType &&
-                    (int)x.GetField("CoordinateIndex") == sourceChaCtrl.fileStatus.coordinateType &&
-                    (int)x.GetField("Slot") == sourceSlot
-                ).ForEach((x) => {
-                    doFlag2 = true;
                     switch (i) {
                         case 0: //MaterialShader
-                            TargetMaterialEditorController.Invoke(storedValue.addFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("ShaderName"), x.GetField("ShaderNameOriginal") });
+                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] {
+                                targetSlot,
+                                m,
+                                gameObject,
+                                true
+                            });
                             if (null != x.GetField("RenderQueueOriginal")) {
-                                TargetMaterialEditorController.Invoke(storedValue.addFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("RenderQueue"), x.GetField("RenderQueueOriginal") });
+                                TargetMaterialEditorController.Invoke("RemoveMaterialShaderRenderQueue", new object[] {
+                                    targetSlot,
+                                    m,
+                                    gameObject,
+                                    true
+                                });
                             }
                             break;
                         case 1: //RendererProperty
-                            TargetMaterialEditorController.Invoke(storedValue.addFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("RendererName"), x.GetField("Property"), x.GetField("Value"), x.GetField("ValueOriginal") });
+                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] {
+                                targetSlot,
+                                r,
+                                x.GetField("Property") ,
+                                gameObject,
+                                true
+                            });
                             break;
                         case 2: //MaterialFloatProperty
                         case 3: //MaterialColorProperty
-                            TargetMaterialEditorController.Invoke(storedValue.addFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), x.GetField("Value"), x.GetField("ValueOriginal") });
+                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] {
+                                targetSlot,
+                                m,
+                                x.GetField("Property") ,
+                                gameObject,
+                                true
+                            });
                             break;
-                        case 4: //MaterialTextureProperty
-                            //Texture
-                            int? texID = (int?)x.GetField("TexID");
-                            if (texID.HasValue && SourceTextureDictionaryBackup.TryGetValue(texID.Value, out object textureHolder) && textureHolder.GetProperty("Data") is byte[] BA) {
-                                TargetMaterialEditorController.SetField("ObjectTypeToSet", (int)objectType);
-                                TargetMaterialEditorController.SetField("CoordinateIndexToSet", targetChaCtrl.fileStatus.coordinateType);
-                                TargetMaterialEditorController.SetField("SlotToSet", targetSlot);
-                                TargetMaterialEditorController.SetField("TexBytes", BA);
-                                TargetMaterialEditorController.SetField("MatToSet", x.GetField("MaterialName"));
-                                TargetMaterialEditorController.SetField("PropertyToSet", x.GetField("Property"));
-                                if (objectType == ObjectType.Clothing) {
-                                    TargetMaterialEditorController.SetField("GameObjectToSet", targetChaCtrl.objClothes[targetSlot]);
-                                } else if (objectType == ObjectType.Accessory) {
-                                    TargetMaterialEditorController.SetField("GameObjectToSet", Patches.GetChaAccessoryComponent(targetChaCtrl, targetSlot)?.gameObject);
-                                }
-
-                                TargetMaterialEditorController.Invoke("Update");
-                            }
-                            //Offset
-                            if (null != x.GetField("OffsetOriginal")) {
-                                TargetMaterialEditorController.Invoke(storedValue.addFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 1 , x.GetField("Offset"), x.GetField("OffsetOriginal") });
-                            }
-                            //Scale
-                            if (null != x.GetField("ScaleOriginal")) {
-                                TargetMaterialEditorController.Invoke(storedValue.addFunctionName, new object[] { (int)objectType, targetChaCtrl.fileStatus.coordinateType, targetSlot, x.GetField("MaterialName"), x.GetField("Property"), 2 , x.GetField("Scale"), x.GetField("ScaleOriginal") });
-                            }
+                        case 4: //MaterialTexture
+                            TargetMaterialEditorController.Invoke(storedValue.removeFunctionName, new object[] {
+                                    targetSlot,
+                                    m,
+                                    x.GetField("Property"),
+                                    gameObject,
+                                    false
+                                });
                             break;
                     }
                 });
@@ -328,6 +346,154 @@ namespace KK_StudioCoordinateLoadOption {
                         GetExtDataFromController(targetChaCtrl, out TargetMaterialBackup, out TargetTextureDictionaryBackup);
                         Logger.LogDebug($"-->Remove {objRemoved.Count()} {storedValue.className}");
                     }
+                }
+                doFlag |= doFlag2;
+            }
+
+            if (objectType == ObjectType.Accessory) {
+                if (doFlag) {
+                    Logger.LogDebug($"->Remove Material Editor Data: {targetChaCtrl.fileParam.fullname} Slot{targetSlot}");
+                } else {
+                    Logger.LogDebug($"->No Material Editor Backup to remove: {targetChaCtrl.fileParam.fullname} Slot{targetSlot}");
+                }
+            } else if (objectType == ObjectType.Clothing) {
+                if (doFlag) {
+                    Logger.LogDebug($"->Remove Material Editor Data: {targetChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), targetSlot)}");
+                } else {
+                    Logger.LogDebug($"->No Material Editor Backup to remove: {targetChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), targetSlot)}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 寫入Material Editor資料
+        /// </summary>
+        /// <param name="sourceChaCtrl"></param>
+        /// <param name="sourceSlot"></param>
+        /// <param name="targetChaCtrl"></param>
+        /// <param name="targetSlot"></param>
+        /// <param name="gameObject">對象GameObject</param>
+        /// <param name="objectType">對象分類</param>
+        private static void SetMaterialEditorData(ChaControl sourceChaCtrl, int sourceSlot, ChaControl targetChaCtrl, int targetSlot, GameObject gameObject, ObjectType objectType) {
+            //是否有執行到
+            bool doFlag = false;
+
+            for (int i = 0; i < storedValueInfos.Length; i++) {
+                bool doFlag2 = false;
+                StoredValueInfo storedValue = storedValueInfos[i];
+                object target = TargetMaterialBackup[storedValue.listName].ToListWithoutType();
+                BindingFlags bf = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod;
+
+                //加入
+                object objAdded = SourceMaterialBackup[storedValue.listName].ToListWithoutType().Where(x =>
+                    (int)x.GetField("ObjectType") == (int)objectType &&
+                    (int)x.GetField("CoordinateIndex") == sourceChaCtrl.fileStatus.coordinateType &&
+                    (int)x.GetField("Slot") == sourceSlot
+                ).ForEach((x) => {
+                    doFlag2 = true;
+                    Renderer r = null;
+                    Material m = null;
+
+                    if (i == 1) {
+                        r = MaterialAPI.InvokeMember("GetRendererList", bf, null, null, new object[] { gameObject })?.ToList<Renderer>().Where(y => y.name == (string)x.GetField("RendererName"))?.First();
+                    } else {
+                        m = MaterialAPI.InvokeMember("GetMaterials", bf, null, null, new object[] { gameObject, (string)x.GetField("MaterialName") })?.ToList<Material>()?.FirstOrDefault();
+                    }
+
+                    switch (i) {
+                        case 0: //MaterialShader
+                            TargetMaterialEditorController.Invoke(storedValue.setFunctionName, new object[] {
+                                targetSlot,
+                                m,
+                                x.GetField("ShaderName"),
+                                gameObject,
+                                true
+                            });
+                            if (null != x.GetField("RenderQueueOriginal")) {
+                                TargetMaterialEditorController.Invoke("SetMaterialShaderRenderQueue", new object[] {
+                                    targetSlot,
+                                    m,
+                                    x.GetField("RenderQueue"),
+                                    gameObject,
+                                    true
+                                });
+                            }
+                            break;
+                        case 1: //RendererProperty
+                            TargetMaterialEditorController.Invoke(storedValue.setFunctionName, new object[] {
+                                targetSlot,
+                                r,
+                                x.GetField("Property"),
+                                x.GetField("Value"),
+                                gameObject,
+                                true
+                            });
+                            break;
+                        case 2: //MaterialFloatProperty
+                            TargetMaterialEditorController.Invoke(storedValue.setFunctionName, new object[] {
+                                targetSlot,
+                                m,
+                                x.GetField("Property"),
+                                (float)Convert.ToDouble( x.GetField("Value")),
+                                gameObject,
+                                true
+                            });
+                            break;
+                        case 3: //MaterialColorProperty
+                            TargetMaterialEditorController.Invoke(storedValue.setFunctionName, new object[] {
+                                targetSlot,
+                                m,
+                                x.GetField("Property"),
+                                x.GetField("Value"),
+                                gameObject,
+                                true
+                            });
+                            break;
+                        case 4: //MaterialTextureProperty
+                            //Texture
+                            int? texID = (int?)x.GetField("TexID");
+                            if (texID.HasValue && SourceTextureDictionaryBackup.TryGetValue(texID.Value, out object textureHolder) && textureHolder.GetProperty("Data") is byte[] BA) {
+                                string tempPath = Path.Combine(CacheDirectory.FullName, DateTime.UtcNow.Ticks + "_" + texID);
+                                File.WriteAllBytes(tempPath, BA);
+                                TargetMaterialEditorController.Invoke("SetMaterialTextureFromFile", new object[] {
+                                    targetSlot,
+                                    m,
+                                    x.GetField("Property"),
+                                    tempPath,
+                                    gameObject,
+                                    false
+                                });
+
+                                File.Delete(tempPath);
+
+                                //Offset
+                                if (null != x.GetField("OffsetOriginal")) {
+                                    TargetMaterialEditorController.Invoke("SetMaterialTextureOffset", new object[] {
+                                        targetSlot,
+                                        m,
+                                        x.GetField("Property"),
+                                        x.GetField("Offset"),
+                                        gameObject,
+                                        true
+                                    });
+                                }
+                                //Scale
+                                if (null != x.GetField("ScaleOriginal")) {
+                                    TargetMaterialEditorController.Invoke("SetMaterialTextureScale", new object[] {
+                                        targetSlot,
+                                        m,
+                                        x.GetField("Property"),
+                                        x.GetField("Scale"),
+                                        gameObject,
+                                        true
+                                    });
+                                }
+                            }
+                            break;
+                    }
+                });
+
+                if (doFlag2) {
                     if (objAdded.Count() > 0) {
                         GetExtDataFromController(targetChaCtrl, out TargetMaterialBackup, out TargetTextureDictionaryBackup);
                         Logger.LogDebug($"-->Change {objAdded.Count()} {storedValue.className}");
@@ -338,15 +504,15 @@ namespace KK_StudioCoordinateLoadOption {
 
             if (objectType == ObjectType.Accessory) {
                 if (doFlag) {
-                    Logger.LogDebug($"->Copy Material Editor Data: {sourceChaCtrl.fileParam.fullname} Slot{sourceSlot} -> {targetChaCtrl.fileParam.fullname} Slot{targetSlot}");
+                    Logger.LogDebug($"->Set Material Editor Data: {sourceChaCtrl.fileParam.fullname} Slot{sourceSlot} -> {targetChaCtrl.fileParam.fullname} Slot{targetSlot}");
                 } else {
-                    Logger.LogDebug($"->No Material Editor Backup to copy: {sourceChaCtrl.fileParam.fullname} {sourceSlot}");
+                    Logger.LogDebug($"->No Material Editor Backup to set: {sourceChaCtrl.fileParam.fullname} {sourceSlot}");
                 }
             } else if (objectType == ObjectType.Clothing) {
                 if (doFlag) {
-                    Logger.LogDebug($"->Copy Material Editor Data: {sourceChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), sourceSlot)} -> {targetChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), targetSlot)}");
+                    Logger.LogDebug($"->Set Material Editor Data: {sourceChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), sourceSlot)} -> {targetChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), targetSlot)}");
                 } else {
-                    Logger.LogDebug($"->No Material Editor Backup to copy: {sourceChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), sourceSlot)}");
+                    Logger.LogDebug($"->No Material Editor Backup to set: {sourceChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), sourceSlot)}");
                 }
             }
         }

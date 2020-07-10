@@ -18,7 +18,6 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
 using BepInEx;
-using BepInEx.Harmony;
 using BepInEx.Logging;
 using ExIni;
 using Extension;
@@ -47,14 +46,14 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.05.16.0";
-        internal const string PLUGIN_RELEASE_VERSION = "3.3.4";
+        internal const string PLUGIN_VERSION = "20.07.11.0";
+        internal const string PLUGIN_RELEASE_VERSION = "3.3.5";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
             UIUtility.Init();
-            Harmony harmonyInstance = HarmonyWrapper.PatchAll(typeof(Patches));
+            Harmony harmonyInstance = Harmony.CreateAndPatchAll(typeof(Patches));
             harmonyInstance.PatchAll(typeof(MoreAccessories_Support));
 
             Type CostumeInfoType = typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic);
@@ -283,7 +282,7 @@ namespace KK_StudioCoordinateLoadOption {
                     }
                 });
                 tglCharaOverlay.isOn = false;
-                toggleList.AddRange(new Toggle[] {tglCharaOverlay, tglEyeOverlay, tglFaceOverlay, tglBodyOverlay });
+                toggleList.AddRange(new Toggle[] { tglCharaOverlay, tglEyeOverlay, tglFaceOverlay, tglBodyOverlay });
             }
 
             if (KK_StudioCoordinateLoadOption._isABMXExist) {
@@ -379,17 +378,17 @@ namespace KK_StudioCoordinateLoadOption {
             btnAll.onClick.RemoveAllListeners();
             btnAll.onClick.AddListener(() => {
                 if (toggleList.All(x => x.isOn == true)) {
-                    foreach(var x in toggleList) { x.isOn = false; }
+                    foreach (Toggle x in toggleList) { x.isOn = false; }
                 } else {
-                    foreach(var x in toggleList) { x.isOn = true; }
+                    foreach (Toggle x in toggleList) { x.isOn = true; }
                 }
             });
             btnAll2.onClick.RemoveAllListeners();
             btnAll2.onClick.AddListener(() => {
                 if (tgls2.All(x => x.isOn == true)) {
-                    foreach(var x in tgls2) { x.isOn = false; }
+                    foreach (Toggle x in tgls2) { x.isOn = false; }
                 } else {
-                    foreach(var x in tgls2) { x.isOn = true; }
+                    foreach (Toggle x in tgls2) { x.isOn = true; }
                 }
             });
             btnClearAcc.onClick.RemoveAllListeners();
@@ -482,11 +481,11 @@ namespace KK_StudioCoordinateLoadOption {
             bool isAllTrueFlag = true;
             bool isAllFalseFlag = true;
 
-            List<bool> toggleBoolList = tgls.Select(x=>x.isOn).ToList();
+            List<bool> toggleBoolList = tgls.Select(x => x.isOn).ToList();
             toggleBoolList.AddRange(charaOverlay);
             toggleBoolList.Add(readABMX);
 
-            foreach(bool b in toggleBoolList) {
+            foreach (bool b in toggleBoolList) {
                 isAllTrueFlag &= b;
                 isAllFalseFlag &= !b;
             }
@@ -577,7 +576,7 @@ namespace KK_StudioCoordinateLoadOption {
         internal static void DressChara(ChaControl chaCtrl) => chaCtrl.nowCoordinate.LoadFile(charaFileSort.selectPath);
 
         internal static void ReloadCheckTmpCharaFunc() {
-            if (null != tmpChaCtrl && HairAccessoryCustomizer_Support.CheckHairLoadStateByCoordinate(tmpChaCtrl,doReload:true)) {
+            if (null != tmpChaCtrl && HairAccessoryCustomizer_Support.CheckHairLoadStateByCoordinate(tmpChaCtrl, true)) {
                 ReloadCheckTmpCharaFlag = false;
                 tmpChaCtrl.StopAllCoroutines();
 
@@ -631,8 +630,9 @@ namespace KK_StudioCoordinateLoadOption {
                             chaCtrl.nowCoordinate.clothes.parts[kind] = MessagePackSerializer.Deserialize<ChaFileClothes.PartsInfo>(tmp);
                             chaCtrl.ChangeClothes(kind, tmpChaCtrl.nowCoordinate.clothes.parts[kind].id, tmpChaCtrl.nowCoordinate.clothes.subPartsId[0], tmpChaCtrl.nowCoordinate.clothes.subPartsId[1], tmpChaCtrl.nowCoordinate.clothes.subPartsId[2], true);
 
-                            if (KK_StudioCoordinateLoadOption._isMaterialEditorExist) {
-                                MaterialEditor_Support.CopyMaterialEditorData(MaterialEditor_Support.ObjectType.Clothing, tmpChaCtrl, kind, chaCtrl, kind);
+                            GameObject go = chaCtrl.objClothes[kind];
+                            if (KK_StudioCoordinateLoadOption._isMaterialEditorExist && null != go) {
+                                MaterialEditor_Support.CopyMaterialEditorData(tmpChaCtrl, kind, chaCtrl, kind, go, MaterialEditor_Support.ObjectType.Clothing);
                             }
 
                             Logger.LogDebug("->Changed: " + tgl.name + " / ID: " + chaCtrl.nowCoordinate.clothes.parts[kind].id);
@@ -754,6 +754,11 @@ namespace KK_StudioCoordinateLoadOption {
                     }
                 }
 
+                //Rollback Material Editor Data
+                if (KK_StudioCoordinateLoadOption._isMaterialEditorExist) {
+                    MaterialEditor_Support.SetControllerFromCoordinate(chaCtrl, backupTmpCoordinate);
+                }
+
                 //顯示HairAcc狀態
                 if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
                     HairAccessoryCustomizer_Support.GetDataFromExtData(chaCtrl, out Dictionary<int, object> nowCoor);
@@ -761,11 +766,6 @@ namespace KK_StudioCoordinateLoadOption {
                         nowCoor = new Dictionary<int, object>();
                     }
                     Logger.LogDebug($"->Hair Count: {nowCoor.Count} : {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
-                }
-
-                //Rollback Material Editor Data
-                if (KK_StudioCoordinateLoadOption._isMaterialEditorExist) {
-                    MaterialEditor_Support.SetControllerFromCoordinate(chaCtrl, backupTmpCoordinate);
                 }
 
                 chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
@@ -911,8 +911,10 @@ namespace KK_StudioCoordinateLoadOption {
             if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
                 HairAccessoryCustomizer_Support.CopyHairAcc(sourceChaCtrl, sourceSlot, targetChaCtrl, targetSlot);
             }
-            if (KK_StudioCoordinateLoadOption._isMaterialEditorExist) {
-                MaterialEditor_Support.CopyMaterialEditorData(MaterialEditor_Support.ObjectType.Accessory, sourceChaCtrl, sourceSlot, targetChaCtrl, targetSlot);
+
+            GameObject go = GetChaAccessoryComponent(sourceChaCtrl, sourceSlot).gameObject;
+            if (KK_StudioCoordinateLoadOption._isMaterialEditorExist && null != go) {
+                MaterialEditor_Support.CopyMaterialEditorData(sourceChaCtrl, sourceSlot, targetChaCtrl, targetSlot, go, MaterialEditor_Support.ObjectType.Accessory);
             }
             Logger.LogDebug($"->Changed: Acc{targetSlot} / Part: {(ChaListDefine.CategoryNo)targetParts[targetSlot].type} / ID: {targetParts[targetSlot].id}");
         }
