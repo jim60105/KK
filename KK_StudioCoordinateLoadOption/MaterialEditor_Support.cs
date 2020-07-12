@@ -275,7 +275,6 @@ namespace KK_StudioCoordinateLoadOption {
                 bool doFlag2 = false;
                 StoredValueInfo storedValue = storedValueInfos[i];
                 object target = TargetMaterialBackup[storedValue.listName].ToListWithoutType();
-                BindingFlags bf = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod;
 
                 //移除
                 object objRemoved = target.Where((x) =>
@@ -288,9 +287,9 @@ namespace KK_StudioCoordinateLoadOption {
                     Material m = null;
 
                     if (i == 1) {
-                        r = MaterialAPI.InvokeMember("GetRendererList", bf, null, null, new object[] { gameObject })?.ToList<Renderer>().Where(y => y.name == (string)x.GetField("RendererName"))?.First();
+                        r = Extension.Extension.InvokeStatic(MaterialAPI, "GetRendererList", new object[] { gameObject })?.ToList<Renderer>().Where(y => y.name == (string)x.GetField("RendererName"))?.FirstOrDefault();
                     } else {
-                        m = MaterialAPI.InvokeMember("GetMaterials", bf, null, null, new object[] { gameObject, (string)x.GetField("MaterialName") })?.ToList<Material>()?.FirstOrDefault();
+                        m = Extension.Extension.InvokeStatic(MaterialAPI, "GetMaterials", new object[] { gameObject, (string)x.GetField("MaterialName") })?.ToList<Material>()?.FirstOrDefault();
                     }
 
                     switch (i) {
@@ -382,7 +381,6 @@ namespace KK_StudioCoordinateLoadOption {
                 bool doFlag2 = false;
                 StoredValueInfo storedValue = storedValueInfos[i];
                 object target = TargetMaterialBackup[storedValue.listName].ToListWithoutType();
-                BindingFlags bf = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod;
 
                 //加入
                 object objAdded = SourceMaterialBackup[storedValue.listName].ToListWithoutType().Where(x =>
@@ -395,9 +393,9 @@ namespace KK_StudioCoordinateLoadOption {
                     Material m = null;
 
                     if (i == 1) {
-                        r = MaterialAPI.InvokeMember("GetRendererList", bf, null, null, new object[] { gameObject })?.ToList<Renderer>().Where(y => y.name == (string)x.GetField("RendererName"))?.First();
+                        r = Extension.Extension.InvokeStatic(MaterialAPI, "GetRendererList", new object[] { gameObject })?.ToList<Renderer>().Where(y => y.name == (string)x.GetField("RendererName"))?.FirstOrDefault();
                     } else {
-                        m = MaterialAPI.InvokeMember("GetMaterials", bf, null, null, new object[] { gameObject, (string)x.GetField("MaterialName") })?.ToList<Material>()?.FirstOrDefault();
+                        m = Extension.Extension.InvokeStatic(MaterialAPI, "GetMaterials", new object[] { gameObject, (string)x.GetField("MaterialName") })?.ToList<Material>()?.FirstOrDefault();
                     }
 
                     switch (i) {

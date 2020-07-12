@@ -19,7 +19,6 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 
 using BepInEx;
 using BepInEx.Configuration;
-using BepInEx.Harmony;
 using BepInEx.Logging;
 using ExtensibleSaveFormat;
 using Extension;
@@ -42,8 +41,8 @@ namespace KK_StudioCharaOnlyLoadBody {
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "20.01.20.1";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.7";
+        internal const string PLUGIN_VERSION = "20.07.12.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.7.1";
 
         public static ConfigEntry<string> ExtendedDataToCopySetting { get; private set; }
         public static string[] ExtendedDataToCopy;
@@ -51,7 +50,7 @@ namespace KK_StudioCharaOnlyLoadBody {
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
-            HarmonyWrapper.PatchAll(typeof(Patches));
+            Harmony.CreateAndPatchAll(typeof(Patches));
 
             string[] SampleArray = {
                 "KSOX",
@@ -345,7 +344,8 @@ namespace KK_StudioCharaOnlyLoadBody {
                                         Logger.LogDebug($"Sideloader count: {tmpExtList.Count}");
                                         ResolveInfo tmpResolveInfo;
                                         for (int j = 0; j < tmpExtList.Count;) {
-                                            tmpResolveInfo = (ResolveInfo)typeof(ResolveInfo).InvokeMember("Deserialize", BindingFlags.Default | BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod, null, null, new object[] { (byte[])tmpExtList[j] });
+                                            tmpResolveInfo = (ResolveInfo)Extension.Extension.InvokeStatic(typeof(ResolveInfo), "Deserialize", new object[] { (byte[])tmpExtList[j] });
+
                                             if (keepBodyData == isBelongsToCharaBody(tmpResolveInfo.CategoryNo)) {
                                                 Logger.LogDebug($"Add Sideloader info: {tmpResolveInfo.GUID} : {tmpResolveInfo.Property} : {tmpResolveInfo.Slot}");
                                                 j++;
@@ -395,9 +395,7 @@ namespace KK_StudioCharaOnlyLoadBody {
                         Logger.LogDebug($"Merge and Save Sideloader: {tmpObj.Length}");
 
                         //調用原始sideloader載入hook function
-                        typeof(UniversalAutoResolver).GetNestedType("Hooks", BindingFlags.NonPublic)
-                            .InvokeMember("ExtendedCardLoad", BindingFlags.Default | BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod, null, null,
-                                new object[] { ocichar.charInfo.chaFile });
+                        Extension.Extension.InvokeStatic(typeof(UniversalAutoResolver).GetNestedType("Hooks", BindingFlags.NonPublic), "ExtendedCardLoad", new object[] { ocichar.charInfo.chaFile });
 
                         Logger.LogDebug("Sideloader Data Loaded");
                         break;
@@ -421,17 +419,9 @@ namespace KK_StudioCharaOnlyLoadBody {
         public static void CopyAllMoreAccessoriesData(ChaControl oriChaCtrl, ChaControl targetChaCtrl) {
             //這條如果call ChaFile.CopyAll會觸發其他鉤子，導致ExtendedData無法正常作用
             //所以用reflection處理
-            ChaFile_CopyAll_Patches.InvokeMember("Postfix",
-                BindingFlags.InvokeMethod | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance,
-                null,
-                null,
-                new object[] { (ChaFile)targetChaCtrl.chaFile, (ChaFile)oriChaCtrl.chaFile });
+            Extension.Extension.InvokeStatic(ChaFile_CopyAll_Patches, "Postfix", new object[] { targetChaCtrl.chaFile, oriChaCtrl.chaFile });
 
-            MoreAccessories.InvokeMember("Update",
-                BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance,
-                null,
-                MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null),
-                null);
+            MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null).Invoke("Update");
 
             Logger.LogDebug("Copy MoreAccessories Finish");
         }

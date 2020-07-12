@@ -47,7 +47,7 @@ namespace KK_StudioCoordinateLoadOption {
                 }
                 return result;
             }
-            Logger.LogDebug($"No Hair Accessories get from {chaCtrl.fileParam.fullname} From ExtData");
+            Logger.LogDebug($"No Hair Accessories get from {chaCtrl.fileParam.fullname}'s ExtData");
             return null;
         }
 
@@ -87,7 +87,8 @@ namespace KK_StudioCoordinateLoadOption {
                 }
                 return result;
             }
-            Logger.LogDebug($"No Hair Accessories get from {chaCtrl.fileParam.fullname} From Controller");
+            Logger.LogDebug($"No Hair Accessories get from {chaCtrl.fileParam.fullname}'s Controller");
+            nowcoordinateExtData = null;
             return null;
         }
 
@@ -109,7 +110,7 @@ namespace KK_StudioCoordinateLoadOption {
                 Logger.LogDebug($"->{string.Join(",", nowcoordinateExtData.Select(x => x.Key.ToString()).ToArray())}");
                 return nowcoordinateExtData;
             }
-            Logger.LogDebug($"No Hair Accessories get from {coordinate.coordinateFileName} (1)");
+            Logger.LogDebug($"No Hair Accessories get from coordinate {coordinate.coordinateFileName}");
             return null;
         }
 
@@ -204,9 +205,8 @@ namespace KK_StudioCoordinateLoadOption {
         /// 檢核LoadState，這是因為異步流程所需，檢查Extdata是否已從Coordinate載入完成
         /// </summary>
         /// <param name="chaCtrl">檢核的ChaControl</param>
-        /// <param name="coordinate">判斷基礎的Coordinate，留空取chaCtrl.nowCoordinate</param>
         /// <returns>檢核通過</returns>
-        public static bool CheckHairLoadStateByCoordinate(ChaControl chaCtrl, bool doReload = false) {
+        public static bool CheckControllerPrepared(ChaControl chaCtrl, bool doReload = false) {
             if (!KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
                 return true;
             }
@@ -215,14 +215,19 @@ namespace KK_StudioCoordinateLoadOption {
 
             Dictionary<int, object> dataFromCoorExt = GetDataFromCoordinate(coordinate);
             GetDataFromController(chaCtrl, out Dictionary<int, object> dataFromCon);
-            if(null != dataFromCoorExt && null!= dataFromCon) {
-                //過濾假的HairAccInfo
-                foreach (KeyValuePair<int, object> rk in dataFromCoorExt.Where(x => null == Patches.GetChaAccessoryComponent(chaCtrl, x.Key)).ToList()) {
+
+            //過濾假的HairAccInfo
+            if (null != dataFromCoorExt) {
+                foreach (KeyValuePair<int, object> rk in dataFromCoorExt.Where(x => null == Patches.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
                     dataFromCoorExt.Remove(rk.Key);
                 }
-                foreach (KeyValuePair<int, object> rk in dataFromCon.Where(x => null == Patches.GetChaAccessoryComponent(chaCtrl, x.Key)).ToList()) {
+                Logger.LogDebug($"Test with {dataFromCoorExt.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromCoorExt.Select(x => x.Key.ToString()).ToArray())}");
+            }
+            if (null != dataFromCon) {
+                foreach (KeyValuePair<int, object> rk in dataFromCon.Where(x => null == Patches.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
                     dataFromCon.Remove(rk.Key);
                 }
+                Logger.LogDebug($"Test with {dataFromCon.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromCon.Select(x => x.Key.ToString()).ToArray())}");
             }
 
             if (null != dataFromCoorExt && dataFromCoorExt.Count > 0) {

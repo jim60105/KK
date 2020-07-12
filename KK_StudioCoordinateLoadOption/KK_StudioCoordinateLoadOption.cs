@@ -25,6 +25,7 @@ using HarmonyLib;
 using MessagePack;
 using Studio;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -46,8 +47,8 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.07.11.0";
-        internal const string PLUGIN_RELEASE_VERSION = "3.3.5";
+        internal const string PLUGIN_VERSION = "20.07.12.0";
+        internal const string PLUGIN_RELEASE_VERSION = "3.3.5.1";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -139,13 +140,9 @@ namespace KK_StudioCoordinateLoadOption {
         private static OCIChar[] oCICharArray;
         private static Queue<OCIChar> oCICharQueue = new Queue<OCIChar>();
         private static float mouthOpen = 0;
-        private static bool ReloadCheckTmpCharaFlag = false;
-        private static OCIChar ReloadCheckChara;
         private static ChaControl tmpChaCtrl;
         private static ChaFileCoordinate backupTmpCoordinate;
-        private static int callCount = CALLCOUNT;
         private static int forceCleanCount = FORCECLEANCOUNT;
-
 
         public static void InitPostfix(object __instance) {
             BlockAnotherPlugin();
@@ -405,7 +402,7 @@ namespace KK_StudioCoordinateLoadOption {
             });
             btnReverseHairAcc.onClick.RemoveAllListeners();
             btnReverseHairAcc.onClick.AddListener(() => {
-                MakeTmpChara();
+                MakeTmpChara(false);
                 for (int i = 0; i < MoreAccessories_Support.GetAccessoriesAmount(tmpChaCtrl.chaFile); i++) {
                     if (i < tgls2.Length) {
                         if (IsHairAccessory(tmpChaCtrl, i)) {
@@ -524,29 +521,16 @@ namespace KK_StudioCoordinateLoadOption {
             return;
         }
         internal static void Update() {
-            #region ReloadCheck1
-            if (ReloadCheckTmpCharaFlag) {
-                callCount--;
-                ReloadCheckTmpCharaFunc();
-            }
-            #endregion
-
-            #region ReloadCheck3
-            if (null != ReloadCheckChara) {
-                callCount--;
-                ReloadCheckCharaFunc();
-            }
-            #endregion
-
             if (null != tmpChaCtrl) {
                 forceCleanCount--;
+                //Logger.LogDebug("ForceClean: " + (FORCECLEANCOUNT - forceCleanCount));
                 if (forceCleanCount <= 0) {
                     EndCheck(true);
                 }
             }
         }
 
-        private static void MakeTmpChara(bool reloadCheck = false) {
+        private static void MakeTmpChara(bool doChange) {
             forceCleanCount = FORCECLEANCOUNT;
             tmpChaCtrl = Singleton<Manager.Character>.Instance.CreateFemale(Camera.main.gameObject, -1);
             tmpChaCtrl.Load(true);
@@ -554,261 +538,194 @@ namespace KK_StudioCoordinateLoadOption {
             tmpChaCtrl.fileParam.firstname = "舔舔";
             tmpChaCtrl.gameObject.transform.localPosition = new Vector3(0, 0, -10);   //丟到Camera後面就看不見了
 
-            ReloadTmpChara(reloadCheck);
+            tmpChaCtrl.StartCoroutine(ReloadTmpChara(doChange));
         }
 
-        internal static void ReloadTmpChara(bool reloadCheck) {
+        internal static IEnumerator ReloadTmpChara(bool doChange) {
             HairAccessoryCustomizer_Support.ClearHairAccOnController(tmpChaCtrl);
             ClearAccessories(tmpChaCtrl);
             backupTmpCoordinate = new ChaFileCoordinate();
             backupTmpCoordinate.LoadFile(charaFileSort.selectPath);
+
+            //KCOX在讀衣裝前需要先做Reload初始化
+            tmpChaCtrl.Reload();
+            yield return new WaitUntil(delegate { return CheckPluginPrepared(tmpChaCtrl); });
+
             DressChara(tmpChaCtrl);
             tmpChaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)tmpChaCtrl.fileStatus.coordinateType);
             tmpChaCtrl.Reload(false, true, true, true);
 
-            if (reloadCheck) {
-                callCount = CALLCOUNT;
-                ReloadCheckTmpCharaFlag = true;
+            if (doChange) {
+                forceCleanCount = FORCECLEANCOUNT;
+
+                do {
+                    yield return new WaitForFixedUpdate();
+                } while (!CheckPluginPrepared(tmpChaCtrl));
+                ChangeCoordinate();
             }
-            //=>Goto ReloadCheckTmp
         }
 
         internal static void DressChara(ChaControl chaCtrl) => chaCtrl.nowCoordinate.LoadFile(charaFileSort.selectPath);
 
-        internal static void ReloadCheckTmpCharaFunc() {
-            if (null != tmpChaCtrl && HairAccessoryCustomizer_Support.CheckHairLoadStateByCoordinate(tmpChaCtrl, true)) {
-                ReloadCheckTmpCharaFlag = false;
-                tmpChaCtrl.StopAllCoroutines();
+        internal static void ChangeCoordinate() {
+            tmpChaCtrl.StopAllCoroutines();
 
-                tmpChaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)tmpChaCtrl.fileStatus.coordinateType);
-                if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
-                    HairAccessoryCustomizer_Support.SetExtDataFromController(tmpChaCtrl);
-                }
-                if (KK_StudioCoordinateLoadOption._isMaterialEditorExist) {
-                    MaterialEditor_Support.SetControllerFromCoordinate(tmpChaCtrl);
-                }
-                OCIChar ocichar = oCICharQueue.Dequeue();
-                mouthOpen = ocichar.oiCharInfo.mouthOpen;
-                Logger.LogDebug($"Mouth: {mouthOpen}");
-
-                //Load Coordinate
-                ChaControl chaCtrl = ocichar.charInfo;
-
-                Queue<int> accQueue = new Queue<int>();
-
-                foreach (Toggle tgl in tgls) {
-                    object tmpToggleType = null;
-                    int kind = -2;
-                    try {
-                        tmpToggleType = Enum.Parse(typeof(ClothesKind), tgl.name);
-                        kind = Convert.ToInt32(tmpToggleType);
-                    } catch (ArgumentException) {
-                        kind = -1;
-                    }
-                    if (tgl.isOn) {
-                        if (kind == 9) {
-                            if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
-                                MoreAccessories_Support.CopyMoreAccessories(tmpChaCtrl, chaCtrl);
-                            } else {
-                                //Copy accessories
-                                ChaFileAccessory.PartsInfo[] chaCtrlAccParts = chaCtrl.nowCoordinate.accessory.parts;
-                                ChaFileAccessory.PartsInfo[] tmpCtrlAccParts = tmpChaCtrl.nowCoordinate.accessory.parts;
-
-                                ChangeAccessories(tmpChaCtrl, tmpCtrlAccParts, chaCtrl, chaCtrlAccParts, accQueue);
-
-                                //accQueue內容物太多，報告後捨棄
-                                while (accQueue.Count > 0) {
-                                    int slot = accQueue.Dequeue();
-                                    ChaFileAccessory.PartsInfo part = tmpCtrlAccParts[slot];
-                                    Logger.LogMessage("Accessories slot is not enough! Discard " + GetNameFromIDAndType(part.id, (ChaListDefine.CategoryNo)part.type));
-                                }
-                            }
-                            Logger.LogDebug("->Changed: " + tgl.name);
-                        } else if (kind >= 0) {
-                            //Change clothes
-                            byte[] tmp = MessagePackSerializer.Serialize<ChaFileClothes.PartsInfo>(tmpChaCtrl.nowCoordinate.clothes.parts[kind]);
-                            chaCtrl.nowCoordinate.clothes.parts[kind] = MessagePackSerializer.Deserialize<ChaFileClothes.PartsInfo>(tmp);
-                            chaCtrl.ChangeClothes(kind, tmpChaCtrl.nowCoordinate.clothes.parts[kind].id, tmpChaCtrl.nowCoordinate.clothes.subPartsId[0], tmpChaCtrl.nowCoordinate.clothes.subPartsId[1], tmpChaCtrl.nowCoordinate.clothes.subPartsId[2], true);
-
-                            GameObject go = chaCtrl.objClothes[kind];
-                            if (KK_StudioCoordinateLoadOption._isMaterialEditorExist && null != go) {
-                                MaterialEditor_Support.CopyMaterialEditorData(tmpChaCtrl, kind, chaCtrl, kind, go, MaterialEditor_Support.ObjectType.Clothing);
-                            }
-
-                            Logger.LogDebug("->Changed: " + tgl.name + " / ID: " + chaCtrl.nowCoordinate.clothes.parts[kind].id);
-                        }
-                    } else {
-                        if (kind == 9) {
-                            //若沒有load飾品，就把當前狀態存入ExtData
-                            if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
-                                HairAccessoryCustomizer_Support.SetExtDataFromController(chaCtrl);
-                            }
-                        }
-                    }
-                }
-
-                //寫入Material Editor Data
-                if (KK_StudioCoordinateLoadOption._isMaterialEditorExist) {
-                    MaterialEditor_Support.SetExtDataFromController(chaCtrl);
-
-                    //Backup Material
-                    MaterialEditor_Support.SetCoordinateExtDataFromController(chaCtrl, backupTmpCoordinate);
-                    chaCtrl.StopAllCoroutines();
-                }
-
-                //KK_COBOC
-                if (KK_StudioCoordinateLoadOption._isCharaOverlayBasedOnCoordinateExist) {
-                    COBOC_Support.SetControllerFromExtData(chaCtrl);
-                    if (charaOverlay.ToList().Where((x) => x).Count() > 0) {
-                        COBOC_Support.CopyCurrentCharaOverlayByController(tmpChaCtrl, chaCtrl, charaOverlay);
-                    } else {
-                        Logger.LogDebug("Skip load CharaOverlay");
-                    }
-
-                    //Backup Chara Overlays
-                    COBOC_Support.SetExtDataFromController(chaCtrl);
-                }
-
-                //Backup KCOX
-                if (KK_StudioCoordinateLoadOption._isKCOXExist) {
-                    KCOX_Support.BackupKCOXData(chaCtrl, chaCtrl.nowCoordinate.clothes);
-                }
-
-                //Backup MoreAcc
-                if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
-                    chaCtrl.ChangeAccessory(true);
-                    chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
-                    MoreAccessories_Support.SetExtDataFromPlugin(chaCtrl.chaFile);
-                }
-
-                //fake load
-                using (FileStream fileStream = new FileStream(charaFileSort.selectPath, FileMode.Open, FileAccess.Read)) {
-                    fakeLoadFlag_LoadBytes = true;
-                    chaCtrl.nowCoordinate.LoadFile(fileStream);
-                    fakeLoadFlag_LoadBytes = false;
-                }
-
-                //Load完畢再Rollback
-                callCount = CALLCOUNT;
-                ReloadCheckChara = ocichar;
-                //=>Goto ReloadCheck
-            } else if (callCount <= 0) {
-                //TmpChara load failed
-                ReloadCheckTmpCharaFlag = false;
-                backupTmpCoordinate = null;
-                oCICharQueue.Clear();
-                EndCheck();
-
-                Logger.LogMessage("Optional coordinate loading FAILED.");
-                Logger.LogMessage("Instead, call the original game function by checking all the toggles except lockHairAcc.");
-                Logger.LogError("Optional coordinate loading FAILED.");
-                Logger.LogError("Instead, call the original game function by checking all the toggles except lockHairAcc.");
+            tmpChaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)tmpChaCtrl.fileStatus.coordinateType);
+            if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
+                HairAccessoryCustomizer_Support.SetExtDataFromController(tmpChaCtrl);
             }
-        }
+            if (KK_StudioCoordinateLoadOption._isMaterialEditorExist) {
+                MaterialEditor_Support.SetControllerFromCoordinate(tmpChaCtrl);
+            }
+            OCIChar ocichar = oCICharQueue.Dequeue();
+            mouthOpen = ocichar.oiCharInfo.mouthOpen;
+            Logger.LogDebug($"Mouth: {mouthOpen}");
 
-        internal static void ReloadCheckCharaFunc() {
-            if (HairAccessoryCustomizer_Support.CheckHairLoadStateByCoordinate(ReloadCheckChara.charInfo)) {
-                OCIChar ocichar = ReloadCheckChara;
-                ReloadCheckChara = null;
-                ChaControl chaCtrl = ocichar.charInfo;
-                chaCtrl.StopAllCoroutines();
+            //Load Coordinate
+            ChaControl chaCtrl = ocichar.charInfo;
 
-                //Rollback All MoreAccessories
-                if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
-                    MoreAccessories_Support.GetExtDataFromPlugin(chaCtrl.chaFile);
-                    MoreAccessories_Support.Update();
+            Queue<int> accQueue = new Queue<int>();
+
+            foreach (Toggle tgl in tgls) {
+                object tmpToggleType = null;
+                int kind = -2;
+                try {
+                    tmpToggleType = Enum.Parse(typeof(ClothesKind), tgl.name);
+                    kind = Convert.ToInt32(tmpToggleType);
+                } catch (ArgumentException) {
+                    kind = -1;
                 }
+                if (tgl.isOn) {
+                    if (kind == 9) {
+                        if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
+                            MoreAccessories_Support.CopyMoreAccessories(tmpChaCtrl, chaCtrl);
+                        } else {
+                            //Copy accessories
+                            ChaFileAccessory.PartsInfo[] chaCtrlAccParts = chaCtrl.nowCoordinate.accessory.parts;
+                            ChaFileAccessory.PartsInfo[] tmpCtrlAccParts = tmpChaCtrl.nowCoordinate.accessory.parts;
 
-                //Rollback KCOX
-                if (KK_StudioCoordinateLoadOption._isKCOXExist) {
-                    foreach (Toggle tgl in tgls) {
-                        int kind;
-                        try {
-                            kind = Convert.ToInt32(Enum.Parse(typeof(ClothesKind), tgl.name));
-                        } catch (ArgumentException) {
-                            kind = -1;
-                        }
+                            ChangeAccessories(tmpChaCtrl, tmpCtrlAccParts, chaCtrl, chaCtrlAccParts, accQueue);
 
-                        if (!tgl.isOn && kind >= 0 && kind < 9) {
-                            KCOX_Support.RollbackOverlay(true, kind, chaCtrl);
-                            if (kind == 0) {
-                                for (int j = 0; j < SubClothesNames.Length; j++) {
-                                    KCOX_Support.RollbackOverlay(false, j, chaCtrl);
-                                }
-                                foreach (string maskKind in KCOX_Support.MaskKind) {
-                                    KCOX_Support.RollbackOverlay(true, 0, chaCtrl, maskKind);
-                                }
+                            //accQueue內容物太多，報告後捨棄
+                            while (accQueue.Count > 0) {
+                                int slot = accQueue.Dequeue();
+                                ChaFileAccessory.PartsInfo part = tmpCtrlAccParts[slot];
+                                Logger.LogMessage("Accessories slot is not enough! Discard " + GetNameFromIDAndType(part.id, (ChaListDefine.CategoryNo)part.type));
                             }
                         }
+                        Logger.LogDebug("->Changed: " + tgl.name);
+                    } else if (kind >= 0) {
+                        //Change clothes
+                        byte[] tmp = MessagePackSerializer.Serialize<ChaFileClothes.PartsInfo>(tmpChaCtrl.nowCoordinate.clothes.parts[kind]);
+                        chaCtrl.nowCoordinate.clothes.parts[kind] = MessagePackSerializer.Deserialize<ChaFileClothes.PartsInfo>(tmp);
+                        chaCtrl.ChangeClothes(kind, tmpChaCtrl.nowCoordinate.clothes.parts[kind].id, tmpChaCtrl.nowCoordinate.clothes.subPartsId[0], tmpChaCtrl.nowCoordinate.clothes.subPartsId[1], tmpChaCtrl.nowCoordinate.clothes.subPartsId[2], true);
+
+                        GameObject go = chaCtrl.objClothes[kind];
+                        if (KK_StudioCoordinateLoadOption._isMaterialEditorExist && null != go) {
+                            MaterialEditor_Support.CopyMaterialEditorData(tmpChaCtrl, kind, chaCtrl, kind, go, MaterialEditor_Support.ObjectType.Clothing);
+                        }
+
+                        if (KK_StudioCoordinateLoadOption._isKCOXExist)
+                            KCOX_Support.CopyKCOXData(tmpChaCtrl, chaCtrl, kind);
+
+                        Logger.LogDebug("->Changed: " + tgl.name + " / ID: " + chaCtrl.nowCoordinate.clothes.parts[kind].id);
                     }
-                    KCOX_Support.SetExtDataFromController(chaCtrl);
-                }
-
-                //HairAcc和COBOC不需要Rollback，因為Load Coordinate時是直接從存檔->Controller
-                //沒有修改chaCtrl上的ExtData，故只需Reload就會再覆蓋回來
-
-                //Rollback ABMX
-                if (KK_StudioCoordinateLoadOption._isABMXExist) {
-                    if (readABMX) {
-                        ABMX_Support.SetExtDataFromController(chaCtrl);
+                } else {
+                    if (kind == 9) {
+                        //若沒有load飾品，就把當前狀態存入ExtData
+                        if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
+                            HairAccessoryCustomizer_Support.SetExtDataFromController(chaCtrl);
+                        }
                     }
                 }
+            }
 
-                //Rollback Material Editor Data
-                if (KK_StudioCoordinateLoadOption._isMaterialEditorExist) {
-                    MaterialEditor_Support.SetControllerFromCoordinate(chaCtrl, backupTmpCoordinate);
+            if (KK_StudioCoordinateLoadOption._isKCOXExist)
+                KCOX_Support.SetExtDataFromController(chaCtrl);
+
+            //寫入Material Editor Data
+            if (KK_StudioCoordinateLoadOption._isMaterialEditorExist) {
+                MaterialEditor_Support.SetExtDataFromController(chaCtrl);
+            }
+
+            //KK_COBOC
+            if (KK_StudioCoordinateLoadOption._isCharaOverlayBasedOnCoordinateExist) {
+                COBOC_Support.SetControllerFromExtData(chaCtrl);
+                if (charaOverlay.ToList().Where((x) => x).Count() > 0) {
+                    COBOC_Support.CopyCurrentCharaOverlayByController(tmpChaCtrl, chaCtrl, charaOverlay);
+                } else {
+                    Logger.LogDebug("Skip load CharaOverlay");
                 }
 
-                //顯示HairAcc狀態
-                if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
-                    HairAccessoryCustomizer_Support.GetDataFromExtData(chaCtrl, out Dictionary<int, object> nowCoor);
-                    if (null == nowCoor) {
-                        nowCoor = new Dictionary<int, object>();
-                    }
-                    Logger.LogDebug($"->Hair Count: {nowCoor.Count} : {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
-                }
+                COBOC_Support.SetExtDataFromController(chaCtrl);
+            }
 
+            //MoreAcc
+            if (KK_StudioCoordinateLoadOption._isMoreAccessoriesExist) {
+                chaCtrl.ChangeAccessory(true);
                 chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
-                chaCtrl.Reload();   //全false的Reload會觸發KKAPI的hook
-
-                //修正嘴開
-                Logger.LogDebug($"Mouth: {mouthOpen}");
-                ocichar?.ChangeMouthOpen(mouthOpen);
-
-                //Reload()後除了skirt也要重置hair，否則PoseCtrl會有問題
-                chaCtrl.UpdateBustSoftnessAndGravity();
-                ocichar.hairDynamic = AddObjectFemale.GetHairDynamic(ocichar.charInfo.objHair);
-                ocichar.skirtDynamic = AddObjectFemale.GetSkirtDynamic(ocichar.charInfo.objClothes);
-                ocichar.ActiveFK(OIBoneInfo.BoneGroup.Hair, ocichar.oiCharInfo.activeFK[0], ocichar.oiCharInfo.enableFK);
-                ocichar.ActiveFK(OIBoneInfo.BoneGroup.Skirt, ocichar.oiCharInfo.activeFK[6], ocichar.oiCharInfo.enableFK);
-
-                finishedCount++;
-
-                Logger.LogDebug($"Extended Parts Count : {MoreAccessories_Support.GetAccessoriesAmount(chaCtrl.chaFile)}");
-                Logger.LogInfo($"Loaded: {finishedCount}/{oCICharArray.Length}");
-                EndCheck();
-            } else if (callCount <= 0) {
-                ChaControl chaCtrl = ReloadCheckChara.charInfo;
-                ReloadCheckChara = null;
-                Logger.LogError($"Reload {chaCtrl.name} ERROR, call original game function instead");
-                oCICharArray.ToList().Find(x => x.charInfo == chaCtrl)?.LoadClothesFile(charaFileSort.selectPath);
-                finishedCount++;
-                EndCheck();
+                MoreAccessories_Support.SetExtDataFromPlugin(chaCtrl.chaFile);
+                MoreAccessories_Support.Update();
             }
+
+            /// TODO
+            //Rollback ABMX
+            //if (KK_StudioCoordinateLoadOption._isABMXExist) {
+            //    if (readABMX) {
+            //        ABMX_Support.SetExtDataFromController(chaCtrl);
+            //    }
+            //}
+
+            //顯示HairAcc狀態
+            if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
+                HairAccessoryCustomizer_Support.GetDataFromExtData(chaCtrl, out Dictionary<int, object> nowCoor);
+                if (null == nowCoor) {
+                    nowCoor = new Dictionary<int, object>();
+                }
+                Logger.LogDebug($"->Hair Count: {nowCoor.Count} {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
+            }
+
+            chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
+            chaCtrl.Reload();   //全false的Reload會觸發KKAPI的hook
+
+            //修正嘴開
+            Logger.LogDebug($"Mouth: {mouthOpen}");
+            ocichar?.ChangeMouthOpen(mouthOpen);
+
+            //Reload()後除了skirt也要重置hair，否則PoseCtrl會有問題
+            chaCtrl.UpdateBustSoftnessAndGravity();
+            ocichar.hairDynamic = AddObjectFemale.GetHairDynamic(ocichar.charInfo.objHair);
+            ocichar.skirtDynamic = AddObjectFemale.GetSkirtDynamic(ocichar.charInfo.objClothes);
+            ocichar.ActiveFK(OIBoneInfo.BoneGroup.Hair, ocichar.oiCharInfo.activeFK[0], ocichar.oiCharInfo.enableFK);
+            ocichar.ActiveFK(OIBoneInfo.BoneGroup.Skirt, ocichar.oiCharInfo.activeFK[6], ocichar.oiCharInfo.enableFK);
+
+            finishedCount++;
+
+            Logger.LogDebug($"Extended Parts Count : {MoreAccessories_Support.GetAccessoriesAmount(chaCtrl.chaFile)}");
+            Logger.LogInfo($"Loaded: {finishedCount}/{oCICharArray.Length}");
+            forceCleanCount = FORCECLEANCOUNT;
+            EndCheck();
         }
 
         private static void EndCheck(bool forceClean = false) {
             if (oCICharQueue.Count > 0 && !forceClean) {
                 ReloadTmpChara(true);
-            } else if (forceClean || (null != tmpChaCtrl && null == ReloadCheckChara)) {
+            } else if (null != tmpChaCtrl) {
                 HairAccessoryCustomizer_Support.ClearHairAccBackup();
                 MaterialEditor_Support.ClearMaterialBackup();
                 KCOX_Support.CleanKCOXBackup();
                 tmpChaCtrl.StopAllCoroutines();
+                backupTmpCoordinate = null;
+                oCICharQueue.Clear();
                 Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
                 tmpChaCtrl = null;
                 Logger.LogDebug($"Delete Temp Chara");
                 Logger.LogInfo($"Load End");
+
+                if (forceClean) {
+                    Logger.Log(LogLevel.Message | LogLevel.Error, "Coordinate Load FAILED.");
+                    Logger.Log(LogLevel.Message | LogLevel.Error, "Call original game function instead");
+                }
             }
         }
 
@@ -986,12 +903,10 @@ namespace KK_StudioCoordinateLoadOption {
             }
         }
 
-        private static bool fakeLoadFlag_LoadBytes = false;
-        [HarmonyPrefix, HarmonyPatch(typeof(ChaFileCoordinate), "LoadBytes"), HarmonyPriority(Priority.Last)]
-        public static bool LoadBytesPrefix(ref bool __result) {
-            __result = fakeLoadFlag_LoadBytes;
-            return !fakeLoadFlag_LoadBytes;
-        }
+        public static bool CheckPluginPrepared(ChaControl chaCtrl) =>
+            null != chaCtrl &&
+            KCOX_Support.CheckControllerPrepared(chaCtrl) &&
+            HairAccessoryCustomizer_Support.CheckControllerPrepared(chaCtrl);
 
         //另一插件(KK_ClothesLoadOption)在和我相同的位置畫Panel，將他Block掉
         //因為他的插件在CharaMaker和Studio皆有功能，僅Studio部分和我重疊，故採此對策

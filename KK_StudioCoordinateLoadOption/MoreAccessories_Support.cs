@@ -191,10 +191,7 @@ namespace KK_StudioCoordinateLoadOption {
         public static string[] LoadMoreAcc(ChaFileCoordinate chaFileCoordinate) {
             List<ChaFileAccessory.PartsInfo> tempLoadedAccessories = new List<ChaFileAccessory.PartsInfo>();
 
-            //typeof(Sideloader.AutoResolver.UniversalAutoResolver).GetNestedType("Hooks", BindingFlags.NonPublic).Invoke("ExtendedCoordinateLoad", new object[] { chaFileCoordinate });
-            typeof(Sideloader.AutoResolver.UniversalAutoResolver).GetNestedType("Hooks", BindingFlags.NonPublic)
-                .InvokeMember("ExtendedCoordinateLoad", BindingFlags.Default | BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod, null, null,
-                    new object[] { chaFileCoordinate });
+            Extension.Extension.InvokeStatic(typeof(Sideloader.AutoResolver.UniversalAutoResolver).GetNestedType("Hooks", BindingFlags.NonPublic), "ExtendedCoordinateLoad", new object[] { chaFileCoordinate });
 
             //本地Info
             List<ResolveInfo> LoadedResolutionInfoList = Sideloader.AutoResolver.UniversalAutoResolver.LoadedResolutionInfo?.ToList();
@@ -289,11 +286,7 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="index">飾品欄位index</param>
         /// <returns></returns>
         public static ChaAccessoryComponent GetChaAccessoryComponent(ChaControl chaCtrl, int index) {
-            return (ChaAccessoryComponent)MoreAccessories.InvokeMember("GetChaAccessoryComponent",
-                BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Instance,
-                null,
-                MoreAccObj,
-                new object[] { chaCtrl, index });
+            return (ChaAccessoryComponent) MoreAccObj.Invoke("GetChaAccessoryComponent", new object[] { chaCtrl, index });
         }
 
         /// <summary>
@@ -309,8 +302,6 @@ namespace KK_StudioCoordinateLoadOption {
         /// <summary>
         /// 對Studio Work Control選擇中的項目更新UI
         /// </summary>
-        public static void Update() {
-            MoreAccessories.InvokeMember("Update", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
-        }
+        public static void Update() => MoreAccObj.Invoke("Update");
     }
 }

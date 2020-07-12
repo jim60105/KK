@@ -88,6 +88,7 @@ namespace Extension {
                 return false;
             }
         }
+
         public static object GetProperty(this object self, string name) {
             if (!self.SearchForProperties(name)) {
                 Console.WriteLine("[KK_Extension] Property Not Found: " + name);
@@ -97,6 +98,7 @@ namespace Extension {
             propertyInfo = self.GetType().GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.GetProperty);
             return propertyInfo.GetValue(self, null);
         }
+
         public static object Invoke(this object self, string name, object[] p = null) {
             try {
                 return self?.GetType().InvokeMember(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod, null, self, p);
@@ -104,6 +106,28 @@ namespace Extension {
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.InnerException);
                 MemberInfo[] members = self?.GetType().GetMembers(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod);
+                List<string> printArray = new List<string>();
+                foreach (MemberInfo me in members) {
+                    if (me.Name == name) {
+                        return true;
+                    }
+                    printArray.Add("[KK_Extension] Member Name/Type: " + me.Name + " / " + me.MemberType);
+                }
+                foreach (string st in printArray) {
+                    Console.WriteLine(st);
+                }
+                Console.WriteLine("[KK_Extension] Get " + members.Length + " Members.");
+                return false;
+            }
+        }
+
+        public static object InvokeStatic(Type type, string name, object[] p = null) {
+            try {
+                return type.InvokeMember(name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod, null, null, p);
+            } catch (MissingMethodException e) {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.InnerException);
+                MemberInfo[] members = type.GetMembers(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod);
                 List<string> printArray = new List<string>();
                 foreach (MemberInfo me in members) {
                     if (me.Name == name) {
