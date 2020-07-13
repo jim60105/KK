@@ -70,8 +70,7 @@ namespace KK_StudioCoordinateLoadOption {
         /// </summary>
         /// <param name="chaCtrl">清空對象</param>
         public static void ClearMoreAccessoriesData(ChaControl chaCtrl, bool force = false) {
-            Dictionary<ChaFile, object> _accessoriesByChar = MoreAccObj.GetField("_accessoriesByChar").ToDictionary<ChaFile, object>();
-            _accessoriesByChar.TryGetValue(chaCtrl.chaFile, out object charAdditionalData);
+            object charAdditionalData = TryGetValueFromWeakKeyDict(MoreAccObj.GetField("_accessoriesByChar"), chaCtrl.chaFile);
             charAdditionalData.GetField("rawAccessoriesInfos").ToDictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>>()
                 .TryGetValue((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, out List<ChaFileAccessory.PartsInfo> parts);
             for (int i = 0; i < parts.Count; i++) {
@@ -102,9 +101,8 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="targetChaCtrl">目標</param>
         public static void CopyMoreAccessories(ChaControl sourceChaCtrl, ChaControl targetChaCtrl) {
             Queue<int> accQueue = new Queue<int>();
-            Dictionary<ChaFile, object> _accessoriesByChar = MoreAccObj.GetField("_accessoriesByChar").ToDictionary<ChaFile, object>();
-            _accessoriesByChar.TryGetValue(sourceChaCtrl.chaFile, out object sourceCharAdditionalData);
-            _accessoriesByChar.TryGetValue(targetChaCtrl.chaFile, out object targetCharAdditionalData);
+            object sourceCharAdditionalData = TryGetValueFromWeakKeyDict(MoreAccObj.GetField("_accessoriesByChar"), sourceChaCtrl.chaFile);
+            object targetCharAdditionalData = TryGetValueFromWeakKeyDict(MoreAccObj.GetField("_accessoriesByChar"), targetChaCtrl.chaFile);
 
             sourceCharAdditionalData.GetField("rawAccessoriesInfos").ToDictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>>()
                 .TryGetValue((ChaFileDefine.CoordinateType)sourceChaCtrl.fileStatus.coordinateType, out List<ChaFileAccessory.PartsInfo> sourceParts);
@@ -286,7 +284,7 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="index">飾品欄位index</param>
         /// <returns></returns>
         public static ChaAccessoryComponent GetChaAccessoryComponent(ChaControl chaCtrl, int index) {
-            return (ChaAccessoryComponent) MoreAccObj.Invoke("GetChaAccessoryComponent", new object[] { chaCtrl, index });
+            return (ChaAccessoryComponent)MoreAccObj.Invoke("GetChaAccessoryComponent", new object[] { chaCtrl, index });
         }
 
         /// <summary>
@@ -294,9 +292,22 @@ namespace KK_StudioCoordinateLoadOption {
         /// </summary>
         /// <param name="chaFile"></param>
         /// <returns></returns>
-        public static int GetAccessoriesAmount(ChaFile chaFile) {
-            MoreAccObj.GetField("_accessoriesByChar").ToDictionary<ChaFile, object>().TryGetValue(chaFile, out object charAdditionalData);
-            return charAdditionalData?.GetField("nowAccessories").ToList<ChaFileAccessory.PartsInfo>().Count + 20 ?? 20;
+        public static int GetAccessoriesAmount(ChaFile chaFile) => 
+            TryGetValueFromWeakKeyDict(MoreAccObj.GetField("_accessoriesByChar"), chaFile)?
+                .GetField("nowAccessories").ToList<ChaFileAccessory.PartsInfo>().Count + 20 ?? 20;
+
+        private static object TryGetValueFromWeakKeyDict(object weakDict, object Key) {
+            //以Enumerator遍歷WeakKeyDictionary
+            object enumerator = weakDict.Invoke("GetEnumerator");
+            if ((bool)weakDict.Invoke("ContainsKey", new object[] { Key })) {
+                while ((bool)enumerator.Invoke("MoveNext")) {
+                    object current = enumerator.GetProperty("Current");
+                    if (current?.GetProperty("Key") == Key) {
+                        return current?.GetProperty("Value");
+                    }
+                }
+            }
+            return null;
         }
 
         /// <summary>
