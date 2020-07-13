@@ -9,9 +9,11 @@ using UnityEngine;
 namespace KK_StudioCoordinateLoadOption {
     class ABMX_Support {
         private static readonly BepInEx.Logging.ManualLogSource Logger = KK_StudioCoordinateLoadOption.Logger;
-        private static Dictionary<string, object> ABMXDataBackup = null;
-        private static object BoneController = null;
         private static Type BoneModifierType = null;
+        private static ChaControl sourceChaCtrl;
+        private static ChaControl targetChaCtrl;
+        private static MonoBehaviour TargetAMBXController;
+        private static Dictionary<string, object> SourceABMXBackup = null;
 
         public static bool LoadAssembly() {
             try {
@@ -29,22 +31,46 @@ namespace KK_StudioCoordinateLoadOption {
             }
         }
 
-        public static void BackupABMXData(ChaControl chaCtrl) {
-            BoneController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
-            if (null == BoneController) {
+        public static bool GetControllerAndBackupData(ChaControl sourceChaCtrl = null, ChaControl targetChaCtrl = null) {
+            if (null != sourceChaCtrl) {
+                Logger.LogDebug("Source ABMX-----");
+                ABMX_Support.sourceChaCtrl = sourceChaCtrl;
+                MonoBehaviour SourceABMXController = GetExtendedDataFromController(sourceChaCtrl, out SourceABMXBackup);
+                if (null == SourceABMXController) {
+                    Logger.LogDebug($"No Source ABMX Controller found on {sourceChaCtrl.fileParam.fullname}");
+                    return false;
+                }
+            }
+
+            if (null != targetChaCtrl) {
+                Logger.LogDebug("Target ABMX-----");
+                ABMX_Support.targetChaCtrl = targetChaCtrl;
+                TargetAMBXController = GetExtendedDataFromController(targetChaCtrl, out _);
+                if (null == TargetAMBXController) {
+                    Logger.LogDebug($"No Target ABMX Controller found on {targetChaCtrl.fileParam.fullname}");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        public static MonoBehaviour GetExtendedDataFromController(ChaControl chaCtrl, out Dictionary<string, object> dict) {
+            dict = new Dictionary<string, object>();
+            MonoBehaviour controller = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
+            if (null == controller) {
                 Logger.LogDebug("No ABMX BoneController found");
-                return;
+                return null;
             }
 
             //Logger.LogDebug("BoneController Get");
             List<object> Modifiers = new List<object>();
-            foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames")) {
-                object tmpModifier = BoneController.Invoke("GetModifier", new object[] { boneName });
+            foreach (string boneName in (IEnumerable<string>)controller.Invoke("GetAllPossibleBoneNames")) {
+                object tmpModifier = controller.Invoke("GetModifier", new object[] { boneName });
                 if (null != tmpModifier) {
                     Modifiers.Add(tmpModifier);
                 }
             }
-            Dictionary<string, object> toSave = Modifiers
+            dict = Modifiers
                 .Where(x => (bool)x.Invoke("IsCoordinateSpecific"))
                 .Where(x => !(bool)x.Invoke("IsEmpty"))
                 .ToDictionary(
@@ -56,63 +82,69 @@ namespace KK_StudioCoordinateLoadOption {
                     }
                 );
 
-            //Logger.LogDebug("toSave Get");
-            if (toSave == null || toSave.Count == 0) {
-                ABMXDataBackup = null;
+            if (dict == null || dict.Count == 0) {
                 Logger.LogDebug("No original ABMX BoneData.");
             } else {
-                ABMXDataBackup = toSave;
-                Logger.LogDebug("Get original ABMX BoneData: " + toSave.Count);
+                Logger.LogDebug("Get original ABMX BoneData: " + dict.Count);
             }
-            return;
+            return controller;
         }
 
-        public static void RollbackABMXBone(ChaControl chaCtrl) {
+        public static void CopyABMXData(ChaControl sourceChaCtrl, ChaControl targetChaCtrl) {
+            if (sourceChaCtrl != ABMX_Support.sourceChaCtrl || targetChaCtrl != ABMX_Support.targetChaCtrl) {
+                GetControllerAndBackupData(sourceChaCtrl, targetChaCtrl);
+            }
+
             // Clear previous data for this coordinate from coord specific modifiers
             List<object> Modifiers = new List<object>();
-            foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames")) {
-                object tmpModifier = BoneController.Invoke("GetModifier", new object[] { boneName });
+            foreach (string boneName in (IEnumerable<string>)TargetAMBXController.Invoke("GetAllPossibleBoneNames")) {
+                object tmpModifier = TargetAMBXController.Invoke("GetModifier", new object[] { boneName });
                 if (null != tmpModifier) {
                     Modifiers.Add(tmpModifier);
                 }
             }
             //Logger.LogDebug("Get Modifiers by AllBoneName");
             foreach (object modifier in Modifiers.Where(x => (bool)x.Invoke("IsCoordinateSpecific"))) {
-                object y = modifier.Invoke("GetModifier", new object[] { (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType });
+                object y = modifier.Invoke("GetModifier", new object[] { (ChaFileDefine.CoordinateType)targetChaCtrl.fileStatus.coordinateType });
                 y.Invoke("Clear");
             }
             //Logger.LogDebug("Clear all Modifiers");
 
-            if (null != BoneController && null != ABMXDataBackup) {
-                foreach (KeyValuePair<string, object> modifierDict in ABMXDataBackup) {
-                    object target = BoneController.Invoke("GetModifier", new object[] { modifierDict.Key });
+            if (null != TargetAMBXController && null != SourceABMXBackup) {
+                foreach (KeyValuePair<string, object> modifierDict in SourceABMXBackup) {
+                    object target = TargetAMBXController.Invoke("GetModifier", new object[] { modifierDict.Key });
                     if (target == null) {
                         // Add any missing modifiers
                         target = Activator.CreateInstance(BoneModifierType, new object[] { modifierDict.Key });
                         Logger.LogDebug("->Create target");
-                        BoneController.Invoke("AddModifier", new object[] { target });
+                        TargetAMBXController.Invoke("AddModifier", new object[] { target });
                     }
                     target.Invoke("MakeCoordinateSpecific");
                     object[] tmp = (object[])target.GetProperty("CoordinateModifiers");
-                    tmp[chaCtrl.fileStatus.coordinateType] = modifierDict.Value;
+                    tmp[targetChaCtrl.fileStatus.coordinateType] = modifierDict.Value;
                     target.SetProperty("CoordinateModifiers", tmp);
                     Logger.LogDebug("->Insert Modifier: " + modifierDict.Key);
                 }
-                BoneController.Invoke("StartCoroutine", new object[] {
-                    BoneController.Invoke("OnDataChangedCo")
+                TargetAMBXController.Invoke("StartCoroutine", new object[] {
+                    TargetAMBXController.Invoke("OnDataChangedCo")
                 }); //StartCoroutine(OnDataChangedCo());
                 Logger.LogDebug("->ABMX Bone Rollback complete");
-                SetExtDataFromController(chaCtrl);
-                ABMXDataBackup = null;
+                SetExtDataFromController(targetChaCtrl);
             } else {
                 Logger.LogDebug("->ABMX Bone not found");
-                ABMXDataBackup = null;
             }
         }
 
         public static void SetExtDataFromController(ChaControl chaCtrl) {
-            MonoBehaviour BoneController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
+            MonoBehaviour BoneController = GetExtendedDataFromController(chaCtrl, out _);
             BoneController.Invoke("OnCardBeingSaved", new object[] { 1 });
+        }
+
+        public static void ClearABMXBackup() {
+            sourceChaCtrl = null;
+            targetChaCtrl = null;
+            SourceABMXBackup = null;
+            TargetAMBXController = null;
         }
     }
 }

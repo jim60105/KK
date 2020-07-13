@@ -47,8 +47,8 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.07.12.0";
-        internal const string PLUGIN_RELEASE_VERSION = "3.3.5.1";
+        internal const string PLUGIN_VERSION = "20.07.13.0";
+        internal const string PLUGIN_RELEASE_VERSION = "3.3.5.2";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -668,13 +668,12 @@ namespace KK_StudioCoordinateLoadOption {
                 MoreAccessories_Support.Update();
             }
 
-            /// TODO
-            //Rollback ABMX
-            //if (KK_StudioCoordinateLoadOption._isABMXExist) {
-            //    if (readABMX) {
-            //        ABMX_Support.SetExtDataFromController(chaCtrl);
-            //    }
-            //}
+            //ABMX
+            if (KK_StudioCoordinateLoadOption._isABMXExist) {
+                if (readABMX) {
+                    ABMX_Support.CopyABMXData(tmpChaCtrl,chaCtrl);
+                }
+            }
 
             //顯示HairAcc狀態
             if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
@@ -714,6 +713,7 @@ namespace KK_StudioCoordinateLoadOption {
                 HairAccessoryCustomizer_Support.ClearHairAccBackup();
                 MaterialEditor_Support.ClearMaterialBackup();
                 KCOX_Support.CleanKCOXBackup();
+                ABMX_Support.ClearABMXBackup();
                 tmpChaCtrl.StopAllCoroutines();
                 backupTmpCoordinate = null;
                 oCICharQueue.Clear();
