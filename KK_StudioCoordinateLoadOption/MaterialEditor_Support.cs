@@ -109,9 +109,9 @@ namespace KK_StudioCoordinateLoadOption {
             }
 
             Dictionary<int, object> TextureDictionary = MaterialEditorController.GetField("TextureDictionary").ToDictionary<int, object>();
-            if (TextureDictionary is Dictionary<int, object> tdb) {
-                Logger.LogDebug("TextureDictionaryBackup Count: " + tdb.Count);
-            }
+            //if (TextureDictionary is Dictionary<int, object> tdb) {
+            //    Logger.LogDebug("TextureDictionaryBackup Count: " + tdb.Count);
+            //}
             return TextureDictionary;
         }
 
@@ -136,7 +136,7 @@ namespace KK_StudioCoordinateLoadOption {
             foreach (StoredValueInfo storedValue in storedValueInfos) {
                 MaterialBackup.Add(storedValue.listName, MaterialEditorController.GetField(storedValue.listName).ToListWithoutType());
             }
-            Logger.LogDebug($"Get {chaCtrl.fileParam.fullname} Material From Controller");
+            //Logger.LogDebug($"Get {chaCtrl.fileParam.fullname} Material From Controller");
             return MaterialEditorController;
         }
 
@@ -184,7 +184,7 @@ namespace KK_StudioCoordinateLoadOption {
                     if (doFlag2) {
                         MaterialEditorController.SetField(storedValue.listName, target);
                         GetExtDataFromController(chaCtrl, out Dictionary<string, object> m, out Dictionary<int, object> t);
-                        Logger.LogDebug($"-->{storedValue.className}: {m[storedValue.listName].Count()}");
+                        Logger.LogDebug($"--->{storedValue.className}: {m[storedValue.listName].Count()}");
                     }
 
                     doFlag |= doFlag2;
@@ -192,9 +192,9 @@ namespace KK_StudioCoordinateLoadOption {
 
                 if (doFlag) {
                     if (objectType == ObjectType.Clothing) {
-                        Logger.LogDebug($"->Material Set: Clothes " + ((Slot >= 0) ? $", {Patches.ClothesKindName[Slot]}" : ", All Clothes"));
+                        Logger.LogDebug($"-->Material Set: Clothes " + ((Slot >= 0) ? $", {Patches.ClothesKindName[Slot]}" : ", All Clothes"));
                     } else if (objectType == ObjectType.Accessory) {
-                        Logger.LogDebug($"->Material Set: Accessory" + ((Slot >= 0) ? ", Slot " + Slot : ", All Slots"));
+                        Logger.LogDebug($"-->Material Set: Accessory" + ((Slot >= 0) ? ", Slot " + Slot : ", All Slots"));
                     }
                 }
             }
@@ -237,6 +237,13 @@ namespace KK_StudioCoordinateLoadOption {
             return true;
         }
 
+        private static bool GameObjectTypeCheck(GameObject gameObject, ObjectType objectType) =>
+            null != gameObject &&
+                (
+                    objectType == ObjectType.Clothing && null != gameObject.GetComponentInChildren<ChaClothesComponent>() |
+                    objectType == ObjectType.Accessory && null != gameObject.GetComponent<ChaAccessoryComponent>()
+                );
+
         /// <summary>
         /// 拷貝Material Editor資料
         /// </summary>
@@ -247,12 +254,10 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="gameObject">對象GameObject</param>
         /// <param name="objectType">對象分類</param>
         public static void CopyMaterialEditorData(ChaControl sourceChaCtrl, int sourceSlot, ChaControl targetChaCtrl, int targetSlot, GameObject gameObject, ObjectType objectType) {
-            if (objectType == ObjectType.Clothing && null != gameObject.GetComponentInChildren<ChaClothesComponent>() ||
-                objectType == ObjectType.Accessory && (null != gameObject && null != gameObject?.GetComponent<ChaAccessoryComponent>())
-                ) {
-                RemoveMaterialEditorData(targetChaCtrl, targetSlot, gameObject, objectType);
-                SetMaterialEditorData(sourceChaCtrl, sourceSlot, targetChaCtrl, targetSlot, gameObject, objectType);
-            }
+            if (GameObjectTypeCheck(gameObject, objectType)) return;
+
+            RemoveMaterialEditorData(targetChaCtrl, targetSlot, gameObject, objectType);
+            SetMaterialEditorData(sourceChaCtrl, sourceSlot, targetChaCtrl, targetSlot, gameObject, objectType);
         }
 
         /// <summary>
@@ -263,6 +268,8 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="gameObject">對象GameObject</param>
         /// <param name="objectType">對象分類</param>
         public static void RemoveMaterialEditorData(ChaControl targetChaCtrl, int targetSlot, GameObject gameObject, ObjectType objectType) {
+            if (GameObjectTypeCheck(gameObject, objectType)) return;
+
             if (targetChaCtrl != MaterialEditor_Support.targetChaCtrl) {
                 GetControllerAndBackupData(targetChaCtrl: targetChaCtrl);
             }
@@ -351,7 +358,7 @@ namespace KK_StudioCoordinateLoadOption {
                 if (doFlag2) {
                     if (objRemoved.Count() > 0) {
                         GetExtDataFromController(targetChaCtrl, out TargetMaterialBackup, out TargetTextureDictionaryBackup);
-                        Logger.LogDebug($"-->Remove {objRemoved.Count()} {storedValue.className}");
+                        Logger.LogDebug($"--->Remove {objRemoved.Count()} {storedValue.className}");
                     }
                 }
                 doFlag |= doFlag2;
@@ -359,15 +366,15 @@ namespace KK_StudioCoordinateLoadOption {
 
             if (objectType == ObjectType.Accessory) {
                 if (doFlag) {
-                    Logger.LogDebug($"->Remove Material Editor Data: {targetChaCtrl.fileParam.fullname} Slot{targetSlot}");
+                    Logger.LogDebug($"-->Remove Material Editor Data: {targetChaCtrl.fileParam.fullname} Slot{targetSlot}");
                 } else {
-                    Logger.LogDebug($"->No Material Editor Backup to remove: {targetChaCtrl.fileParam.fullname} Slot{targetSlot}");
+                    Logger.LogDebug($"-->No Material Editor Backup to remove: {targetChaCtrl.fileParam.fullname} Slot{targetSlot}");
                 }
             } else if (objectType == ObjectType.Clothing) {
                 if (doFlag) {
-                    Logger.LogDebug($"->Remove Material Editor Data: {targetChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), targetSlot)}");
+                    Logger.LogDebug($"-->Remove Material Editor Data: {targetChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), targetSlot)}");
                 } else {
-                    Logger.LogDebug($"->No Material Editor Backup to remove: {targetChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), targetSlot)}");
+                    Logger.LogDebug($"-->No Material Editor Backup to remove: {targetChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), targetSlot)}");
                 }
             }
         }
@@ -516,7 +523,7 @@ namespace KK_StudioCoordinateLoadOption {
                 if (doFlag2) {
                     if (objAdded.Count() > 0) {
                         GetExtDataFromController(targetChaCtrl, out TargetMaterialBackup, out TargetTextureDictionaryBackup);
-                        Logger.LogDebug($"-->Change {objAdded.Count()} {storedValue.className}");
+                        Logger.LogDebug($"--->Change {objAdded.Count()} {storedValue.className}");
                     }
                 }
                 doFlag |= doFlag2;
@@ -524,15 +531,15 @@ namespace KK_StudioCoordinateLoadOption {
 
             if (objectType == ObjectType.Accessory) {
                 if (doFlag) {
-                    Logger.LogDebug($"->Set Material Editor Data: {sourceChaCtrl.fileParam.fullname} Slot{sourceSlot} -> {targetChaCtrl.fileParam.fullname} Slot{targetSlot}");
+                    Logger.LogDebug($"-->Set Material Editor Data: {sourceChaCtrl.fileParam.fullname} Slot{sourceSlot} -> {targetChaCtrl.fileParam.fullname} Slot{targetSlot}");
                 } else {
-                    Logger.LogDebug($"->No Material Editor Backup to set: {sourceChaCtrl.fileParam.fullname} {sourceSlot}");
+                    Logger.LogDebug($"-->No Material Editor Backup to set: {sourceChaCtrl.fileParam.fullname} {sourceSlot}");
                 }
             } else if (objectType == ObjectType.Clothing) {
                 if (doFlag) {
-                    Logger.LogDebug($"->Set Material Editor Data: {sourceChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), sourceSlot)} -> {targetChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), targetSlot)}");
+                    Logger.LogDebug($"-->Set Material Editor Data: {sourceChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), sourceSlot)} -> {targetChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), targetSlot)}");
                 } else {
-                    Logger.LogDebug($"->No Material Editor Backup to set: {sourceChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), sourceSlot)}");
+                    Logger.LogDebug($"-->No Material Editor Backup to set: {sourceChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), sourceSlot)}");
                 }
             }
         }
@@ -541,7 +548,7 @@ namespace KK_StudioCoordinateLoadOption {
             if (!KK_StudioCoordinateLoadOption._isMaterialEditorExist) return true;
 
             MonoBehaviour controller = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "MaterialEditorCharaController"));
-            return null != controller && (bool)controller?.GetProperty("CharacterLoading");
+            return null != controller && !(bool)controller?.GetProperty("CharacterLoading");
         }
 
         public static void ClearMaterialBackup() {

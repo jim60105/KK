@@ -6,7 +6,24 @@ using UnityEngine;
 namespace KK_StudioCoordinateLoadOption {
     class KCOX_Support {
         private static readonly BepInEx.Logging.ManualLogSource Logger = KK_StudioCoordinateLoadOption.Logger;
+
         internal static string[] MaskKind = { "BodyMask", "InnerMask", "BraMask" };
+        internal static readonly string[] MainClothesNames = {
+            "ct_clothesTop",
+            "ct_clothesBot",
+            "ct_bra",
+            "ct_shorts",
+            "ct_gloves",
+            "ct_panst",
+            "ct_socks",
+            "ct_shoes_inner",
+            "ct_shoes_outer"
+        };
+        internal static readonly string[] SubClothesNames = {
+            "ct_top_parts_A",
+            "ct_top_parts_B",
+            "ct_top_parts_C"
+        };
 
         private static ChaControl sourceChaCtrl;
         private static ChaControl targetChaCtrl;
@@ -60,10 +77,10 @@ namespace KK_StudioCoordinateLoadOption {
                 Logger.LogDebug($"No KCOX Controller found on {chaCtrl.fileParam.fullname}");
             } else {
                 int cnt = 0;
-                foreach (string mainName in Patches.MainClothesNames) {
+                foreach (string mainName in MainClothesNames) {
                     cnt += GetOverlay(controller, dict, mainName) ? 1 : 0;
                 }
-                foreach (string subName in Patches.SubClothesNames) {
+                foreach (string subName in SubClothesNames) {
                     cnt += GetOverlay(controller, dict, subName) ? 1 : 0;
                 }
                 foreach (string maskKind in MaskKind) {
@@ -98,7 +115,7 @@ namespace KK_StudioCoordinateLoadOption {
             string name = "";
             switch (main) {
                 case true:
-                    name = Patches.MainClothesNames[kind];
+                    name = MainClothesNames[kind];
                     switch (kind) {
                         case 0:
                             //換上衣時處理sub和BodyMask、InnerMask
@@ -116,7 +133,7 @@ namespace KK_StudioCoordinateLoadOption {
                     }
                     break;
                 case false:
-                    name = Patches.SubClothesNames[kind];
+                    name = SubClothesNames[kind];
                     break;
                 case null:
                     name = MaskKind[kind];
@@ -158,12 +175,7 @@ namespace KK_StudioCoordinateLoadOption {
             if (!KK_StudioCoordinateLoadOption._isKCOXExist) return true;
 
             MonoBehaviour controller = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "KoiClothesOverlayController"));
-            if (null != controller && (bool)controller?.GetProperty("Started") && null != controller.GetProperty("CurrentOverlayTextures")) {
-                return true;
-            } else {
-                controller?.Invoke("OnReload", new object[] { 0, false });
-                return false;
-            }
+            return null != controller && (bool)controller?.GetProperty("Started") && null != controller.GetProperty("CurrentOverlayTextures");
         }
 
         public static void CleanKCOXBackup() {

@@ -255,57 +255,8 @@ namespace KK_StudioCoordinateLoadOption {
                 return true;
             } else {
                 if (doReload) {
-                    //SetControllerFromCoordinate(chaCtrl, coordinate);
-                    Patches.DressChara(chaCtrl);
-                } else if (null == dataFromCoorExt || dataFromCoorExt.Count == 0) {
-                    ClearHairAccOnController(chaCtrl);
+                    SetControllerFromCoordinate(chaCtrl, coordinate);
                 }
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// 檢核LoadState，這是因為異步流程所需，檢查Extdata是否已從Controller內載入完成
-        /// </summary>
-        /// <param name="chaCtrl">檢核的ChaControl</param>
-        /// <returns>檢核通過</returns>
-        public static bool CheckExtDataLoadStateByController(ChaControl chaCtrl) {
-            if (!KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
-                return true;
-            }
-            bool? flag = true;
-
-            Dictionary<int, Dictionary<int, object>> dataFromCon = GetDataFromController(chaCtrl, out _);
-            Dictionary<int, Dictionary<int, object>> dataFromExt = GetDataFromExtData(chaCtrl, out _);
-            if (null != dataFromCon && dataFromCon.Count > 0) {
-                if (null != dataFromExt && dataFromExt.Count == dataFromCon.Count) {
-                    foreach (KeyValuePair<int, Dictionary<int, object>> kv in dataFromCon) {
-                        if (dataFromExt.ContainsKey(kv.Key)) {
-                            foreach (KeyValuePair<int, object> kv2 in kv.Value) {
-                                if (dataFromCon[kv.Key].ContainsKey(kv2.Key)) {
-                                    continue;
-                                } else { flag = false; break; }
-                            }
-                        } else { flag = false; break; }
-                    }
-                } else { flag = false; }
-            } else {
-                //No data from controller
-                if (null != dataFromExt && dataFromExt.Count != 0) {
-                    flag = false;
-                } else {
-                    flag = null;
-                }
-            }
-
-            if (null == flag) {
-                return true;
-            } else if (true == flag) {
-                MonoBehaviour HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
-                HairAccCusController.Invoke("UpdateAccessories", new object[] { true });
-                return true;
-            } else {
-                SetExtDataFromController(chaCtrl);
                 return false;
             }
         }
@@ -345,6 +296,7 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="targetChaCtrl">目標</param>
         public static void GetControllerAndBackupData(ChaControl sourceChaCtrl, ChaControl targetChaCtrl = null) {
             if (null != sourceChaCtrl) {
+                SetExtDataFromController(sourceChaCtrl);
                 ClearHairAccBackup();
                 SourceHairAccCusController = sourceChaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
                 if (null == SourceHairAccCusController) {
@@ -356,6 +308,7 @@ namespace KK_StudioCoordinateLoadOption {
             }
 
             if (null != targetChaCtrl) {
+                SetExtDataFromController(targetChaCtrl);
                 TargetHairAccCusController = targetChaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
                 if (null == TargetHairAccCusController) {
                     Logger.LogDebug("No Target Hair Accessory Customizer Controller found");
