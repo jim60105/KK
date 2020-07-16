@@ -250,6 +250,15 @@ namespace KK_StudioCoordinateLoadOption.StringResources {
         }
         
         /// <summary>
+        ///   查詢類似 Show Selection 的當地語系化字串。
+        /// </summary>
+        internal static string showSelection {
+            get {
+                return ResourceManager.GetString("showSelection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 Unrecognized 的當地語系化字串。
         /// </summary>
         internal static string unreconized {

@@ -32,7 +32,7 @@ namespace KK_StudioCoordinateLoadOption {
         private static Dictionary<string, object> SourceKCOXBackup = null;
 
         public static bool LoadAssembly() {
-            if (null != Extension.Extension.TryGetPluginInstance("KCOX", new System.Version(5, 0))) {
+            if (null != Extension.Extension.TryGetPluginInstance("KCOX", new System.Version(5, 2))) {
                 Logger.LogDebug("KCOX found");
                 return true;
             } else {

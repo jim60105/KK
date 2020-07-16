@@ -47,8 +47,8 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.07.16.1";
-        internal const string PLUGIN_RELEASE_VERSION = "3.3.5.5";
+        internal const string PLUGIN_VERSION = "20.07.16.2";
+        internal const string PLUGIN_RELEASE_VERSION = "3.3.5.6";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -110,6 +110,7 @@ namespace KK_StudioCoordinateLoadOption {
 
         private static Toggle[] tgls2 = new Toggle[0]; //使用時再初始化
         private static Toggle[] tgls;
+        private static Image panel;
         private static Image panel2;
         private static RectTransform toggleGroup;
         internal static bool lockHairAcc = false;
@@ -145,11 +146,22 @@ namespace KK_StudioCoordinateLoadOption {
             Array ClothesKindArray = Enum.GetValues(typeof(ClothesKind));
 
             #region UI
-            //Draw Panel and ButtonAll
             charaFileSort = (CharaFileSort)__instance.GetField("fileSort");
-            Image panel = UIUtility.CreatePanel("CoordinateTooglePanel", charaFileSort.root.parent.parent.parent);
+            //Show Selection Btn
+            Image coordianteLoadPanel = UIUtility.CreatePanel("CoordinateLoadPanel", charaFileSort.root.parent.parent.parent);
+            coordianteLoadPanel.GetComponent<Image>().color = new Color32(80, 80, 80, 220);
+            Button btnCoordinateLoadOption = UIUtility.CreateButton("CoordinateLoadBtn", coordianteLoadPanel.transform, StringResources.StringResourcesManager.GetString("showSelection"));
+            btnCoordinateLoadOption.GetComponentInChildren<Text>(true).color = Color.white;
+            btnCoordinateLoadOption.GetComponent<Image>().color = Color.gray;
+            btnCoordinateLoadOption.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -35f), new Vector2(-5f, -5f));
+            btnCoordinateLoadOption.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
+            coordianteLoadPanel.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(170f, -45f), new Vector2(0, -345f));
+
+            //Draw Panel
+            panel = UIUtility.CreatePanel("CoordinateTooglePanel", charaFileSort.root.parent.parent.parent);
             panel.GetComponent<Image>().color = new Color32(80, 80, 80, 220);
 
+            //Draw ButtonAll
             Button btnAll = UIUtility.CreateButton("BtnAll", panel.transform, "All");
             btnAll.GetComponentInChildren<Text>(true).color = Color.white;
             btnAll.GetComponent<Image>().color = Color.gray;
@@ -284,11 +296,12 @@ namespace KK_StudioCoordinateLoadOption {
                 toggleList.Add(tglReadABMX);
             }
 
-            panel.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(170f, baseY - 7.5f), new Vector2(-55f, -345f));
+            panel.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(170f, baseY - 7.5f - 40f), new Vector2(-52f, -345f - 40f));
+            panel.gameObject.SetActive(false);
 
             //Draw accessories panel
             panel2 = UIUtility.CreatePanel("AccessoriesTooglePanel", panel.transform);
-            panel2.transform.SetRect(Vector2.one, Vector2.one, new Vector2(5f, -612.5f), new Vector2(200f, 0f));
+            panel2.transform.SetRect(Vector2.one, Vector2.one, new Vector2(1f, -612.5f), new Vector2(200f, 0f));
             panel2.GetComponent<Image>().color = new Color32(80, 80, 80, 220);
 
             Button btnAll2 = UIUtility.CreateButton("BtnAll2", panel2.transform, "All");
@@ -353,6 +366,13 @@ namespace KK_StudioCoordinateLoadOption {
 
             #region Button_Logic
             //Button邏輯
+            btnCoordinateLoadOption.onClick.RemoveAllListeners();
+            btnCoordinateLoadOption.onClick.AddListener(() => {
+                if (null != panel) {
+                    panel.gameObject.SetActive(!panel.IsActive());
+                }
+            });
+
             btnAll.onClick.RemoveAllListeners();
             btnAll.onClick.AddListener(() => {
                 if (toggleList.All(x => x.isOn == true)) {
@@ -383,18 +403,21 @@ namespace KK_StudioCoordinateLoadOption {
             });
             btnReverseHairAcc.onClick.RemoveAllListeners();
             btnReverseHairAcc.onClick.AddListener(() => {
-                MakeTmpChara(false);
-                for (int i = 0; i < MoreAccessories_Support.GetAccessoriesAmount(tmpChaCtrl.chaFile); i++) {
-                    if (i < tgls2.Length) {
-                        if (IsHairAccessory(tmpChaCtrl, i)) {
-                            tgls2[i].isOn = !tgls2[i].isOn;
-                            Logger.LogDebug($"Reverse Hair Acc.: {i}");
+                MakeTmpChara(delegate {
+                    tmpChaCtrl.StopAllCoroutines();
+                    for (int i = 0; i < MoreAccessories_Support.GetAccessoriesAmount(tmpChaCtrl.chaFile); i++) {
+                        if (i < tgls2.Length) {
+                            if (IsHairAccessory(tmpChaCtrl, i)) {
+                                tgls2[i].isOn = !tgls2[i].isOn;
+                                Logger.LogDebug($"Reverse Hair Acc.: {i}");
+                            }
                         }
                     }
-                }
-                Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
-                Logger.LogDebug($"Delete Temp Chara");
-                Logger.LogDebug("Reverse Hair Acc. toggles.");
+                    Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
+                    tmpChaCtrl = null;
+                    Logger.LogDebug($"Delete Temp Chara");
+                    Logger.LogDebug("Reverse Hair Acc. toggles.");
+                });
             });
 
             btnChangeAccLoadMode.onClick.RemoveAllListeners();
@@ -455,6 +478,8 @@ namespace KK_StudioCoordinateLoadOption {
 
         //Load衣裝時觸發
         internal static void OnClickLoadPostfix() {
+            if (oCICharQueue.Count != 0) return;
+
             Logger.LogDebug("Studio Coordinate Load Option Start");
 
             bool isAllTrueFlag = true;
@@ -484,8 +509,8 @@ namespace KK_StudioCoordinateLoadOption {
                                select Studio.Studio.GetCtrlInfo(v) into v
                                where null != v
                                select v).OfType<OCIChar>().ToArray();
-            if (isAllTrueFlag && !lockHairAcc && !addAccModeFlag) {
-                Logger.LogInfo("Toggle all true, use original game function");
+            if (!panel.IsActive() || (isAllTrueFlag && !lockHairAcc && !addAccModeFlag)) {
+                Logger.LogInfo("Use original game function");
                 foreach (OCIChar ocichar in array) {
                     ocichar.LoadClothesFile(charaFileSort.selectPath);
                 }
@@ -498,9 +523,8 @@ namespace KK_StudioCoordinateLoadOption {
                 oCICharArray = array;
                 oCICharQueue = new Queue<OCIChar>(array);
                 finishedCount = 0;
-                MakeTmpChara(true);
+                MakeTmpChara(ChangeCoordinate);
             }
-            return;
         }
 
         internal static void Update() {
@@ -513,7 +537,7 @@ namespace KK_StudioCoordinateLoadOption {
             }
         }
 
-        private static void MakeTmpChara(bool doChange) {
+        private static void MakeTmpChara(Action callback) {
             forceCleanCount = FORCECLEANCOUNT;
 
             //丟到Camera後面就看不見了
@@ -541,7 +565,7 @@ namespace KK_StudioCoordinateLoadOption {
 
                 yield return new WaitUntil(delegate { return CheckPluginPrepared(tmpChaCtrl); });
 
-                if (doChange) ChangeCoordinate();
+                callback?.Invoke();
             }
         }
 
@@ -682,7 +706,7 @@ namespace KK_StudioCoordinateLoadOption {
             tmpChaCtrl = null;
             Logger.LogDebug($"Delete Temp Chara");
             if (oCICharQueue.Count > 0 && !forceClean) {
-                MakeTmpChara(true);
+                MakeTmpChara(ChangeCoordinate);
             } else {
                 oCICharQueue.Clear();
                 Logger.LogInfo($"Load End");

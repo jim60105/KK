@@ -183,4 +183,7 @@
   <data name="readABMX" xml:space="preserve">
     <value>ABMX</value>
   </data>
+  <data name="showSelection" xml:space="preserve">
+    <value>Show Selection</value>
+  </data>
 </root>
