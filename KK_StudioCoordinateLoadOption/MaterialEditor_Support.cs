@@ -56,7 +56,7 @@ namespace KK_StudioCoordinateLoadOption {
 
         //若MaterialEditor改版不運作時，優先確認這部分
         //KK_MaterialEditor.KK_MaterialEditor.MaterialEditorCharaController
-        private static StoredValueInfo[] storedValueInfos = {
+        private static readonly StoredValueInfo[] storedValueInfos = {
             new StoredValueInfo("MaterialShader","MaterialShaderList","RemoveMaterialShader","SetMaterialShader"),
             new StoredValueInfo("RendererProperty","RendererPropertyList","RemoveRendererProperty","SetRendererProperty"),
             new StoredValueInfo("MaterialFloatProperty","MaterialFloatPropertyList","RemoveMaterialFloatProperty","SetMaterialFloatProperty"),
@@ -109,9 +109,9 @@ namespace KK_StudioCoordinateLoadOption {
             }
 
             Dictionary<int, object> TextureDictionary = MaterialEditorController.GetField("TextureDictionary").ToDictionary<int, object>();
-            //if (TextureDictionary is Dictionary<int, object> tdb) {
-            //    Logger.LogDebug("TextureDictionaryBackup Count: " + tdb.Count);
-            //}
+            if (TextureDictionary is Dictionary<int, object> tdb) {
+                Logger.LogDebug("TextureDictionaryBackup Count: " + tdb.Count);
+            }
             return TextureDictionary;
         }
 
@@ -136,7 +136,7 @@ namespace KK_StudioCoordinateLoadOption {
             foreach (StoredValueInfo storedValue in storedValueInfos) {
                 MaterialBackup.Add(storedValue.listName, MaterialEditorController.GetField(storedValue.listName).ToListWithoutType());
             }
-            //Logger.LogDebug($"Get {chaCtrl.fileParam.fullname} Material From Controller");
+            Logger.LogDebug($"Get {chaCtrl.fileParam.fullname} Material From Controller");
             return MaterialEditorController;
         }
 
@@ -247,11 +247,6 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="gameObject">對象GameObject</param>
         /// <param name="objectType">對象分類</param>
         public static void CopyMaterialEditorData(ChaControl sourceChaCtrl, int sourceSlot, ChaControl targetChaCtrl, int targetSlot, GameObject gameObject, ObjectType objectType) {
-            if (sourceChaCtrl != MaterialEditor_Support.sourceChaCtrl || targetChaCtrl != MaterialEditor_Support.targetChaCtrl) {
-                GetControllerAndBackupData(sourceChaCtrl, targetChaCtrl);
-            }
-
-            //Make fake gameObject for MaterialEditorCharaController.FindGameObjectType
             if (objectType == ObjectType.Clothing && null != gameObject.GetComponentInChildren<ChaClothesComponent>() ||
                 objectType == ObjectType.Accessory && (null != gameObject && null != gameObject?.GetComponent<ChaAccessoryComponent>())
                 ) {
@@ -268,6 +263,10 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="gameObject">對象GameObject</param>
         /// <param name="objectType">對象分類</param>
         public static void RemoveMaterialEditorData(ChaControl targetChaCtrl, int targetSlot, GameObject gameObject, ObjectType objectType) {
+            if (targetChaCtrl != MaterialEditor_Support.targetChaCtrl) {
+                GetControllerAndBackupData(targetChaCtrl: targetChaCtrl);
+            }
+
             //是否有執行到
             bool doFlag = false;
 
@@ -282,14 +281,23 @@ namespace KK_StudioCoordinateLoadOption {
                     (int)x.GetField("CoordinateIndex") == targetChaCtrl.fileStatus.coordinateType &&
                     (int)x.GetField("Slot") == targetSlot
                 ).ForEach((x) => {
+                    if (null == x) return;
                     doFlag2 = true;
                     Renderer r = null;
                     Material m = null;
 
                     if (i == 1) {
                         r = Extension.Extension.InvokeStatic(MaterialAPI, "GetRendererList", new object[] { gameObject })?.ToList<Renderer>().Where(y => y.name == (string)x.GetField("RendererName"))?.FirstOrDefault();
+                        if (r == null) {
+                            doFlag2 = false;
+                            return;
+                        }
                     } else {
                         m = Extension.Extension.InvokeStatic(MaterialAPI, "GetMaterials", new object[] { gameObject, (string)x.GetField("MaterialName") })?.ToList<Material>()?.FirstOrDefault();
+                        if (m == null) {
+                            doFlag2 = false;
+                            return;
+                        }
                     }
 
                     switch (i) {
@@ -374,6 +382,10 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="gameObject">對象GameObject</param>
         /// <param name="objectType">對象分類</param>
         private static void SetMaterialEditorData(ChaControl sourceChaCtrl, int sourceSlot, ChaControl targetChaCtrl, int targetSlot, GameObject gameObject, ObjectType objectType) {
+            if (sourceChaCtrl != MaterialEditor_Support.sourceChaCtrl || targetChaCtrl != MaterialEditor_Support.targetChaCtrl) {
+                GetControllerAndBackupData(sourceChaCtrl, targetChaCtrl);
+            }
+
             //是否有執行到
             bool doFlag = false;
 
@@ -394,8 +406,18 @@ namespace KK_StudioCoordinateLoadOption {
 
                     if (i == 1) {
                         r = Extension.Extension.InvokeStatic(MaterialAPI, "GetRendererList", new object[] { gameObject })?.ToList<Renderer>().Where(y => y.name == (string)x.GetField("RendererName"))?.FirstOrDefault();
+                        if (r == null) {
+                            Logger.LogWarning($"Missing Renderer: {(string)x.GetField("RendererName")}!");
+                            doFlag2 = false;
+                            return;
+                        }
                     } else {
                         m = Extension.Extension.InvokeStatic(MaterialAPI, "GetMaterials", new object[] { gameObject, (string)x.GetField("MaterialName") })?.ToList<Material>()?.FirstOrDefault();
+                        if (m == null) {
+                            Logger.LogWarning($"Missing Material: {(string)x.GetField("MaterialName")}!");
+                            doFlag2 = false;
+                            return;
+                        }
                     }
 
                     switch (i) {
@@ -515,10 +537,19 @@ namespace KK_StudioCoordinateLoadOption {
             }
         }
 
+        public static bool CheckControllerPrepared(ChaControl chaCtrl) {
+            if (!KK_StudioCoordinateLoadOption._isMaterialEditorExist) return true;
+
+            MonoBehaviour controller = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "MaterialEditorCharaController"));
+            return null != controller && (bool)controller?.GetProperty("CharacterLoading");
+        }
+
         public static void ClearMaterialBackup() {
+            sourceChaCtrl = null;
             SourceMaterialBackup = null;
             SourceTextureDictionaryBackup = null;
             SourceMaterialEditorController = null;
+            targetChaCtrl = null;
             TargetMaterialBackup = null;
             TargetTextureDictionaryBackup = null;
             TargetMaterialEditorController = null;
