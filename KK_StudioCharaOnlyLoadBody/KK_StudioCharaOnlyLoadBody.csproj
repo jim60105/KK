@@ -74,12 +74,12 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="ILMergeOrder.txt" />
-    <EmbeddedResource Include="Resources\buttonChange_EN.png" />
-    <EmbeddedResource Include="Resources\buttonChange_JP.png" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Include="Resources\buttonChange_EN.png" />
+    <EmbeddedResource Include="Resources\buttonChange_JP.png" />
     <EmbeddedResource Include="Resources\buttonChange.png" />
   </ItemGroup>
   <ItemGroup>

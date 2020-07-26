@@ -41,8 +41,8 @@ namespace KK_StudioCharaOnlyLoadBody {
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "20.07.12.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.7.1";
+        internal const string PLUGIN_VERSION = "20.07.27.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.7.2";
 
         public static ConfigEntry<string> ExtendedDataToCopySetting { get; private set; }
         public static string[] ExtendedDataToCopy;
@@ -92,8 +92,10 @@ namespace KK_StudioCharaOnlyLoadBody {
             //繪製UI
             GameObject original = GameObject.Find("StudioScene/Canvas Main Menu/01_Add/" + __instance.name + "/Button Change");
             int i = (string.Equals(__instance.name, "00_Female") ? 1 : 0);
+            if (null != btn[i]) return;
+
             btn[i] = UnityEngine.Object.Instantiate(original, original.transform.parent);
-            btn[i].name = "Button Keep Coordinate Change";
+            btn[i].name = "Button Keep Coordinate Change" + i;
             btn[i].transform.position += new Vector3(0, -25, 0);
             btn[i].transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(180, -401), new Vector2(390, -380));
 
@@ -159,7 +161,9 @@ namespace KK_StudioCharaOnlyLoadBody {
                 }
 
                 //Main Load Control
-                if (chaCtrl.chaFile.LoadFileLimited(fullPath, (byte)sex, true, true, true, true, false) || !LoadExtendedData(ocichar, charaFileSort.selectPath, (byte)sex) || !UpdateTreeNodeObjectName(ocichar)) {
+                if (chaCtrl.chaFile.LoadFileLimited(fullPath, (byte)sex, true, true, true, true, false) ||
+                    !LoadExtendedData(ocichar, charaFileSort.selectPath, (byte)sex) ||
+                    !UpdateTreeNodeObjectName(ocichar)) {
                     Logger.LogError("Load Body FAILED");
                 } else {
                     if (null != MoreAccessories) {
@@ -245,7 +249,7 @@ namespace KK_StudioCharaOnlyLoadBody {
                 switch (ext) {
                     case "KKABMPlugin.ABMData":
                         //取得BoneController
-                        object BoneController = ocichar.charInfo.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "BoneController"));
+                        MonoBehaviour BoneController = ocichar.charInfo.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
                         if (null == BoneController) {
                             Logger.LogDebug("No ABMX BoneController found");
                             break;
@@ -404,8 +408,8 @@ namespace KK_StudioCharaOnlyLoadBody {
                         Logger.LogDebug($"Change Extended Data: {ext}");
                         break;
                 }
-                MonoBehaviour KCOXController = ocichar.charInfo.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KoiClothesOverlayX"));
-                KCOXController?.Invoke("OnCardBeingSaved", new object[] { 1 });
+                //MonoBehaviour KCOXController = ocichar.charInfo.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KoiClothesOverlayX"));
+                //KCOXController?.Invoke("OnCardBeingSaved", new object[] { 1 });
             }
 
             return true;

@@ -445,9 +445,9 @@ namespace Extension {
             Sprite NewSprite;
             Texture2D SpriteTexture = LoadTexture(FilePath);
             if (null == SpriteTexture) {
-                SpriteTexture = LoadDllResource(FilePath, width, height);
+                SpriteTexture = LoadDllResource(FilePath);
             }
-            NewSprite = Sprite.Create(SpriteTexture, new Rect(0, 0, SpriteTexture.width, SpriteTexture.height), new Vector2(0, 0), PixelsPerUnit);
+            NewSprite = Sprite.Create(SpriteTexture, new Rect(0, 0, width, height), new Vector2(0, 0), PixelsPerUnit);
 
             return NewSprite;
         }
@@ -465,7 +465,7 @@ namespace Extension {
                 FileData = File.ReadAllBytes(FilePath);
                 texture = new Texture2D(2, 2);
                 if (texture.LoadImage(FileData)) {
-                    if ((width > 0 && texture.width != width) || height > 0 && texture.height != height) {
+                    if ((width > 0 && texture.width != width) || (height > 0 && texture.height != height)) {
                         texture = Scale(texture, width > 0 ? width : texture.width, height > 0 ? height : texture.height);
                     }
                     return texture;
@@ -484,7 +484,7 @@ namespace Extension {
             Texture2D texture = new Texture2D(2, 2);
             using (Stream myStream = myAssembly.GetManifestResourceStream(FilePath)) {
                 if (texture.LoadImage(ReadToEnd(myStream))) {
-                    if ((width > 0 && texture.width != width) || height > 0 && texture.height != height) {
+                    if ((width > 0 && texture.width != width) || (height > 0 && texture.height != height)) {
                         texture = Scale(texture, width > 0 ? width : texture.width, height > 0 ? height : texture.height);
                     }
                     return texture;
@@ -543,7 +543,7 @@ namespace Extension {
             _gpu_scale(src, width, height, mode);
 
             //Get rendered data back to a new texture
-            Texture2D result = new Texture2D(width, height, TextureFormat.ARGB32, true);
+            Texture2D result = new Texture2D(width, height, src.format, true);
             result.Resize(width, height);
             result.ReadPixels(texR, 0, 0, true);
             return result;
