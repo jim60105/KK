@@ -47,8 +47,8 @@ namespace KK_StudioCoordinateLoadOption {
     public class KK_StudioCoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.studiocoordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.07.16.2";
-        internal const string PLUGIN_RELEASE_VERSION = "3.3.5.6";
+        internal const string PLUGIN_VERSION = "20.07.26.0";
+        internal const string PLUGIN_RELEASE_VERSION = "3.3.5.7";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -573,8 +573,18 @@ namespace KK_StudioCoordinateLoadOption {
             tmpChaCtrl.StopAllCoroutines();
 
             OCIChar ocichar = oCICharQueue.Dequeue();
-            mouthOpen = ocichar.oiCharInfo.mouthOpen;
-            Logger.LogDebug($"Mouth: {mouthOpen}");
+
+            //Bone
+            foreach (OCIChar.BoneInfo boneInfo in (from v in ocichar.listBones
+                                                   where v.boneGroup == OIBoneInfo.BoneGroup.Hair
+                                                   select v).ToList<OCIChar.BoneInfo>()) {
+                Singleton<GuideObjectManager>.Instance.Delete(boneInfo.guideObject, true);
+            }
+            ocichar.listBones = (from v in ocichar.listBones
+                                 where v.boneGroup != OIBoneInfo.BoneGroup.Hair
+                                 select v).ToList<OCIChar.BoneInfo>();
+            ocichar.hairDynamic = null;
+            ocichar.skirtDynamic = null;
 
             //Load Coordinate
             ChaControl chaCtrl = ocichar.charInfo;
@@ -678,14 +688,21 @@ namespace KK_StudioCoordinateLoadOption {
 
             //修正嘴開
             Logger.LogDebug($"Mouth: {mouthOpen}");
-            ocichar?.ChangeMouthOpen(mouthOpen);
 
-            //Reload()後除了skirt也要重置hair，否則PoseCtrl會有問題
+            //Bone
             chaCtrl.UpdateBustSoftnessAndGravity();
+            AddObjectAssist.InitHairBone(ocichar, Singleton<Info>.Instance.dicBoneInfo);
             ocichar.hairDynamic = AddObjectFemale.GetHairDynamic(ocichar.charInfo.objHair);
             ocichar.skirtDynamic = AddObjectFemale.GetSkirtDynamic(ocichar.charInfo.objClothes);
-            ocichar.ActiveFK(OIBoneInfo.BoneGroup.Hair, ocichar.oiCharInfo.activeFK[0], ocichar.oiCharInfo.enableFK);
-            ocichar.ActiveFK(OIBoneInfo.BoneGroup.Skirt, ocichar.oiCharInfo.activeFK[6], ocichar.oiCharInfo.enableFK);
+            ocichar.InitFK(null);
+            foreach (var tmp in FKCtrl.parts.Select((OIBoneInfo.BoneGroup p, int i2) => new { p, i2 })) {
+                ocichar.ActiveFK(tmp.p, ocichar.oiCharInfo.activeFK[tmp.i2], ocichar.oiCharInfo.activeFK[tmp.i2]);
+            }
+            ocichar.ActiveKinematicMode(OICharInfo.KinematicMode.FK, ocichar.oiCharInfo.enableFK, true);
+            ocichar.UpdateFKColor(new OIBoneInfo.BoneGroup[] { OIBoneInfo.BoneGroup.Hair });
+            ocichar.ChangeEyesOpen(ocichar.charFileStatus.eyesOpenMax);
+            ocichar.ChangeBlink(ocichar.charFileStatus.eyesBlink);
+            ocichar.ChangeMouthOpen(ocichar.oiCharInfo.mouthOpen);
 
             finishedCount++;
 
