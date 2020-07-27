@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{AC89E605-C385-4E44-B781-5EE60C7BC70A}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>KK_StudioAllGirlsPlugin</RootNamespace>
-    <AssemblyName>KK_StudioAllGirlsPlugin</AssemblyName>
+    <RootNamespace>KK_StudioTransgenderLoading</RootNamespace>
+    <AssemblyName>KK_StudioTransgenderLoading</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -49,7 +49,7 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="KK_StudioAllGirlsPlugin.cs" />
+    <Compile Include="KK_StudioTransgenderLoading.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

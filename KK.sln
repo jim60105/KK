@@ -8,8 +8,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioCoordinateLoadOpti
 		{5FF39402-D216-42DE-9AAA-BA34103F1786} = {5FF39402-D216-42DE-9AAA-BA34103F1786}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioAllGirlsPlugin", "KK_StudioAllGirlsPlugin\KK_StudioAllGirlsPlugin.csproj", "{AC89E605-C385-4E44-B781-5EE60C7BC70A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioSimpleColorOnGirls", "KK_StudioSimpleColorOnGirls\KK_StudioSimpleColorOnGirls.csproj", "{670A8493-10C7-4071-8FC8-A49ACE4CCFDB}"
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Extension", "Extension\Extension.shproj", "{0646BE09-F599-4EDB-B115-DE4043C8D3BE}"
@@ -58,6 +56,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_SaveLoadCompression", "K
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_CoordinateCapturePoseUnlock", "KK_CoordinateCapturePoseUnlock\KK_CoordinateCapturePoseUnlock.csproj", "{7AAC6224-8071-4198-818B-5F18A6FBC4B4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioTransgenderLoading", "KK_StudioTransgenderLoading\KK_StudioTransgenderLoading.csproj", "{AC89E605-C385-4E44-B781-5EE60C7BC70A}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Extension\Extension.projitems*{0646be09-f599-4edb-b115-de4043c8d3be}*SharedItemsImports = 13
@@ -93,12 +93,6 @@ Global
 		{85268FD6-A1FD-41AA-84D9-71F18815C034}.Release|Any CPU.ActiveCfg = Release|x64
 		{85268FD6-A1FD-41AA-84D9-71F18815C034}.Release|x64.ActiveCfg = Release|x64
 		{85268FD6-A1FD-41AA-84D9-71F18815C034}.Release|x64.Build.0 = Release|x64
-		{AC89E605-C385-4E44-B781-5EE60C7BC70A}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{AC89E605-C385-4E44-B781-5EE60C7BC70A}.Debug|x64.ActiveCfg = Debug|x64
-		{AC89E605-C385-4E44-B781-5EE60C7BC70A}.Debug|x64.Build.0 = Debug|x64
-		{AC89E605-C385-4E44-B781-5EE60C7BC70A}.Release|Any CPU.ActiveCfg = Release|x64
-		{AC89E605-C385-4E44-B781-5EE60C7BC70A}.Release|x64.ActiveCfg = Release|x64
-		{AC89E605-C385-4E44-B781-5EE60C7BC70A}.Release|x64.Build.0 = Release|x64
 		{670A8493-10C7-4071-8FC8-A49ACE4CCFDB}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{670A8493-10C7-4071-8FC8-A49ACE4CCFDB}.Debug|x64.ActiveCfg = Debug|x64
 		{670A8493-10C7-4071-8FC8-A49ACE4CCFDB}.Debug|x64.Build.0 = Debug|x64
@@ -242,13 +236,19 @@ Global
 		{7AAC6224-8071-4198-818B-5F18A6FBC4B4}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7AAC6224-8071-4198-818B-5F18A6FBC4B4}.Release|x64.ActiveCfg = Release|x64
 		{7AAC6224-8071-4198-818B-5F18A6FBC4B4}.Release|x64.Build.0 = Release|x64
+		{AC89E605-C385-4E44-B781-5EE60C7BC70A}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{AC89E605-C385-4E44-B781-5EE60C7BC70A}.Debug|x64.ActiveCfg = Debug|x64
+		{AC89E605-C385-4E44-B781-5EE60C7BC70A}.Debug|x64.Build.0 = Debug|x64
+		{AC89E605-C385-4E44-B781-5EE60C7BC70A}.Release|Any CPU.ActiveCfg = Release|x64
+		{AC89E605-C385-4E44-B781-5EE60C7BC70A}.Release|x64.ActiveCfg = Release|x64
+		{AC89E605-C385-4E44-B781-5EE60C7BC70A}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {9C634E2C-489D-470F-94E5-72383D9364B5}
-		RESX_NeutralResourcesLanguage = en-US
 		RESX_Rules = {"EnabledRules":["StringFormat","WhiteSpaceLead","WhiteSpaceTail"]}
+		RESX_NeutralResourcesLanguage = en-US
+		SolutionGuid = {9C634E2C-489D-470F-94E5-72383D9364B5}
 	EndGlobalSection
 EndGlobal
