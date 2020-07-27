@@ -19,7 +19,6 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 
 using BepInEx;
 using BepInEx.Configuration;
-using BepInEx.Harmony;
 using BepInEx.Logging;
 using ExtensibleSaveFormat;
 using Extension;
@@ -44,8 +43,8 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.05.30.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.5";
+        internal const string PLUGIN_VERSION = "20.07.27.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.6";
 
         internal static new ManualLogSource Logger;
         public static ConfigEntry<bool> Enable_Saving_To_Chara { get; private set; }
@@ -65,7 +64,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             Save_Face_Overlay = Config.Bind<bool>("Save By Coordinate (Enable Main Config first)", "Face Overlay", true, "This setting will only react when main config enabled");
             Save_Body_Overlay = Config.Bind<bool>("Save By Coordinate (Enable Main Config first)", "Body Overlay", true, "This setting will only react when main config enabled");
             CharacterApi.RegisterExtraBehaviour<CharaOverlaysBasedOnCoordinateController>(GUID);
-            HarmonyWrapper.PatchAll(typeof(Patches));
+            Harmony.CreateAndPatchAll(typeof(Patches));
         }
 
         public void Start() {
@@ -295,13 +294,6 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             KoiSkinOverlayGui = Extension.Extension.TryGetPluginInstance("KSOX_GUI") as KoiSkinOverlayGui;
             CurrentCoordinate.Subscribe(onNext: delegate { ChangeCoordinate(); });
 
-            //// The card save events are always fired before the scene is saved
-            //if (KKAPI.Studio.StudioAPI.StudioLoaded) {
-            //    KKAPI.Studio.SaveLoad.StudioSaveLoadApi.SceneSave += new EventHandler(delegate (object sender, EventArgs e) {
-            //        OnCardBeingSaved(GameMode.Studio);
-            //    });
-            //}
-
             base.Start();
         }
 
@@ -336,7 +328,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
             }
         }
 
-        protected override void OnReload(GameMode currentGameMode) {
+        protected override void OnReload(GameMode currentGameMode, bool maintainState) {
             KSOXController = CharacterApi.GetRegisteredBehaviour(typeof(KoiSkinOverlayController)).Instances.Where(x => x.ChaControl == base.ChaControl).Single() as KoiSkinOverlayController;
             BackCoordinateType = CurrentCoordinate.Value;
             //Maker沒有打勾就不載入
@@ -417,10 +409,10 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
 
         protected override void OnCoordinateBeingLoaded(ChaFileCoordinate coordinate, bool maintainState) {
             KSOXController = CharacterApi.GetRegisteredBehaviour(typeof(KoiSkinOverlayController)).Instances.Where(x => x.ChaControl == base.ChaControl).Single() as KoiSkinOverlayController;
-            if (!CheckLoad(false) || maintainState) return;
+            if (!CheckLoad(false)) return;
             LoadingLock = true;
 
-            IrisDisplaySide[(int)CurrentCoordinate.Value] = 0;
+            //IrisDisplaySide[(int)CurrentCoordinate.Value] = 0;
             PluginData data = GetCoordinateExtendedData((ChaFileCoordinate)UpdateOldGUIDSaveData(coordinate));
             if (null != data && data.version != 3) {
                 UpdateOldVersionSaveData(data);
