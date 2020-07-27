@@ -41,8 +41,8 @@ namespace KK_StudioCharaOnlyLoadBody {
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "20.07.27.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.7.2";
+        internal const string PLUGIN_VERSION = "20.07.27.1";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.7.3";
 
         public static ConfigEntry<string> ExtendedDataToCopySetting { get; private set; }
         public static string[] ExtendedDataToCopy;
@@ -57,7 +57,8 @@ namespace KK_StudioCharaOnlyLoadBody {
                 "com.jim60105.kk.charaoverlaysbasedoncoordinate",
                 "com.deathweasel.bepinex.uncensorselector",
                 "KKABMPlugin.ABMData",
-                "com.bepis.sideloader.universalautoresolver"
+                "com.bepis.sideloader.universalautoresolver",
+                "marco.authordata"
             };
 
             //config.ini設定
@@ -66,26 +67,12 @@ namespace KK_StudioCharaOnlyLoadBody {
                 ExtendedDataToCopy = ExtendedDataToCopySetting.Value.Split(';');
             };
             ExtendedDataToCopy = ExtendedDataToCopySetting.Value.Split(';');
-            Patches.Awake();
+            Model.Awake();
         }
-
     }
 
     class Patches {
-        private static readonly ManualLogSource Logger = KK_StudioCharaOnlyLoadBody.Logger;
         private static readonly GameObject[] btn = new GameObject[2];
-        internal static Type ChaFile_CopyAll_Patches = null;
-        internal static Type MoreAccessories = null;
-
-        internal static void Awake() {
-            //MoreAcc相關
-            string path = Extension.Extension.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories")?.Info.Location;
-            if (null != path && path.Length != 0) {
-                Assembly ass = Assembly.LoadFrom(path);
-                ChaFile_CopyAll_Patches = ass.GetType("MoreAccessoriesKOI.ChaFile_CopyAll_Patches");
-                MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
-            }
-        }
 
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "InitCharaList")]
         public static void InitCharaListPostfix(CharaList __instance) {
@@ -115,14 +102,67 @@ namespace KK_StudioCharaOnlyLoadBody {
             //Button Onclick
             btn[i].GetComponent<Button>().onClick.RemoveAllListeners();
             btn[i].GetComponent<Button>().onClick.SetPersistentListenerState(0, UnityEngine.Events.UnityEventCallState.Off);
-            btn[i].GetComponent<Button>().onClick.AddListener(() => OnButtonClick(__instance, i));
+            btn[i].GetComponent<Button>().onClick.AddListener(() => Model.OnButtonClick(__instance, i));
 
             //同步按鈕狀態
             SetKeepCoorButtonInteractable(__instance);
         }
 
+        //將我的按鈕和官方的變更按鈕同步狀態
+        #region Button Interactive
+        [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnDelete")]
+        public static void OnDelete(CharaList __instance) {
+            SetKeepCoorButtonInteractable(__instance);
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnDeselect")]
+        public static void OnDeselect(CharaList __instance) {
+            SetKeepCoorButtonInteractable(__instance);
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnSelect")]
+        public static void OnSelect(CharaList __instance) {
+            SetKeepCoorButtonInteractable(__instance);
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnSelectChara")]
+        public static void OnSelectChara(CharaList __instance) {
+            SetKeepCoorButtonInteractable(__instance);
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnSort")]
+        public static void OnSort(CharaList __instance) {
+            SetKeepCoorButtonInteractable(__instance);
+        }
+
+        private static void SetKeepCoorButtonInteractable(CharaList __instance) {
+            if (null != __instance) {
+                int i = (string.Equals(__instance.name, "00_Female") ? 1 : 0);
+                if (null != btn[i] && null != btn[i].GetComponent<Button>() && null != __instance.GetField("buttonChange")) {
+                    btn[i].GetComponent<Button>().interactable = ((Button)__instance.GetField("buttonChange")).interactable;
+                }
+            }
+        }
+        #endregion
+    }
+
+    class Model {
+        private static readonly ManualLogSource Logger = KK_StudioCharaOnlyLoadBody.Logger;
+        internal static Type ChaFile_CopyAll_Patches = null;
+        internal static Type MoreAccessories = null;
+
+        internal static void Awake() {
+            //MoreAcc相關
+            string path = Extension.Extension.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories")?.Info.Location;
+            if (null != path && path.Length != 0) {
+                Assembly ass = Assembly.LoadFrom(path);
+                ChaFile_CopyAll_Patches = ass.GetType("MoreAccessoriesKOI.ChaFile_CopyAll_Patches");
+                MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
+            }
+        }
+
         //按鈕邏輯
-        private static void OnButtonClick(CharaList __instance, int sex) {
+        internal static void OnButtonClick(CharaList __instance, int sex) {
             CharaFileSort charaFileSort = __instance.GetField("charaFileSort") as CharaFileSort;
             ChaFileControl chaFileControl = new ChaFileControl();
             string fullPath = chaFileControl.ConvertCharaFilePath(charaFileSort.selectPath, (byte)sex, false);
@@ -197,43 +237,6 @@ namespace KK_StudioCharaOnlyLoadBody {
 
         }
 
-        //將我的按鈕和官方的變更按鈕同步狀態
-        #region Button Interactive
-        [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnDelete")]
-        public static void OnDelete(CharaList __instance) {
-            SetKeepCoorButtonInteractable(__instance);
-        }
-
-        [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnDeselect")]
-        public static void OnDeselect(CharaList __instance) {
-            SetKeepCoorButtonInteractable(__instance);
-        }
-
-        [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnSelect")]
-        public static void OnSelect(CharaList __instance) {
-            SetKeepCoorButtonInteractable(__instance);
-        }
-
-        [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnSelectChara")]
-        public static void OnSelectChara(CharaList __instance) {
-            SetKeepCoorButtonInteractable(__instance);
-        }
-
-        [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnSort")]
-        public static void OnSort(CharaList __instance) {
-            SetKeepCoorButtonInteractable(__instance);
-        }
-
-        private static void SetKeepCoorButtonInteractable(CharaList __instance) {
-            if (null != __instance) {
-                int i = (string.Equals(__instance.name, "00_Female") ? 1 : 0);
-                if (null != btn[i] && null != btn[i].GetComponent<Button>() && null != __instance.GetField("buttonChange")) {
-                    btn[i].GetComponent<Button>().interactable = ((Button)__instance.GetField("buttonChange")).interactable;
-                }
-            }
-        }
-        #endregion
-
         /// <summary>
         /// 載入擴充資料
         /// </summary>
@@ -248,6 +251,7 @@ namespace KK_StudioCharaOnlyLoadBody {
             foreach (string ext in KK_StudioCharaOnlyLoadBody.ExtendedDataToCopy) {
                 switch (ext) {
                     case "KKABMPlugin.ABMData":
+                    #region ABMX
                         //取得BoneController
                         MonoBehaviour BoneController = ocichar.charInfo.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
                         if (null == BoneController) {
@@ -318,17 +322,19 @@ namespace KK_StudioCharaOnlyLoadBody {
                         BoneController.Invoke("OnCardBeingSaved", new object[] { 1 });
                         BoneController.Invoke("OnReload", new object[] { 2, false });
 
-                        //列出角色身上所有ABMX數據
-                        Logger.LogDebug("--List all exist ABMX BoneData--");
-                        foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames", null)) {
-                            object modifier = BoneController.Invoke("GetModifier", new object[] { boneName });
-                            if (null != modifier) {
-                                Logger.LogDebug(boneName);
-                            }
-                        }
-                        Logger.LogDebug("--List End--");
+                        ////列出角色身上所有ABMX數據
+                        //Logger.LogDebug("--List all exist ABMX BoneData--");
+                        //foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames", null)) {
+                        //    object modifier = BoneController.Invoke("GetModifier", new object[] { boneName });
+                        //    if (null != modifier) {
+                        //        Logger.LogDebug(boneName);
+                        //    }
+                        //}
+                        //Logger.LogDebug("--List End--");
                         break;
+                    #endregion
                     case "com.bepis.sideloader.universalautoresolver":
+                    #region SideloaderUAS
                         //判斷CategoryNo分類function
                         bool isBelongsToCharaBody(ChaListDefine.CategoryNo categoryNo) {
                             Type StructReference = typeof(UniversalAutoResolver).Assembly.GetType("Sideloader.AutoResolver.StructReference");
@@ -400,16 +406,13 @@ namespace KK_StudioCharaOnlyLoadBody {
 
                         //調用原始sideloader載入hook function
                         Extension.Extension.InvokeStatic(typeof(UniversalAutoResolver).GetNestedType("Hooks", BindingFlags.NonPublic), "ExtendedCardLoad", new object[] { ocichar.charInfo.chaFile });
-
-                        Logger.LogDebug("Sideloader Data Loaded");
                         break;
+                    #endregion
                     default:
                         ExtendedSave.SetExtendedDataById(ocichar.charInfo.chaFile, ext, ExtendedSave.GetExtendedDataById(tmpChaFile, ext));
-                        Logger.LogDebug($"Change Extended Data: {ext}");
                         break;
                 }
-                //MonoBehaviour KCOXController = ocichar.charInfo.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KoiClothesOverlayX"));
-                //KCOXController?.Invoke("OnCardBeingSaved", new object[] { 1 });
+                Logger.LogDebug($"Change Extended Data: {ext}");
             }
 
             return true;

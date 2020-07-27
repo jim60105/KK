@@ -620,20 +620,20 @@ namespace Extension {
             return null;
         }
 
-        public static bool IsSteam() {
-            if (typeof(DownloadScene).GetProperty("isSteam", AccessTools.all) != null) {
-                Console.WriteLine("[KK_Extension] This Plugin is not working in Koikatu Party (Steam version)");
-                return true;
-            }
-            return false;
-        }
+        //public static bool IsSteam() {
+        //    if (typeof(DownloadScene).GetProperty("isSteam", AccessTools.all) != null) {
+        //        Console.WriteLine("[KK_Extension] This Plugin is not working in Koikatu Party (Steam version)");
+        //        return true;
+        //    }
+        //    return false;
+        //}
 
-        public static bool IsDarkness() {
-            if (null == typeof(ChaFileParameter).GetProperty("exType")) {
-                Console.WriteLine("[KK_Extension] This Plugin is not working without Darkness.");
-                return false;
-            }
-            return true;
-        }
+        //public static bool IsDarkness() {
+        //    if (null == typeof(ChaFileParameter).GetProperty("exType")) {
+        //        Console.WriteLine("[KK_Extension] This Plugin is not working without Darkness.");
+        //        return false;
+        //    }
+        //    return true;
+        //}
     }
 }

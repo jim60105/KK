@@ -18,7 +18,7 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
 using BepInEx;
-using BepInEx.Harmony;
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using Extension;
 using HarmonyLib;
@@ -36,13 +36,18 @@ namespace KK_StudioSimpleColorOnGirls {
     public class KK_StudioSimpleColorOnGirls : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Simple Color On Girls";
         internal const string GUID = "com.jim60105.kk.studiosimplecolorongirls";
-        internal const string PLUGIN_VERSION = "20.06.23.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.8";
+        internal const string PLUGIN_VERSION = "20.07.27.1";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
 
+        public static ConfigEntry<bool> Force_Reset_Color { get; private set; }
+        public static ConfigEntry<Color> Default_Color { get; private set; }
         internal static new ManualLogSource Logger;
         public void Start() {
             Logger = base.Logger;
-            if (!Extension.Extension.IsDarkness()) {
+
+            Force_Reset_Color = Config.Bind<bool>("Config", "Enable reset color", false);
+            Default_Color = Config.Bind<Color>("Config", "Reset Color", new Color(1, 1, 1, 0.5f));
+            if (null == typeof(ChaFileParameter).GetProperty("exType")) {
                 Logger.LogError("This Plugin is not working without Darkness.");
                 return;
             }
@@ -57,7 +62,7 @@ namespace KK_StudioSimpleColorOnGirls {
                 }
             } finally { GameObject.Destroy(go); }
 
-            Harmony harmonyInstance = HarmonyWrapper.PatchAll(typeof(Patches));
+            Harmony harmonyInstance = Harmony.CreateAndPatchAll(typeof(Patches));
             harmonyInstance.Patch(
                 typeof(MPCharCtrl).GetNestedType("StateInfo", BindingFlags.NonPublic).GetMethod("OnValueChangedSimple", AccessTools.all),
                 postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.OnValueChangedSimplePostfix)));
@@ -113,6 +118,9 @@ namespace KK_StudioSimpleColorOnGirls {
 
         [HarmonyPostfix, HarmonyPatch(typeof(AddObjectFemale), "Add", new Type[] { typeof(ChaControl), typeof(OICharInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject), typeof(bool), typeof(int) })]
         private static void AddPostFix(ref OCICharFemale __result, OICharInfo _info) {
+            if (KK_StudioSimpleColorOnGirls.Force_Reset_Color.Value) {
+                _info.simpleColor = KK_StudioSimpleColorOnGirls.Default_Color.Value;
+            }
             __result.charInfo.fileStatus.visibleSimple = _info.visibleSimple;
             __result.charInfo.ChangeSimpleBodyColor(_info.simpleColor);
         }

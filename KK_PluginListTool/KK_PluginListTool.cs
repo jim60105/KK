@@ -34,14 +34,14 @@ namespace KK_PluginListTool {
 	public class KK_PluginListTool : BaseUnityPlugin {
 		internal const string PLUGIN_NAME = "Plugin List Tool";
 		internal const string GUID = "com.jim60105.kk.pluginlisttool";
-		internal const string PLUGIN_VERSION = "19.12.25.0";
-		internal const string PLUGIN_RELEASE_VERSION = "1.0.2";
+		internal const string PLUGIN_VERSION = "20.07.27.1";
+		internal const string PLUGIN_RELEASE_VERSION = "1.0.3";
 		internal static new ManualLogSource Logger;
 		public static ConfigEntry<bool> Enable { get; private set; }
 		public static ConfigEntry<string> SavePath { get; private set; }
 		public void Awake() {
-			Enable = Config.Bind<bool>("Config", "Enable", true, "Re-enable to output again immediately");
-			SavePath = Config.Bind<string>("Config", "Output Directory", Path.Combine(Path.GetDirectoryName(base.Info.Location), "KK_PluginListTool"), "Where do you want to store them?");
+            Enable = Config.Bind<bool>("Config", "Enable", true, "Re-enable to output again immediately");
+            SavePath = Config.Bind<string>("Config", "Output Directory(Relative)", GetRelativePath(BepInEx.Paths.BepInExRootPath, Path.Combine(Path.GetDirectoryName(base.Info.Location), "KK_PluginListTool")), "Where do you want to store them?");
 			Logger = base.Logger;
             _isInited = !Enable.Value;
             Enable.SettingChanged += delegate {
@@ -93,12 +93,8 @@ namespace KK_PluginListTool {
                 }
 
                 try {
-                    FileLog.logPath = Path.Combine(SavePath.Value, Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList.json";
-                    if (File.Exists(FileLog.logPath)) {
-                        File.Delete(FileLog.logPath);
-                    }
-                    FileLog.Log(JsonHelper.FormatJson($"[{pluginList.Select(x => MakeJsonString(x.GUID, x.Name, x.Version, x.Location)).Join(delimiter: ",")}]"));
-                    Logger.LogInfo($"Logged JSON into: {FileLog.logPath}");
+                    File.WriteAllText(Path.Combine(SavePath.Value, Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList.json",
+                        JsonHelper.FormatJson($"[{pluginList.Select(x => MakeJsonString(x.GUID, x.Name, x.Version, x.Location)).Join(delimiter: ",")}]"));
                 }catch(Exception e) {
                     Logger.LogError($"Logged JSON FAILED");
                     Logger.LogError(e.Message);
@@ -106,12 +102,8 @@ namespace KK_PluginListTool {
                 }
 
                 try {
-                    FileLog.logPath = Path.Combine(SavePath.Value, Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList.csv";
-                    if (File.Exists(FileLog.logPath)) {
-                        File.Delete(FileLog.logPath);
-                    }
-                    FileLog.Log($"GUID, Name, Version, Location\n{pluginList.Select(x => MakeCsvString(x.GUID, x.Name, x.Version, x.Location)).Join(delimiter: "\n")}");
-                    Logger.LogInfo($"Logged CSV into: {FileLog.logPath}");
+                    File.WriteAllText(Path.Combine(SavePath.Value, Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList.csv",
+                        $"GUID, Name, Version, Location\n{pluginList.Select(x => MakeCsvString(x.GUID, x.Name, x.Version, x.Location)).Join(delimiter: "\n")}");
                 }catch(Exception e) {
                     Logger.LogError($"Logged CSV FAILED");
                     Logger.LogError(e.Message);
@@ -154,6 +146,12 @@ namespace KK_PluginListTool {
 
         public static string MakeCsvString(string guid, string name, string version, string location) {
             return $"{guid}, {name}, {version}, {location}";
+        }
+
+        static string GetRelativePath(string basePath, string targetPath) {
+            Uri baseUri = new Uri(basePath);
+            Uri targetUri = new Uri(targetPath);
+            return baseUri.MakeRelativeUri(targetUri).ToString().Replace(@"/", @"\");
         }
     }
 
