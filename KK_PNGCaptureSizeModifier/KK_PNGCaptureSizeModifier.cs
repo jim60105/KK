@@ -36,8 +36,8 @@ namespace KK_PNGCaptureSizeModifier {
     public class KK_PNGCaptureSizeModifier : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "PNG Capture Size Modifier";
         internal const string GUID = "com.jim60105.kk.pngcapturesizemodifier";
-        internal const string PLUGIN_VERSION = "20.07.11.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.5.3";
+        internal const string PLUGIN_VERSION = "20.07.28.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.5.4";
 
         public static ConfigEntry<float> TimesOfMaker { get; private set; }
         public static ConfigEntry<float> TimesOfStudio { get; private set; }
@@ -135,25 +135,31 @@ namespace KK_PNGCaptureSizeModifier {
             => ChangeRowCount((ChaCustom.CustomFileWindow)__instance.GetField("fileWindow"));
 
         public static void ChangeRowCount(ChaCustom.CustomFileWindow window) {
-            GridLayoutGroup component = window.gameObject.GetComponentInChildren<GridLayoutGroup>();
+            if (null == Singleton<ChaCustom.CustomBase>.Instance) return;   //Block HScene
+
             int count = KK_PNGCaptureSizeModifier.PNGColumnCount.Value;
-            if (component.constraintCount != count) {
-                if (count == 0) {
-                    KK_PNGCaptureSizeModifier.PNGColumnCount.Value = (int)KK_PNGCaptureSizeModifier.PNGColumnCount.DefaultValue;
-                    return;
-                }
-                RectTransform rect = component.transform as RectTransform;
+            if (count == 0) {
+                KK_PNGCaptureSizeModifier.PNGColumnCount.Value = (int)KK_PNGCaptureSizeModifier.PNGColumnCount.DefaultValue;
+            }
+            GridLayoutGroup component = window.gameObject.GetComponentInChildren<GridLayoutGroup>();
+            if (count != component.constraintCount) {
                 component.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
                 component.constraintCount = count;
+                Singleton<ChaCustom.CustomBase>.Instance.StartCoroutine(UpdateWidth());
+            }
+
+            IEnumerator UpdateWidth() {
+                //切換到System頁的下一幀再計算，否則width會不對
+                Toggle tgl = GameObject.Find("CustomScene/CustomRoot/FrontUIGroup/CustomUIGroup/CvsMainMenu/BaseTop/tglSystem").GetComponentInChildren<Toggle>();
+                yield return new WaitUntil(() => tgl.isOn);
+                yield return new WaitForFixedUpdate();
+
+                RectTransform rect = component.transform as RectTransform;
                 float width = (rect.rect.width - (9 * (count - 1)) - 20) / count;
                 component.cellSize = new Vector2(width, width / component.cellSize.x * component.cellSize.y);
-                Singleton<ChaCustom.CustomBase>.Instance.StartCoroutine(UpdateLayout(component.transform as RectTransform));
+                yield return new WaitForEndOfFrame();
+                LayoutRebuilder.ForceRebuildLayoutImmediate(component.transform as RectTransform);
             }
-        }
-
-        public static IEnumerator UpdateLayout(RectTransform rect) {
-            yield return new WaitForEndOfFrame();
-            LayoutRebuilder.ForceRebuildLayoutImmediate(rect);
         }
 
         //Studio預覽放大
