@@ -55,9 +55,6 @@
       <HintPath>C:\illusion\Koikatu\BepInEx\core\BepInEx.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Json.Net35, Version=1.0.0.0, Culture=neutral, PublicKeyToken=c6752e45808247c2, processorArchitecture=MSIL">
-      <HintPath>..\packages\JSON.1.0.1\lib\net35\Json.Net35.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
