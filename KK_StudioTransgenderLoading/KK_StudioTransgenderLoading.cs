@@ -35,7 +35,7 @@ namespace KK_StudioTransgenderLoading {
         internal const string PLUGIN_NAME = "Studio Transgender Loading";
         internal const string GUID = "com.jim60105.kk.studiotransgenderloading";
         internal const string PLUGIN_VERSION = "20.07.27.0";
-        internal const string PLUGIN_RELEASE_VERSION = "0.0.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.0";
 
         public void Awake() => Harmony.CreateAndPatchAll(typeof(Patches));
     }
