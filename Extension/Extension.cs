@@ -33,7 +33,7 @@ namespace Extension {
             if (null == type) {
                 type = self.GetType();
             }
-            if (!self.SearchForFields(name)) {
+            if (!self.SearchForFields(name,type)) {
                 Console.WriteLine("[KK_Extension] Field Not Found: " + name);
                 return false;
             }
@@ -49,7 +49,7 @@ namespace Extension {
             if (null == type) {
                 type = self.GetType();
             }
-            if (!self.SearchForFields(name)) {
+            if (!self.SearchForFields(name,type)) {
                 Console.WriteLine("[KK_Extension] Field Not Found: " + name);
                 return false;
             }
@@ -144,8 +144,11 @@ namespace Extension {
         }
 
         //List all the fields inside the object if name not found.
-        public static bool SearchForFields(this object self, string name) {
-            FieldInfo[] fieldInfos = self.GetType().GetFields(AccessTools.all);
+        public static bool SearchForFields(this object self, string name,Type type = null) {
+            if (null == type) {
+                type = self.GetType();
+            }
+            FieldInfo[] fieldInfos = type.GetFields(AccessTools.all);
             List<string> printArray = new List<string>();
             foreach (FieldInfo fi in fieldInfos) {
                 if (fi.Name == name) {
