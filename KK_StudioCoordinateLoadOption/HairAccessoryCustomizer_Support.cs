@@ -16,16 +16,36 @@ namespace KK_StudioCoordinateLoadOption {
         private static readonly string GUID = "com.deathweasel.bepinex.hairaccessorycustomizer";
         public static Dictionary<int, object> sourceHairBackup = new Dictionary<int, object>();
         public static Dictionary<int, object> targetHairBackup = new Dictionary<int, object>();
+        internal static Type HairAccessoryControllerType;
 
         public static bool LoadAssembly() {
-            if (null != Extension.Extension.TryGetPluginInstance(GUID, new Version(1, 1, 2))) {
+            try {
+                string path = Extension.Extension.TryGetPluginInstance(GUID, new Version(1, 1, 2))?.Info.Location;
+                System.Reflection.Assembly ass = System.Reflection.Assembly.LoadFrom(path);
+                HairAccessoryControllerType = ass.GetType("KK_Plugins.HairAccessoryCustomizer").GetNestedType("HairAccessoryController");
+                if (null == HairAccessoryControllerType) {
+                    throw new Exception("Load assembly FAILED: Hair Accessory Customizer");
+                }
                 Logger.LogDebug("Hair Accessory Customizer found");
                 return true;
-            } else {
-                Logger.LogDebug("Load assembly FAILED: Hair Accessory Customizer");
+            } catch (Exception ex) {
+                Logger.LogDebug(ex.Message);
                 return false;
             }
         }
+
+        internal static bool UpdateBlock = false;
+        public static bool UpdateAccessoriesPrefix() {
+            return !UpdateBlock;
+        }
+        //public static void UpdateAccessoriesPostfix(object __instance) {
+        //    //顯示HairAcc狀態
+        //    if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist && __instance.GetProperty("ChaControl") is ChaControl) {
+        //        GetDataFromController(__instance.GetProperty("ChaControl") as ChaControl, out _);
+
+        //        GetDataFromExtData(__instance.GetProperty("ChaControl") as ChaControl, out _);
+        //    }
+        //}
 
         /// <summary>
         /// 從ExtendedData取得給定ChaControl的HairAccessories和單一hairAccessoryInfo
@@ -181,7 +201,9 @@ namespace KK_StudioCoordinateLoadOption {
                 }
                 data.data.Add("HairAccessories", MessagePackSerializer.Serialize(allExtData));
             }
-            ExtendedSave.SetExtendedDataById(chaCtrl.chaFile, GUID, data);
+            MonoBehaviour HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
+            //注意這條是異步執行
+            HairAccCusController.Invoke("SetExtendedData", new object[] { data });
         }
 
         public static void ClearHairAccOnController(ChaControl chaCtrl, int? coordinateIndex = null) {
@@ -206,59 +228,59 @@ namespace KK_StudioCoordinateLoadOption {
         /// </summary>
         /// <param name="chaCtrl">檢核的ChaControl</param>
         /// <returns>檢核通過</returns>
-        public static bool CheckControllerPrepared(ChaControl chaCtrl, bool doReload = false) {
-            if (!KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
+        public static bool CheckControllerPrepared(ChaControl chaCtrl, ChaFileCoordinate backCoordinate) {
+            if (!KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist || null == backCoordinate) {
                 return true;
             }
-            ChaFileCoordinate coordinate = chaCtrl.nowCoordinate;
             bool? flag = true;
 
-            Dictionary<int, object> dataFromCoorExt = GetDataFromCoordinate(coordinate);
-            GetDataFromController(chaCtrl, out Dictionary<int, object> dataFromCon);
+            Dictionary<int, object> dataFromChaCtrlExt = GetDataFromCoordinate(chaCtrl.nowCoordinate);
+            Dictionary<int, object> dataFromBackCoor = GetDataFromCoordinate(backCoordinate);
+            //GetDataFromController(chaCtrl, out Dictionary<int, object> dataFromCon);
 
             //過濾假的HairAccInfo
-            if (null != dataFromCoorExt) {
-                foreach (KeyValuePair<int, object> rk in dataFromCoorExt.Where(x => null == Patches.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
-                    dataFromCoorExt.Remove(rk.Key);
+            if (null != dataFromChaCtrlExt) {
+                foreach (KeyValuePair<int, object> rk in dataFromChaCtrlExt.Where(x => null == Patches.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
+                    dataFromChaCtrlExt.Remove(rk.Key);
                 }
-                Logger.LogDebug($"Test with {dataFromCoorExt.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromCoorExt.Select(x => x.Key.ToString()).ToArray())}");
+                Logger.LogDebug($"Test with {dataFromChaCtrlExt.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromChaCtrlExt.Select(x => x.Key.ToString()).ToArray())}");
             }
-            if (null != dataFromCon) {
-                foreach (KeyValuePair<int, object> rk in dataFromCon.Where(x => null == Patches.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
-                    dataFromCon.Remove(rk.Key);
+            if (null != dataFromBackCoor) {
+                foreach (KeyValuePair<int, object> rk in dataFromBackCoor.Where(x => null == Patches.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
+                    dataFromBackCoor.Remove(rk.Key);
                 }
-                Logger.LogDebug($"Test with {dataFromCon.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromCon.Select(x => x.Key.ToString()).ToArray())}");
+                Logger.LogDebug($"Test with {dataFromBackCoor.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromBackCoor.Select(x => x.Key.ToString()).ToArray())}");
             }
 
-            if (null != dataFromCoorExt && dataFromCoorExt.Count > 0) {
-                if (null != dataFromCon && dataFromCon.Count == dataFromCoorExt.Count) {
-                    foreach (KeyValuePair<int, object> kv in dataFromCoorExt) {
-                        if (dataFromCon.ContainsKey(kv.Key)) {
+            if (null != dataFromChaCtrlExt && dataFromChaCtrlExt.Count > 0) {
+                if (null != dataFromBackCoor && dataFromBackCoor.Count == dataFromChaCtrlExt.Count) {
+                    foreach (KeyValuePair<int, object> kv in dataFromChaCtrlExt) {
+                        if (dataFromBackCoor.ContainsKey(kv.Key)) {
                             continue;
                         } else { flag = false; break; }
                     }
                 } else { flag = false; }
             } else {
                 //No data from coordinate extData 
-                if (null != dataFromCon && dataFromCon.Count != 0) {
+                if (null != dataFromBackCoor && dataFromBackCoor.Count != 0) {
                     flag = false;
                 } else {
                     flag = null;
                 }
             }
 
-            if (null == flag) {
-                return true;
-            } else if (true == flag) {
-                MonoBehaviour HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
-                HairAccCusController.Invoke("UpdateAccessories", new object[] { true });
-                return true;
-            } else {
-                if (doReload) {
-                    SetControllerFromCoordinate(chaCtrl, coordinate);
-                }
-                return false;
-            }
+            //if (null == flag) {
+            //    return true;
+            //} else if (true == flag) {
+            //    if (KK_StudioCoordinateLoadOption.insideStudio) {
+            //        MonoBehaviour HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
+            //        HairAccCusController.Invoke("UpdateAccessories", new object[] { true });
+            //    }
+            //    return true;
+            //} else {
+            //    return false;
+            //}
+            return flag ?? true;
         }
 
         /// <summary>
@@ -304,7 +326,11 @@ namespace KK_StudioCoordinateLoadOption {
                     return;
                 }
                 Logger.LogDebug("Source-----");
-                GetDataFromExtData(sourceChaCtrl, out sourceHairBackup);
+                //GetDataFromExtData(sourceChaCtrl, out sourceHairBackup);
+
+                //Source是tmpChara，其資料來自讀入coordinate
+                //不需等待tmpChara載入完成再由tmpChara讀取，直接由coordinate取得資料即可
+                sourceHairBackup = GetDataFromCoordinate(sourceChaCtrl.nowCoordinate);
             }
 
             if (null != targetChaCtrl) {

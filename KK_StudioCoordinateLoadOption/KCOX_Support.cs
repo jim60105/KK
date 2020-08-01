@@ -1,4 +1,5 @@
 ﻿using Extension;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -164,6 +165,15 @@ namespace KK_StudioCoordinateLoadOption {
                     Logger.LogDebug($"->Add Overlay/Mask: {name}");
                 }
             }
+        }
+
+        /// <summary>
+        /// 重新整理Overlay，Mask需要這個
+        /// </summary>
+        public static IEnumerator Update(ChaControl chaCtrl) {
+            yield return null;
+            MonoBehaviour KCOXController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "KoiClothesOverlayController"));
+            KCOXController.Invoke("RefreshAllTextures", new object[] { false });
         }
 
         public static void SetExtDataFromController(ChaControl chaCtrl) {

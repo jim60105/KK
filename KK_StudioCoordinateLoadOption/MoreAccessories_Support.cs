@@ -166,15 +166,16 @@ namespace KK_StudioCoordinateLoadOption {
 
             //_accessoriesByChar[targetChaCtrl.chaFile] = targetCharAdditionalData;
             //MoreAccObj.SetField("_accessoriesByChar", _accessoriesByChar);
-            //Update();
 
             if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist) {
                 HairAccessoryCustomizer_Support.GetDataFromExtData(targetChaCtrl, out Dictionary<int, object> nowCoor);
                 if (null != nowCoor) {
-                    Logger.LogDebug($"->Hair Count: {nowCoor.Count} : {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
+                    Logger.LogDebug($"->Hair Count {nowCoor.Count}: {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
                 }
+                //targetChaCtrl.StopAllCoroutines();
+                HairAccessoryCustomizer_Support.SetControllerFromExtData(targetChaCtrl);
             }
-            Logger.LogDebug($"->MoreAcc Parts Count : {GetAccessoriesAmount(targetChaCtrl.chaFile)}");
+            Logger.LogDebug($"->MoreAcc Parts Count: {GetAccessoriesAmount(targetChaCtrl.chaFile)}");
 
             Logger.LogDebug("Load MoreAccessories Finish");
         }
@@ -317,6 +318,6 @@ namespace KK_StudioCoordinateLoadOption {
         /// <summary>
         /// 對Studio Work Control選擇中的項目更新UI
         /// </summary>
-        public static void Update() => MoreAccObj.Invoke("Update");
+        public static void Update() => MoreAccObj.Invoke("UpdateUI");
     }
 }
