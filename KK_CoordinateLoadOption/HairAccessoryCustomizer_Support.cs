@@ -7,10 +7,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace KK_StudioCoordinateLoadOption {
-
+namespace KK_CoordinateLoadOption {
     internal class HairAccessoryCustomizer_Support {
-        private static readonly BepInEx.Logging.ManualLogSource Logger = KK_StudioCoordinateLoadOption.Logger;
+        private static readonly BepInEx.Logging.ManualLogSource Logger = KK_CoordinateLoadOption.Logger;
         private static object SourceHairAccCusController;
         private static object TargetHairAccCusController;
         private static readonly string GUID = "com.deathweasel.bepinex.hairaccessorycustomizer";
@@ -38,14 +37,6 @@ namespace KK_StudioCoordinateLoadOption {
         public static bool UpdateAccessoriesPrefix() {
             return !UpdateBlock;
         }
-        //public static void UpdateAccessoriesPostfix(object __instance) {
-        //    //顯示HairAcc狀態
-        //    if (KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist && __instance.GetProperty("ChaControl") is ChaControl) {
-        //        GetDataFromController(__instance.GetProperty("ChaControl") as ChaControl, out _);
-
-        //        GetDataFromExtData(__instance.GetProperty("ChaControl") as ChaControl, out _);
-        //    }
-        //}
 
         /// <summary>
         /// 從ExtendedData取得給定ChaControl的HairAccessories和單一hairAccessoryInfo
@@ -229,7 +220,7 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="chaCtrl">檢核的ChaControl</param>
         /// <returns>檢核通過</returns>
         public static bool CheckControllerPrepared(ChaControl chaCtrl, ChaFileCoordinate backCoordinate) {
-            if (!KK_StudioCoordinateLoadOption._isHairAccessoryCustomizerExist || null == backCoordinate) {
+            if (!KK_CoordinateLoadOption._isHairAccessoryCustomizerExist || null == backCoordinate) {
                 return true;
             }
             bool? flag = true;
@@ -240,13 +231,13 @@ namespace KK_StudioCoordinateLoadOption {
 
             //過濾假的HairAccInfo
             if (null != dataFromChaCtrlExt) {
-                foreach (KeyValuePair<int, object> rk in dataFromChaCtrlExt.Where(x => null == Patches.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
+                foreach (KeyValuePair<int, object> rk in dataFromChaCtrlExt.Where(x => null == CoordinateLoad.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
                     dataFromChaCtrlExt.Remove(rk.Key);
                 }
                 Logger.LogDebug($"Test with {dataFromChaCtrlExt.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromChaCtrlExt.Select(x => x.Key.ToString()).ToArray())}");
             }
             if (null != dataFromBackCoor) {
-                foreach (KeyValuePair<int, object> rk in dataFromBackCoor.Where(x => null == Patches.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
+                foreach (KeyValuePair<int, object> rk in dataFromBackCoor.Where(x => null == CoordinateLoad.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
                     dataFromBackCoor.Remove(rk.Key);
                 }
                 Logger.LogDebug($"Test with {dataFromBackCoor.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromBackCoor.Select(x => x.Key.ToString()).ToArray())}");
@@ -269,17 +260,6 @@ namespace KK_StudioCoordinateLoadOption {
                 }
             }
 
-            //if (null == flag) {
-            //    return true;
-            //} else if (true == flag) {
-            //    if (KK_StudioCoordinateLoadOption.insideStudio) {
-            //        MonoBehaviour HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
-            //        HairAccCusController.Invoke("UpdateAccessories", new object[] { true });
-            //    }
-            //    return true;
-            //} else {
-            //    return false;
-            //}
             return flag ?? true;
         }
 
@@ -326,7 +306,6 @@ namespace KK_StudioCoordinateLoadOption {
                     return;
                 }
                 Logger.LogDebug("Source-----");
-                //GetDataFromExtData(sourceChaCtrl, out sourceHairBackup);
 
                 //Source是tmpChara，其資料來自讀入coordinate
                 //不需等待tmpChara載入完成再由tmpChara讀取，直接由coordinate取得資料即可

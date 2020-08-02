@@ -6,9 +6,9 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-namespace KK_StudioCoordinateLoadOption {
+namespace KK_CoordinateLoadOption {
     class ABMX_Support {
-        private static readonly BepInEx.Logging.ManualLogSource Logger = KK_StudioCoordinateLoadOption.Logger;
+        private static readonly BepInEx.Logging.ManualLogSource Logger = KK_CoordinateLoadOption.Logger;
         private static Type BoneModifierType = null;
         private static ChaControl sourceChaCtrl;
         private static ChaControl targetChaCtrl;
@@ -31,6 +31,11 @@ namespace KK_StudioCoordinateLoadOption {
             }
         }
 
+        /// <summary>
+        /// Copy前準備Source和Target資料
+        /// </summary>
+        /// <param name="sourceChaCtrl">來源ChaControl</param>
+        /// <param name="targetChaCtrl">目標ChaControl</param>
         public static bool GetControllerAndBackupData(ChaControl sourceChaCtrl = null, ChaControl targetChaCtrl = null) {
             if (null != sourceChaCtrl) {
                 Logger.LogDebug("Source ABMX-----");
@@ -54,6 +59,12 @@ namespace KK_StudioCoordinateLoadOption {
             return true;
         }
 
+        /// <summary>
+        /// 由ChaControl Controller取得ExtData
+        /// </summary>
+        /// <param name="chaCtrl">對象ChaControl</param>
+        /// <param name="dict">Output ABMX Data Backup</param>
+        /// <returns>ABMX Controller</returns>
         public static MonoBehaviour GetExtendedDataFromController(ChaControl chaCtrl, out Dictionary<string, object> dict) {
             dict = new Dictionary<string, object>();
             MonoBehaviour controller = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
@@ -90,6 +101,11 @@ namespace KK_StudioCoordinateLoadOption {
             return controller;
         }
 
+        /// <summary>
+        /// 拷貝ABMX資料
+        /// </summary>
+        /// <param name="sourceChaCtrl"></param>
+        /// <param name="targetChaCtrl"></param>
         public static void CopyABMXData(ChaControl sourceChaCtrl, ChaControl targetChaCtrl) {
             if (sourceChaCtrl != ABMX_Support.sourceChaCtrl || targetChaCtrl != ABMX_Support.targetChaCtrl) {
                 GetControllerAndBackupData(sourceChaCtrl, targetChaCtrl);
@@ -129,12 +145,15 @@ namespace KK_StudioCoordinateLoadOption {
                     TargetAMBXController.Invoke("OnDataChangedCo")
                 }); //StartCoroutine(OnDataChangedCo());
                 Logger.LogDebug("->ABMX Bone Rollback complete");
-                SetExtDataFromController(targetChaCtrl);
             } else {
                 Logger.LogDebug("->ABMX Bone not found");
             }
         }
 
+        /// <summary>
+        /// 將Controller內之ABMX Data儲存至ChaControl ExtendedData內
+        /// </summary>
+        /// <param name="chaCtrl">對象ChaControl</param>
         public static void SetExtDataFromController(ChaControl chaCtrl) {
             MonoBehaviour BoneController = GetExtendedDataFromController(chaCtrl, out _);
             BoneController.Invoke("OnCardBeingSaved", new object[] { 1 });

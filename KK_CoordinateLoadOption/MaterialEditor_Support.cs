@@ -6,11 +6,11 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-namespace KK_StudioCoordinateLoadOption {
+namespace KK_CoordinateLoadOption {
     class MaterialEditor_Support {
         private static object SourceMaterialEditorController;
         private static object TargetMaterialEditorController;
-        private static readonly BepInEx.Logging.ManualLogSource Logger = KK_StudioCoordinateLoadOption.Logger;
+        private static readonly BepInEx.Logging.ManualLogSource Logger = KK_CoordinateLoadOption.Logger;
         internal static ChaControl sourceChaCtrl = null;
         internal static Dictionary<string, object> SourceMaterialBackup = null;
         internal static Dictionary<int, object> SourceTextureDictionaryBackup = null;
@@ -30,7 +30,7 @@ namespace KK_StudioCoordinateLoadOption {
                 }
                 Logger.LogDebug("MaterialEditor found");
 
-                CacheDirectory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), KK_StudioCoordinateLoadOption.GUID));
+                CacheDirectory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), KK_CoordinateLoadOption.GUID));
                 foreach (FileInfo file in CacheDirectory.GetFiles()) file.Delete();
                 foreach (DirectoryInfo subDirectory in CacheDirectory.GetDirectories()) subDirectory.Delete(true);
                 Logger.LogDebug("Clean cache folder");
@@ -121,7 +121,7 @@ namespace KK_StudioCoordinateLoadOption {
         /// <param name="chaCtrl">對象ChaControl</param>
         /// <param name="MaterialBackup">Output Material Data Backup</param>
         /// <param name="TextureDictionaryBackup">Output TextureDiuctionary，注意這個無法寫回Controller</param>
-        /// <returns></returns>
+        /// <returns>MaterialEditor Controller</returns>
         public static MonoBehaviour GetExtDataFromController(ChaControl chaCtrl, out Dictionary<string, object> MaterialBackup, out Dictionary<int, object> TextureDictionaryBackup) {
             MaterialBackup = new Dictionary<string, object>();
             TextureDictionaryBackup = null;
@@ -545,7 +545,7 @@ namespace KK_StudioCoordinateLoadOption {
         }
 
         public static bool CheckControllerPrepared(ChaControl chaCtrl) {
-            if (!KK_StudioCoordinateLoadOption._isMaterialEditorExist) return true;
+            if (!KK_CoordinateLoadOption._isMaterialEditorExist) return true;
 
             MonoBehaviour controller = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "MaterialEditorCharaController"));
             return null != controller && !(bool)controller?.GetProperty("CharacterLoading");

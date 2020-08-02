@@ -4,12 +4,12 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace KK_StudioCoordinateLoadOption {
+namespace KK_CoordinateLoadOption {
     class KCOX_Support {
-        private static readonly BepInEx.Logging.ManualLogSource Logger = KK_StudioCoordinateLoadOption.Logger;
+        private static readonly BepInEx.Logging.ManualLogSource Logger = KK_CoordinateLoadOption.Logger;
 
         internal static string[] MaskKind = { "BodyMask", "InnerMask", "BraMask" };
-        internal static readonly string[] MainClothesNames = {
+        internal static readonly string[] MainClothesKind = {
             "ct_clothesTop",
             "ct_clothesBot",
             "ct_bra",
@@ -20,7 +20,7 @@ namespace KK_StudioCoordinateLoadOption {
             "ct_shoes_inner",
             "ct_shoes_outer"
         };
-        internal static readonly string[] SubClothesNames = {
+        internal static readonly string[] SubClothesKind = {
             "ct_top_parts_A",
             "ct_top_parts_B",
             "ct_top_parts_C"
@@ -70,6 +70,12 @@ namespace KK_StudioCoordinateLoadOption {
             return true;
         }
 
+        /// <summary>
+        /// 由ChaControl Controller取得ExtData
+        /// </summary>
+        /// <param name="chaCtrl">對象ChaControl</param>
+        /// <param name="dict">Output KCOX Data Backup</param>
+        /// <returns>KCOX Controller</returns>
         public static MonoBehaviour GetExtendedDataFromController(ChaControl chaCtrl, out Dictionary<string, object> dict) {
             MonoBehaviour controller = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "KoiClothesOverlayController"));
 
@@ -78,37 +84,44 @@ namespace KK_StudioCoordinateLoadOption {
                 Logger.LogDebug($"No KCOX Controller found on {chaCtrl.fileParam.fullname}");
             } else {
                 int cnt = 0;
-                foreach (string mainName in MainClothesNames) {
-                    cnt += GetOverlay(controller, dict, mainName) ? 1 : 0;
+                foreach (string mainName in MainClothesKind) {
+                    cnt += GetOverlay(ref dict, mainName) ? 1 : 0;
                 }
-                foreach (string subName in SubClothesNames) {
-                    cnt += GetOverlay(controller, dict, subName) ? 1 : 0;
+                foreach (string subName in SubClothesKind) {
+                    cnt += GetOverlay(ref dict, subName) ? 1 : 0;
                 }
                 foreach (string maskKind in MaskKind) {
-                    cnt += GetOverlay(controller, dict, maskKind) ? 1 : 0;
+                    cnt += GetOverlay(ref dict, maskKind) ? 1 : 0;
                 }
                 Logger.LogDebug("Get Overlay/Mask Total: " + cnt);
             }
             return controller;
-        }
 
-        private static bool GetOverlay(object controller, Dictionary<string, object> dict, string name) {
-            dict[name] = controller.Invoke("GetOverlayTex", new object[] { name, false });
+            bool GetOverlay(ref Dictionary<string, object> dictionary, string name) {
+                dictionary[name] = controller.Invoke("GetOverlayTex", new object[] { name, false });
 
-            if (null == dict[name]) {
-                //Logger.LogDebug(name + " not found");
-                return false;
-            } else {
-                Logger.LogDebug("->Get Overlay/Mask: " + name);
-                return true;
+                if (null == dictionary[name]) {
+                    //Logger.LogDebug(name + " not found");
+                    return false;
+                } else {
+                    Logger.LogDebug("->Get Overlay/Mask: " + name);
+                    return true;
+                }
             }
         }
 
+        /// <summary>
+        /// 拷貝KCOX資料
+        /// </summary>
+        /// <param name="sourceChaCtrl"></param>
+        /// <param name="targetChaCtrl"></param>
+        /// <param name="kind">Kind Name的Array位置</param>
+        /// <param name="main">True:MainKind, False:SubKind, Null:MaskKind</param>
         public static void CopyKCOXData(ChaControl sourceChaCtrl, ChaControl targetChaCtrl, int kind, bool? main = true) {
             if (sourceChaCtrl != KCOX_Support.sourceChaCtrl || targetChaCtrl != KCOX_Support.targetChaCtrl) {
                 if (!GetControllerAndBackupData(sourceChaCtrl, targetChaCtrl)) {
                     Logger.LogError("Skip on KCOX Controller not found.");
-                    CleanKCOXBackup();
+                    ClearKCOXBackup();
                     return;
                 }
             }
@@ -116,7 +129,7 @@ namespace KK_StudioCoordinateLoadOption {
             string name = "";
             switch (main) {
                 case true:
-                    name = MainClothesNames[kind];
+                    name = MainClothesKind[kind];
                     switch (kind) {
                         case 0:
                             //換上衣時處理sub和BodyMask、InnerMask
@@ -134,7 +147,7 @@ namespace KK_StudioCoordinateLoadOption {
                     }
                     break;
                 case false:
-                    name = SubClothesNames[kind];
+                    name = SubClothesKind[kind];
                     break;
                 case null:
                     name = MaskKind[kind];
@@ -143,7 +156,6 @@ namespace KK_StudioCoordinateLoadOption {
 
             bool exist = SourceKCOXBackup.TryGetValue(name, out object tex);
 
-            //KCOXController.Invoke("SetOverlayTex", new object[] { tex, name });
             ChaFileDefine.CoordinateType coordinateType = (ChaFileDefine.CoordinateType)targetChaCtrl.fileStatus.coordinateType;
             Dictionary<ChaFileDefine.CoordinateType, object> _allOverlayTextures = TargetKCOXController.GetField("_allOverlayTextures").ToDictionary<ChaFileDefine.CoordinateType, object>();
             if (TargetKCOXController.GetProperty("CurrentOverlayTextures").ToDictionary<string, object>().TryGetValue(name, out object clothesTexData)) {
@@ -168,7 +180,7 @@ namespace KK_StudioCoordinateLoadOption {
         }
 
         /// <summary>
-        /// 重新整理Overlay，Mask需要這個
+        /// 重新整理Overlay，Mask
         /// </summary>
         public static IEnumerator Update(ChaControl chaCtrl) {
             yield return null;
@@ -176,19 +188,23 @@ namespace KK_StudioCoordinateLoadOption {
             KCOXController.Invoke("RefreshAllTextures", new object[] { false });
         }
 
+        /// <summary>
+        /// 將Controller內之KCOX Data儲存至ChaControl ExtendedData內
+        /// </summary>
+        /// <param name="chaCtrl">對象ChaControl</param>
         public static void SetExtDataFromController(ChaControl chaCtrl) {
             MonoBehaviour KCOXController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "KoiClothesOverlayController"));
             KCOXController.Invoke("OnCardBeingSaved", new object[] { 1 });
         }
 
         public static bool CheckControllerPrepared(ChaControl chaCtrl) {
-            if (!KK_StudioCoordinateLoadOption._isKCOXExist) return true;
+            if (!KK_CoordinateLoadOption._isKCOXExist) return true;
 
             MonoBehaviour controller = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "KoiClothesOverlayController"));
             return null != controller && (bool)controller?.GetProperty("Started") && null != controller.GetProperty("CurrentOverlayTextures");
         }
 
-        public static void CleanKCOXBackup() {
+        public static void ClearKCOXBackup() {
             sourceChaCtrl = null;
             targetChaCtrl = null;
             SourceKCOXBackup = null;

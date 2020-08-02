@@ -3,10 +3,10 @@
     <Target Name="ILRepacker" AfterTargets="Build;Rebuild" Condition="'$(Configuration)' == 'Release'">
 
     <ItemGroup>
-        <InputAssemblies Include="$(OutputPath)\KK_StudioCoordinateLoadOption.dll" />
+        <InputAssemblies Include="$(OutputPath)\KK_CoordinateLoadOption.dll" />
         <InputAssemblies Include="$(OutputPath)\UIUtility.dll" />
         <InputAssemblies Include="$(OutputPath)\ExIni.dll" />
-        <InputAssemblies Include="$(OutputPath)\*\KK_StudioCoordinateLoadOption.resources.dll" />
+        <InputAssemblies Include="$(OutputPath)\*\KK_CoordinateLoadOption.resources.dll" />
     </ItemGroup>
 
     <ILRepack

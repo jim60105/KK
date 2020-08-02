@@ -18,27 +18,28 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
 using BepInEx;
-using BepInEx.Harmony;
 using BepInEx.Logging;
-using Extension;
 using HarmonyLib;
 using Studio;
-using UnityEngine;
-using UnityEngine.UI;
 
-namespace KK_Sample{
+namespace KK_Sample {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
+    [BepInDependency("com.some.kk.pluginguid", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInIncompatibility("KK_SomePlugin")]
     public class KK_Sample : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Sample Project";
         internal const string GUID = "com.jim60105.kk.sampleproject";
-        internal const string PLUGIN_VERSION = "20.05.17.0";
-		internal const string PLUGIN_RELEASE_VERSION = "0.0.0";
+        internal const string PLUGIN_VERSION = "20.08.03.0";
+        internal const string PLUGIN_RELEASE_VERSION = "0.0.0";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
-            HarmonyWrapper.PatchAll(typeof(Patches));
+            Harmony.CreateAndPatchAll(typeof(Patches));
+
+            StringResources.StringResourcesManager.SetUICulture("en-US");
+            string sampleString = StringResources.StringResourcesManager.GetString("SampleString");
         }
     }
 

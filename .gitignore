@@ -330,8 +330,6 @@ ASALocalRun/
 .mfractor/
 
 *.psd
-/KK_StudioTextObject
-/TMPro
 /KK_FBIOpenUp/Resources/sample_chara.png
 /KK_FBIOpenUp/Resources/redBag.png
 /KK_FBIOpenUp/Resources/beam.png
@@ -339,4 +337,7 @@ ASALocalRun/
 /KK_FBIOpenUp/Resources/FBI.mp4
 /KK_FBIOpenUp/Resources/FBI.ogg
 /KK_FBIOpenUp/Resources/Kumakichi.jpg
-/KK_StudioCoordinateLoadOption/bin/x64/Release
+/KK_CoordinateLoadOption/bin/x64/Release/ja
+/KK_CoordinateLoadOption/bin/x64/Release/zh
+/KK_CoordinateLoadOption/bin/x64/Release/ExIni.dll
+/KK_CoordinateLoadOption/bin/x64/Release/UIUtility.dll

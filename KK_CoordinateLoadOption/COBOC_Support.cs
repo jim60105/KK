@@ -4,9 +4,9 @@ using System.Collections;
 using System.Linq;
 using UnityEngine;
 
-namespace KK_StudioCoordinateLoadOption {
+namespace KK_CoordinateLoadOption {
     class COBOC_Support {
-        private static readonly BepInEx.Logging.ManualLogSource Logger = KK_StudioCoordinateLoadOption.Logger;
+        private static readonly BepInEx.Logging.ManualLogSource Logger = KK_CoordinateLoadOption.Logger;
 
         public static bool LoadAssembly() {
             if (null != Extension.Extension.TryGetPluginInstance("com.jim60105.kk.charaoverlaysbasedoncoordinate", new System.Version(20, 4, 28, 0))) {
