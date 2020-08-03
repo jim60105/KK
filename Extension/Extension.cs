@@ -11,58 +11,63 @@ using UnityEngine;
 namespace Extension {
     public static class Extension {
         #region Reflection Stuff
-        private struct FieldKey {
+        private struct Key {
             public readonly Type type;
             public readonly string name;
             private readonly int _hashCode;
 
-            public FieldKey(Type inType, string inName) {
-                this.type = inType;
-                this.name = inName;
-                this._hashCode = this.type.GetHashCode() ^ this.name.GetHashCode();
+            public Key(Type inType, string inName) {
+                type = inType;
+                name = inName;
+                _hashCode = type.GetHashCode() ^ name.GetHashCode();
             }
 
             public override int GetHashCode() {
-                return this._hashCode;
+                return _hashCode;
             }
         }
 
-        private static readonly Dictionary<FieldKey, FieldInfo> _fieldCache = new Dictionary<FieldKey, FieldInfo>();
+        private static readonly Dictionary<Key, FieldInfo> _fieldCache = new Dictionary<Key, FieldInfo>();
+        private static readonly Dictionary<Key, PropertyInfo> _propertyCache = new Dictionary<Key, PropertyInfo>();
+        private static readonly Dictionary<Key, MethodInfo> _methodCache = new Dictionary<Key, MethodInfo>();
 
-        public static object GetField(this object self, string name, Type type = null) {
-            if (null == type) {
-                type = self.GetType();
+        public static object GetField(this object self, string name) {
+            //Console.WriteLine("GetField with no type");
+            Type type = self.GetType();
+            MethodInfo method = typeof(Extension).GetMethods(BindingFlags.Public | BindingFlags.Static).Where(m => m.Name == nameof(Extension.GetField) && m.IsGenericMethod).First();
+            method = method.MakeGenericMethod(type);
+
+            return method.Invoke(self, new object[] { self, name });
+        }
+        public static object GetField<T>(this object self, string name) where T : class {
+            Key fieldKey = new Key(typeof(T), name);
+            //Console.WriteLine("GetField on " + typeof(T).FullName);
+            if (!SearchForFields(fieldKey)) {
+                //Console.WriteLine("GetField failed " + typeof(T).FullName);
+                return null;
             }
-            if (!self.SearchForFields(name,type)) {
-                Console.WriteLine("[KK_Extension] Field Not Found: " + name);
-                return false;
-            }
-            FieldKey key = new FieldKey(type, name);
-            if (_fieldCache.TryGetValue(key, out FieldInfo info) == false) {
-                info = key.type.GetField(key.name, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
-                _fieldCache.Add(key, info);
-            }
-            return info.GetValue(self);
+            _fieldCache.TryGetValue(fieldKey, out FieldInfo field);
+            //Console.WriteLine("GetField GetValue " + field.Name);
+            return field.GetValue(self as T) ?? null;
         }
 
-        public static bool SetField(this object self, string name, object value, Type type = null) {
-            if (null == type) {
-                type = self.GetType();
-            }
-            if (!self.SearchForFields(name,type)) {
-                Console.WriteLine("[KK_Extension] Field Not Found: " + name);
+        public static bool SetField(this object self, string name, object value) {
+            //Console.WriteLine("SetField with no type");
+            Type type = self.GetType();
+            MethodInfo method = typeof(Extension).GetMethods(BindingFlags.Public | BindingFlags.Static).Where(m => m.Name == nameof(Extension.SetField) && m.IsGenericMethod).First();
+            method = method.MakeGenericMethod(type);
+
+            return (bool)method.Invoke(self, new object[] { self, name, value });
+        }
+        public static bool SetField<T>(this object self, string name, object value) where T : class {
+            Key fieldKey = new Key(typeof(T), name);
+            //Console.WriteLine("SetField on " + typeof(T).FullName);
+            if (!SearchForFields(fieldKey)) {
+                //Console.WriteLine("SetField failed " + typeof(T).FullName);
                 return false;
             }
-            FieldKey fieldKey = new FieldKey(type, name);
-            if (_fieldCache.TryGetValue(fieldKey, out FieldInfo field) == false) {
-                field = fieldKey.type.GetField(fieldKey.name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
-                if (null != field) {
-                    _fieldCache.Add(fieldKey, field);
-                } else {
-                    Console.WriteLine("[KK_Extension] Set Field Not Found: " + name);
-                    return false;
-                }
-            }
+            _fieldCache.TryGetValue(fieldKey, out FieldInfo field);
+            //Console.WriteLine("SetField SetValue " + field.Name);
             try {
                 field.SetValue(self, value);
                 return true;
@@ -73,113 +78,151 @@ namespace Extension {
             }
         }
 
-        public static bool SetProperty(this object self, string name, object value) {
-            if (!self.SearchForProperties(name)) {
-                Console.WriteLine("[KK_Extension] Field Not Found: " + name);
-                return false;
+        public static object GetProperty(this object self, string name) {
+            Type type = self.GetType();
+            MethodInfo method = typeof(Extension).GetMethods(BindingFlags.Public | BindingFlags.Static).Where(m => m.Name == nameof(Extension.GetProperty) && m.IsGenericMethod).First();
+            method = method.MakeGenericMethod(type);
+
+            return method.Invoke(self, new object[] { self, name });
+        }
+        public static object GetProperty<T>(this object self, string name) where T : class {
+            Key key = new Key(typeof(T), name);
+            if (!SearchForProperties(key)) {
+                return null;
             }
-            PropertyInfo propertyInfo;
-            propertyInfo = self.GetType().GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.GetProperty);
-            if (null != propertyInfo) {
-                propertyInfo.SetValue(self, value, null);
-                return true;
-            } else {
-                Console.WriteLine("[KK_Extension] Set Property Not Found: " + name);
-                return false;
-            }
+
+            _propertyCache.TryGetValue(key, out PropertyInfo info);
+            return info.GetValue(self as T, null) ?? null;
         }
 
-        public static object GetProperty(this object self, string name) {
-            if (!self.SearchForProperties(name)) {
-                Console.WriteLine("[KK_Extension] Property Not Found: " + name);
+        public static bool SetProperty(this object self, string name, object value) {
+            Type type = self.GetType();
+            MethodInfo method = typeof(Extension).GetMethods(BindingFlags.Public | BindingFlags.Static).Where(m => m.Name == nameof(Extension.SetProperty) && m.IsGenericMethod).First();
+            method = method.MakeGenericMethod(type);
+
+            return (bool) method.Invoke(self, new object[] { self, name, value });
+        }
+        public static bool SetProperty<T>(this object self, string name, object value) where T : class {
+            Key key = new Key(typeof(T), name);
+            if (!SearchForProperties(key)) {
                 return false;
             }
-            PropertyInfo propertyInfo;
-            propertyInfo = self.GetType().GetProperty(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.GetProperty);
-            return propertyInfo.GetValue(self, null);
+
+            _propertyCache.TryGetValue(key, out PropertyInfo property);
+            try {
+                property.SetValue(self as T, value, null);
+                return true;
+            } catch (ArgumentException ae) {
+                Console.WriteLine("[KK_Extension] Set Property is not the same type as input: " + name);
+                Console.WriteLine("[KK_Extension] " + ae.Message);
+                return false;
+            }
         }
 
         public static object Invoke(this object self, string name, object[] p = null) {
-            try {
-                return self?.GetType().InvokeMember(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod, null, self, p);
-            } catch (MissingMethodException e) {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.InnerException);
-                MemberInfo[] members = self?.GetType().GetMembers(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod);
-                List<string> printArray = new List<string>();
-                foreach (MemberInfo me in members) {
-                    if (me.Name == name) {
-                        return true;
-                    }
-                    printArray.Add("[KK_Extension] Member Name/Type: " + me.Name + " / " + me.MemberType);
-                }
-                foreach (string st in printArray) {
-                    Console.WriteLine(st);
-                }
-                Console.WriteLine("[KK_Extension] Get " + members.Length + " Members.");
-                return false;
-            }
+            Type type = self.GetType();
+            MethodInfo method = typeof(Extension).GetMethods(BindingFlags.NonPublic | BindingFlags.Static).Where(m => m.Name == nameof(Extension._Invoke) && m.IsGenericMethod).First();
+            method = method.MakeGenericMethod(type);
+
+            return method.Invoke(self, new object[] { self, name, p });
         }
+        public static object Invoke<T>(this object self, string name, object[] p = null) where T : class => _Invoke<T>(self, name, p);
 
         public static object InvokeStatic(Type type, string name, object[] p = null) {
+            MethodInfo method = typeof(Extension).GetMethods(BindingFlags.NonPublic | BindingFlags.Static).Where(m => m.Name == nameof(Extension._Invoke) && m.IsGenericMethod).First();
+            method = method.MakeGenericMethod(type);
+
+            return method.Invoke(null, new object[] { null, name, p });
+        }
+
+        private static object _Invoke<T>(object self, string name, object[] p = null) where T : class {
+            Key key = new Key(typeof(T), name);
+            if (!SearchForMethod(key)) {
+                return null;
+            }
+
+            _methodCache.TryGetValue(key, out MethodInfo methodInfo);
             try {
-                return type.InvokeMember(name, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod, null, null, p);
-            } catch (MissingMethodException e) {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.InnerException);
-                MemberInfo[] members = type.GetMembers(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.InvokeMethod);
+                if (null != self) {
+                    return methodInfo.Invoke(self as T, p);
+                } else if (methodInfo.IsStatic) {
+                    return methodInfo.Invoke(null, p);
+                } else { throw new Exception("Invoke as static on a not static method"); }
+            } catch (ArgumentException ae) {
+                Console.WriteLine("[KK_Extension] Invoke Method is not the same type as input: " + name);
+                Console.WriteLine("[KK_Extension] " + ae.Message);
+            } catch (Exception e) {
+                Console.WriteLine("[KK_Extension] " + e.Message);
+            }
+            return null;
+        }
+
+        private static bool SearchForFields(Key fieldKey) {
+            if (_fieldCache.ContainsKey(fieldKey)) {
+                return true;
+            } else {
+                FieldInfo[] fieldInfos = fieldKey.type.GetFields(AccessTools.all);
                 List<string> printArray = new List<string>();
-                foreach (MemberInfo me in members) {
-                    if (me.Name == name) {
+                foreach (FieldInfo fi in fieldInfos) {
+                    if (fi.Name == fieldKey.name) {
+                        _fieldCache.Add(fieldKey, fi);
                         return true;
                     }
-                    printArray.Add("[KK_Extension] Member Name/Type: " + me.Name + " / " + me.MemberType);
+                    printArray.Add("[KK_Extension] Field Name/Type: " + fi.Name + " / " + fi.FieldType);
                 }
+                Console.WriteLine($"[KK_Extension] Field Not Found on {fieldKey.type.FullName}: {fieldKey.name}");
+                Console.WriteLine("[KK_Extension] Get " + fieldInfos.Length + " Fields.");
+
                 foreach (string st in printArray) {
                     Console.WriteLine(st);
                 }
-                Console.WriteLine("[KK_Extension] Get " + members.Length + " Members.");
                 return false;
             }
         }
 
-        //List all the fields inside the object if name not found.
-        public static bool SearchForFields(this object self, string name,Type type = null) {
-            if (null == type) {
-                type = self.GetType();
-            }
-            FieldInfo[] fieldInfos = type.GetFields(AccessTools.all);
-            List<string> printArray = new List<string>();
-            foreach (FieldInfo fi in fieldInfos) {
-                if (fi.Name == name) {
-                    return true;
+        private static bool SearchForProperties(Key propertyKey) {
+            if (_propertyCache.ContainsKey(propertyKey)) {
+                return true;
+            } else {
+                PropertyInfo[] propertyInfos = propertyKey.type.GetProperties(AccessTools.all);
+                List<string> printArray = new List<string>();
+                foreach (PropertyInfo pi in propertyInfos) {
+                    if (pi.Name == propertyKey.name) {
+                        _propertyCache.Add(propertyKey, pi);
+                        return true;
+                    }
+                    printArray.Add("[KK_Extension] Property Name/Type: " + pi.Name + " / " + pi.PropertyType);
                 }
-                printArray.Add("[KK_Extension] Field Name/Type: " + fi.Name + " / " + fi.FieldType);
-            }
-            Console.WriteLine("[KK_Extension] Get " + fieldInfos.Length + " Fields.");
+                Console.WriteLine($"[KK_Extension] Property Not Found on {nameof(propertyKey.type)}: " + propertyKey.name);
+                Console.WriteLine("[KK_Extension] Get " + propertyInfos.Length + " Properties.");
 
-            foreach (string st in printArray) {
-                Console.WriteLine(st);
+                foreach (string st in printArray) {
+                    Console.WriteLine(st);
+                }
+                return false;
             }
-            return false;
         }
 
-        //List all the fields inside the object if name not found.
-        public static bool SearchForProperties(this object self, string name) {
-            PropertyInfo[] propertyInfos = self.GetType().GetProperties(AccessTools.all);
-            List<string> printArray = new List<string>();
-            foreach (PropertyInfo pi in propertyInfos) {
-                if (pi.Name == name) {
-                    return true;
+        private static bool SearchForMethod(Key methodKey) {
+            if (_methodCache.ContainsKey(methodKey)) {
+                return true;
+            } else {
+                MethodInfo[] methodInfos = methodKey.type.GetMethods(AccessTools.all);
+                List<string> printArray = new List<string>();
+                foreach (MethodInfo me in methodInfos) {
+                    if (me.Name == methodKey.name) {
+                        _methodCache.Add(methodKey, me);
+                        return true;
+                    }
+                    printArray.Add("[KK_Extension] Method Name/Type: " + me.Name + " / " + me.MemberType);
                 }
-                printArray.Add("[KK_Extension] Property Name/Type: " + pi.Name + " / " + pi.PropertyType);
+                Console.WriteLine($"[KK_Extension] Invoke Method Not Found on {nameof(methodKey.type)}: " + methodKey.name);
+                Console.WriteLine("[KK_Extension] Get " + methodInfos.Length + " Members.");
+                foreach (string st in printArray) {
+                    Console.WriteLine(st);
+                }
+                return false;
             }
-            Console.WriteLine("[KK_Extension] Get " + propertyInfos.Length + " Properties.");
-
-            foreach (string st in printArray) {
-                Console.WriteLine(st);
-            }
-            return false;
         }
 
         public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this object self) {

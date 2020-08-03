@@ -25,7 +25,6 @@ using HarmonyLib;
 using StrayTech;
 using Studio;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -37,13 +36,12 @@ namespace KK_StudioSimpleColorOnGirls {
     public class KK_StudioSimpleColorOnGirls : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Simple Color On Girls";
         internal const string GUID = "com.jim60105.kk.studiosimplecolorongirls";
-        internal const string PLUGIN_VERSION = "20.08.01.1";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.1";
+        internal const string PLUGIN_VERSION = "20.08.04.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.2";
 
         public static ConfigEntry<bool> Force_Reset_Color { get; private set; }
         public static ConfigEntry<Color> Default_Color { get; private set; }
         internal static new ManualLogSource Logger;
-        private static Harmony harmonyInstance;
         public void Start() {
             Logger = base.Logger;
 
@@ -64,7 +62,7 @@ namespace KK_StudioSimpleColorOnGirls {
                 }
             } finally { GameObject.Destroy(go); }
 
-            harmonyInstance = Harmony.CreateAndPatchAll(typeof(Patches),GUID);
+            Harmony harmonyInstance = Harmony.CreateAndPatchAll(typeof(Patches), GUID);
             harmonyInstance.Patch(
                 typeof(MPCharCtrl).GetNestedType("StateInfo", BindingFlags.NonPublic).GetMethod("OnValueChangedSimple", AccessTools.all),
                 postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.OnValueChangedSimplePostfix)));
@@ -74,15 +72,6 @@ namespace KK_StudioSimpleColorOnGirls {
             harmonyInstance.Patch(
                 typeof(MPCharCtrl).GetNestedType("OtherInfo", BindingFlags.Public).GetMethod("UpdateInfo", AccessTools.all),
                 postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.UpdateInfoPostfix)));
-        }
-
-        internal static IEnumerator HarmonyUnpatch(Exception e) {
-            yield return null;
-            yield return new WaitForEndOfFrame();
-            Logger.LogError(e);
-            Logger.LogWarning($"Encounter {e.GetType().Name}, in fact this should not happen.");
-            Logger.LogWarning("Disable function now.");
-            harmonyInstance.UnpatchAll(GUID);
         }
     }
 
@@ -142,36 +131,24 @@ namespace KK_StudioSimpleColorOnGirls {
         public static void CreateReferenceInfoPostfix(object __instance, ulong flags, GameObject objRef) {
             if (flags >= 1UL && flags <= 15UL && (int)(flags - 1UL) == 2) {
                 Dictionary<ChaReference.RefObjKey, GameObject> dictRefObj;
-                GameObject SimpleTop = null;
-                try {
-                    dictRefObj = __instance.GetField("dictRefObj", typeof(ChaReference)).ToDictionary<ChaReference.RefObjKey, GameObject>();
-                    if (!(dictRefObj is Dictionary<ChaReference.RefObjKey, GameObject>))
-                        dictRefObj = new Dictionary<ChaReference.RefObjKey, GameObject>();
+                dictRefObj = __instance.GetField<ChaReference>("dictRefObj").ToDictionary<ChaReference.RefObjKey, GameObject>();
 
-                    /* cf_o_root
-                     * └ n_silhouetteTop    (SimpleTop)
-                     *   └ n_body_silhouette
-                     *   └ n_tang_silhouette */
-                    SimpleTop = CreateSilhouetteGameObjects();
-                    SimpleTop.transform.SetParent(objRef.FindChild("cf_o_root").transform);
+                /* cf_o_root
+                 * └ n_silhouetteTop    (SimpleTop)
+                 *   └ n_body_silhouette
+                 *   └ n_tang_silhouette */
+                GameObject SimpleTop = CreateSilhouetteGameObjects();
+                SimpleTop.transform.SetParent(objRef.FindChild("cf_o_root").transform);
 
-                    editDict(ChaReference.RefObjKey.S_SimpleTop, SimpleTop);
-                    editDict(ChaReference.RefObjKey.S_SimpleBody, SimpleTop.FindChild("n_body_silhouette"));
-                    editDict(ChaReference.RefObjKey.S_SimpleTongue, SimpleTop.FindChild("n_tang_silhouette"));
-                    void editDict(ChaReference.RefObjKey key, GameObject newGO) {
-                        if (dictRefObj.TryGetValue(key, out GameObject oldGO) && null != oldGO) { GameObject.Destroy(oldGO); }
-                        dictRefObj[key] = newGO;
-                    }
-
-                    __instance.SetField("dictRefObj", dictRefObj);
-                } catch (NullReferenceException e) {    
-                    // 2020/08/01 這是必要的，我收到一個十分奇怪的error回報
-                    // editDict()內發生「在ChaControl上GetField("dictRefObj")並且Field Not Found」，而後的ToDictionary()會觸發NullReferenceException
-                    if (null != SimpleTop) {
-                        GameObject.Destroy(SimpleTop.gameObject);
-                    }
-                    Singleton<Studio.Studio>.Instance.StartCoroutine(KK_StudioSimpleColorOnGirls.HarmonyUnpatch(e));
+                editDict(ChaReference.RefObjKey.S_SimpleTop, SimpleTop);
+                editDict(ChaReference.RefObjKey.S_SimpleBody, SimpleTop.FindChild("n_body_silhouette"));
+                editDict(ChaReference.RefObjKey.S_SimpleTongue, SimpleTop.FindChild("n_tang_silhouette"));
+                void editDict(ChaReference.RefObjKey key, GameObject newGO) {
+                    if (dictRefObj.TryGetValue(key, out GameObject oldGO) && null != oldGO) { GameObject.Destroy(oldGO); }
+                    dictRefObj[key] = newGO;
                 }
+
+                __instance.SetField<ChaReference>("dictRefObj", dictRefObj);
             }
         }
 
