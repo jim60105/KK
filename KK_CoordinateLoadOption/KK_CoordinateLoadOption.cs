@@ -53,7 +53,7 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
+        internal const string PLUGIN_VERSION = "20.08.06.0";
         internal const string PLUGIN_RELEASE_VERSION = "1.0.1";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
@@ -408,7 +408,7 @@ namespace KK_CoordinateLoadOption {
                         GameObject stackLoadPanel = GameObject.Find("CustomScene/CustomRoot/FrontUIGroup/CustomUIGroup/CvsMenuTree/06_SystemTop/cosFileControl/charaFileWindow/WinRect/CoordinateLoad/Select");
                         stackLoadPanel.SetActive(!active);
                         GameObject listView = GameObject.Find("CustomScene/CustomRoot/FrontUIGroup/CustomUIGroup/CvsMenuTree/06_SystemTop/cosFileControl/charaFileWindow/WinRect/ListArea");
-                        listView.transform.SetRect(Vector2.up, Vector2.up, new Vector2(4, active ? -880 : -834), new Vector2(772, -72));
+                        listView.transform.SetRect(Vector2.up, Vector2.up, new Vector2(4, active ? -887 : -834), new Vector2(772, -72));
                     }
                 }
             });

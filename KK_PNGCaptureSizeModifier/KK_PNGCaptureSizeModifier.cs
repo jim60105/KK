@@ -36,7 +36,7 @@ namespace KK_PNGCaptureSizeModifier {
     public class KK_PNGCaptureSizeModifier : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "PNG Capture Size Modifier";
         internal const string GUID = "com.jim60105.kk.pngcapturesizemodifier";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
+        internal const string PLUGIN_VERSION = "20.08.06.0";
         internal const string PLUGIN_RELEASE_VERSION = "1.5.5";
 
         public static ConfigEntry<float> TimesOfMaker { get; private set; }
@@ -57,7 +57,7 @@ namespace KK_PNGCaptureSizeModifier {
             Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
             TimesOfMaker = Config.Bind<float>("Config", "Times of multiplication (Maker)", 3.0f, "The game needs to be restarted for changes to take effect.");
             TimesOfStudio = Config.Bind<float>("Config", "Times of multiplication (Studio)", 5.0f, "The game needs to be restarted for changes to take effect.");
-            PNGColumnCount = Config.Bind<int>("Config", "Number of PNG rows in File List View", 3, "Must be a natural number");
+            PNGColumnCount = Config.Bind<int>("Config", "Number of PNG rows in File List View", 3, new ConfigDescription("Must be a natural number",new AcceptableValueRange<int>(1,30)));
             StudioSceneWatermark = Config.Bind<bool>("Config", "Use Studio Scene Watermark", true, "It is extremely NOT recommended to disable the watermark function, which is for distinguishing between scene data and normal image.");
             CharaMakerWatermark = Config.Bind<bool>("Config", "Use Character Watermark", true);
             ResolutionWaterMark = Config.Bind<bool>("Config", "Use Resolution Watermark", true, "When the StudioScene/Character watermark is enabled, the resolution watermark will be forced to use.");
@@ -155,6 +155,7 @@ namespace KK_PNGCaptureSizeModifier {
                 yield return new WaitUntil(() => tgl.isOn);
                 yield return new WaitForFixedUpdate();
 
+                count = KK_PNGCaptureSizeModifier.PNGColumnCount.Value; //重抓，以免設定值在此期間有改變
                 RectTransform rect = component.transform as RectTransform;
                 float width = (rect.rect.width - (9 * (count - 1)) - 20) / count;
                 component.cellSize = new Vector2(width, width / component.cellSize.x * component.cellSize.y);
