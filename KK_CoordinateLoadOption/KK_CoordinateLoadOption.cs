@@ -53,8 +53,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.08.03.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.0";
+        internal const string PLUGIN_VERSION = "20.08.05.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.1";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -62,6 +62,7 @@ namespace KK_CoordinateLoadOption {
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
+            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
             UIUtility.Init();
             harmonyInstance = Harmony.CreateAndPatchAll(typeof(Patches));
             harmonyInstance.PatchAll(typeof(MoreAccessories_Support));
@@ -75,7 +76,7 @@ namespace KK_CoordinateLoadOption {
             harmonyInstance.Patch(CostumeInfoType.GetMethod("OnSelect", AccessTools.all),
                 postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.OnSelectPostfix)));
 
-            harmonyInstance.Patch(typeof(CustomCoordinateFile).GetMethod("Start"),
+            harmonyInstance.Patch(typeof(CustomCoordinateFile).GetMethod("Start", AccessTools.all),
                 postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.InitPostfix)));
             harmonyInstance.Patch(typeof(CustomCoordinateFile).GetMethod("OnChangeSelect", AccessTools.all),
                 postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.OnSelectPostfix)));

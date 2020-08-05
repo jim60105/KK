@@ -19,10 +19,10 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 
 using BepInEx;
 using BepInEx.Configuration;
-using BepInEx.Harmony;
 using BepInEx.Logging;
 using ExtensibleSaveFormat;
 using Extension;
+using HarmonyLib;
 using MessagePack;
 using System;
 using System.Collections.Generic;
@@ -37,8 +37,8 @@ namespace KK_FBIOpenUp {
     public class KK_FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "20.04.29.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.2";
+        internal const string PLUGIN_VERSION = "20.08.05.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.3";
 
         internal static bool _isenabled = false;
         internal static bool _isABMXExist = false;
@@ -66,8 +66,9 @@ namespace KK_FBIOpenUp {
         public void Awake() {
             Logger = base.Logger;
             UIUtility.Init();
-            HarmonyWrapper.PatchAll(typeof(Patches));
-            HarmonyWrapper.PatchAll(typeof(Hooks));
+            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Harmony harmonyInstance = Harmony.CreateAndPatchAll(typeof(Patches));
+            harmonyInstance.PatchAll(typeof(Hooks));
         }
 
         public void Update() => UnityStuff.Update();
@@ -211,13 +212,13 @@ namespace KK_FBIOpenUp {
             //(不block掉是因為，即使在單次Loading Chara內，此function也會被trigger不止一次)
             if (chaFileCustomDict.TryGetValue(chaFileCustom, out List<float>[] chaFileCustomStored)) {
                 if (disableDoubleChange) {
-                    chaFileCustomDict[chaFileCustom] = new List<float>[] { new List<float>(originalShapeValueFace), new List<float>(originalShapeValueBody)};
+                    chaFileCustomDict[chaFileCustom] = new List<float>[] { new List<float>(originalShapeValueFace), new List<float>(originalShapeValueBody) };
                 } else {
                     originalShapeValueFace = chaFileCustomStored[0].ToList<float>();
                     originalShapeValueBody = chaFileCustomStored[1].ToList<float>();
                 }
             } else {
-                chaFileCustomDict.Add(chaFileCustom, new List<float>[] { new List<float>(originalShapeValueFace), new List<float>(originalShapeValueBody)});
+                chaFileCustomDict.Add(chaFileCustom, new List<float>[] { new List<float>(originalShapeValueFace), new List<float>(originalShapeValueBody) });
                 Logger.LogDebug("chaFileCustomDict.Count: " + chaFileCustomDict.Count);
             }
 

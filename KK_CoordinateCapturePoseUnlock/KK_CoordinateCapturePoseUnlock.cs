@@ -18,7 +18,6 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
 using BepInEx;
-using BepInEx.Harmony;
 using HarmonyLib;
 
 namespace KK_CoordinateCapturePoseUnlock {
@@ -27,10 +26,10 @@ namespace KK_CoordinateCapturePoseUnlock {
     public class KK_CoordinateCapturePoseUnlock : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Capture Pose Unlock";
         internal const string GUID = "com.jim60105.kk.coordinatecaptureposeunlock";
-        internal const string PLUGIN_VERSION = "20.06.07.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.0";
+        internal const string PLUGIN_VERSION = "20.08.05.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.1";
         public void Awake() {
-            HarmonyWrapper.PatchAll();
+            Harmony.CreateAndPatchAll(typeof(KK_CoordinateCapturePoseUnlock));
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(ChaCustom.CustomCoordinateFile), "CreateCoordinateFileCoroutine")]

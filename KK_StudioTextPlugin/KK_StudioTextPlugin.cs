@@ -19,7 +19,6 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 
 using BepInEx;
 using BepInEx.Configuration;
-using BepInEx.Harmony;
 using BepInEx.Logging;
 using Extension;
 using HarmonyLib;
@@ -38,15 +37,16 @@ namespace KK_StudioTextPlugin {
     public class KK_StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
         internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "20.04.27.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.5";
+        internal const string PLUGIN_VERSION = "20.08.05.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.6";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
+            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
             if (TextPlugin.Awake()) {
                 UIUtility.Init();
-                HarmonyWrapper.PatchAll(typeof(Patches));
+                Harmony.CreateAndPatchAll(typeof(Patches));
             }
         }
 
@@ -98,7 +98,7 @@ namespace KK_StudioTextPlugin {
             if (isConfigPanelCreated) {
                 return;
             }
-            var panelRoot = GameObject.Find("StudioScene/Canvas Main Menu/02_Manipulate/04_Folder");
+            GameObject panelRoot = GameObject.Find("StudioScene/Canvas Main Menu/02_Manipulate/04_Folder");
             //畫Config視窗
             panel = UIUtility.CreatePanel("ConfigPanel", panelRoot.transform);
             panel.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -510), new Vector2(160, -70));
@@ -116,7 +116,7 @@ namespace KK_StudioTextPlugin {
             nameInputPanel.gameObject.SetActive(false);
 
             //Config1: Font
-            var text1 = UIUtility.CreateText("FontText", panel.transform, "Font");
+            Text text1 = UIUtility.CreateText("FontText", panel.transform, "Font");
             text1.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -30f), new Vector2(155f, -5f));
 
             //畫SelectFont視窗
@@ -138,16 +138,16 @@ namespace KK_StudioTextPlugin {
 
             //滾動元件
             ScrollRect scrollRect = UIUtility.CreateScrollView("scroll", panelSelectFont.transform);
-            var btnGroup = scrollRect.content;
+            RectTransform btnGroup = scrollRect.content;
             scrollRect.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(0f, 5f), new Vector2(0, -5f));
             scrollRect.GetComponent<Image>().color = new Color32(0, 0, 0, 0);
-            foreach (var img in scrollRect.verticalScrollbar.GetComponentsInChildren<Image>()) {
+            foreach (Image img in scrollRect.verticalScrollbar.GetComponentsInChildren<Image>()) {
                 img.color = Color.Lerp(img.color, Color.black, 0.6f);
             }
             (scrollRect.verticalScrollbar.transform as RectTransform).offsetMin = new Vector2(-16f, 0);
             scrollRect.scrollSensitivity = 50;
             //字體預覽之按鈕清單
-            var tmpBtns = new List<Button>();
+            List<Button> tmpBtns = new List<Button>();
             foreach (string fontName in TextPlugin.GetDynamicFontNames()) {
                 Button fontDisplayBtn = UIUtility.CreateButton("fontDisplayBtn", btnGroup.transform, fontName);
                 Text text = fontDisplayBtn.GetComponentInChildren<Text>(true);
@@ -197,9 +197,9 @@ namespace KK_StudioTextPlugin {
             panelSelectFont.gameObject.SetActive(false);
 
             //Config2: FontSize (CharacterSize)
-            var text2 = UIUtility.CreateText("FontSize", panel.transform, "FontSize");
+            Text text2 = UIUtility.CreateText("FontSize", panel.transform, "FontSize");
             text2.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -115f), new Vector2(155f, -90f));
-            var input = UIUtility.CreateInputField("fontSizeInput", panel.transform, "e.g., 1.56 (float)");
+            InputField input = UIUtility.CreateInputField("fontSizeInput", panel.transform, "e.g., 1.56 (float)");
             input.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -155f), new Vector2(155f, -120f));
             input.text = "1";
             input.onEndEdit.AddListener(delegate {
@@ -215,13 +215,13 @@ namespace KK_StudioTextPlugin {
             });
 
             //Config3: FontStyle
-            var text3 = UIUtility.CreateText("FontStyle", panel.transform, "FontStyle");
+            Text text3 = UIUtility.CreateText("FontStyle", panel.transform, "FontStyle");
             text3.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -185f), new Vector2(155f, -160f));
-            var d2 = UIUtility.CreateDropdown("fontStyleDropdown", panel.transform);
+            Dropdown d2 = UIUtility.CreateDropdown("fontStyleDropdown", panel.transform);
             d2.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -225f), new Vector2(155f, -190f));
             //Font List
             d2.options.Clear();
-            var fontStyle = Enum.GetNames(typeof(FontStyle));
+            string[] fontStyle = Enum.GetNames(typeof(FontStyle));
             d2.AddOptions(fontStyle.ToList());
             d2.value = 0;
             //Change FontStyle
@@ -232,13 +232,13 @@ namespace KK_StudioTextPlugin {
             });
 
             //Config4: Anchor 
-            var text4 = UIUtility.CreateText("Anchor", panel.transform, "Anchor");
+            Text text4 = UIUtility.CreateText("Anchor", panel.transform, "Anchor");
             text4.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -325f), new Vector2(155f, -300f));
-            var d3 = UIUtility.CreateDropdown("anchorDropdown", panel.transform);
+            Dropdown d3 = UIUtility.CreateDropdown("anchorDropdown", panel.transform);
             d3.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -365f), new Vector2(155f, -330f));
             //Font List
             d3.options.Clear();
-            var textAnchor = Enum.GetNames(typeof(TextAnchor));
+            string[] textAnchor = Enum.GetNames(typeof(TextAnchor));
             d3.AddOptions(textAnchor.ToList());
             d3.value = 4;
             //Change Anchor 
@@ -249,13 +249,13 @@ namespace KK_StudioTextPlugin {
             });
 
             //Config5: Alignment 
-            var text5 = UIUtility.CreateText("AlignmentText", panel.transform, "Align");
+            Text text5 = UIUtility.CreateText("AlignmentText", panel.transform, "Align");
             text5.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -395f), new Vector2(155f, -370f));
-            var d4 = UIUtility.CreateDropdown("alignmentDropdown", panel.transform);
+            Dropdown d4 = UIUtility.CreateDropdown("alignmentDropdown", panel.transform);
             d4.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -435f), new Vector2(155f, -400f));
             //Font List
             d4.options.Clear();
-            var textAlignment = Enum.GetNames(typeof(TextAlignment));
+            string[] textAlignment = Enum.GetNames(typeof(TextAlignment));
             d4.AddOptions(textAlignment.ToList());
             d4.value = 1;
             //Change Alignment 
@@ -266,13 +266,13 @@ namespace KK_StudioTextPlugin {
             });
 
             //Config6: Color
-            var text6 = UIUtility.CreateText("Color", panel.transform, "Color");
+            Text text6 = UIUtility.CreateText("Color", panel.transform, "Color");
             text6.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -255f), new Vector2(155f, -230f));
-            var btn = UIUtility.CreateButton("colorBtn", panel.transform, "");
+            Button btn = UIUtility.CreateButton("colorBtn", panel.transform, "");
             btn.transform.SetRect(Vector2.up, Vector2.up, new Vector2(5f, -295f), new Vector2(155f, -260f));
             btn.onClick.AddListener(delegate {
                 if (!onUpdating) {
-                    if (!ColorUtility.TryParseHtmlString(TextPlugin.GetConfig(null, TextPlugin.Config.Color), out var color)) {
+                    if (!ColorUtility.TryParseHtmlString(TextPlugin.GetConfig(null, TextPlugin.Config.Color), out Color color)) {
                         color = KK_StudioTextPlugin.Default_Color.Value;
                     }
                     Singleton<Studio.Studio>.Instance.colorPalette.Setup("字體顏色", color, new Action<Color>(TextPlugin.ChangeColor), true);
@@ -280,10 +280,10 @@ namespace KK_StudioTextPlugin {
                 }
             });
 
-            foreach (var image in panel.GetComponentsInChildren<Image>(true)) {
+            foreach (Image image in panel.GetComponentsInChildren<Image>(true)) {
                 image.color = new Color32(120, 120, 120, 220);
             }
-            foreach (var text in panel.GetComponentsInChildren<Text>(true)) {
+            foreach (Text text in panel.GetComponentsInChildren<Text>(true)) {
                 text.color = Color.white;
             }
             input.GetComponent<InputField>().placeholder.GetComponent<Text>().color = new Color(1, 1, 1, 0.3f);
@@ -311,8 +311,8 @@ namespace KK_StudioTextPlugin {
 
         [HarmonyPostfix, HarmonyPatch(typeof(TreeNodeObject), "OnClickSelect")]
         public static void OnClickSelectPostfix(TreeNodeObject __instance) {
-            if (Studio.Studio.GetCtrlInfo(__instance) is ObjectCtrlInfo objectCtrlInfo  &&
-                objectCtrlInfo.objectInfo?.kind == 3 && 
+            if (Studio.Studio.GetCtrlInfo(__instance) is ObjectCtrlInfo objectCtrlInfo &&
+                objectCtrlInfo.objectInfo?.kind == 3 &&
                 objectCtrlInfo is OCIFolder oCIFolder
             ) {
                 //選擇到config資料夾時往上跳
@@ -435,7 +435,7 @@ namespace KK_StudioTextPlugin {
             //Scene讀取的進入點
             if (isCreatingTextFolder || __result.name.Contains(TextObjPrefix)) {
                 __result.name = isCreatingTextFolder ? TextObjPrefix + KK_StudioTextPlugin.Default_New_Text.Value : _info.name;
-                var t = TextPlugin.MakeTextObj(__result, isCreatingTextFolder ? KK_StudioTextPlugin.Default_New_Text.Value : _info.name.Replace(TextObjPrefix, "").Replace("\\n", "\n"));
+                TextMesh t = TextPlugin.MakeTextObj(__result, isCreatingTextFolder ? KK_StudioTextPlugin.Default_New_Text.Value : _info.name.Replace(TextObjPrefix, "").Replace("\\n", "\n"));
                 isCreatingTextFolder = false;
                 if (_addInfo) {
                     //Scene Load就不創建Config資料夾結構
@@ -469,8 +469,8 @@ namespace KK_StudioTextPlugin {
                 InputField input = (InputField)__instance.GetField("inputName");
                 input.readOnly = true;
 
-                var inputFieldPanel = __instance.transform.Find("ConfigPanel/FolderNameInputPanel").gameObject;
-                var inputField = inputFieldPanel.GetComponentInChildren<InputField>();
+                GameObject inputFieldPanel = __instance.transform.Find("ConfigPanel/FolderNameInputPanel").gameObject;
+                InputField inputField = inputFieldPanel.GetComponentInChildren<InputField>();
 
                 inputField.onEndEdit.RemoveAllListeners();
                 inputField.onEndEdit.AddListener(delegate {
@@ -585,7 +585,7 @@ namespace KK_StudioTextPlugin {
                                        select Studio.Studio.GetCtrlInfo(v) as OCIFolder into v
                                        where v != null
                                        select v).ToArray();
-            foreach (var oCIFolder in folderArray) {
+            foreach (OCIFolder oCIFolder in folderArray) {
                 if (oCIFolder.objectItem.GetComponentInChildren<TextMesh>(true)?.text.IndexOf("\n") >= 0) {
                     active = true;
                     break;
@@ -611,7 +611,7 @@ namespace KK_StudioTextPlugin {
                 text = text.Substring(0, text.IndexOf("\n"));
             }
             if (!TextPlugin.DisablePreview) {
-                foreach (var t in panelSelectFont.transform.GetComponentsInChildren<Text>()) {
+                foreach (Text t in panelSelectFont.transform.GetComponentsInChildren<Text>()) {
                     if (t.name == "demoText") {
                         t.font.RequestCharactersInTexture(text);
                         t.text = text;

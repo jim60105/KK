@@ -18,7 +18,6 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
 using BepInEx;
-using BepInEx.Harmony;
 using BepInEx.Logging;
 using Extension;
 using HarmonyLib;
@@ -31,13 +30,14 @@ namespace KK_StudioSaveWorkspaceOrderFix {
     public class KK_StudioSaveWorkspaceOrderFix : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Save Workspace Order Fix";
         internal const string GUID = "com.jim60105.kk.studiosaveworkspaceorderfix";
-        internal const string PLUGIN_VERSION = "20.05.15.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.0";
+        internal const string PLUGIN_VERSION = "20.08.05.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.1";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
-            HarmonyWrapper.PatchAll(typeof(Patches));
+            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Harmony.CreateAndPatchAll(typeof(Patches));
         }
     }
     class Patches {

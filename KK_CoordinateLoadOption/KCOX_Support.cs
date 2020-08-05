@@ -201,7 +201,7 @@ namespace KK_CoordinateLoadOption {
             if (!KK_CoordinateLoadOption._isKCOXExist) return true;
 
             MonoBehaviour controller = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "KoiClothesOverlayController"));
-            return null != controller && (bool)controller?.GetProperty("Started") && null != controller.GetProperty("CurrentOverlayTextures");
+            return null != controller && null != controller.GetProperty("CurrentOverlayTextures");
         }
 
         public static void ClearKCOXBackup() {

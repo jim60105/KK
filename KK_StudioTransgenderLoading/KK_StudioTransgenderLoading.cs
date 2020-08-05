@@ -34,10 +34,13 @@ namespace KK_StudioTransgenderLoading {
     public class KK_StudioTransgenderLoading : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Transgender Loading";
         internal const string GUID = "com.jim60105.kk.studiotransgenderloading";
-        internal const string PLUGIN_VERSION = "20.07.27.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.0";
+        internal const string PLUGIN_VERSION = "20.08.05.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.1";
 
-        public void Awake() => Harmony.CreateAndPatchAll(typeof(Patches));
+        public void Awake() {
+            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Harmony.CreateAndPatchAll(typeof(Patches));
+        }
     }
 
     class Patches {

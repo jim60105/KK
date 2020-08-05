@@ -19,9 +19,7 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 
 using BepInEx;
 using BepInEx.Configuration;
-using BepInEx.Harmony;
 using BepInEx.Logging;
-using Extension;
 using HarmonyLib;
 using Studio;
 using System;
@@ -34,8 +32,8 @@ namespace KK_StudioChikaReplacer {
     public class KK_StudioChikaReplacer : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chika Replacer";
         internal const string GUID = "com.jim60105.kk.studiochikareplacer";
-        internal const string PLUGIN_VERSION = "20.02.23.1";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
+        internal const string PLUGIN_VERSION = "20.08.05.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.1";
 
         public static ConfigEntry<KeyboardShortcut> HotkeyAll { get; set; }
         public static ConfigEntry<KeyboardShortcut> Hotkey { get; set; }
@@ -50,7 +48,7 @@ namespace KK_StudioChikaReplacer {
             Save_before_change = Config.Bind<bool>("Config", "Save before change characters", true);
             Sample_chara = Config.Bind<string>("Config", "Chara to change", "", "Leave blank to use Chika, or use paths like UserData/chara/female/*.png");
 
-            HarmonyWrapper.PatchAll(typeof(Patches));
+            Harmony.CreateAndPatchAll(typeof(Patches));
         }
 
         public void Update() => Patches.Update();

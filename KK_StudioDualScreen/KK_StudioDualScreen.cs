@@ -19,7 +19,6 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 
 using BepInEx;
 using BepInEx.Configuration;
-using BepInEx.Harmony;
 using BepInEx.Logging;
 using Extension;
 using HarmonyLib;
@@ -34,8 +33,8 @@ namespace KK_StudioDualScreen {
     public class KK_StudioDualScreen : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Dual Screen";
         internal const string GUID = "com.jim60105.kk.studiodualscreen";
-        internal const string PLUGIN_VERSION = "20.05.01.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
+        internal const string PLUGIN_VERSION = "20.08.05.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.1";
 
         public static ConfigEntry<KeyboardShortcut> Hotkey { get; set; }
         public static ConfigEntry<KeyboardShortcut> LockHotkey { get; set; }
@@ -43,7 +42,8 @@ namespace KK_StudioDualScreen {
 
         public void Start() {
             Logger = base.Logger;
-            HarmonyWrapper.PatchAll(typeof(Patches));
+            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Harmony.CreateAndPatchAll(typeof(Patches));
 
             Hotkey = Config.Bind<KeyboardShortcut>("Hotkey", "Active Key", new KeyboardShortcut(KeyCode.None), "You must have two monitors to make it work.");
             LockHotkey = Config.Bind<KeyboardShortcut>("Hotkey", "Lock Key", new KeyboardShortcut(KeyCode.None), "Trigger this to lock/unlock the sub camera.");
@@ -148,10 +148,10 @@ namespace KK_StudioDualScreen {
                 try {
                     string path = Extension.Extension.TryGetPluginInstance("KKVMDPlayPlugin.KKVMDPlayPlugin")?.Info.Location;
                     Assembly ass = Assembly.LoadFrom(path);
-                    System.Type VMDAniMgrType = ass.GetType("KKVMDPlayPlugin.VMDAnimationMgr");
-                    if (null != VMDAniMgrType) {
-                        object VMDAniMgr = VMDAniMgrType.GetField("_instance", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null);
-                        VMDAniMgr?.GetField("CameraMgr").SetField("cameraControl", cloneCamera.GetComponent<Studio.CameraControl>());
+                    System.Type VMDCamMgrType = ass.GetType("KKVMDPlayPlugin.VMDCameraMgr");
+                    if (null != VMDCamMgrType) {
+                        object VMDCamMgr = VMDCamMgrType.GetFieldStatic("_instance");
+                        VMDCamMgr?.SetField("cameraControl", cloneCamera.GetComponent<Studio.CameraControl>());
                     } else {
                         throw new System.Exception("Load assembly FAILED: VMDPlayPlugin");
                     }

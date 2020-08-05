@@ -60,7 +60,6 @@ Global
 		Extension\Extension.projitems*{0646be09-f599-4edb-b115-de4043c8d3be}*SharedItemsImports = 13
 		Extension\Extension.projitems*{0c47ebaa-b09c-44e1-b114-5337b8beba79}*SharedItemsImports = 4
 		Extension\Extension.projitems*{2d638e6e-8295-40d9-b76e-6f5a06779c6b}*SharedItemsImports = 4
-		Extension\Extension.projitems*{3438c334-6a7e-47cc-b243-0a3410fdc44f}*SharedItemsImports = 4
 		Extension\Extension.projitems*{4f3e6d68-d3b2-4a0f-817a-272eaafb91aa}*SharedItemsImports = 4
 		Extension\Extension.projitems*{661b77ce-d337-49d2-a359-ad85e68986b2}*SharedItemsImports = 4
 		Extension\Extension.projitems*{670a8493-10c7-4071-8fc8-a49ace4ccfdb}*SharedItemsImports = 4
@@ -68,7 +67,6 @@ Global
 		Extension\Extension.projitems*{82c2994c-24eb-4df4-a367-2f33ec849978}*SharedItemsImports = 4
 		Extension\Extension.projitems*{8321a574-1480-41b6-a4f8-52069703f1cd}*SharedItemsImports = 4
 		Extension\Extension.projitems*{85268fd6-a1fd-41aa-84d9-71f18815c034}*SharedItemsImports = 4
-		Extension\Extension.projitems*{8abc8100-d514-4b28-bcfb-67b040250d35}*SharedItemsImports = 4
 		Extension\Extension.projitems*{94dda10b-7a91-4f59-9c62-4aa363e1c36f}*SharedItemsImports = 4
 		Extension\Extension.projitems*{957dec7d-0d10-41e5-9cf6-a72902355ccc}*SharedItemsImports = 4
 		Extension\Extension.projitems*{a5f430a2-ae7a-4bcd-a380-0f73add7a4a3}*SharedItemsImports = 4
@@ -245,8 +243,8 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {9C634E2C-489D-470F-94E5-72383D9364B5}
-		RESX_NeutralResourcesLanguage = en-US
 		RESX_Rules = {"EnabledRules":["StringFormat","WhiteSpaceLead","WhiteSpaceTail"]}
+		RESX_NeutralResourcesLanguage = en-US
+		SolutionGuid = {9C634E2C-489D-470F-94E5-72383D9364B5}
 	EndGlobalSection
 EndGlobal

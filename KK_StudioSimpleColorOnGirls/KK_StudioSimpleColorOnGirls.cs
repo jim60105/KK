@@ -26,6 +26,7 @@ using StrayTech;
 using Studio;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -36,16 +37,19 @@ namespace KK_StudioSimpleColorOnGirls {
     public class KK_StudioSimpleColorOnGirls : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Simple Color On Girls";
         internal const string GUID = "com.jim60105.kk.studiosimplecolorongirls";
-        internal const string PLUGIN_VERSION = "20.08.04.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.2";
+        internal const string PLUGIN_VERSION = "20.08.05.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
 
-        public static ConfigEntry<bool> Force_Reset_Color { get; private set; }
+        public static ConfigEntry<bool> Force_Reset_Color_Girl { get; private set; }
+        public static ConfigEntry<bool> Force_Reset_Color_Boy { get; private set; }
         public static ConfigEntry<Color> Default_Color { get; private set; }
         internal static new ManualLogSource Logger;
         public void Start() {
             Logger = base.Logger;
+            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
 
-            Force_Reset_Color = Config.Bind<bool>("Config", "Enable reset color", false);
+            Force_Reset_Color_Girl = Config.Bind<bool>("Config", "Reset color on Girls", false);
+            Force_Reset_Color_Boy = Config.Bind<bool>("Config", "Reset color on Boys", false);
             Default_Color = Config.Bind<Color>("Config", "Reset Color", new Color(1, 1, 1, 0.5f));
             if (null == typeof(ChaFileParameter).GetProperty("exType")) {
                 Logger.LogError("This Plugin is not working without Darkness.");
@@ -97,7 +101,10 @@ namespace KK_StudioSimpleColorOnGirls {
         }
 
         public static void OnValueChangedSimplePostfix(object __instance, bool _value) {
-            if (__instance.GetProperty("isUpdateInfo") is bool b && b) {
+            Type CommonInfoType = typeof(MPCharCtrl).GetNestedType("CommonInfo", BindingFlags.NonPublic);
+            MethodInfo getProMethod = typeof(Extension.Extension).GetMethods(BindingFlags.Public | BindingFlags.Static).Where(m => m.Name == nameof(Extension.Extension.GetProperty) && m.IsGenericMethod).First();
+            getProMethod = getProMethod.MakeGenericMethod(CommonInfoType);
+            if (getProMethod.Invoke(__instance, new object[] { __instance, "isUpdateInfo" }) is bool b && b) {
                 return;
             }
             ociChar.oiCharInfo.visibleSimple = _value;
@@ -117,12 +124,25 @@ namespace KK_StudioSimpleColorOnGirls {
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(AddObjectFemale), "Add", new Type[] { typeof(ChaControl), typeof(OICharInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject), typeof(bool), typeof(int) })]
-        private static void AddPostFix(ref OCICharFemale __result, OICharInfo _info) {
-            if (KK_StudioSimpleColorOnGirls.Force_Reset_Color.Value) {
+        public static void AddPostFix(ref OCICharFemale __result, OICharInfo _info) 
+            => AddPost(__result, _info, KK_StudioSimpleColorOnGirls.Force_Reset_Color_Girl.Value);
+        [HarmonyPostfix, HarmonyPatch(typeof(AddObjectMale), "Add", new Type[] { typeof(ChaControl), typeof(OICharInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject), typeof(bool), typeof(int) })]
+        public static void AddPostFix2(ref OCICharMale __result, OICharInfo _info)
+            => AddPost(__result, _info, KK_StudioSimpleColorOnGirls.Force_Reset_Color_Boy.Value);
+        private static void AddPost(OCIChar __result, OICharInfo _info, bool enableReset) {
+            if (enableReset) {
                 _info.simpleColor = KK_StudioSimpleColorOnGirls.Default_Color.Value;
             }
             __result.charInfo.fileStatus.visibleSimple = _info.visibleSimple;
             __result.charInfo.ChangeSimpleBodyColor(_info.simpleColor);
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(OICharInfo), "Load", new Type[] { typeof(BinaryReader), typeof(Version), typeof(bool), typeof(bool) })]
+        public static void LoadPostFix(OICharInfo __instance) {
+            if ((__instance.sex == 0 && KK_StudioSimpleColorOnGirls.Force_Reset_Color_Boy.Value) ||
+            (__instance.sex == 1 && KK_StudioSimpleColorOnGirls.Force_Reset_Color_Girl.Value)) {
+                __instance.simpleColor = KK_StudioSimpleColorOnGirls.Default_Color.Value;
+            }
         }
         #endregion
 
@@ -156,7 +176,7 @@ namespace KK_StudioSimpleColorOnGirls {
         /// Create Simple gameobjects.
         /// </summary>
         /// <returns>False if failed</returns>
-        static internal GameObject CreateSilhouetteGameObjects() {
+        internal static GameObject CreateSilhouetteGameObjects() {
             GameObject simpleBodyGameObject = null;
             try {
                 //不能緩存後拷貝，必須每次都LoadAsset來用

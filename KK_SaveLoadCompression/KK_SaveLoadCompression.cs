@@ -19,8 +19,8 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 
 using BepInEx;
 using BepInEx.Configuration;
-using BepInEx.Harmony;
 using BepInEx.Logging;
+using Extension;
 using HarmonyLib;
 using SevenZip;
 using Studio;
@@ -34,8 +34,8 @@ namespace KK_SaveLoadCompression {
     public class KK_SaveLoadCompression : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Save Load Compression";
         internal const string GUID = "com.jim60105.kk.saveloadcompression";
-        internal const string PLUGIN_VERSION = "20.06.10.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.2";
+        internal const string PLUGIN_VERSION = "20.08.05.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.3";
         public static ConfigEntry<DictionarySize> DictionarySize { get; private set; }
         public static ConfigEntry<bool> Enable { get; private set; }
         public static ConfigEntry<bool> Notice { get; private set; }
@@ -55,7 +55,7 @@ namespace KK_SaveLoadCompression {
             DisplayMessage = Config.Bind<bool>("Settings", "Display compression message on screen", true);
             SkipSaveCheck = Config.Bind<bool>("Settings", "Skip bytes compare when saving", false, "!!!Use this at your own risk!!!!");
             DictionarySize = Config.Bind<DictionarySize>("Settings", "Compress Dictionary Size", SevenZip.DictionarySize.VeryLarge, "If compression FAILs, try changing it to a smaller size.");
-            Harmony harmonyInstance = HarmonyWrapper.PatchAll(typeof(Patches));
+            Harmony harmonyInstance = Harmony.CreateAndPatchAll(typeof(Patches));
             harmonyInstance.Patch(
                 typeof(SceneInfo).GetMethod(nameof(SceneInfo.Load), new[] { typeof(string), typeof(Version).MakeByRefType() }),
                 prefix: new HarmonyMethod(typeof(Patches), nameof(Patches.LoadPrefix))
@@ -140,18 +140,17 @@ namespace KK_SaveLoadCompression {
             string decompressPath = Path.Combine(KK_SaveLoadCompression.CacheDirectory.CreateSubdirectory("Decompressed").FullName, Path.GetFileName(cleanedPath));
             File.Copy(path, decompressPath, true);
 
+            //Make png watermarked
             using (FileStream fileStreamReader = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
                 using (BinaryReader binaryReader = new BinaryReader(fileStreamReader)) {
-                    Logger.LogInfo("Start Compress");
                     pngData = PngFile.LoadPngBytes(binaryReader);
                     Texture2D png = new Texture2D(2, 2);
                     png.LoadImage(pngData);
 
                     Texture2D watermark = Extension.Extension.LoadDllResource($"KK_SaveLoadCompression.Resources.zip_watermark.png");
                     float scaleTimes = (token == StudioToken) ? .14375f : .30423f;
-                    watermark = Extension.Extension.Scale(watermark, Convert.ToInt32(png.width * scaleTimes), Convert.ToInt32(png.width * scaleTimes));
-                    png = Extension.Extension.OverwriteTexture(
-                        png,
+                    watermark = watermark.Scale(Convert.ToInt32(png.width * scaleTimes), Convert.ToInt32(png.width * scaleTimes));
+                    png = png.OverwriteTexture(
                         watermark,
                         0,
                         png.height - watermark.height
@@ -161,10 +160,12 @@ namespace KK_SaveLoadCompression {
                 }
             }
 
+            //New Thread, No Freeze 
             Thread newThread = new Thread(doMain);
             newThread.Start();
 
             void doMain() {
+                Logger.LogInfo("Start Compress");
                 bool successFlag = true;
                 try {
                     using (FileStream fileStreamReader = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {

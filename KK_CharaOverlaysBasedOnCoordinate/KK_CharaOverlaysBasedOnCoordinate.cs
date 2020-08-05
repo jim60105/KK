@@ -43,8 +43,8 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.07.27.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.6";
+        internal const string PLUGIN_VERSION = "20.08.05.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.7";
 
         internal static new ManualLogSource Logger;
         public static ConfigEntry<bool> Enable_Saving_To_Chara { get; private set; }
@@ -57,6 +57,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
 
         public void Awake() {
             Logger = base.Logger;
+            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
             Enable_Saving_To_Chara = Config.Bind<bool>("Main Config", "Saving to character outfits (7 outfits)", true, "Enable this to save the plugin data to the character file");
             Enable_Saving_To_Coordinate = Config.Bind<bool>("Main Config", "Saving to Coordinate files", false, "[Warning] It is highly recommended to enable this ONLY WHEN NEEDED");
             Warning_Message = Config.Bind<bool>("Main Config", "Warning Message", true, "Enable/Disable warning message when saving files");

@@ -30,61 +30,62 @@ using System.Reflection;
 using System.Text;
 
 namespace KK_PluginListTool {
-	[BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
-	public class KK_PluginListTool : BaseUnityPlugin {
-		internal const string PLUGIN_NAME = "Plugin List Tool";
-		internal const string GUID = "com.jim60105.kk.pluginlisttool";
-		internal const string PLUGIN_VERSION = "20.07.27.1";
-		internal const string PLUGIN_RELEASE_VERSION = "1.0.3";
-		internal static new ManualLogSource Logger;
-		public static ConfigEntry<bool> Enable { get; private set; }
-		public static ConfigEntry<string> SavePath { get; private set; }
-		public void Awake() {
+    [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
+    public class KK_PluginListTool : BaseUnityPlugin {
+        internal const string PLUGIN_NAME = "Plugin List Tool";
+        internal const string GUID = "com.jim60105.kk.pluginlisttool";
+        internal const string PLUGIN_VERSION = "20.08.05.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.4";
+        internal static new ManualLogSource Logger;
+        public static ConfigEntry<bool> Enable { get; private set; }
+        public static ConfigEntry<string> SavePath { get; private set; }
+        public void Awake() {
             Enable = Config.Bind<bool>("Config", "Enable", true, "Re-enable to output again immediately");
             SavePath = Config.Bind<string>("Config", "Output Directory(Relative)", GetRelativePath(BepInEx.Paths.BepInExRootPath, Path.Combine(Path.GetDirectoryName(base.Info.Location), "KK_PluginListTool")), "Where do you want to store them?");
-			Logger = base.Logger;
+            Logger = base.Logger;
+            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
             _isInited = !Enable.Value;
             Enable.SettingChanged += delegate {
                 _isInited = !Enable.Value;
             };
-		}
+        }
 
-		internal static List<string> strList = new List<string>();
-		internal static List<Plugin> pluginList = new List<Plugin>();
+        internal static List<string> strList = new List<string>();
+        internal static List<Plugin> pluginList = new List<Plugin>();
         internal static bool _isInited = false;
-		public void LateUpdate() {
+        public void LateUpdate() {
             //只觸發一次
-			if (!_isInited) {
+            if (!_isInited) {
                 _isInited = true;
-				Logger.LogDebug($"Start listing loaded plugin infos...");
+                Logger.LogDebug($"--Start listing loaded plugin infos--");
 
-				#region GetPlugins
-				//IPA
-				Logger.LogDebug($"Try load IPA plugin infos...");
-				string IPAAssPath = Extension.Extension.TryGetPluginInstance("BepInEx.IPALoader", new Version(1, 2))?.Info.Location;
-				//Logger.LogDebug($"Path: {IPAAssPath}");
-				if (null != IPAAssPath && File.Exists(IPAAssPath)) {
-					Type IPlugin = Assembly.LoadFrom(IPAAssPath).GetType("IllusionPlugin.IPlugin");
-					Type PluginManager = Assembly.LoadFrom(IPAAssPath).GetType("IllusionInjector.PluginManager");
+                #region GetPlugins
+                //IPA
+                Logger.LogDebug($">>Try load IPA plugin infos");
+                string IPAAssPath = Extension.Extension.TryGetPluginInstance("BepInEx.IPALoader", new Version(1, 2))?.Info.Location;
+                //Logger.LogDebug($"Path: {IPAAssPath}");
+                if (null != IPAAssPath && File.Exists(IPAAssPath)) {
+                    Type IPlugin = Assembly.LoadFrom(IPAAssPath).GetType("IllusionPlugin.IPlugin");
+                    Type PluginManager = Assembly.LoadFrom(IPAAssPath).GetType("IllusionInjector.PluginManager");
 
-					//呼叫 KK_PluginListTool.GetIPA<IPlugin>(Plugins);
-					MethodInfo method = typeof(KK_PluginListTool).GetMethod(nameof(GetIPA), BindingFlags.Public | BindingFlags.Static);
-					method = method.MakeGenericMethod(IPlugin);
-					method.Invoke(null, new object[] { PluginManager.GetProperties()[0].GetValue(null, null) });
-				} else {
-					Logger.LogDebug($"No IPALoader found.");
-				}
+                    //呼叫 KK_PluginListTool.GetIPA<IPlugin>(Plugins);
+                    MethodInfo method = typeof(KK_PluginListTool).GetMethod(nameof(GetIPA), BindingFlags.Public | BindingFlags.Static);
+                    method = method.MakeGenericMethod(IPlugin);
+                    method.Invoke(null, new object[] { PluginManager.GetProperties()[0].GetValue(null, null) });
+                } else {
+                    Logger.LogDebug($">>No IPALoader found.");
+                }
 
-				//BepPlugin
-				Logger.LogDebug($">>Get {BepInEx.Bootstrap.Chainloader.PluginInfos.Count} BepInEx Plugins.");
-				foreach (var kv in BepInEx.Bootstrap.Chainloader.PluginInfos) {
-					pluginList.Add(new Plugin(
-						kv.Value.Metadata.GUID,
-						kv.Value.Metadata.Name,
-						kv.Value.Metadata.Version.ToString(),
-						kv.Value.Location.Replace(Paths.GameRootPath + "\\", "")
-					));
-				}
+                //BepPlugin
+                Logger.LogDebug($">>Get {BepInEx.Bootstrap.Chainloader.PluginInfos.Count} BepInEx Plugins.");
+                foreach (KeyValuePair<string, PluginInfo> kv in BepInEx.Bootstrap.Chainloader.PluginInfos) {
+                    pluginList.Add(new Plugin(
+                        kv.Value.Metadata.GUID,
+                        kv.Value.Metadata.Name,
+                        kv.Value.Metadata.Version.ToString(),
+                        kv.Value.Location.Replace(Paths.GameRootPath + "\\", "")
+                    ));
+                }
                 #endregion
 
                 #region WriteFile
@@ -95,8 +96,8 @@ namespace KK_PluginListTool {
                 try {
                     File.WriteAllText(Path.Combine(SavePath.Value, Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList.json",
                         JsonHelper.FormatJson($"[{pluginList.Select(x => MakeJsonString(x.GUID, x.Name, x.Version, x.Location)).Join(delimiter: ",")}]"));
-                }catch(Exception e) {
-                    Logger.LogError($"Logged JSON FAILED");
+                } catch (Exception e) {
+                    Logger.LogError($">>Logged JSON FAILED");
                     Logger.LogError(e.Message);
                     Logger.LogError(e.StackTrace);
                 }
@@ -104,24 +105,25 @@ namespace KK_PluginListTool {
                 try {
                     File.WriteAllText(Path.Combine(SavePath.Value, Path.GetFileNameWithoutExtension(Paths.ExecutablePath)) + "_LoadedPluginList.csv",
                         $"GUID, Name, Version, Location\n{pluginList.Select(x => MakeCsvString(x.GUID, x.Name, x.Version, x.Location)).Join(delimiter: "\n")}");
-                }catch(Exception e) {
-                    Logger.LogError($"Logged CSV FAILED");
+                } catch (Exception e) {
+                    Logger.LogError($">>Logged CSV FAILED");
                     Logger.LogError(e.Message);
                     Logger.LogError(e.StackTrace);
                 }
                 #endregion
+                Logger.LogDebug($"--List Finish--");
             }
-		}
+        }
 
-		public static void GetIPA<T>(object obj) {
-			if (obj is IEnumerable<T> iEnumerable) {
-				List<T> newList = new List<T>(iEnumerable);
-				Logger.LogDebug($">>Get {newList.Count} IPA Plugins.");
-                var cf = new ConfigFile(Utility.CombinePaths(Paths.ConfigPath, "BepInEx.IPALoader.cfg"), false);
-                var IPAPath = cf.Bind("Config", "Plugins Path", "Plugins", "Folder from which to load IPA plugins relative to the game root directory").Value;
+        public static void GetIPA<T>(object obj) {
+            if (obj is IEnumerable<T> iEnumerable) {
+                List<T> newList = new List<T>(iEnumerable);
+                Logger.LogDebug($">>Get {newList.Count} IPA Plugins.");
+                ConfigFile cf = new ConfigFile(Utility.CombinePaths(Paths.ConfigPath, "BepInEx.IPALoader.cfg"), false);
+                string IPAPath = cf.Bind("Config", "Plugins Path", "Plugins", "Folder from which to load IPA plugins relative to the game root directory").Value;
 
                 if (newList.Count > 0) {
-                    foreach (var l in newList) {
+                    foreach (T l in newList) {
                         pluginList.Add(new Plugin(
                             "IPA." + ((string)l.GetProperty("Name")).Replace("_", "").Replace(" ", "."),   //IPlugin結構內沒有GUID，姑且拼一個
                             (string)l.GetProperty("Name"),
@@ -176,11 +178,11 @@ namespace KK_PluginListTool {
     static class JsonHelper {
         private const string INDENT_STRING = "    ";
         public static string FormatJson(string str) {
-            var indent = 0;
-            var quoted = false;
-            var sb = new StringBuilder();
-            for (var i = 0; i < str.Length; i++) {
-                var ch = str[i];
+            int indent = 0;
+            bool quoted = false;
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < str.Length; i++) {
+                char ch = str[i];
                 switch (ch) {
                     case '{':
                     case '[':
@@ -201,7 +203,7 @@ namespace KK_PluginListTool {
                     case '"':
                         sb.Append(ch);
                         bool escaped = false;
-                        var index = i;
+                        int index = i;
                         while (index > 0 && str[--index] == '\\')
                             escaped = !escaped;
                         if (!escaped)
@@ -231,7 +233,7 @@ namespace KK_PluginListTool {
         }
 
         public static void ForEach<T>(this IEnumerable<T> ie, Action<T> action) {
-            foreach (var i in ie) {
+            foreach (T i in ie) {
                 action(i);
             }
         }

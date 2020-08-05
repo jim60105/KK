@@ -30,8 +30,8 @@ namespace KK_TransparentBackground {
     public class KK_TransparentBackground : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Transparent Background";
         internal const string GUID = "com.jim60105.kk.transparentbackground";
-        internal const string PLUGIN_VERSION = "20.05.23.1";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.0";
+        internal const string PLUGIN_VERSION = "20.08.05.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.1";
 
         internal static new ManualLogSource Logger;
         public static ConfigEntry<KeyboardShortcut> Hotkey { get; set; }

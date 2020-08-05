@@ -21,10 +21,10 @@ namespace KK_CoordinateLoadOption {
                 string path = Extension.Extension.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories", new Version(1, 1))?.Info.Location;
                 Assembly ass = Assembly.LoadFrom(path);
                 MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
-                if (null == MoreAccessories) {
+                MoreAccObj = MoreAccessories?.GetFieldStatic("_self");
+                if (null == MoreAccessories || null == MoreAccObj) {
                     throw new Exception("Load assembly FAILED: MoreAccessories");
                 }
-                MoreAccObj = MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null);
                 Logger.LogDebug("MoreAccessories found");
                 return true;
             } catch (Exception ex) {
@@ -70,7 +70,7 @@ namespace KK_CoordinateLoadOption {
         /// </summary>
         /// <param name="chaCtrl">清空對象</param>
         public static void ClearMoreAccessoriesData(ChaControl chaCtrl, bool force = false) {
-            TryGetValueFromWeakKeyDict(MoreAccObj.GetField("_accessoriesByChar"), chaCtrl.chaFile, out object charAdditionalData);
+            TryGetValueFromWeakKeyDict(MoreAccObj.GetField("_accessoriesByChar"), chaCtrl.chaFile as ChaFile, out object charAdditionalData);
             charAdditionalData.GetField("rawAccessoriesInfos").ToDictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>>()
                 .TryGetValue((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, out List<ChaFileAccessory.PartsInfo> parts);
             for (int i = 0; i < parts.Count; i++) {
@@ -101,8 +101,8 @@ namespace KK_CoordinateLoadOption {
         /// <param name="targetChaCtrl">目標</param>
         public static void CopyMoreAccessories(ChaControl sourceChaCtrl, ChaControl targetChaCtrl) {
             Queue<int> accQueue = new Queue<int>();
-            TryGetValueFromWeakKeyDict(MoreAccObj.GetField("_accessoriesByChar"), sourceChaCtrl.chaFile, out object sourceCharAdditionalData);
-            TryGetValueFromWeakKeyDict(MoreAccObj.GetField("_accessoriesByChar"), targetChaCtrl.chaFile, out object targetCharAdditionalData);
+            TryGetValueFromWeakKeyDict(MoreAccObj.GetField("_accessoriesByChar"), sourceChaCtrl.chaFile as ChaFile, out object sourceCharAdditionalData);
+            TryGetValueFromWeakKeyDict(MoreAccObj.GetField("_accessoriesByChar"), targetChaCtrl.chaFile as ChaFile, out object targetCharAdditionalData);
 
             sourceCharAdditionalData.GetField("rawAccessoriesInfos").ToDictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>>()
                 .TryGetValue((ChaFileDefine.CoordinateType)sourceChaCtrl.fileStatus.coordinateType, out List<ChaFileAccessory.PartsInfo> sourceParts);
@@ -189,7 +189,7 @@ namespace KK_CoordinateLoadOption {
         public static string[] LoadMoreAcc(ChaFileCoordinate chaFileCoordinate) {
             List<ChaFileAccessory.PartsInfo> tempLoadedAccessories = new List<ChaFileAccessory.PartsInfo>();
 
-            Extension.Extension.InvokeStatic(typeof(Sideloader.AutoResolver.UniversalAutoResolver).GetNestedType("Hooks", BindingFlags.NonPublic), "ExtendedCoordinateLoad", new object[] { chaFileCoordinate });
+            typeof(Sideloader.AutoResolver.UniversalAutoResolver).GetNestedType("Hooks", BindingFlags.NonPublic).InvokeStatic("ExtendedCoordinateLoad", new object[] { chaFileCoordinate });
 
             //本地Info
             List<ResolveInfo> LoadedResolutionInfoList = Sideloader.AutoResolver.UniversalAutoResolver.LoadedResolutionInfo?.ToList();
@@ -297,20 +297,27 @@ namespace KK_CoordinateLoadOption {
                 _acc.GetField("nowAccessories").ToList<ChaFileAccessory.PartsInfo>().Count + 20
                 : 20;
         }
-
-        private static bool TryGetValueFromWeakKeyDict(object weakDict, object Key, out object result) {
+        
+        private static bool TryGetValueFromWeakKeyDict<TKey>(object weakDict, TKey Key, out object result) where TKey : class {
             result = null;
-            //以Enumerator遍歷WeakKeyDictionary
-            object enumerator = weakDict.Invoke("GetEnumerator");
-            if ((bool)weakDict.Invoke("ContainsKey", new object[] { Key })) {
-                while ((bool)enumerator.Invoke("MoveNext")) {
-                    object current = enumerator.GetProperty("Current");
-                    if (current?.GetProperty("Key") == Key) {
-                        result = current?.GetProperty("Value");
-                        return true;
-                    }
-                }
+            if (null == weakDict || null == Key) {
+                Logger.LogError("WeakDict or Key is null!!");
+                return false;
             }
+
+            if (weakDict.GetType().GetGenericArguments()[0] == typeof(TKey)) {
+                //以Enumerator遍歷WeakKeyDictionary
+                object enumerator = weakDict.Invoke("GetEnumerator");
+                if ((bool)weakDict.Invoke("ContainsKey", new object[] { Key })) {
+                    while ((bool)enumerator.Invoke("MoveNext")) {
+                        object current = enumerator.GetProperty("Current");
+                        if (current?.GetProperty("Key") == Key) {
+                            result = current?.GetProperty("Value");
+                            return true;
+                        }
+                    }
+                } else Logger.LogError("WeakDict does not contain the key!!");
+            } else Logger.LogError("WeakDict key type does not match!!");
             return false;
         }
 

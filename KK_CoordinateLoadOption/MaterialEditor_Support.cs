@@ -294,13 +294,13 @@ namespace KK_CoordinateLoadOption {
                     Material m = null;
 
                     if (i == 1) {
-                        r = Extension.Extension.InvokeStatic(MaterialAPI, "GetRendererList", new object[] { gameObject })?.ToList<Renderer>().Where(y => y.name == (string)x.GetField("RendererName"))?.FirstOrDefault();
+                        r = MaterialAPI.InvokeStatic("GetRendererList", new object[] { gameObject })?.ToList<Renderer>().Where(y => y.name == (string)x.GetField("RendererName"))?.FirstOrDefault();
                         if (r == null) {
                             doFlag2 = false;
                             return;
                         }
                     } else {
-                        m = Extension.Extension.InvokeStatic(MaterialAPI, "GetMaterials", new object[] { gameObject, (string)x.GetField("MaterialName") })?.ToList<Material>()?.FirstOrDefault();
+                        m = MaterialAPI.InvokeStatic("GetMaterials", new object[] { gameObject, (string)x.GetField("MaterialName") })?.ToList<Material>()?.FirstOrDefault();
                         if (m == null) {
                             doFlag2 = false;
                             return;
@@ -412,14 +412,14 @@ namespace KK_CoordinateLoadOption {
                     Material m = null;
 
                     if (i == 1) {
-                        r = Extension.Extension.InvokeStatic(MaterialAPI, "GetRendererList", new object[] { gameObject })?.ToList<Renderer>().Where(y => y.name == (string)x.GetField("RendererName"))?.FirstOrDefault();
+                        r = MaterialAPI.InvokeStatic("GetRendererList", new object[] { gameObject })?.ToList<Renderer>().Where(y => y.name == (string)x.GetField("RendererName"))?.FirstOrDefault();
                         if (r == null) {
                             Logger.LogWarning($"Missing Renderer: {(string)x.GetField("RendererName")}!");
                             doFlag2 = false;
                             return;
                         }
                     } else {
-                        m = Extension.Extension.InvokeStatic(MaterialAPI, "GetMaterials", new object[] { gameObject, (string)x.GetField("MaterialName") })?.ToList<Material>()?.FirstOrDefault();
+                        m = MaterialAPI.InvokeStatic("GetMaterials", new object[] { gameObject, (string)x.GetField("MaterialName") })?.ToList<Material>()?.FirstOrDefault();
                         if (m == null) {
                             Logger.LogWarning($"Missing Material: {(string)x.GetField("MaterialName")}!");
                             doFlag2 = false;

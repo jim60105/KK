@@ -18,7 +18,6 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
 using BepInEx;
-using BepInEx.Harmony;
 using BepInEx.Logging;
 using Extension;
 using HarmonyLib;
@@ -33,13 +32,15 @@ namespace KK_StudioReflectFKFix {
     public class KK_StudioReflectFKFix : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Reflect FK Fix";
         internal const string GUID = "com.jim60105.kk.studioreflectfkfix";
-        internal const string PLUGIN_VERSION = "19.11.01.0";
-		internal const string PLUGIN_RELEASE_VERSION = "1.0.3";
+        internal const string PLUGIN_VERSION = "20.08.05.0";
+		internal const string PLUGIN_RELEASE_VERSION = "1.0.4";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
-            HarmonyWrapper.PatchAll(typeof(Patches));
+            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            UIUtility.Init();
+            Harmony.CreateAndPatchAll(typeof(Patches));
         }
     }
 
@@ -70,7 +71,7 @@ namespace KK_StudioReflectFKFix {
             ((Button[])__instance.GetField("fkInfo").GetField("buttonAnimeSingle"))[1].onClick.AddListener(delegate () {
                 __instance.Invoke("CopyBoneFK", new object[] { OIBoneInfo.BoneGroup.Neck });
             });
-            KK_StudioReflectFKFix.Logger.LogDebug("FK Fix Finish");
+            //KK_StudioReflectFKFix.Logger.LogDebug("FK Fix Finish");
             InitBtn(__instance);
         }
 
@@ -81,10 +82,10 @@ namespace KK_StudioReflectFKFix {
             btn = UnityEngine.Object.Instantiate(original, parent.transform);
             btn.name = "Copy FK Neck";
             btn.transform.localPosition = new Vector3(0, -95, 0);
-            btn.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -116), new Vector2(190, -95));
-            btn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioReflectFKFix.Resources.CopyFKNeck.png", 183, 20);
+            btn.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -117), new Vector2(191, -95));
             btn.GetComponent<Button>().onClick.RemoveAllListeners();
             btn.GetComponent<Button>().onClick.SetPersistentListenerState(0, UnityEngine.Events.UnityEventCallState.Off);
+            btn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioReflectFKFix.Resources.CopyFKNeck.png", 191, 22);
             btn.GetComponent<Button>().interactable = true;
 
             btn.GetComponent<Button>().onClick.AddListener(() => {

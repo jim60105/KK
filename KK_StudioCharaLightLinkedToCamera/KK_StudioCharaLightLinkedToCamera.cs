@@ -18,7 +18,6 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
 using BepInEx;
-using BepInEx.Harmony;
 using BepInEx.Logging;
 using ExtensibleSaveFormat;
 using Extension;
@@ -36,13 +35,14 @@ namespace KK_StudioCharaLightLinkedToCamera {
     public class KK_StudioCharaLightLinkedToCamera : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Light Linked To Camera";
         internal const string GUID = "com.jim60105.kk.studiocharalightlinkedtocamera";
-        internal const string PLUGIN_VERSION = "20.03.30.1";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.6";
+        internal const string PLUGIN_VERSION = "20.08.05.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.7";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
-            Harmony harmonyInstance = HarmonyWrapper.PatchAll(typeof(Patches));
+            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Harmony harmonyInstance = Harmony.CreateAndPatchAll(typeof(Patches));
 
             harmonyInstance.Patch(
                 typeof(Studio.CameraLightCtrl).GetNestedType("LightCalc", BindingFlags.NonPublic).GetMethod("OnValueChangeAxis", AccessTools.all),
@@ -58,7 +58,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
         private static Studio.CameraLightCtrl.LightInfo chaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
         private static Studio.CameraControl cameraControl;
         private static Vector2 preCamEuler = Vector2.zero;
-        
+
         #region View
         static internal GameObject LockBtn;
 
@@ -172,7 +172,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
             if (!Locked || __instance != cameraControl) return;
             if (__instance.cameraAngle.x == preCamEuler.x && __instance.cameraAngle.y == preCamEuler.y) return;
             preCamEuler = __instance.cameraAngle;
-    
+
             Vector2 vec = ComputeAngle.GetLightEuler(__instance.cameraAngle.x, __instance.cameraAngle.y);
             chaLight.rot[0] = vec.x;
             chaLight.rot[1] = vec.y;
@@ -251,8 +251,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
         private static Vector2 GetLightEulerOffset(float camDeltaX, float camDeltaY) {
             if (situ == 1) return new Vector2(camDeltaX, camDeltaY);
             if (situ == 2) return new Vector2(-camDeltaX, camDeltaY);
-            if (situ == 3)
-            {
+            if (situ == 3) {
                 if (alpha > 90f) return new Vector2(-camDeltaX, camDeltaY + 180f - alpha);
                 if (alpha < -90f) return new Vector2(-camDeltaX, camDeltaY - 180f - alpha);
                 return new Vector2(camDeltaX, camDeltaY - alpha);
@@ -282,7 +281,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
 
             float x = bx * Mathf.Rad2Deg - beta;
             float y = camDeltaY + ay * Mathf.Rad2Deg - alpha;
-            
+
             return GetFixedAngle(preLigEuler.x + sign * x, preLigEuler.y + y);
         }
 

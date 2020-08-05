@@ -41,8 +41,8 @@ namespace KK_StudioCharaOnlyLoadBody {
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "20.07.27.1";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.8";
+        internal const string PLUGIN_VERSION = "20.08.05.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.9";
 
         public static ConfigEntry<string> ExtendedDataToCopySetting { get; private set; }
         public static string[] ExtendedDataToCopy;
@@ -50,6 +50,8 @@ namespace KK_StudioCharaOnlyLoadBody {
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
+            UIUtility.Init();
+            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
             Harmony.CreateAndPatchAll(typeof(Patches));
 
             string[] SampleArray = {
@@ -194,7 +196,7 @@ namespace KK_StudioCharaOnlyLoadBody {
 
                 //用這種方式初始化不會觸發其他鉤子
                 ChaControl tmpCtrl = new ChaControl();
-                tmpCtrl.SetProperty("chaFile", new ChaFileControl());
+                tmpCtrl.SetProperty<ChaInfo>("chaFile", new ChaFileControl());
 
                 if (null != MoreAccessories) {
                     CopyAllMoreAccessoriesData(ocichar.charInfo, tmpCtrl);
@@ -338,10 +340,10 @@ namespace KK_StudioCharaOnlyLoadBody {
                         //判斷CategoryNo分類function
                         bool isBelongsToCharaBody(ChaListDefine.CategoryNo categoryNo) {
                             Type StructReference = typeof(UniversalAutoResolver).Assembly.GetType("Sideloader.AutoResolver.StructReference");
-                            return StructReference.GetProperty("ChaFileFaceProperties", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy).GetValue(StructReference, null).ToDictionary<object, object>().Keys.Any(x => (ChaListDefine.CategoryNo)x.GetField("Category") == categoryNo) ||
-                                StructReference.GetProperty("ChaFileBodyProperties", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy).GetValue(StructReference, null).ToDictionary<object, object>().Keys.Any(x => (ChaListDefine.CategoryNo)x.GetField("Category") == categoryNo) ||
-                                StructReference.GetProperty("ChaFileHairProperties", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy).GetValue(StructReference, null).ToDictionary<object, object>().Keys.Any(x => (ChaListDefine.CategoryNo)x.GetField("Category") == categoryNo) ||
-                                StructReference.GetProperty("ChaFileMakeupProperties", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy).GetValue(StructReference, null).ToDictionary<object, object>().Keys.Any(x => (ChaListDefine.CategoryNo)x.GetField("Category") == categoryNo);
+                            return StructReference.GetPropertyStatic("ChaFileFaceProperties").ToDictionary<object, object>().Keys.Any(x => (ChaListDefine.CategoryNo)x.GetField("Category") == categoryNo) ||
+                                StructReference.GetPropertyStatic("ChaFileBodyProperties").ToDictionary<object, object>().Keys.Any(x => (ChaListDefine.CategoryNo)x.GetField("Category") == categoryNo) ||
+                                StructReference.GetPropertyStatic("ChaFileHairProperties").ToDictionary<object, object>().Keys.Any(x => (ChaListDefine.CategoryNo)x.GetField("Category") == categoryNo) ||
+                                StructReference.GetPropertyStatic("ChaFileMakeupProperties").ToDictionary<object, object>().Keys.Any(x => (ChaListDefine.CategoryNo)x.GetField("Category") == categoryNo);
                         }
 
                         //extInfo整理
@@ -354,7 +356,7 @@ namespace KK_StudioCharaOnlyLoadBody {
                                         Logger.LogDebug($"Sideloader count: {tmpExtList.Count}");
                                         ResolveInfo tmpResolveInfo;
                                         for (int j = 0; j < tmpExtList.Count;) {
-                                            tmpResolveInfo = (ResolveInfo)Extension.Extension.InvokeStatic(typeof(ResolveInfo), "Deserialize", new object[] { (byte[])tmpExtList[j] });
+                                            tmpResolveInfo = typeof(ResolveInfo).InvokeStatic("Deserialize", new object[] { (byte[])tmpExtList[j] }) as ResolveInfo;
 
                                             if (keepBodyData == isBelongsToCharaBody(tmpResolveInfo.CategoryNo)) {
                                                 Logger.LogDebug($"Add Sideloader info: {tmpResolveInfo.GUID} : {tmpResolveInfo.Property} : {tmpResolveInfo.Slot}");
@@ -405,7 +407,7 @@ namespace KK_StudioCharaOnlyLoadBody {
                         Logger.LogDebug($"Merge and Save Sideloader: {tmpObj.Length}");
 
                         //調用原始sideloader載入hook function
-                        Extension.Extension.InvokeStatic(typeof(UniversalAutoResolver).GetNestedType("Hooks", BindingFlags.NonPublic), "ExtendedCardLoad", new object[] { ocichar.charInfo.chaFile });
+                        typeof(UniversalAutoResolver).GetNestedType("Hooks", BindingFlags.NonPublic).InvokeStatic("ExtendedCardLoad", new object[] { ocichar.charInfo.chaFile });
                         break;
                     #endregion
                     default:
@@ -426,9 +428,9 @@ namespace KK_StudioCharaOnlyLoadBody {
         public static void CopyAllMoreAccessoriesData(ChaControl oriChaCtrl, ChaControl targetChaCtrl) {
             //這條如果call ChaFile.CopyAll會觸發其他鉤子，導致ExtendedData無法正常作用
             //所以用reflection處理
-            Extension.Extension.InvokeStatic(ChaFile_CopyAll_Patches, "Postfix", new object[] { targetChaCtrl.chaFile, oriChaCtrl.chaFile });
+            ChaFile_CopyAll_Patches.InvokeStatic("Postfix", new object[] { targetChaCtrl.chaFile, oriChaCtrl.chaFile });
 
-            MoreAccessories.GetField("_self", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.Instance)?.GetValue(null).Invoke("Update");
+            MoreAccessories.GetFieldStatic("_self").Invoke("Update");
 
             Logger.LogDebug("Copy MoreAccessories Finish");
         }
@@ -439,7 +441,7 @@ namespace KK_StudioCharaOnlyLoadBody {
         /// <param name="oCIChar">更新對象</param>
         public static bool UpdateTreeNodeObjectName(OCIChar oCIChar) {
             oCIChar.charInfo.name = oCIChar.charInfo.chaFile.parameter.fullname;
-            oCIChar.charInfo.chaFile.SetProperty("charaFileName", oCIChar.charInfo.chaFile.parameter.fullname);
+            oCIChar.charInfo.chaFile.SetProperty<ChaFile>("charaFileName", oCIChar.charInfo.chaFile.parameter.fullname);
             oCIChar.treeNodeObject.textName = oCIChar.charInfo.chaFile.parameter.fullname;
             Logger.LogDebug("Set Name to: " + oCIChar.charInfo.chaFile.parameter.fullname);
 

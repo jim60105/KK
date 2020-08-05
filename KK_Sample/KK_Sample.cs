@@ -30,12 +30,13 @@ namespace KK_Sample {
     public class KK_Sample : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Sample Project";
         internal const string GUID = "com.jim60105.kk.sampleproject";
-        internal const string PLUGIN_VERSION = "20.08.03.0";
+        internal const string PLUGIN_VERSION = "20.08.05.0";
         internal const string PLUGIN_RELEASE_VERSION = "0.0.0";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
+            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
             Harmony.CreateAndPatchAll(typeof(Patches));
 
             StringResources.StringResourcesManager.SetUICulture("en-US");

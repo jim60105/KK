@@ -192,9 +192,8 @@ namespace KK_CoordinateLoadOption {
                 }
                 data.data.Add("HairAccessories", MessagePackSerializer.Serialize(allExtData));
             }
-            MonoBehaviour HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
-            //注意這條是異步執行
-            HairAccCusController.Invoke("SetExtendedData", new object[] { data });
+
+            ExtendedSave.SetExtendedDataById(chaCtrl.chaFile, GUID, data);
         }
 
         public static void ClearHairAccOnController(ChaControl chaCtrl, int? coordinateIndex = null) {

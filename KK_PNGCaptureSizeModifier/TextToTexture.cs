@@ -33,6 +33,7 @@ THE SOFTWARE.
 //If someone wants to reuse this code, I recommend using the original code.
 //Which can be found on the original author's blog: http://blog.almostlogical.com/2010/08/20/adding-text-to-texture-at-runtime-in-unity3d-without-using-render-texture/
 
+using Extension;
 using UnityEngine;
 
 public class TextToTexture {
@@ -161,12 +162,12 @@ public class TextToTexture {
             charPixels = fontTexture.GetPixels((int)charTexturePos.x, fontTexture.height - (int)charTexturePos.y - fontGridCellHeight, fontGridCellWidth, fontGridCellHeight);
             Texture2D temp = new Texture2D(fontGridCellWidth, fontGridCellHeight);
             temp.SetPixels(charPixels);
-            temp = Extension.Extension.Scale(temp, fontItemWidth, fontItemHeight);
+            temp = temp.Scale(fontItemWidth, fontItemHeight);
 
             //charPixels = changeDimensions(charPixels, fontGridCellWidth, fontGridCellHeight, fontItemWidth, fontItemHeight);
 
             //txtTexture.SetPixels((int)textPosX, (int)textPosY, fontItemWidth, fontItemHeight, charPixels);
-            txtTexture = Extension.Extension.OverwriteTexture(txtTexture, temp, (int)textPosX, (int)textPosY);
+            txtTexture = txtTexture.OverwriteTexture(temp, (int)textPosX, (int)textPosY);
 
             charKerning = GetKerningValue(letter);
             textPosX += (fontItemWidth * charKerning); //add kerning here
@@ -185,7 +186,7 @@ public class TextToTexture {
         for (int n = 0; n < text.Length; n++) {
             letter = text[n];
             //if (n < text.Length - 1) {
-                width += fontItemWidth * GetKerningValue(letter);
+            width += fontItemWidth * GetKerningValue(letter);
             //} else {
             //    //last letter ignore kerning for buffer
             //    width += fontItemWidth;

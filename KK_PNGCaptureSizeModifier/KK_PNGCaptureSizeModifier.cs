@@ -36,8 +36,8 @@ namespace KK_PNGCaptureSizeModifier {
     public class KK_PNGCaptureSizeModifier : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "PNG Capture Size Modifier";
         internal const string GUID = "com.jim60105.kk.pngcapturesizemodifier";
-        internal const string PLUGIN_VERSION = "20.07.28.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.5.4";
+        internal const string PLUGIN_VERSION = "20.08.05.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.5.5";
 
         public static ConfigEntry<float> TimesOfMaker { get; private set; }
         public static ConfigEntry<float> TimesOfStudio { get; private set; }
@@ -54,6 +54,7 @@ namespace KK_PNGCaptureSizeModifier {
         internal static Texture2D fontTexture;
         public void Awake() {
             Logger = base.Logger;
+            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
             TimesOfMaker = Config.Bind<float>("Config", "Times of multiplication (Maker)", 3.0f, "The game needs to be restarted for changes to take effect.");
             TimesOfStudio = Config.Bind<float>("Config", "Times of multiplication (Studio)", 5.0f, "The game needs to be restarted for changes to take effect.");
             PNGColumnCount = Config.Bind<int>("Config", "Number of PNG rows in File List View", 3, "Must be a natural number");
@@ -204,9 +205,8 @@ namespace KK_PNGCaptureSizeModifier {
                 string text = $"{screenshot.width}x{screenshot.height}";
                 int textureWidth = TextToTexture.CalcTextWidthPlusTrailingBuffer(text, KK_PNGCaptureSizeModifier.CharacterSize.Value);
                 Texture2D capsize = TextToTexture.CreateTextToTexture(text, 0, 0, textureWidth, KK_PNGCaptureSizeModifier.CharacterSize.Value);
-                capsize = Extension.Extension.Scale(capsize, (int)(capsize.width * times.Value / (float)times.DefaultValue), (int)(capsize.height * times.Value / (float)times.DefaultValue));
-                screenshot = Extension.Extension.OverwriteTexture(
-                    screenshot,
+                capsize = capsize.Scale((int)(capsize.width * times.Value / (float)times.DefaultValue), (int)(capsize.height * times.Value / (float)times.DefaultValue));
+                screenshot = screenshot.OverwriteTexture(
                     capsize,
                     screenshot.width * KK_PNGCaptureSizeModifier.PositionX.Value / 100 - capsize.width,
                     screenshot.height * KK_PNGCaptureSizeModifier.PositionY.Value / 100
@@ -217,9 +217,8 @@ namespace KK_PNGCaptureSizeModifier {
             //浮水印
             if (doWatermarkFlag) {
                 Texture2D watermark = Extension.Extension.LoadDllResource($"KK_PNGCaptureSizeModifier.Resources.{wmFileName}");
-                watermark = Extension.Extension.Scale(watermark, (int)(watermark.width * times.Value / (float)times.DefaultValue), (int)(watermark.height * times.Value / (float)times.DefaultValue));
-                screenshot = Extension.Extension.OverwriteTexture(
-                    screenshot,
+                watermark = watermark.Scale((int)(watermark.width * times.Value / (float)times.DefaultValue), (int)(watermark.height * times.Value / (float)times.DefaultValue));
+                screenshot = screenshot.OverwriteTexture(
                     watermark,
                     0,
                     screenshot.height - watermark.height
