@@ -34,8 +34,8 @@ namespace KK_SaveLoadCompression {
     public class KK_SaveLoadCompression : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Save Load Compression";
         internal const string GUID = "com.jim60105.kk.saveloadcompression";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.3";
+        internal const string PLUGIN_VERSION = "20.08.21.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.4";
         public static ConfigEntry<DictionarySize> DictionarySize { get; private set; }
         public static ConfigEntry<bool> Enable { get; private set; }
         public static ConfigEntry<bool> Notice { get; private set; }
@@ -202,7 +202,7 @@ namespace KK_SaveLoadCompression {
                                     long fileStreamPos = fileStreamReader.Position;
                                     LZMA.Compress(fileStreamReader, msCompressed, LzmaSpeed.Fastest, KK_SaveLoadCompression.DictionarySize.Value,
                                         delegate (long inSize, long _) {
-                                            KK_SaveLoadCompression.Progress = $"Compressing: {Convert.ToInt32(inSize * 100 / (fileStreamReader.Length - fileStreamPos))}%";
+                                            KK_SaveLoadCompression.Progress = $"Compressing: {Convert.ToInt32(inSize * 100L / (fileStreamReader.Length - fileStreamPos))}%";
                                         }
                                     );
                                     KK_SaveLoadCompression.Progress = "";
@@ -214,15 +214,15 @@ namespace KK_SaveLoadCompression {
 
                                             LZMA.Decompress(msCompressed, msDecompressed,
                                                 delegate (long inSize, long _) {
-                                                    KK_SaveLoadCompression.Progress = $"Decompressing: {Convert.ToInt32(inSize * 100 / (fileStreamReader.Length - fileStreamPos))}%";
+                                                    KK_SaveLoadCompression.Progress = $"Decompressing: {Convert.ToInt32(inSize * 100L / (fileStreamReader.Length - fileStreamPos)) }%";
                                                 }
                                             );
                                             KK_SaveLoadCompression.Progress = "";
                                             fileStreamReader.Seek(fileStreamPos, SeekOrigin.Begin);
                                             msDecompressed.Seek(0, SeekOrigin.Begin);
 
-                                            for (int i = 0; i < msDecompressed.Length; i++) {
-                                                KK_SaveLoadCompression.Progress = $"Comparing: {i * 100 / msDecompressed.Length}%";
+                                            for (long i = 0; i < msDecompressed.Length; i++) {
+                                                KK_SaveLoadCompression.Progress = $"Comparing: {Convert.ToInt32(i * 100L / msDecompressed.Length)}%";
                                                 int aByte = fileStreamReader.ReadByte();
                                                 int bByte = msDecompressed.ReadByte();
                                                 if (aByte.CompareTo(bByte) != 0) {
@@ -239,7 +239,7 @@ namespace KK_SaveLoadCompression {
                                             Logger.LogInfo($"Compression test SUCCESS");
                                             Logger.Log(logLevel, $"Compression finish in {Math.Round(Time.time - startTime, 2)} seconds");
                                             Logger.Log(logLevel, $"Size compress from {fileStreamReader.Length} bytes to {newSize} bytes");
-                                            Logger.Log(logLevel, $"Compress ratio: {Math.Round(Convert.ToDouble(fileStreamReader.Length) / newSize, 2)}, which means it is now {Math.Round(100 / (Convert.ToDouble(fileStreamReader.Length) / newSize), 2)}% big.");
+                                            Logger.Log(logLevel, $"Compress ratio: {Math.Round(Convert.ToDouble(fileStreamReader.Length / newSize), 2)}/1, which means it is now {Math.Round(Convert.ToDouble(100L / (fileStreamReader.Length / newSize)), 2)}% big.");
                                         } else {
                                             Logger.LogError($"Compression test FAILED");
                                         }
@@ -352,10 +352,10 @@ namespace KK_SaveLoadCompression {
                     } catch (Exception) {
                         //在這裡發生讀取錯誤，那大概不是個正確的存檔
                         //因為已經有其它檢核的plugin存在，直接拋給他處理
-                        Logger.Log(LogLevel.Error | LogLevel.Message,"Corrupted file: " + path);
-                        return; 
+                        Logger.Log(LogLevel.Error | LogLevel.Message, "Corrupted file: " + path);
+                        return;
                     }
-                    try { 
+                    try {
                         //Discard token string
                         binaryReader.ReadString();
 
