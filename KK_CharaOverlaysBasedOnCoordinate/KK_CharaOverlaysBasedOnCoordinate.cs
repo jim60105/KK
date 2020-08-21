@@ -43,8 +43,8 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
     class KK_CharaOverlaysBasedOnCoordinate : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Chara Overlays Based On Coordinate";
         internal const string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.7";
+        internal const string PLUGIN_VERSION = "20.08.22.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.8";
 
         internal static new ManualLogSource Logger;
         public static ConfigEntry<bool> Enable_Saving_To_Chara { get; private set; }
@@ -178,7 +178,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
                 foreach (KeyValuePair<TexType, byte[]> kvp in EyeTexture) {
                     controller.OverwriteOverlayWithoutUpdate(kvp.Key, kvp.Value);
                 }
-                Extension.Extension.TryGetPluginInstance("KSOX_GUI").Invoke("OnChaFileLoaded");
+                Extension.Extension.TryGetPluginInstance("KSOX_GUI")?.Invoke<KoiSkinOverlayGui>("OnChaFileLoaded");
             }
         }
     }
