@@ -34,8 +34,8 @@ namespace KK_StudioTransgenderLoading {
     public class KK_StudioTransgenderLoading : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Transgender Loading";
         internal const string GUID = "com.jim60105.kk.studiotransgenderloading";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.1";
+        internal const string PLUGIN_VERSION = "20.08.30.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.2";
 
         public void Awake() {
             Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
@@ -100,12 +100,19 @@ namespace KK_StudioTransgenderLoading {
              select Studio.Studio.GetCtrlInfo(v) as OCIChar into v
              where v != null
              select v).ToList().ForEach((OCIChar ocichar) => {
-                 ocichar.charInfo.fileParam.sex = (byte)(int)__instance.GetField("sex");
+                 int sex = (int)__instance.GetField("sex");
+                 ocichar.charInfo.fileParam.sex = (byte)sex;
+                 ocichar.optionItemCtrl.oiCharInfo.SetProperty<OICharInfo>("sex", sex);
+                 ShapeBodyInfoFemale sib = ocichar.charInfo.sibBody as ShapeBodyInfoFemale;
+                 sib.correctHeadSize = sex == 0 ? 0.91f : 1f;
+                 sib.correctNeckSize = sex == 0 ? 0.91f : 1f;
+
                  ocichar.ChangeChara((__instance.GetField("charaFileSort") as CharaFileSort).selectPath);
              });
             return false;
         }
 
+        //讓CharaList的Change按鈕顯示
         [HarmonyTranspiler, HarmonyPatch(typeof(CharaList), "OnSelectChara")]
         public static IEnumerable<CodeInstruction> OnSelectCharaTranspiler(IEnumerable<CodeInstruction> instructions) {
             List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
@@ -126,6 +133,56 @@ namespace KK_StudioTransgenderLoading {
                 }
             }
             return codes.AsEnumerable();
+        }
+        #endregion
+
+        #region 補齊OCICharMale對比OCICharFemale缺少的Method
+        [HarmonyPostfix, HarmonyPatch(typeof(OCICharMale), nameof(OCICharMale.ChangeChara))]
+        public static void ChangeCharaPostfix(OCICharMale __instance) {
+            if (__instance.charInfo.fileParam.sex == 0) return;
+
+            __instance.charInfo.UpdateBustSoftnessAndGravity();
+            __instance.optionItemCtrl.height = __instance.charInfo.fileBody.shapeValueBody[0];
+            __instance.charInfo.setAnimatorParamFloat("height", __instance.charInfo.fileBody.shapeValueBody[0]);
+            if (__instance.isAnimeMotion) {
+                __instance.charInfo.setAnimatorParamFloat("breast", __instance.charInfo.fileBody.shapeValueBody[1]);
+            }
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(OCICharMale), nameof(OCICharMale.LoadClothesFile))]
+        public static void LoadClothesFilePostfix(OCICharMale __instance) => UpdateBustAndSkirt(__instance);
+
+        [HarmonyPostfix, HarmonyPatch(typeof(OCICharMale), nameof(OCICharMale.SetCoordinateInfo))]
+        public static void SetCoordinateInfoPostfix(OCICharMale __instance) => UpdateBustAndSkirt(__instance);
+
+        private static void UpdateBustAndSkirt(OCICharMale __instance) {
+            if (__instance.charInfo.fileParam.sex == 0) return;
+
+            __instance.charInfo.UpdateBustSoftnessAndGravity();
+            __instance.skirtDynamic = AddObjectFemale.GetSkirtDynamic(__instance.charInfo.objClothes);
+            __instance.ActiveFK(OIBoneInfo.BoneGroup.Skirt, __instance.oiCharInfo.activeFK[6], __instance.oiCharInfo.enableFK);
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(OCIChar), nameof(OCIChar.SetNipStand))]
+        public static void SetNipStandPostfix(OCIChar __instance, float _value) {
+            if (__instance.charInfo.fileParam.sex == 0 || __instance is OCICharFemale) return;
+
+            __instance.oiCharInfo.nipple = _value;
+            __instance.charInfo.ChangeNipRate(_value);
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(OCIChar), nameof(OCIChar.GetSiruFlags))]
+        public static void GetSiruFlagsPostfix(OCIChar __instance, ChaFileDefine.SiruParts _parts, ref byte __result) {
+            if (__instance.charInfo.fileParam.sex == 0 || __instance is OCICharFemale) return;
+
+            __result = __instance.charInfo.GetSiruFlags(_parts);
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(OCIChar), nameof(OCIChar.SetSiruFlags))]
+        public static void SetSiruFlagsPostfix(OCIChar __instance, ChaFileDefine.SiruParts _parts, byte _state) {
+            if (__instance.charInfo.fileParam.sex == 0 || __instance is OCICharFemale) return;
+
+            __instance.charInfo.SetSiruFlags(_parts, _state);
         }
         #endregion
 
