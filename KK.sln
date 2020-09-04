@@ -55,6 +55,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioTransgenderLoading
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_CoordinateLoadOption", "KK_CoordinateLoadOption\KK_CoordinateLoadOption.csproj", "{85268FD6-A1FD-41AA-84D9-71F18815C034}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioMenuScrollingText", "KK_StudioMenuScrollingText\KK_StudioMenuScrollingText.csproj", "{B27D7AED-568B-462F-BACA-BA2A19CCF9F6}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Extension\Extension.projitems*{0646be09-f599-4edb-b115-de4043c8d3be}*SharedItemsImports = 13
@@ -71,6 +73,7 @@ Global
 		Extension\Extension.projitems*{957dec7d-0d10-41e5-9cf6-a72902355ccc}*SharedItemsImports = 4
 		Extension\Extension.projitems*{a5f430a2-ae7a-4bcd-a380-0f73add7a4a3}*SharedItemsImports = 4
 		Extension\Extension.projitems*{ac89e605-c385-4e44-b781-5ee60c7bc70a}*SharedItemsImports = 4
+		Extension\Extension.projitems*{b27d7aed-568b-462f-baca-ba2a19ccf9f6}*SharedItemsImports = 4
 		Extension\Extension.projitems*{d02e90af-be20-4eae-a462-5efda36095a9}*SharedItemsImports = 4
 		Extension\Extension.projitems*{dad31687-4de7-47c3-af78-6d366da10407}*SharedItemsImports = 4
 		Extension\Extension.projitems*{e70886b9-0aec-444b-90a1-95e47c4fe03f}*SharedItemsImports = 4
@@ -238,6 +241,14 @@ Global
 		{85268FD6-A1FD-41AA-84D9-71F18815C034}.Release|Any CPU.ActiveCfg = Release|x64
 		{85268FD6-A1FD-41AA-84D9-71F18815C034}.Release|x64.ActiveCfg = Release|x64
 		{85268FD6-A1FD-41AA-84D9-71F18815C034}.Release|x64.Build.0 = Release|x64
+		{B27D7AED-568B-462F-BACA-BA2A19CCF9F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B27D7AED-568B-462F-BACA-BA2A19CCF9F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B27D7AED-568B-462F-BACA-BA2A19CCF9F6}.Debug|x64.ActiveCfg = Debug|x64
+		{B27D7AED-568B-462F-BACA-BA2A19CCF9F6}.Debug|x64.Build.0 = Debug|x64
+		{B27D7AED-568B-462F-BACA-BA2A19CCF9F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B27D7AED-568B-462F-BACA-BA2A19CCF9F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B27D7AED-568B-462F-BACA-BA2A19CCF9F6}.Release|x64.ActiveCfg = Release|x64
+		{B27D7AED-568B-462F-BACA-BA2A19CCF9F6}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
