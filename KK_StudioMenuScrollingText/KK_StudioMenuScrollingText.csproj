@@ -79,6 +79,9 @@
     <Compile Include="KK_StudioMenuScrollingText.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="template.csv" />
+  </ItemGroup>
   <Import Project="..\Extension\Extension.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

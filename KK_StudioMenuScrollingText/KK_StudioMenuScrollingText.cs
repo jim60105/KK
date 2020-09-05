@@ -18,10 +18,15 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
 using BepInEx;
-//using BepInEx.Logging;
+using BepInEx.Configuration;
+using BepInEx.Logging;
 using Extension;
 using HarmonyLib;
 using Studio;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -31,47 +36,88 @@ namespace KK_StudioMenuScrollingText {
     public class KK_StudioMenuScrollingText : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Menu Scrolling Text";
         internal const string GUID = "com.jim60105.kk.studiomenuscrollingtext";
-        internal const string PLUGIN_VERSION = "20.09.04.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.0";
+        internal const string PLUGIN_VERSION = "20.09.05.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
 
-        //internal static new ManualLogSource Logger;
+        public static ConfigEntry<string> AddtionalFolder { get; private set; }
+        internal readonly static Dictionary<int, string> HeaderDict = new Dictionary<int, string>();
+        internal readonly static Dictionary<int, string> FooterDict = new Dictionary<int, string>();
+
+        internal static new ManualLogSource Logger;
         public void Awake() {
-            //Logger = base.Logger;
+            Logger = base.Logger;
             Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+
+            AddtionalFolder = Config.Bind<string>("Config", "Menu Addtional Text Folder", GetRelativePath(BepInEx.Paths.BepInExRootPath, Path.Combine(Path.GetDirectoryName(base.Info.Location), nameof(KK_StudioMenuScrollingText))));
+            if (!Directory.Exists(AddtionalFolder.Value)) {
+                Directory.CreateDirectory(AddtionalFolder.Value);
+            } else {
+                foreach (string path in Directory.GetFiles(AddtionalFolder.Value).ToList<string>().Where(s => s.EndsWith(".csv"))) {
+                    try {
+                        File.ReadAllLines(path).Select(a => a.Split(',')).ToList().ForEach(s => {
+                            if (s[0] == "Before") {
+                                HeaderDict[int.Parse(s[1])] = s[2];
+                            } else if (s[0] == "After") {
+                                FooterDict[int.Parse(s[1])] = s[2];
+                            }
+                        });
+                    } catch (Exception) {
+                        Logger.LogWarning($"Load addtional text faild in: {path}");
+                        return;
+                    };
+                }
+            }
+
             Harmony.CreateAndPatchAll(typeof(Patches));
+        }
+
+        static string GetRelativePath(string basePath, string targetPath) {
+            Uri baseUri = new Uri(basePath);
+            Uri targetUri = new Uri(targetPath);
+            return baseUri.MakeRelativeUri(targetUri).ToString().Replace(@"/", @"\");
         }
     }
 
-    internal class ScrollingListNode : ListNode {
+    internal class ScrollingTextComponent : MonoBehaviour {
         const int DELAY = 10;
-        private string FullText;
+        private string FullText = "";
         private int anchor = 0;
-        private int delay = DELAY;
-        private int segmentLength = 14;
+        private int delayCount = DELAY;
+        private int segmentLength = 13;
+        private ListNode node;
 
-        public void Set(ListNode node, int s) {
-            this.SetField<ListNode>("button", node.GetField("button"));
-            this.SetField<ListNode>("content", node.GetField("content"));
-            this.SetField<ListNode>("imageSelect", node.GetField("imageSelect"));
-            this.SetField<ListNode>("textMesh", node.GetField("textMesh"));
-            segmentLength = s;
-            if (System.Text.Encoding.Default.GetBytes(node.text).Length > segmentLength) {
-                FullText = node.text + "  " + node.text;
-                Text t = this.GetField<ListNode>("content") as Text ?? this.GetField<ListNode>("textMesh") as Text ?? this.gameObject.GetComponentInChildren<Text>();
+        public void Awake() {
+            if (this.GetComponentInParent<ListNode>() is ListNode n) {
+                node = n;
+                Text t = (node.GetField<ListNode>("content") ?? node.GetField<ListNode>("textMesh")?.GetProperty("text")) as Text;
                 t.resizeTextForBestFit = false;
+                t.horizontalOverflow = HorizontalWrapMode.Overflow;
                 t.fontSize = 13;
                 t.alignment = TextAnchor.MiddleCenter;
-                t.horizontalOverflow = HorizontalWrapMode.Overflow;
+                if (System.Text.Encoding.Default.GetBytes(node.text).Length > segmentLength) {
+                    FullText = node.text + "      " + node.text;
+                }
+            }
+        }
+
+        public void Set(int s, string text = null) {
+            segmentLength = s;
+            if (null != text) {
+                node.text = text;
+                if (System.Text.Encoding.Default.GetBytes(text).Length > segmentLength) {
+                    FullText = text + "      " + text;
+                } else {
+                    FullText = "";
+                }
             }
         }
 
         public void Update() {
-            if (null != FullText && delay-- < 0) {
-                if (anchor > ((FullText.Length - 2) / 2)) anchor = 0;
-                base.text = FullText.Substring(anchor, segmentLength);
+            if (FullText.Length >= segmentLength && null != node && delayCount-- < 0) {
+                if (anchor >= ((FullText.Length - 6) / 2) + 6) anchor = 0;
+                node.text = FullText.Substring(anchor, segmentLength);
                 anchor++;
-                delay = DELAY;
-                //KK_StudioMenuScrollingText.Logger.LogDebug(base.text);
+                delayCount = DELAY;
             }
         }
 
@@ -90,10 +136,39 @@ namespace KK_StudioMenuScrollingText {
         public static void InitItemListPostfix(MonoBehaviour __instance) {
             Transform parent = __instance.GetField("transformRoot") as Transform;
             ListNode[] listNodes = parent.gameObject.GetComponentsInChildren<ListNode>();
+
+            //Header
+            if (__instance is ItemCategoryList && KK_StudioMenuScrollingText.HeaderDict.TryGetValue((int)__instance.GetField<ItemCategoryList>("group"), out string str)) {
+                makeFakeNode(str)?.transform.SetAsFirstSibling();
+            }
+
             foreach (ListNode node in listNodes) {
-                ScrollingListNode SLN = parent.gameObject.AddComponent(typeof(ScrollingListNode)) as ScrollingListNode;
-                SLN.Set(node, 13);
-                GameObject.Destroy(node);
+                (node.gameObject.AddComponent(typeof(ScrollingTextComponent)) as ScrollingTextComponent).Set(13);
+            }
+
+            //Footer
+            if (__instance is ItemCategoryList && KK_StudioMenuScrollingText.FooterDict.TryGetValue((int)__instance.GetField<ItemCategoryList>("group"), out str)) {
+                makeFakeNode(str)?.transform.SetAsLastSibling();
+            }
+
+            return;
+
+            ListNode makeFakeNode(string s) {
+                if (__instance is ItemCategoryList && null != __instance.GetField<ItemCategoryList>("group")) {
+                    GameObject gameObject = UnityEngine.Object.Instantiate(__instance.GetField<ItemCategoryList>("objectPrefab") as GameObject);
+                    if (!gameObject.activeSelf) {
+                        gameObject.SetActive(true);
+                    }
+                    gameObject.transform.SetParent(parent, false);
+                    ListNode node = gameObject.GetComponent<ListNode>();
+
+                    (node.gameObject.AddComponent(typeof(ScrollingTextComponent)) as ScrollingTextComponent).Set(13, s);
+                    node.GetComponentInChildren<Button>().interactable = false;
+                    Text t = (node.GetField<ListNode>("content") ?? node.GetField<ListNode>("textMesh")?.GetProperty("text")) as Text;
+                    t.color = new Color(1, .64f, 0);
+                    return node;
+                }
+                return null;
             }
         }
     }
