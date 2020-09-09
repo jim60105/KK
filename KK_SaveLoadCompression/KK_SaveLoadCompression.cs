@@ -34,8 +34,8 @@ namespace KK_SaveLoadCompression {
     public class KK_SaveLoadCompression : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Save Load Compression";
         internal const string GUID = "com.jim60105.kk.saveloadcompression";
-        internal const string PLUGIN_VERSION = "20.08.21.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.4";
+        internal const string PLUGIN_VERSION = "20.09.07.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.5";
         public static ConfigEntry<DictionarySize> DictionarySize { get; private set; }
         public static ConfigEntry<bool> Enable { get; private set; }
         public static ConfigEntry<bool> Notice { get; private set; }
@@ -113,7 +113,7 @@ namespace KK_SaveLoadCompression {
         //Chara Save
         [HarmonyPostfix, HarmonyPatch(typeof(ChaFileControl), "SaveCharaFile", new Type[] { typeof(string), typeof(byte), typeof(bool) })]
         public static void SaveCharaFilePostfix(ChaFileControl __instance, string filename, byte sex)
-            => Save(__instance.ConvertCharaFilePath(filename, sex), CharaToken + SexToken + sex);
+            => Save(__instance.ConvertCharaFilePath(filename, sex), CharaToken + "】" + SexToken + sex);  //】:為了通過CharacterReplacer
 
         //Coordinate Save
         [HarmonyPostfix, HarmonyPatch(typeof(ChaFileCoordinate), "SaveFile", new Type[] { typeof(string) })]
@@ -202,7 +202,7 @@ namespace KK_SaveLoadCompression {
                                     long fileStreamPos = fileStreamReader.Position;
                                     LZMA.Compress(fileStreamReader, msCompressed, LzmaSpeed.Fastest, KK_SaveLoadCompression.DictionarySize.Value,
                                         delegate (long inSize, long _) {
-                                            KK_SaveLoadCompression.Progress = $"Compressing: {Convert.ToInt32(inSize * 100L / (fileStreamReader.Length - fileStreamPos))}%";
+                                            KK_SaveLoadCompression.Progress = $"Compressing: {Convert.ToDecimal(inSize) / (fileStreamReader.Length - fileStreamPos):p2}";
                                         }
                                     );
                                     KK_SaveLoadCompression.Progress = "";
@@ -214,7 +214,7 @@ namespace KK_SaveLoadCompression {
 
                                             LZMA.Decompress(msCompressed, msDecompressed,
                                                 delegate (long inSize, long _) {
-                                                    KK_SaveLoadCompression.Progress = $"Decompressing: {Convert.ToInt32(inSize * 100L / (fileStreamReader.Length - fileStreamPos)) }%";
+                                                    KK_SaveLoadCompression.Progress = $"Decompressing: {Convert.ToDecimal(inSize) / (fileStreamReader.Length - fileStreamPos):p2}";
                                                 }
                                             );
                                             KK_SaveLoadCompression.Progress = "";
@@ -222,7 +222,7 @@ namespace KK_SaveLoadCompression {
                                             msDecompressed.Seek(0, SeekOrigin.Begin);
 
                                             for (long i = 0; i < msDecompressed.Length; i++) {
-                                                KK_SaveLoadCompression.Progress = $"Comparing: {Convert.ToInt32(i * 100L / msDecompressed.Length)}%";
+                                                KK_SaveLoadCompression.Progress = $"Comparing: {Convert.ToDecimal(i) / msDecompressed.Length:p2}";
                                                 int aByte = fileStreamReader.ReadByte();
                                                 int bByte = msDecompressed.ReadByte();
                                                 if (aByte.CompareTo(bByte) != 0) {
@@ -237,9 +237,9 @@ namespace KK_SaveLoadCompression {
                                             binaryWriter.Write(msCompressed.ToArray());
                                             LogLevel logLevel = KK_SaveLoadCompression.DisplayMessage.Value ? (LogLevel.Message | LogLevel.Info) : LogLevel.Info;
                                             Logger.LogInfo($"Compression test SUCCESS");
-                                            Logger.Log(logLevel, $"Compression finish in {Math.Round(Time.time - startTime, 2)} seconds");
+                                            Logger.Log(logLevel, $"Compression finish in {Time.time - startTime:n2} seconds");
                                             Logger.Log(logLevel, $"Size compress from {fileStreamReader.Length} bytes to {newSize} bytes");
-                                            Logger.Log(logLevel, $"Compress ratio: {Math.Round(Convert.ToDouble(fileStreamReader.Length / newSize), 2)}/1, which means it is now {Math.Round(Convert.ToDouble(100L / (fileStreamReader.Length / newSize)), 2)}% big.");
+                                            Logger.Log(logLevel, $"Compress ratio: {Convert.ToDecimal(fileStreamReader.Length) / newSize:n3}/1, which means it is now {Convert.ToDecimal(newSize) / fileStreamReader.Length:p3} big.");
                                         } else {
                                             Logger.LogError($"Compression test FAILED");
                                         }
@@ -282,7 +282,7 @@ namespace KK_SaveLoadCompression {
                             Logger.LogError("Overwrite was FAILED twice. Fallback to use the '_compressed2' path.");
                         }
                     } else {
-                        Logger.LogError($"An unknown error occurred. If your files are lost, please find them at %TEMP%/{KK_SaveLoadCompression.GUID}");
+                        Logger.Log(LogLevel.Error | LogLevel.Message,$"An unknown error occurred. If your files are lost, please find them at %TEMP%/{KK_SaveLoadCompression.GUID}");
                         throw;
                     }
                 } finally {
@@ -309,7 +309,7 @@ namespace KK_SaveLoadCompression {
             => Load(ref path, CharaToken);
 
         [HarmonyPrefix, HarmonyPriority(Priority.First), HarmonyPatch(typeof(ChaFileControl), "LoadCharaFile", new Type[] { typeof(string), typeof(byte), typeof(bool), typeof(bool) })]
-        public static void LoadCharaFilePostfix(ChaFileControl __instance, ref string filename, byte sex) {
+        public static void LoadCharaFilePrefix(ChaFileControl __instance, ref string filename, byte sex) {
             filename = __instance.ConvertCharaFilePath(filename, sex);
             Load(ref filename, CharaToken);
         }
@@ -332,6 +332,7 @@ namespace KK_SaveLoadCompression {
             using (FileStream fileStreamReader = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
                 using (BinaryReader binaryReader = new BinaryReader(fileStreamReader)) {
                     byte[] pngData;
+                    float startTime = Time.time;
                     try {
                         bool checkfail = false;
                         pngData = PngFile.LoadPngBytes(binaryReader);
@@ -359,7 +360,7 @@ namespace KK_SaveLoadCompression {
                         //Discard token string
                         binaryReader.ReadString();
 
-                        Logger.LogDebug("Start Decompress...");
+                        //Logger.LogDebug("Start Decompress...");
                         //KK_Fix_CharacterListOptimizations依賴檔名做比對
                         using (FileStream fileStreamWriter = new FileStream(tmpPath, FileMode.Create, FileAccess.Write)) {
                             using (BinaryWriter binaryWriter = new BinaryWriter(fileStreamWriter)) {
@@ -368,7 +369,7 @@ namespace KK_SaveLoadCompression {
                                 long fileStreamPos = fileStreamReader.Position;
                                 LZMA.Decompress(fileStreamReader, fileStreamWriter,
                                     delegate (long inSize, long _) {
-                                        KK_SaveLoadCompression.Progress = $"Decompressing: {Convert.ToInt32(inSize * 100 / (fileStreamReader.Length - fileStreamPos))}%";
+                                        KK_SaveLoadCompression.Progress = $"Decompressing: {Convert.ToDecimal(inSize) / (fileStreamReader.Length - fileStreamPos):p2}";
                                     }
                                 );
                                 KK_SaveLoadCompression.Progress = "";
@@ -376,9 +377,13 @@ namespace KK_SaveLoadCompression {
                         }
 
                         path = tmpPath;
-                        Logger.LogDebug($"Decompression FINISH");
+                        if (Time.time - startTime == 0) {
+                            Logger.LogDebug($"Decompressed: {n}");
+                        } else {
+                            Logger.LogDebug($"Decompressed: {n}, finish in {Time.time - startTime} seconds");
+                        }
                     } catch (Exception) {
-                        Logger.LogError($"Decompression FAILDED. The file was damaged during compression.");
+                        Logger.LogError($"Decompression FAILDED. The file was corrupted during compression or storage.");
                         Logger.LogError($"Do not disable the byte comparison setting next time to avoid this.");
                         return;
                     }
