@@ -36,10 +36,11 @@ namespace KK_StudioMenuScrollingText {
     public class KK_StudioMenuScrollingText : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Menu Scrolling Text";
         internal const string GUID = "com.jim60105.kk.studiomenuscrollingtext";
-        internal const string PLUGIN_VERSION = "20.09.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
+        internal const string PLUGIN_VERSION = "20.09.10.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
 
         public static ConfigEntry<string> AddtionalFolder { get; private set; }
+        public static ConfigEntry<int> Speed { get; private set; }
         internal readonly static Dictionary<int, string> HeaderDict = new Dictionary<int, string>();
         internal readonly static Dictionary<int, string> FooterDict = new Dictionary<int, string>();
 
@@ -49,6 +50,7 @@ namespace KK_StudioMenuScrollingText {
             Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
 
             AddtionalFolder = Config.Bind<string>("Config", "Menu Addtional Text Folder", GetRelativePath(BepInEx.Paths.BepInExRootPath, Path.Combine(Path.GetDirectoryName(base.Info.Location), nameof(KK_StudioMenuScrollingText))));
+            Speed = Config.Bind<int>("Config", "Scrolling speed", 777, new ConfigDescription("σ`∀´)σ", new AcceptableValueRange<int>(666, 888))); 
             if (!Directory.Exists(AddtionalFolder.Value)) {
                 Directory.CreateDirectory(AddtionalFolder.Value);
             } else {
@@ -79,10 +81,9 @@ namespace KK_StudioMenuScrollingText {
     }
 
     internal class ScrollingTextComponent : MonoBehaviour {
-        const int DELAY = 10;
         private string FullText = "";
         private int anchor = 0;
-        private int delayCount = DELAY;
+        private int delayCount = 10;
         private int segmentLength = 13;
         private ListNode node;
 
@@ -117,7 +118,7 @@ namespace KK_StudioMenuScrollingText {
                 if (anchor >= ((FullText.Length - 6) / 2) + 6) anchor = 0;
                 node.text = FullText.Substring(anchor, segmentLength);
                 anchor++;
-                delayCount = DELAY;
+                delayCount = (888 - KK_StudioMenuScrollingText.Speed.Value) * 10 / 111;
             }
         }
 
