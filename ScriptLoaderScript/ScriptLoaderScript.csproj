@@ -54,11 +54,17 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>C:\illusion\Koikatu\BepInEx\core\0Harmony.dll</HintPath>
+    </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>C:\illusion\Koikatu\CharaStudio_Data\Managed\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="TextMeshPro-1.0.55.56.0b12">
+      <HintPath>C:\illusion\Koikatu\Koikatu_Data\Managed\TextMeshPro-1.0.55.56.0b12.dll</HintPath>
+    </Reference>
     <Reference Include="UnityEngine">
       <HintPath>C:\illusion\Koikatu\CharaStudio_Data\Managed\UnityEngine.dll</HintPath>
       <Private>False</Private>
@@ -68,6 +74,7 @@
     <None Include="StudioBodyOverwrite.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <Compile Include="ChangeToRandomTexts.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
