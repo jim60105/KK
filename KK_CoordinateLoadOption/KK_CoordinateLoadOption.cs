@@ -53,8 +53,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.08.06.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.1";
+        internal const string PLUGIN_VERSION = "20.10.01.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.1.1";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -120,6 +120,20 @@ namespace KK_CoordinateLoadOption {
         public void Update() => CoordinateLoad.Update();
     }
 
+    //用於MakerUI之OnEnable回呼
+    class OnEnableListener : MonoBehaviour {
+        public delegate void EventHandler();
+        public event EventHandler OnEnableEvent;
+
+        public void OnEnable() => this.StartCoroutine(OnEnableCoroutine());
+
+        //確保能在最後執行
+        private IEnumerator OnEnableCoroutine() {
+            yield return null;
+            OnEnableEvent?.Invoke();
+        }
+    }
+
     class Patches {
         private static readonly ManualLogSource Logger = SCLO.Logger;
         internal static string coordinatePath;
@@ -128,7 +142,7 @@ namespace KK_CoordinateLoadOption {
 
         internal static Toggle[] tgls;
         internal static Toggle[] tgls2 = new Toggle[0]; //使用時再初始化
-        private static Image panel;
+        internal static Image panel;
         private static Image panel2;
         private static RectTransform toggleGroup;
         internal static bool lockHairAcc = false;
@@ -166,9 +180,7 @@ namespace KK_CoordinateLoadOption {
                 PanelParent = (__instance.GetField("fileSort") as CharaFileSort).root.parent.parent.parent;
             } else {
                 //Maker
-                if (__instance is CustomCoordinateFile customCoordinateFile) {
-                    PanelParent = customCoordinateFile.transform;
-                } else { return; }
+                PanelParent = GameObject.Find("CustomScene/CustomRoot/FrontUIGroup/CustomUIGroup/CvsMenuTree/06_SystemTop/cosFileControl/charaFileWindow/WinRect/CoordinateLoad").transform;
             }
 
             #region UI
@@ -375,8 +387,8 @@ namespace KK_CoordinateLoadOption {
                 panel.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(170f, (baseY - 7.5f) - 40), new Vector2(-52, -345 - 40));
                 panel2.transform.SetRect(Vector2.one, Vector2.one, new Vector2(1f, -612.5f), new Vector2(200f, 0f));
             } else {
-                coordianteLoadPanel.transform.SetRect(Vector2.right, Vector2.right, new Vector2(845, -960), new Vector2(1015, -920));
-                panel.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(1025, -968), new Vector2(1195, -968 - (baseY - 2.5f)));
+                coordianteLoadPanel.transform.SetRect(Vector2.zero, Vector2.zero, new Vector2(596, 1), new Vector2(766, 41));
+                panel.transform.SetRect(Vector2.zero, Vector2.zero, new Vector2(777, -8), new Vector2(947, -7.5f - (baseY - 2.5f)));
                 panel2.transform.SetRect(Vector2.right, Vector2.right, new Vector2(1, 0), new Vector2(200f, 612.5f));
             }
             panel.gameObject.SetActive(false);
@@ -404,11 +416,24 @@ namespace KK_CoordinateLoadOption {
                     bool active = !panel.IsActive();
                     panel.gameObject.SetActive(active);
 
+                    //Maker: 修改服裝選擇器下方的勾選列
                     if (!SCLO.insideStudio) {
                         GameObject stackLoadPanel = GameObject.Find("CustomScene/CustomRoot/FrontUIGroup/CustomUIGroup/CvsMenuTree/06_SystemTop/cosFileControl/charaFileWindow/WinRect/CoordinateLoad/Select");
+                        stackLoadPanel.GetComponentsInChildren<Toggle>().ToList().ForEach(tgl => tgl.isOn = true);  //全勾上tmpChara才能完整載入
                         stackLoadPanel.SetActive(!active);
-                        GameObject listView = GameObject.Find("CustomScene/CustomRoot/FrontUIGroup/CustomUIGroup/CvsMenuTree/06_SystemTop/cosFileControl/charaFileWindow/WinRect/ListArea");
-                        listView.transform.SetRect(Vector2.up, Vector2.up, new Vector2(4, active ? -887 : -834), new Vector2(772, -72));
+
+                        //在CoordinateLoad OnEnable時改變ListArea長度
+                        GameObject go = GameObject.Find("CustomScene/CustomRoot/FrontUIGroup/CustomUIGroup/CvsMenuTree/06_SystemTop/cosFileControl/charaFileWindow/WinRect/CoordinateLoad");
+                        if (null == go.GetComponent(typeof(OnEnableListener))) {
+                            OnEnableListener onEnableListener = (OnEnableListener)go.AddComponent(typeof(OnEnableListener));
+                            onEnableListener.OnEnableEvent += delegate {
+                                GameObject listView = GameObject.Find("CustomScene/CustomRoot/FrontUIGroup/CustomUIGroup/CvsMenuTree/06_SystemTop/cosFileControl/charaFileWindow/WinRect/ListArea");
+                                listView.transform.SetRect(Vector2.up, Vector2.up, new Vector2(4, Patches.panel.IsActive() ? -880 : -834), new Vector2(772, -72));
+                                //Logger.LogDebug("OnEnable: " + Patches.panel.IsActive());
+                            };
+                        }
+                        go.SetActive(false);
+                        go.SetActive(true);
                     }
                 }
             });
@@ -527,7 +552,7 @@ namespace KK_CoordinateLoadOption {
             if (tgls[(int)SCLO.ClothesKind.accessories].isOn) {
                 panel2.gameObject.SetActive(true);
             }
-            Logger.LogDebug("Onselect");
+            //Logger.LogDebug("Onselect");
         }
 
         [HarmonyPriority(Priority.First)]
