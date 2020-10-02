@@ -18,6 +18,7 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
 using BepInEx;
+using BepInEx.Configuration;
 using BepInEx.Logging;
 using ChaCustom;
 using ExIni;
@@ -31,6 +32,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using UILib;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -53,8 +55,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.10.01.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.1.1";
+        internal const string PLUGIN_VERSION = "20.10.02.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.1.2";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -103,6 +105,10 @@ namespace KK_CoordinateLoadOption {
             accessories = 9 /*注意這個*/
         }
 
+        internal static Vector3 defaultPanelPosition = Vector3.zero;
+        public static ConfigEntry<Vector3> Maker_Panel_Position { get; private set; }
+        public static ConfigEntry<Vector3> Studio_Panel_Position { get; private set; }
+
         public void Start() {
             _isKCOXExist = KCOX_Support.LoadAssembly();
             _isABMXExist = ABMX_Support.LoadAssembly();
@@ -115,6 +121,21 @@ namespace KK_CoordinateLoadOption {
                 prefix: new HarmonyMethod(typeof(HairAccessoryCustomizer_Support), nameof(HairAccessoryCustomizer_Support.UpdateAccessoriesPrefix)));
 
             StringResources.StringResourcesManager.SetUICulture();
+
+            if (insideStudio) {
+                Studio_Panel_Position = Config.Bind<Vector3>("Settings", "Studio Panel Position", defaultPanelPosition);
+                Studio_Panel_Position.SettingChanged += _MovePanel;
+            } else {
+                Maker_Panel_Position = Config.Bind<Vector3>("Settings", "Maker Panel Position", defaultPanelPosition);
+                Maker_Panel_Position.SettingChanged += _MovePanel;
+            }
+
+            void _MovePanel(object sender, EventArgs e) {
+                if (sender is ConfigEntry<Vector3> s) {
+                    Patches.panel.transform.localPosition = s.Value;
+                    if (s.Value == Vector3.zero && defaultPanelPosition != Vector3.zero) s.Value = defaultPanelPosition;
+                }
+            };
         }
 
         public void Update() => CoordinateLoad.Update();
@@ -176,7 +197,7 @@ namespace KK_CoordinateLoadOption {
             Array ClothesKindArray = Enum.GetValues(typeof(SCLO.ClothesKind));
 
             Transform PanelParent = null;
-            if (KK_CoordinateLoadOption.insideStudio) {
+            if (SCLO.insideStudio) {
                 PanelParent = (__instance.GetField("fileSort") as CharaFileSort).root.parent.parent.parent;
             } else {
                 //Maker
@@ -385,12 +406,20 @@ namespace KK_CoordinateLoadOption {
             if (SCLO.insideStudio) {
                 coordianteLoadPanel.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(170f, -45f), new Vector2(0, -345f));
                 panel.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(170f, (baseY - 7.5f) - 40), new Vector2(-52, -345 - 40));
+                _SetPanel(SCLO.Studio_Panel_Position);
                 panel2.transform.SetRect(Vector2.one, Vector2.one, new Vector2(1f, -612.5f), new Vector2(200f, 0f));
             } else {
                 coordianteLoadPanel.transform.SetRect(Vector2.zero, Vector2.zero, new Vector2(596, 1), new Vector2(766, 41));
                 panel.transform.SetRect(Vector2.zero, Vector2.zero, new Vector2(777, -8), new Vector2(947, -7.5f - (baseY - 2.5f)));
+                _SetPanel(SCLO.Maker_Panel_Position);
                 panel2.transform.SetRect(Vector2.right, Vector2.right, new Vector2(1, 0), new Vector2(200f, 612.5f));
             }
+            void _SetPanel(ConfigEntry<Vector3> c) {
+                SCLO.defaultPanelPosition = panel.transform.localPosition;
+                if (c.Value == Vector3.zero) c.Value = SCLO.defaultPanelPosition;
+                panel.transform.localPosition = c.Value;
+            }
+
             panel.gameObject.SetActive(false);
 
             //拖曳event
@@ -398,11 +427,15 @@ namespace KK_CoordinateLoadOption {
             EventTrigger trigger = panel.gameObject.AddComponent<EventTrigger>();
             EventTrigger.Entry entry = new EventTrigger.Entry { eventID = EventTriggerType.BeginDrag };
             entry.callback.AddListener((data) => {
-                mouse = new Vector2(Input.mousePosition.x - panel.transform.position.x, Input.mousePosition.y - panel.transform.position.y);
+                mouse = new Vector2(Input.mousePosition.x - panel.transform.localPosition.x, Input.mousePosition.y - panel.transform.localPosition.y);
             });
             EventTrigger.Entry entry2 = new EventTrigger.Entry { eventID = EventTriggerType.Drag };
             entry2.callback.AddListener((data) => {
-                panel.transform.position = new Vector3(Input.mousePosition.x - mouse.x, Input.mousePosition.y - mouse.y, 0);
+                if (SCLO.insideStudio) {
+                    SCLO.Studio_Panel_Position.Value = new Vector3(Input.mousePosition.x - mouse.x, Input.mousePosition.y - mouse.y, 0);
+                } else {
+                    SCLO.Maker_Panel_Position.Value = new Vector3(Input.mousePosition.x - mouse.x, Input.mousePosition.y - mouse.y, 0);
+                }
             });
             trigger.triggers.Add(entry);
             trigger.triggers.Add(entry2);
