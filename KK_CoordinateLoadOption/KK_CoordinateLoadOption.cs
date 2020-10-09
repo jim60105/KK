@@ -43,6 +43,7 @@ namespace KK_CoordinateLoadOption {
 
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("Koikatu")]
+    [BepInProcess("Koikatsu Party")]
     [BepInProcess("CharaStudio")]
     [BepInDependency("KCOX", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("KKABMX.Core", BepInDependency.DependencyFlags.SoftDependency)]
@@ -552,7 +553,15 @@ namespace KK_CoordinateLoadOption {
             if (SCLO.insideStudio) {
                 coordinatePath = (__instance.GetField("fileSort") as CharaFileSort)?.selectPath ?? "";
             } else {
-                coordinatePath = (__instance.GetField("listCtrl") as CustomFileListCtrl)?.GetSelectTopItem()?.info.FullPath ?? "";
+                // CustomFileListCtrl inherits from a generic type, and its compiler-generated implementation has a different name between versions
+                // because of this it can't be accessed directly or it will throw TypeLoadException, only through reflection
+                var property = Traverse.Create(__instance)
+                    .Field("listCtrl")
+                    .Method("GetSelectTopItem")
+                    .Property("info")
+                    .Property("FullPath");
+
+                coordinatePath = property.FieldExists() ? property.GetValue<string>() : "";
             }
             if (string.IsNullOrEmpty(coordinatePath)) return;
 
@@ -563,7 +572,7 @@ namespace KK_CoordinateLoadOption {
             List<string> accNames = new List<string>();
 
             accNames.AddRange(tmpChaFileCoordinate.accessory.parts.Select(x => CoordinateLoad.GetNameFromIDAndType(x.id, (ChaListDefine.CategoryNo)x.type)));
-
+                
             if (SCLO._isMoreAccessoriesExist) {
                 accNames.AddRange(MoreAccessories_Support.LoadMoreAcc(tmpChaFileCoordinate));
             }
