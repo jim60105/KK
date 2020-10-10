@@ -239,7 +239,11 @@ namespace KK_CoordinateLoadOption {
                             };
                         }
                         part.hideCategory = XmlConvert.ToInt32(accessoryNode.Attributes["hideCategory"].Value);
-                        part.noShake = (accessoryNode.Attributes["noShake"] != null && XmlConvert.ToBoolean(accessoryNode.Attributes["noShake"].Value));
+
+                        // noShake doesn't exist in pre-darkness builds
+                        var noshake = Traverse.Create(part).Property("noShake");
+                        if(noshake.FieldExists())
+                            noshake.SetValue(accessoryNode.Attributes["noShake"] != null && XmlConvert.ToBoolean(accessoryNode.Attributes["noShake"].Value));
 
                         //處理Sideloader mod
                         if (null != extInfoList && null != LoadedResolutionInfoList) {
