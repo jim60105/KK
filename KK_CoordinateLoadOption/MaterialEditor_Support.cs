@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.IsolatedStorage;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -30,15 +31,19 @@ namespace KK_CoordinateLoadOption {
                 }
                 Logger.LogDebug("MaterialEditor found");
 
-                CacheDirectory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), KK_CoordinateLoadOption.GUID));
-                foreach (FileInfo file in CacheDirectory.GetFiles()) file.Delete();
-                foreach (DirectoryInfo subDirectory in CacheDirectory.GetDirectories()) subDirectory.Delete(true);
-                Logger.LogDebug("Clean cache folder");
+                MakeCacheDirectory();
                 return true;
             } catch (Exception ex) {
                 Logger.LogDebug(ex.Message);
                 return false;
             }
+        }
+
+        private static void MakeCacheDirectory() {
+            CacheDirectory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), KK_CoordinateLoadOption.GUID));
+            foreach (FileInfo file in CacheDirectory.GetFiles()) file.Delete();
+            foreach (DirectoryInfo subDirectory in CacheDirectory.GetDirectories()) subDirectory.Delete(true);
+            Logger.LogDebug("Clean cache folder");
         }
 
         public class StoredValueInfo {
@@ -481,6 +486,8 @@ namespace KK_CoordinateLoadOption {
                             int? texID = (int?)x.GetField("TexID");
                             if (texID.HasValue && SourceTextureDictionaryBackup.TryGetValue(texID.Value, out object textureHolder) && textureHolder.GetProperty("Data") is byte[] BA) {
                                 string tempPath = Path.Combine(CacheDirectory.FullName, DateTime.UtcNow.Ticks + "_" + texID);
+
+                                if (!Directory.Exists(CacheDirectory.FullName)) { MakeCacheDirectory(); }
                                 File.WriteAllBytes(tempPath, BA);
                                 TargetMaterialEditorController.Invoke("SetMaterialTextureFromFile", new object[] {
                                     targetSlot,

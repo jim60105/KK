@@ -13,8 +13,9 @@ namespace KK_CoordinateLoadOption {
         private static object SourceHairAccCusController;
         private static object TargetHairAccCusController;
         private static readonly string GUID = "com.deathweasel.bepinex.hairaccessorycustomizer";
-        public static Dictionary<int, object> sourceHairBackup = new Dictionary<int, object>();
-        public static Dictionary<int, object> targetHairBackup = new Dictionary<int, object>();
+        public static Dictionary<int, object> sourceHairBackup;
+        public static Dictionary<int, object> targetHairBackup;
+        public static Dictionary<int, Dictionary<int, object>> targetAllBackup;
         internal static Type HairAccessoryControllerType;
 
         public static bool LoadAssembly() {
@@ -33,9 +34,10 @@ namespace KK_CoordinateLoadOption {
             }
         }
 
-        internal static bool UpdateBlock = false;
-        public static bool UpdateAccessoriesPrefix() {
-            return !UpdateBlock;
+        internal static bool LoadBlock = false;
+        public static bool ReloadPrefix() {
+            Logger.LogWarning("Trigger Load Block " + LoadBlock);
+            return !LoadBlock;
         }
 
         /// <summary>
@@ -154,7 +156,7 @@ namespace KK_CoordinateLoadOption {
         public static void SetControllerFromExtData(ChaControl chaCtrl) {
             MonoBehaviour HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
             //注意這條是異步執行
-            HairAccCusController.Invoke("OnReload", new object[] { 2, false });
+            HairAccCusController.Invoke("OnReload", new object[] { KK_CoordinateLoadOption.insideStudio ? 2 : 1, false });
         }
 
         /// <summary>
@@ -167,27 +169,30 @@ namespace KK_CoordinateLoadOption {
             HairAccCusController.Invoke("OnCardBeingSaved", new object[] { 1 });
         }
 
+        public static void SetToExtData(ChaControl chaCtrl, Dictionary<int, object> dict) {
+            SetToExtData(chaCtrl, dict, GetDataFromExtData(chaCtrl, out _));
+        }
+
         /// <summary>
         /// 將dict存入ChaControl ExtendedData
         /// </summary>
         /// <param name="chaCtrl">目標ChaControl</param>
         /// <param name="dict">要存入的dict</param>
-        public static void SetToExtData(ChaControl chaCtrl, Dictionary<int, object> dict) {
+        public static void SetToExtData(ChaControl chaCtrl, Dictionary<int, object> dict, Dictionary<int, Dictionary<int, object>> allExtData) {
             PluginData data = new PluginData();
-            Dictionary<int, Dictionary<int, object>> allExtData = GetDataFromExtData(chaCtrl, out _);
             int coorType = chaCtrl.fileStatus.coordinateType;
-            if ((null == dict || dict.Count == 0) && (null == allExtData || allExtData.Count == 0)) {
+            if (null == allExtData) {
+                allExtData = new Dictionary<int, Dictionary<int, object>>();
+                Logger.LogDebug($"HairAccCustomizer info not found while saving.");
+            }
+            if ((null == dict || dict.Count == 0) && (allExtData.Count == 0)) {
                 data = null;
             } else {
-                if (null == allExtData) {
-                    allExtData = new Dictionary<int, Dictionary<int, object>>();
-                    Logger.LogDebug($"HairAccCustomizer info not found while saving.");
-                }
-                if (allExtData.ContainsKey(coorType)) {
-                    allExtData[coorType].Clear();
+                if (allExtData.TryGetValue(coorType, out Dictionary<int, object> coor) && null != coor && coor.Count == 0) {
                     allExtData.Remove(coorType);
                 }
                 if (null != dict) {
+                    Logger.LogWarning($"Set {dict.Count} HairAcc at coordinate " + coorType);
                     allExtData[coorType] = dict;
                 }
                 data.data.Add("HairAccessories", MessagePackSerializer.Serialize(allExtData));
@@ -218,15 +223,14 @@ namespace KK_CoordinateLoadOption {
         /// </summary>
         /// <param name="chaCtrl">檢核的ChaControl</param>
         /// <returns>檢核通過</returns>
-        public static bool CheckControllerPrepared(ChaControl chaCtrl, ChaFileCoordinate backCoordinate) {
-            if (!KK_CoordinateLoadOption._isHairAccessoryCustomizerExist || null == backCoordinate) {
+        public static bool CheckControllerPrepared(ChaControl chaCtrl/*, ChaFileCoordinate backCoordinate*/) {
+            if (!KK_CoordinateLoadOption._isHairAccessoryCustomizerExist /*|| null == backCoordinate*/) {
                 return true;
             }
             bool? flag = true;
 
-            Dictionary<int, object> dataFromChaCtrlExt = GetDataFromCoordinate(chaCtrl.nowCoordinate);
-            Dictionary<int, object> dataFromBackCoor = GetDataFromCoordinate(backCoordinate);
-            //GetDataFromController(chaCtrl, out Dictionary<int, object> dataFromCon);
+            GetDataFromExtData(chaCtrl, out Dictionary<int, object> dataFromChaCtrlExt);
+            GetDataFromController(chaCtrl, out Dictionary<int, object> dataFromChaCtrlController);
 
             //過濾假的HairAccInfo
             if (null != dataFromChaCtrlExt) {
@@ -235,24 +239,24 @@ namespace KK_CoordinateLoadOption {
                 }
                 Logger.LogDebug($"Test with {dataFromChaCtrlExt.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromChaCtrlExt.Select(x => x.Key.ToString()).ToArray())}");
             }
-            if (null != dataFromBackCoor) {
-                foreach (KeyValuePair<int, object> rk in dataFromBackCoor.Where(x => null == CoordinateLoad.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
-                    dataFromBackCoor.Remove(rk.Key);
+            if (null != dataFromChaCtrlController) {
+                foreach (KeyValuePair<int, object> rk in dataFromChaCtrlController.Where(x => null == CoordinateLoad.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
+                    dataFromChaCtrlController.Remove(rk.Key);
                 }
-                Logger.LogDebug($"Test with {dataFromBackCoor.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromBackCoor.Select(x => x.Key.ToString()).ToArray())}");
+                Logger.LogDebug($"Test with {dataFromChaCtrlController.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromChaCtrlController.Select(x => x.Key.ToString()).ToArray())}");
             }
 
             if (null != dataFromChaCtrlExt && dataFromChaCtrlExt.Count > 0) {
-                if (null != dataFromBackCoor && dataFromBackCoor.Count == dataFromChaCtrlExt.Count) {
+                if (null != dataFromChaCtrlController && dataFromChaCtrlController.Count == dataFromChaCtrlExt.Count) {
                     foreach (KeyValuePair<int, object> kv in dataFromChaCtrlExt) {
-                        if (dataFromBackCoor.ContainsKey(kv.Key)) {
+                        if (dataFromChaCtrlController.ContainsKey(kv.Key)) {
                             continue;
                         } else { flag = false; break; }
                     }
                 } else { flag = false; }
             } else {
                 //No data from coordinate extData 
-                if (null != dataFromBackCoor && dataFromBackCoor.Count != 0) {
+                if (null != dataFromChaCtrlController && dataFromChaCtrlController.Count != 0) {
                     flag = false;
                 } else {
                     flag = null;
@@ -295,10 +299,9 @@ namespace KK_CoordinateLoadOption {
         /// </summary>
         /// <param name="sourceChaCtrl">來源</param>
         /// <param name="targetChaCtrl">目標</param>
-        public static void GetControllerAndBackupData(ChaControl sourceChaCtrl, ChaControl targetChaCtrl = null) {
+        public static void GetControllerAndBackupData(ChaControl sourceChaCtrl = null, ChaFileCoordinate sourceCoordinate = null, ChaControl targetChaCtrl = null) {
             if (null != sourceChaCtrl) {
                 SetExtDataFromController(sourceChaCtrl);
-                ClearHairAccBackup();
                 SourceHairAccCusController = sourceChaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
                 if (null == SourceHairAccCusController) {
                     Logger.LogDebug("No Source Hair Accessory Customizer Controller found");
@@ -307,8 +310,7 @@ namespace KK_CoordinateLoadOption {
                 Logger.LogDebug("Source-----");
 
                 //Source是tmpChara，其資料來自讀入coordinate
-                //不需等待tmpChara載入完成再由tmpChara讀取，直接由coordinate取得資料即可
-                sourceHairBackup = GetDataFromCoordinate(sourceChaCtrl.nowCoordinate);
+                sourceHairBackup = GetDataFromCoordinate(sourceCoordinate ?? sourceChaCtrl.nowCoordinate);
             }
 
             if (null != targetChaCtrl) {
@@ -319,7 +321,7 @@ namespace KK_CoordinateLoadOption {
                     return;
                 }
                 Logger.LogDebug("Target-----");
-                GetDataFromExtData(targetChaCtrl, out targetHairBackup);
+                targetAllBackup = GetDataFromExtData(targetChaCtrl, out targetHairBackup);
             }
         }
 
@@ -343,7 +345,7 @@ namespace KK_CoordinateLoadOption {
                     targetHairBackup.Remove(targetSlot);
                 }
                 targetHairBackup.Add(targetSlot, CopyHairAccInfoObject(sourceHairInfo));
-                //targetDict.Add(targetSlot, (sourceHairInfo));
+                //targetHairBackup.Add(targetSlot, (sourceHairInfo));
 
                 Logger.LogDebug($"-->Copy Hair Acc Finish: {sourceChaCtrl.fileParam.fullname} {sourceSlot} -> {targetChaCtrl.fileParam.fullname} {targetSlot}");
                 Logger.LogDebug($"-->Hair Acc: {targetHairBackup.Count} : {string.Join(",", targetHairBackup.Select(x => x.Key.ToString()).ToArray())}");
@@ -373,6 +375,7 @@ namespace KK_CoordinateLoadOption {
             TargetHairAccCusController = null;
             sourceHairBackup = null;
             targetHairBackup = null;
+            targetAllBackup = null;
         }
     }
 }

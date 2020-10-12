@@ -166,14 +166,6 @@ namespace KK_CoordinateLoadOption {
 
             //_accessoriesByChar[targetChaCtrl.chaFile] = targetCharAdditionalData;
             //MoreAccObj.SetField("_accessoriesByChar", _accessoriesByChar);
-
-            if (KK_CoordinateLoadOption._isHairAccessoryCustomizerExist) {
-                HairAccessoryCustomizer_Support.GetDataFromExtData(targetChaCtrl, out Dictionary<int, object> nowCoor);
-                if (null != nowCoor) {
-                    Logger.LogDebug($"->Hair Count {nowCoor.Count}: {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
-                }
-                HairAccessoryCustomizer_Support.SetControllerFromExtData(targetChaCtrl);
-            }
             Logger.LogDebug($"->MoreAcc Parts Count: {GetAccessoriesAmount(targetChaCtrl.chaFile)}");
 
             Logger.LogDebug("Load MoreAccessories Finish");
