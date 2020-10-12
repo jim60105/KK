@@ -55,8 +55,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.10.13.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.0.2";
+        internal const string PLUGIN_VERSION = "20.10.13.1";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.0.3";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -116,9 +116,6 @@ namespace KK_CoordinateLoadOption {
             _isMaterialEditorExist = MaterialEditor_Support.LoadAssembly();
             _isHairAccessoryCustomizerExist = HairAccessoryCustomizer_Support.LoadAssembly();
             _isCharaOverlayBasedOnCoordinateExist = COBOC_Support.LoadAssembly();
-
-            harmonyInstance.Patch(HairAccessoryCustomizer_Support.HairAccessoryControllerType.GetMethod("UpdateAccessories", AccessTools.all),
-                prefix: new HarmonyMethod(typeof(HairAccessoryCustomizer_Support), nameof(HairAccessoryCustomizer_Support.UpdateAccessoriesPrefix)));
 
             StringResources.StringResourcesManager.SetUICulture();
 
@@ -724,8 +721,19 @@ namespace KK_CoordinateLoadOption {
             tmpChaCtrl.fileParam.lastname = "黑肉";
             tmpChaCtrl.fileParam.firstname = "舔舔";
             if (SCLO._isHairAccessoryCustomizerExist) {
-                HairAccessoryCustomizer_Support.CopyHairAccBetweenControllers(chaCtrl, tmpChaCtrl);
+                //取得BackupData
                 HairAccessoryCustomizer_Support.GetControllerAndBackupData(tmpChaCtrl, backupTmpCoordinate);
+
+                //禁用ColorMatch: 這在Maker中必要 (在Studio會被內部檢核阻擋)
+                //在Maker中，若原本的HairAccData有啟用ColorMatch，會在換完Acc後把飾品原生顏色回寫為HairMatchColor
+                //所以在此取得Backup後、開始換衣前將所有的ColorMatch禁用
+                HairAccessoryCustomizer_Support.DisableColorMatches(chaCtrl);
+
+                //將Controller中之HairAccessories拷貝到tmpChaCtrl
+                //這是Ref Copy，這是MakerAPI並無區分多ChaControl的對應
+                //且Maker換衣時無法呼叫HairAccCusController.LoadData()，只能呼叫LoadCoordinate()
+                //故必須在tmpChaCtrl上完整複製chaCtrl資料，並在換裝完後由Coordinate寫回
+                HairAccessoryCustomizer_Support.CopyHairAccBetweenControllers(chaCtrl, tmpChaCtrl);
             }
             tmpChaCtrl.ChangeCoordinateType((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, false);
 
@@ -736,7 +744,6 @@ namespace KK_CoordinateLoadOption {
                 tmpChaCtrl.Reload();
                 yield return new WaitUntil(delegate { return CheckPluginPrepared(); });
 
-                HairAccessoryCustomizer_Support.UpdateBlock = true;
                 tmpChaCtrl.nowCoordinate.LoadFile(Patches.coordinatePath);
                 tmpChaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)tmpChaCtrl.fileStatus.coordinateType);
                 tmpChaCtrl.Reload(false, true, true, true);
@@ -744,7 +751,6 @@ namespace KK_CoordinateLoadOption {
                 forceCleanCount = SCLO.FORCECLEANCOUNT;
 
                 yield return new WaitUntil(delegate { return CheckPluginPrepared(backupTmpCoordinate); });
-                HairAccessoryCustomizer_Support.UpdateBlock = false;
 
                 callback?.Invoke((object)ocichar ?? chaCtrl);
             }
@@ -801,6 +807,7 @@ namespace KK_CoordinateLoadOption {
                                 Logger.LogMessage("Accessories slot is not enough! Discard " + GetNameFromIDAndType(part.id, (ChaListDefine.CategoryNo)part.type));
                             }
                         }
+                        chaCtrl.ChangeAccessory(true);
                         Logger.LogDebug("->Changed: " + tgl.name);
                     } else if (kind >= 0) {
                         if (SCLO._isMaterialEditorExist)
@@ -822,13 +829,16 @@ namespace KK_CoordinateLoadOption {
                 }
             }
 
+            if(!SCLO.insideStudio)
+                Singleton<CustomBase>.Instance.updateCustomUI = true;
+
             //存入至ExtendedData，然後Reload---
 
             //HairAcc
             if (SCLO._isHairAccessoryCustomizerExist) {
                 //寫入 (即使未載入Acc，也需要將一開始的備份寫回)
                 HairAccessoryCustomizer_Support.SetToExtData(chaCtrl, HairAccessoryCustomizer_Support.targetHairBackup);
-                HairAccessoryCustomizer_Support.SetDatatoCoordinate(chaCtrl.nowCoordinate, HairAccessoryCustomizer_Support.targetHairBackup);
+                HairAccessoryCustomizer_Support.SetDataToCoordinate(chaCtrl.nowCoordinate, HairAccessoryCustomizer_Support.targetHairBackup);
 
                 //讀出驗證
                 HairAccessoryCustomizer_Support.GetDataFromExtData(chaCtrl, out Dictionary<int, object> nowCoor);
@@ -866,10 +876,9 @@ namespace KK_CoordinateLoadOption {
 
             //MoreAcc
             if (SCLO._isMoreAccessoriesExist) {
-                chaCtrl.ChangeAccessory(true);
                 chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
                 MoreAccessories_Support.SetExtDataFromPlugin(chaCtrl.chaFile);
-                chaCtrl.StartCoroutine(MoreAccessories_Support.Update());
+                MoreAccessories_Support.Update();
                 Logger.LogDebug($"Acc Count : {MoreAccessories_Support.GetAccessoriesAmount(chaCtrl.chaFile)}");
             }
 

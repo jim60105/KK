@@ -81,7 +81,7 @@ namespace KK_CoordinateLoadOption {
                     Logger.LogDebug($"Keep HairAcc{i}: {parts[i].id}");
                 }
             }
-            RemoveEmptyFromBackToFront(parts);
+            RemoveEmptyFromBackToFront(parts,0);
             //charAdditionalData.SetField("rawAccessoriesInfos", rawAccessoriesInfos);
             //charAdditionalData.SetField("nowAccessories", rawAccessoriesInfos[(ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType]);
 
@@ -89,7 +89,7 @@ namespace KK_CoordinateLoadOption {
 
             try {
                 //MoreAccessories.InvokeMember("UpdateStudioUI", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
-                chaCtrl.StartCoroutine(Update());
+                Update();
                 chaCtrl.ChangeAccessory(true);
             } catch { }
             Logger.LogDebug("Clear MoreAccessories Finish");
@@ -265,8 +265,8 @@ namespace KK_CoordinateLoadOption {
         /// 由後往前刪除空欄
         /// </summary>
         /// <param name="partsInfos"></param>
-        public static void RemoveEmptyFromBackToFront(List<ChaFileAccessory.PartsInfo> partsInfos) {
-            for (int i = partsInfos.Count - 1; i >= 20; i--) {
+        public static void RemoveEmptyFromBackToFront(List<ChaFileAccessory.PartsInfo> partsInfos,int lowerLimit = 20) {
+            for (int i = partsInfos.Count - 1; i >= lowerLimit; i--) {
                 if (partsInfos[i].type == 120) {
                     partsInfos.RemoveAt(i);
                 } else {
@@ -319,10 +319,6 @@ namespace KK_CoordinateLoadOption {
             return false;
         }
 
-        public static IEnumerator Update() {
-            yield return null;
-            MoreAccObj.Invoke("UpdateUI");
-            yield break;
-        }
+        public static void Update() => MoreAccObj.Invoke("UpdateUI");
     }
 }

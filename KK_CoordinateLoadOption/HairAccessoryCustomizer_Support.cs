@@ -33,11 +33,6 @@ namespace KK_CoordinateLoadOption {
             }
         }
 
-        internal static bool UpdateBlock = false;
-        public static bool UpdateAccessoriesPrefix() {
-            return !UpdateBlock;
-        }
-
         /// <summary>
         /// 從ExtendedData取得給定ChaControl的HairAccessories和單一hairAccessoryInfo
         /// </summary>
@@ -104,6 +99,20 @@ namespace KK_CoordinateLoadOption {
         }
 
         /// <summary>
+        /// 將HairAccCusController.HairAccessories[coordinateType]中，所有HairAccData之ColorMatch都取消。只在Maker中有效。
+        /// </summary>
+        /// <param name="chaCtrl">對象ChaControl</param>
+        public static void DisableColorMatches(ChaControl chaCtrl) {
+            MonoBehaviour HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
+            Dictionary<int, object> HairAccessories = HairAccCusController?.GetField("HairAccessories").ToDictionary<int, object>();
+            if(HairAccessories.TryGetValue(chaCtrl.fileStatus.coordinateType,out object hairAcc) && null!= hairAcc && hairAcc.Count() is int amount) {
+                for(int i=0;i< amount; i++) {
+                    HairAccCusController.Invoke("SetColorMatch", new object[] { false, i });
+                }
+            }
+        }
+
+        /// <summary>
         /// 從ExtendedData取得給定ChaControl的HairAccessories和單一hairAccessoryInfo
         /// </summary>
         /// <param name="chaCtrl">要查詢的ChaControl</param>
@@ -130,7 +139,7 @@ namespace KK_CoordinateLoadOption {
         /// </summary>
         /// <param name="coordinate">目標coordinate</param>
         /// <param name="dict">要存入的dict</param>
-        public static void SetDatatoCoordinate(ChaFileCoordinate coordinate, Dictionary<int, object> dict) {
+        public static void SetDataToCoordinate(ChaFileCoordinate coordinate, Dictionary<int, object> dict) {
             PluginData data = new PluginData();
             if ((null == dict || dict.Count == 0)) {
                 data = null;
@@ -248,16 +257,16 @@ namespace KK_CoordinateLoadOption {
             }
             bool? flag = true;
 
-            Dictionary<int, object> dataFromChaCtrlExt = GetDataFromCoordinate(chaCtrl.nowCoordinate);
+            //Dictionary<int, object> dataFromChaCtrlExt = GetDataFromCoordinate(chaCtrl.nowCoordinate);
             Dictionary<int, object> dataFromBackCoor = GetDataFromCoordinate(backCoordinate);
-            //GetDataFromController(chaCtrl, out Dictionary<int, object> dataFromCon);
+            GetDataFromController(chaCtrl, out Dictionary<int, object> dataFromCon);
 
             //過濾假的HairAccInfo
-            if (null != dataFromChaCtrlExt) {
-                foreach (KeyValuePair<int, object> rk in dataFromChaCtrlExt.Where(x => null == CoordinateLoad.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
-                    dataFromChaCtrlExt.Remove(rk.Key);
+            if (null != dataFromCon) {
+                foreach (KeyValuePair<int, object> rk in dataFromCon.Where(x => null == CoordinateLoad.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
+                    dataFromCon.Remove(rk.Key);
                 }
-                Logger.LogDebug($"Test with {dataFromChaCtrlExt.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromChaCtrlExt.Select(x => x.Key.ToString()).ToArray())}");
+                Logger.LogDebug($"Test with {dataFromCon.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromCon.Select(x => x.Key.ToString()).ToArray())}");
             }
             if (null != dataFromBackCoor) {
                 foreach (KeyValuePair<int, object> rk in dataFromBackCoor.Where(x => null == CoordinateLoad.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
@@ -266,9 +275,9 @@ namespace KK_CoordinateLoadOption {
                 Logger.LogDebug($"Test with {dataFromBackCoor.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromBackCoor.Select(x => x.Key.ToString()).ToArray())}");
             }
 
-            if (null != dataFromChaCtrlExt && dataFromChaCtrlExt.Count > 0) {
-                if (null != dataFromBackCoor && dataFromBackCoor.Count == dataFromChaCtrlExt.Count) {
-                    foreach (KeyValuePair<int, object> kv in dataFromChaCtrlExt) {
+            if (null != dataFromCon && dataFromCon.Count > 0) {
+                if (null != dataFromBackCoor && dataFromBackCoor.Count == dataFromCon.Count) {
+                    foreach (KeyValuePair<int, object> kv in dataFromCon) {
                         if (dataFromBackCoor.ContainsKey(kv.Key)) {
                             continue;
                         } else { flag = false; break; }

@@ -65,6 +65,12 @@ namespace Extension {
 
             return (bool)method.Invoke(self, new object[] { self, name, value });
         }
+        public static bool SetFieldStatic(this Type type, string name,object value) {
+            MethodInfo method = typeof(Extension).GetMethods(BindingFlags.Public | BindingFlags.Static).Where(m => m.Name == nameof(Extension.SetField) && m.IsGenericMethod).First();
+            method = method.MakeGenericMethod(type);
+
+            return (bool)method.Invoke(null, new object[] { null, name, value });
+        }
         public static bool SetField<T>(this object self, string name, object value) where T : class {
             Key fieldKey = new Key(name, typeof(T));
             if (!SearchForFields(fieldKey)) {
