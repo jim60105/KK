@@ -55,8 +55,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.10.12.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.0.1";
+        internal const string PLUGIN_VERSION = "20.10.13.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.0.2";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -67,7 +67,7 @@ namespace KK_CoordinateLoadOption {
             Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
             UIUtility.Init();
             harmonyInstance = Harmony.CreateAndPatchAll(typeof(Patches));
-            harmonyInstance.PatchAll(typeof(MoreAccessories_Support));
+            //harmonyInstance.PatchAll(typeof(MoreAccessories_Support));
 
             Type CostumeInfoType = typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic);
             harmonyInstance.Patch(CostumeInfoType.GetMethod("Init", AccessTools.all),
@@ -117,10 +117,8 @@ namespace KK_CoordinateLoadOption {
             _isHairAccessoryCustomizerExist = HairAccessoryCustomizer_Support.LoadAssembly();
             _isCharaOverlayBasedOnCoordinateExist = COBOC_Support.LoadAssembly();
 
-            harmonyInstance.Patch(HairAccessoryCustomizer_Support.HairAccessoryControllerType.GetMethods(AccessTools.all).ToList().Where(x => x.Name == "OnReload" && x.GetParameters().Length == 2).First(),
-                prefix: new HarmonyMethod(typeof(HairAccessoryCustomizer_Support), nameof(HairAccessoryCustomizer_Support.ReloadPrefix)));
-            harmonyInstance.Patch(HairAccessoryCustomizer_Support.HairAccessoryControllerType.GetMethods(AccessTools.all).ToList().Where(x => x.Name == "OnCoordinateBeingLoaded" && x.GetParameters().Length == 2).First(),
-                prefix: new HarmonyMethod(typeof(HairAccessoryCustomizer_Support), nameof(HairAccessoryCustomizer_Support.ReloadPrefix)));
+            harmonyInstance.Patch(HairAccessoryCustomizer_Support.HairAccessoryControllerType.GetMethod("UpdateAccessories", AccessTools.all),
+                prefix: new HarmonyMethod(typeof(HairAccessoryCustomizer_Support), nameof(HairAccessoryCustomizer_Support.UpdateAccessoriesPrefix)));
 
             StringResources.StringResourcesManager.SetUICulture();
 
@@ -266,7 +264,7 @@ namespace KK_CoordinateLoadOption {
             float baseY = -322;
             Toggle tglEyeOverlay, tglFaceOverlay, tglBodyOverlay;
 
-            if (KK_CoordinateLoadOption._isCharaOverlayBasedOnCoordinateExist) {
+            if (SCLO._isCharaOverlayBasedOnCoordinateExist) {
                 bool onFromChildFlag = false;
                 //分隔線
                 Image line2 = UIUtility.CreateImage("line", panel.transform);
@@ -501,6 +499,7 @@ namespace KK_CoordinateLoadOption {
                     }
                 } else {
                     CoordinateLoad.ClearAccessories(Singleton<CustomBase>.Instance.chaCtrl);
+                    Singleton<CustomBase>.Instance.updateCustomUI = true;
                 }
 
                 Logger.LogDebug("Clear accessories Finish");
@@ -533,6 +532,7 @@ namespace KK_CoordinateLoadOption {
                     StringResources.StringResourcesManager.GetString("replaceMode");
                 Logger.LogDebug("Set add accessories mode to " + (addAccModeFlag ? "add" : "replace") + " mode");
             });
+            addAccModeFlag = true;
             btnChangeAccLoadMode.onClick.Invoke();
             #endregion
 
@@ -554,7 +554,13 @@ namespace KK_CoordinateLoadOption {
             if (SCLO.insideStudio) {
                 coordinatePath = (__instance.GetField("fileSort") as CharaFileSort)?.selectPath ?? "";
             } else {
-                coordinatePath = __instance.GetField("listCtrl")?.Invoke("GetSelectTopItem")?.GetField("info").GetField("FullPath") as string ?? "";
+                object customFileInfoComponent = __instance.GetField("listCtrl")?.Invoke("GetSelectTopItem");
+                if (null != customFileInfoComponent.GetType().GetField("info")) {
+                    coordinatePath = customFileInfoComponent.GetField("info").GetField("FullPath") as string ?? "";
+                } else {
+                    //KKP
+                    coordinatePath = customFileInfoComponent.GetProperty("info").GetProperty("FullPath") as string ?? "";
+                }
             }
             Logger.LogDebug($"Coordinate Path: {coordinatePath}");
             if (string.IsNullOrEmpty(coordinatePath)) return;
@@ -683,7 +689,6 @@ namespace KK_CoordinateLoadOption {
 
         internal static void MakeTmpChara(Action<object> callback) {
             forceCleanCount = SCLO.FORCECLEANCOUNT;
-            HairAccessoryCustomizer_Support.LoadBlock = true;
 
             ChaControl chaCtrl = null;
             OCIChar ocichar = null;
@@ -705,10 +710,12 @@ namespace KK_CoordinateLoadOption {
             } else {
                 chaCtrl = Singleton<CustomBase>.Instance.chaCtrl;
             }
-
             if (SCLO._isHairAccessoryCustomizerExist) {
                 HairAccessoryCustomizer_Support.GetControllerAndBackupData(targetChaCtrl: chaCtrl);
             }
+
+            backupTmpCoordinate = new ChaFileCoordinate();
+            backupTmpCoordinate.LoadFile(Patches.coordinatePath);
 
             //丟到Camera外面就看不見了
             tmpChaCtrl = Singleton<Manager.Character>.Instance.CreateFemale(Camera.main.gameObject, -1);
@@ -716,41 +723,37 @@ namespace KK_CoordinateLoadOption {
             tmpChaCtrl.Load(true);
             tmpChaCtrl.fileParam.lastname = "黑肉";
             tmpChaCtrl.fileParam.firstname = "舔舔";
-
-            backupTmpCoordinate = new ChaFileCoordinate();
-            backupTmpCoordinate.LoadFile(Patches.coordinatePath);
-
             if (SCLO._isHairAccessoryCustomizerExist) {
+                HairAccessoryCustomizer_Support.CopyHairAccBetweenControllers(chaCtrl, tmpChaCtrl);
                 HairAccessoryCustomizer_Support.GetControllerAndBackupData(tmpChaCtrl, backupTmpCoordinate);
             }
+            tmpChaCtrl.ChangeCoordinateType((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, false);
 
             tmpChaCtrl.StartCoroutine(LoadTmpChara());
 
             IEnumerator LoadTmpChara() {
                 //KCOX在讀衣裝前需要先做Reload初始化
                 tmpChaCtrl.Reload();
-                yield return new WaitUntil(delegate { return CheckPluginPrepared(tmpChaCtrl); });
+                yield return new WaitUntil(delegate { return CheckPluginPrepared(); });
 
+                HairAccessoryCustomizer_Support.UpdateBlock = true;
                 tmpChaCtrl.nowCoordinate.LoadFile(Patches.coordinatePath);
                 tmpChaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)tmpChaCtrl.fileStatus.coordinateType);
                 tmpChaCtrl.Reload(false, true, true, true);
 
                 forceCleanCount = SCLO.FORCECLEANCOUNT;
 
-                HairAccessoryCustomizer_Support.LoadBlock = false;
-
-                if (SCLO._isHairAccessoryCustomizerExist) {
-                    HairAccessoryCustomizer_Support.SetControllerFromExtData(chaCtrl);
-                }
-                yield return new WaitUntil(delegate { return CheckPluginPrepared(chaCtrl) && HairAccessoryCustomizer_Support.CheckControllerPrepared(chaCtrl); });
+                yield return new WaitUntil(delegate { return CheckPluginPrepared(backupTmpCoordinate); });
+                HairAccessoryCustomizer_Support.UpdateBlock = false;
 
                 callback?.Invoke((object)ocichar ?? chaCtrl);
             }
 
-            bool CheckPluginPrepared(ChaControl chaControl) =>
-                null != chaControl &&
-                KCOX_Support.CheckControllerPrepared(chaControl) &&
-                MaterialEditor_Support.CheckControllerPrepared(chaControl);
+            bool CheckPluginPrepared(ChaFileCoordinate backCoordinate = null) =>
+                null != tmpChaCtrl &&
+                KCOX_Support.CheckControllerPrepared(tmpChaCtrl) &&
+                (null == backCoordinate || HairAccessoryCustomizer_Support.CheckControllerPrepared(tmpChaCtrl, backCoordinate)) &&
+                MaterialEditor_Support.CheckControllerPrepared(tmpChaCtrl);
         }
 
         internal static void ChangeCoordinate(object OcicharOrChaCtrl) {
@@ -798,10 +801,6 @@ namespace KK_CoordinateLoadOption {
                                 Logger.LogMessage("Accessories slot is not enough! Discard " + GetNameFromIDAndType(part.id, (ChaListDefine.CategoryNo)part.type));
                             }
                         }
-
-                        if (SCLO._isHairAccessoryCustomizerExist) {
-                            HairAccessoryCustomizer_Support.SetControllerFromExtData(chaCtrl);
-                        }
                         Logger.LogDebug("->Changed: " + tgl.name);
                     } else if (kind >= 0) {
                         if (SCLO._isMaterialEditorExist)
@@ -824,6 +823,23 @@ namespace KK_CoordinateLoadOption {
             }
 
             //存入至ExtendedData，然後Reload---
+
+            //HairAcc
+            if (SCLO._isHairAccessoryCustomizerExist) {
+                //寫入 (即使未載入Acc，也需要將一開始的備份寫回)
+                HairAccessoryCustomizer_Support.SetToExtData(chaCtrl, HairAccessoryCustomizer_Support.targetHairBackup);
+                HairAccessoryCustomizer_Support.SetDatatoCoordinate(chaCtrl.nowCoordinate, HairAccessoryCustomizer_Support.targetHairBackup);
+
+                //讀出驗證
+                HairAccessoryCustomizer_Support.GetDataFromExtData(chaCtrl, out Dictionary<int, object> nowCoor);
+                if (null != nowCoor) {
+                    Logger.LogDebug($"->Hair Count {nowCoor.Count}: {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
+                }
+
+                //Load to controller (Maker只有從Coordinate存才能運作)
+                HairAccessoryCustomizer_Support.SetControllerFromExtData(chaCtrl);
+                HairAccessoryCustomizer_Support.SetControllerFromCoordinate(chaCtrl);
+            }
 
             //KCOX
             if (SCLO._isKCOXExist) {
@@ -853,7 +869,7 @@ namespace KK_CoordinateLoadOption {
                 chaCtrl.ChangeAccessory(true);
                 chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
                 MoreAccessories_Support.SetExtDataFromPlugin(chaCtrl.chaFile);
-                MoreAccessories_Support.Update();
+                chaCtrl.StartCoroutine(MoreAccessories_Support.Update());
                 Logger.LogDebug($"Acc Count : {MoreAccessories_Support.GetAccessoriesAmount(chaCtrl.chaFile)}");
             }
 
@@ -868,76 +884,34 @@ namespace KK_CoordinateLoadOption {
             chaCtrl.ChangeCoordinateType((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, false);
             chaCtrl.Reload();   //全false的Reload會觸發KKAPI的hook
 
-            /*
-             * 記錄失敗的嚐試
-             * HairAccData無法由ExtData Reload上到Controller，推測是由於其LoadData有以下檢核:
-             * >>if (MakerAPI.InsideAndLoaded && !MakerAPI.GetCharacterLoadFlags().Clothes) yield break;
-             * 
-             * 有關MakerAPI.GetCharacterLoadFlags().Clothes:
-             * >>Get values of the default partial load checkboxes present at the bottom of the 
-             * >>character load window (load face, body, hair, parameters, clothes).
-             * >>Returns null if the values could not be collected (safe to assume it's the same as being enabled).
-             *
-             * MakerAPI.GetCharacterLoadFlags().Clothes在Coordinate Loading視窗會是null，所以無法在載入Coordinate時做HairAcc Reload
-            **/
+            //---存入至ExtendedData，然後Reload
 
-            chaCtrl.StartCoroutine(CheckReload());
+            finishedCount++;
 
-            IEnumerator CheckReload() {
-                if (SCLO._isHairAccessoryCustomizerExist) {
-                    HairAccessoryCustomizer_Support.ClearHairAccOnController(chaCtrl);
-                    yield return new WaitUntil(delegate {
-                        HairAccessoryCustomizer_Support.GetDataFromController(chaCtrl, out Dictionary<int, object> nowCoor1);
-                        return (nowCoor1 == null || nowCoor1.Count == 0);
-                    });
-                    HairAccessoryCustomizer_Support.SetToExtData(chaCtrl, HairAccessoryCustomizer_Support.targetHairBackup, HairAccessoryCustomizer_Support.targetAllBackup);
-                    HairAccessoryCustomizer_Support.SetControllerFromExtData(chaCtrl);
-
-                    yield return new WaitUntil(delegate {
-                        //這裡永遠無法通過
-                        if (!HairAccessoryCustomizer_Support.CheckControllerPrepared(chaCtrl)) {
-                            HairAccessoryCustomizer_Support.SetControllerFromExtData(chaCtrl);
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    });
-
-                    HairAccessoryCustomizer_Support.GetDataFromController(chaCtrl, out Dictionary<int, object> nowCoor);
-                    if (null != nowCoor) {
-                        Logger.LogDebug($"->Hair Count {nowCoor.Count}: {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
-                    }
+            if (SCLO.insideStudio && null != ocichar) {
+                //Bone & FK,IK
+                chaCtrl.UpdateBustSoftnessAndGravity();
+                AddObjectAssist.InitHairBone(ocichar, Singleton<Info>.Instance.dicBoneInfo);
+                ocichar.hairDynamic = AddObjectFemale.GetHairDynamic(ocichar.charInfo.objHair);
+                ocichar.skirtDynamic = AddObjectFemale.GetSkirtDynamic(ocichar.charInfo.objClothes);
+                ocichar.InitFK(null);
+                foreach (var tmp in FKCtrl.parts.Select((OIBoneInfo.BoneGroup p, int i2) => new { p, i2 })) {
+                    ocichar.ActiveFK(tmp.p, ocichar.oiCharInfo.activeFK[tmp.i2], ocichar.oiCharInfo.activeFK[tmp.i2]);
                 }
+                ocichar.ActiveKinematicMode(OICharInfo.KinematicMode.FK, ocichar.oiCharInfo.enableFK, true);
+                ocichar.UpdateFKColor(new OIBoneInfo.BoneGroup[] { OIBoneInfo.BoneGroup.Hair });
+                //State
+                ocichar.ChangeEyesOpen(ocichar.charFileStatus.eyesOpenMax);
+                ocichar.ChangeBlink(ocichar.charFileStatus.eyesBlink);
+                ocichar.ChangeMouthOpen(ocichar.oiCharInfo.mouthOpen);
 
-                //---存入至ExtendedData，然後Reload
-
-                finishedCount++;
-
-                if (SCLO.insideStudio && null != ocichar) {
-                    //Bone & FK,IK
-                    chaCtrl.UpdateBustSoftnessAndGravity();
-                    AddObjectAssist.InitHairBone(ocichar, Singleton<Info>.Instance.dicBoneInfo);
-                    ocichar.hairDynamic = AddObjectFemale.GetHairDynamic(ocichar.charInfo.objHair);
-                    ocichar.skirtDynamic = AddObjectFemale.GetSkirtDynamic(ocichar.charInfo.objClothes);
-                    ocichar.InitFK(null);
-                    foreach (var tmp in FKCtrl.parts.Select((OIBoneInfo.BoneGroup p, int i2) => new { p, i2 })) {
-                        ocichar.ActiveFK(tmp.p, ocichar.oiCharInfo.activeFK[tmp.i2], ocichar.oiCharInfo.activeFK[tmp.i2]);
-                    }
-                    ocichar.ActiveKinematicMode(OICharInfo.KinematicMode.FK, ocichar.oiCharInfo.enableFK, true);
-                    ocichar.UpdateFKColor(new OIBoneInfo.BoneGroup[] { OIBoneInfo.BoneGroup.Hair });
-                    //State
-                    ocichar.ChangeEyesOpen(ocichar.charFileStatus.eyesOpenMax);
-                    ocichar.ChangeBlink(ocichar.charFileStatus.eyesBlink);
-                    ocichar.ChangeMouthOpen(ocichar.oiCharInfo.mouthOpen);
-
-                    Logger.LogInfo($"Loaded: {finishedCount}/{oCICharArray.Length}");
-                } else {
-                    Singleton<CustomBase>.Instance.updateCustomUI = true;
-                }
-
-                forceCleanCount = SCLO.FORCECLEANCOUNT;
-                End();
+                Logger.LogInfo($"Loaded: {finishedCount}/{oCICharArray.Length}");
+            } else {
+                Singleton<CustomBase>.Instance.updateCustomUI = true;
             }
+
+            forceCleanCount = SCLO.FORCECLEANCOUNT;
+            End();
         }
 
         private static void End(bool forceClean = false) {
@@ -971,10 +945,6 @@ namespace KK_CoordinateLoadOption {
                 Logger.LogError($"ChangeAccessories targetParts < sourceParts");
                 return;
             }
-
-            //if (SCLO._isHairAccessoryCustomizerExist) {
-            //    HairAccessoryCustomizer_Support.GetControllerAndBackupData(sourceChaCtrl: sourceChaCtrl);
-            //}
 
             bool isAllFalseFlag = true;
             foreach (bool b in Patches.tgls2.Select(x => x.isOn).ToArray()) {
@@ -1030,16 +1000,6 @@ namespace KK_CoordinateLoadOption {
                     Logger.LogDebug($"->DeQueue: Acc{j} / Part: {(ChaListDefine.CategoryNo)targetParts[j].type} / ID: {targetParts[j].id}");
                 } //else continue;
             }
-
-            //寫入
-            if (SCLO._isHairAccessoryCustomizerExist) {
-                HairAccessoryCustomizer_Support.SetToExtData(targetChaCtrl, HairAccessoryCustomizer_Support.targetHairBackup, HairAccessoryCustomizer_Support.targetAllBackup);
-
-                HairAccessoryCustomizer_Support.GetDataFromExtData(targetChaCtrl, out Dictionary<int, object> nowCoor);
-                if (null != nowCoor) {
-                    Logger.LogDebug($"->Hair Count {nowCoor.Count}: {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
-                }
-            }
         }
 
         /// <summary>
@@ -1090,7 +1050,6 @@ namespace KK_CoordinateLoadOption {
             }
             if (SCLO._isMoreAccessoriesExist) {
                 MoreAccessories_Support.ClearMoreAccessoriesData(chaCtrl);
-                MoreAccessories_Support.Update();
             }
             chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
             chaCtrl.Reload(false, true, true, true);

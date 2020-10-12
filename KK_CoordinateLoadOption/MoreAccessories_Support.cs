@@ -1,8 +1,9 @@
 ﻿using ExtensibleSaveFormat;
 using Extension;
-using HarmonyLib;
+//using HarmonyLib;
 using MessagePack;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -33,29 +34,29 @@ namespace KK_CoordinateLoadOption {
             }
         }
 
-        private static bool fakeCopyFlag_CopyAll = false;
-        [HarmonyPrefix, HarmonyPatch(typeof(ChaFile), "CopyAll")]
-        public static bool CopyAllPrefix() {
-            return !fakeCopyFlag_CopyAll;
-        }
+        //private static bool fakeCopyFlag_CopyAll = false;
+        //[HarmonyPrefix, HarmonyPatch(typeof(ChaFile), "CopyAll")]
+        //public static bool CopyAllPrefix() {
+        //    return !fakeCopyFlag_CopyAll;
+        //}
 
-        /// <summary>
-        /// 將所有的MoreAccessories飾品由來源對象複製到目標對象
-        /// </summary>
-        /// <param name="oriChaCtrl">來源對象</param>
-        /// <param name="targetChaCtrl">目標對象</param>
-        public static void CopyAllMoreAccessoriesData(ChaControl oriChaCtrl, ChaControl targetChaCtrl) {
-            //Do a forced clearing to avoid the broken clearing function added in MoreAcc v1.0.9.
-            ClearMoreAccessoriesData(targetChaCtrl, true);
+        ///// <summary>
+        ///// 將所有的MoreAccessories飾品由來源對象複製到目標對象
+        ///// </summary>
+        ///// <param name="oriChaCtrl">來源對象</param>
+        ///// <param name="targetChaCtrl">目標對象</param>
+        //public static void CopyAllMoreAccessoriesData(ChaControl oriChaCtrl, ChaControl targetChaCtrl) {
+        //    //Do a forced clearing to avoid the broken clearing function added in MoreAcc v1.0.9.
+        //    ClearMoreAccessoriesData(targetChaCtrl, true);
 
-            fakeCopyFlag_CopyAll = true;
-            targetChaCtrl.chaFile.CopyAll(oriChaCtrl.chaFile);
-            fakeCopyFlag_CopyAll = false;
+        //    fakeCopyFlag_CopyAll = true;
+        //    targetChaCtrl.chaFile.CopyAll(oriChaCtrl.chaFile);
+        //    fakeCopyFlag_CopyAll = false;
 
-            //MoreAccessories.InvokeMember("Update", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
+        //    //MoreAccessories.InvokeMember("Update", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
 
-            Logger.LogDebug($"Copy All MoreAccessories: {oriChaCtrl.fileParam.fullname} -> {targetChaCtrl.fileParam.fullname}");
-        }
+        //    Logger.LogDebug($"Copy All MoreAccessories: {oriChaCtrl.fileParam.fullname} -> {targetChaCtrl.fileParam.fullname}");
+        //}
 
         public static void GetExtDataFromPlugin(ChaFile chafile) {
             MoreAccObj.Invoke("OnActualCharaLoad", new object[] { chafile });
@@ -88,7 +89,7 @@ namespace KK_CoordinateLoadOption {
 
             try {
                 //MoreAccessories.InvokeMember("UpdateStudioUI", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, MoreAccObj, null);
-                Update();
+                chaCtrl.StartCoroutine(Update());
                 chaCtrl.ChangeAccessory(true);
             } catch { }
             Logger.LogDebug("Clear MoreAccessories Finish");
@@ -166,6 +167,7 @@ namespace KK_CoordinateLoadOption {
 
             //_accessoriesByChar[targetChaCtrl.chaFile] = targetCharAdditionalData;
             //MoreAccObj.SetField("_accessoriesByChar", _accessoriesByChar);
+
             Logger.LogDebug($"->MoreAcc Parts Count: {GetAccessoriesAmount(targetChaCtrl.chaFile)}");
 
             Logger.LogDebug("Load MoreAccessories Finish");
@@ -232,10 +234,10 @@ namespace KK_CoordinateLoadOption {
                         }
                         part.hideCategory = XmlConvert.ToInt32(accessoryNode.Attributes["hideCategory"].Value);
 
-                        // noShake doesn't exist in pre-darkness builds
-                        var noshake = Traverse.Create(part).Property("noShake");
-                        if(noshake.FieldExists())
-                            noshake.SetValue(accessoryNode.Attributes["noShake"] != null && XmlConvert.ToBoolean(accessoryNode.Attributes["noShake"].Value));
+                        //Only Darkness has this
+                        if(null!= part.GetType().GetProperty("noShake")) {
+                            part.SetProperty("noShake", accessoryNode.Attributes["noShake"] != null && XmlConvert.ToBoolean(accessoryNode.Attributes["noShake"].Value));
+                        }
 
                         //處理Sideloader mod
                         if (null != extInfoList && null != LoadedResolutionInfoList) {
@@ -317,6 +319,10 @@ namespace KK_CoordinateLoadOption {
             return false;
         }
 
-        public static void Update() => MoreAccObj.Invoke("UpdateUI");
+        public static IEnumerator Update() {
+            yield return null;
+            MoreAccObj.Invoke("UpdateUI");
+            yield break;
+        }
     }
 }
