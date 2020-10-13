@@ -1,8 +1,8 @@
 ﻿using Extension;
+using HarmonyLib;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.IsolatedStorage;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -60,7 +60,9 @@ namespace KK_CoordinateLoadOption {
         }
 
         //若MaterialEditor改版不運作時，優先確認這部分
-        //KK_MaterialEditor.KK_MaterialEditor.MaterialEditorCharaController
+        /// <summary>
+        /// MaterialEditor.MaterialEditorCharaController
+        /// </summary>
         private static readonly StoredValueInfo[] storedValueInfos = {
             new StoredValueInfo("MaterialShader","MaterialShaderList","RemoveMaterialShader","SetMaterialShader"),
             new StoredValueInfo("RendererProperty","RendererPropertyList","RemoveRendererProperty","SetRendererProperty"),
@@ -70,7 +72,7 @@ namespace KK_CoordinateLoadOption {
         };
 
         /// <summary>
-        /// KK_MaterialEditor.KK_MaterialEditor.ObjectType的複製
+        /// MaterialEditor.MaterialEditorCharaController.ObjectType
         /// </summary>
         public enum ObjectType { Unknown, Clothing, Accessory, Hair, Character };
 
@@ -157,7 +159,7 @@ namespace KK_CoordinateLoadOption {
                 (int)x.GetField("ObjectType") == (int)objectType &&
                 (int)x.GetField("CoordinateIndex") == chaCtrl.fileStatus.coordinateType &&
                 //若Slot有給入，則加上檢查Slot的判斷
-                (Slot < 0) ? true : (int)x.GetField("Slot") == Slot
+                ((Slot < 0) || (int)x.GetField("Slot") == Slot)
             );
 
             //是否有執行到
@@ -242,13 +244,6 @@ namespace KK_CoordinateLoadOption {
             return true;
         }
 
-        private static bool GameObjectTypeCheck(GameObject gameObject, ObjectType objectType) =>
-            null != gameObject &&
-                (
-                    objectType == ObjectType.Clothing && null != gameObject.GetComponentInChildren<ChaClothesComponent>() |
-                    objectType == ObjectType.Accessory && null != gameObject.GetComponent<ChaAccessoryComponent>()
-                );
-
         /// <summary>
         /// 拷貝Material Editor資料
         /// </summary>
@@ -259,8 +254,6 @@ namespace KK_CoordinateLoadOption {
         /// <param name="gameObject">對象GameObject</param>
         /// <param name="objectType">對象分類</param>
         public static void CopyMaterialEditorData(ChaControl sourceChaCtrl, int sourceSlot, ChaControl targetChaCtrl, int targetSlot, GameObject gameObject, ObjectType objectType) {
-            if (GameObjectTypeCheck(gameObject, objectType)) return;
-
             RemoveMaterialEditorData(targetChaCtrl, targetSlot, gameObject, objectType);
             SetMaterialEditorData(sourceChaCtrl, sourceSlot, targetChaCtrl, targetSlot, gameObject, objectType);
         }
@@ -273,8 +266,6 @@ namespace KK_CoordinateLoadOption {
         /// <param name="gameObject">對象GameObject</param>
         /// <param name="objectType">對象分類</param>
         public static void RemoveMaterialEditorData(ChaControl targetChaCtrl, int targetSlot, GameObject gameObject, ObjectType objectType) {
-            if (GameObjectTypeCheck(gameObject, objectType)) return;
-
             if (targetChaCtrl != MaterialEditor_Support.targetChaCtrl) {
                 GetControllerAndBackupData(targetChaCtrl: targetChaCtrl);
             }

@@ -55,8 +55,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.10.13.1";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.0.3";
+        internal const string PLUGIN_VERSION = "20.10.14.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.0.6";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -69,6 +69,7 @@ namespace KK_CoordinateLoadOption {
             harmonyInstance = Harmony.CreateAndPatchAll(typeof(Patches));
             //harmonyInstance.PatchAll(typeof(MoreAccessories_Support));
 
+            //Studio
             Type CostumeInfoType = typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic);
             harmonyInstance.Patch(CostumeInfoType.GetMethod("Init", AccessTools.all),
                 postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.InitPostfix)));
@@ -78,6 +79,7 @@ namespace KK_CoordinateLoadOption {
             harmonyInstance.Patch(CostumeInfoType.GetMethod("OnSelect", AccessTools.all),
                 postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.OnSelectPostfix)));
 
+            //Maker
             harmonyInstance.Patch(typeof(CustomCoordinateFile).GetMethod("Start", AccessTools.all),
                 postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.InitPostfix)));
             harmonyInstance.Patch(typeof(CustomCoordinateFile).GetMethod("OnChangeSelect", AccessTools.all),
@@ -116,6 +118,9 @@ namespace KK_CoordinateLoadOption {
             _isMaterialEditorExist = MaterialEditor_Support.LoadAssembly();
             _isHairAccessoryCustomizerExist = HairAccessoryCustomizer_Support.LoadAssembly();
             _isCharaOverlayBasedOnCoordinateExist = COBOC_Support.LoadAssembly();
+
+            //Patch other plugins at Start()
+            HairAccessoryCustomizer_Support.Patch(harmonyInstance);
 
             StringResources.StringResourcesManager.SetUICulture();
 
@@ -709,6 +714,7 @@ namespace KK_CoordinateLoadOption {
             }
             if (SCLO._isHairAccessoryCustomizerExist) {
                 HairAccessoryCustomizer_Support.GetControllerAndBackupData(targetChaCtrl: chaCtrl);
+                HairAccessoryCustomizer_Support.UpdateBlock = true;
             }
 
             backupTmpCoordinate = new ChaFileCoordinate();
@@ -720,6 +726,7 @@ namespace KK_CoordinateLoadOption {
             tmpChaCtrl.Load(true);
             tmpChaCtrl.fileParam.lastname = "黑肉";
             tmpChaCtrl.fileParam.firstname = "舔舔";
+            tmpChaCtrl.fileStatus.coordinateType = chaCtrl.fileStatus.coordinateType;
             if (SCLO._isHairAccessoryCustomizerExist) {
                 //取得BackupData
                 HairAccessoryCustomizer_Support.GetControllerAndBackupData(tmpChaCtrl, backupTmpCoordinate);
@@ -733,9 +740,10 @@ namespace KK_CoordinateLoadOption {
                 //這是Ref Copy，這是MakerAPI並無區分多ChaControl的對應
                 //且Maker換衣時無法呼叫HairAccCusController.LoadData()，只能呼叫LoadCoordinate()
                 //故必須在tmpChaCtrl上完整複製chaCtrl資料，並在換裝完後由Coordinate寫回
+                HairAccessoryCustomizer_Support.SetExtDataFromController(chaCtrl);
                 HairAccessoryCustomizer_Support.CopyHairAccBetweenControllers(chaCtrl, tmpChaCtrl);
+                HairAccessoryCustomizer_Support.CopyAllHairAccExtdata(chaCtrl, tmpChaCtrl);
             }
-            tmpChaCtrl.ChangeCoordinateType((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, false);
 
             tmpChaCtrl.StartCoroutine(LoadTmpChara());
 
@@ -810,8 +818,8 @@ namespace KK_CoordinateLoadOption {
                         chaCtrl.ChangeAccessory(true);
                         Logger.LogDebug("->Changed: " + tgl.name);
                     } else if (kind >= 0) {
-                        if (SCLO._isMaterialEditorExist)
-                            MaterialEditor_Support.RemoveMaterialEditorData(chaCtrl, kind, chaCtrl.objClothes[kind], MaterialEditor_Support.ObjectType.Clothing);
+                        //if (SCLO._isMaterialEditorExist)
+                        //    MaterialEditor_Support.RemoveMaterialEditorData(chaCtrl, kind, chaCtrl.objClothes[kind], MaterialEditor_Support.ObjectType.Clothing);
 
                         //Change clothes
                         byte[] tmp = MessagePackSerializer.Serialize<ChaFileClothes.PartsInfo>(tmpChaCtrl.nowCoordinate.clothes.parts[kind]);
@@ -829,9 +837,6 @@ namespace KK_CoordinateLoadOption {
                 }
             }
 
-            if(!SCLO.insideStudio)
-                Singleton<CustomBase>.Instance.updateCustomUI = true;
-
             //存入至ExtendedData，然後Reload---
 
             //HairAcc
@@ -845,6 +850,8 @@ namespace KK_CoordinateLoadOption {
                 if (null != nowCoor) {
                     Logger.LogDebug($"->Hair Count {nowCoor.Count}: {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
                 }
+
+                HairAccessoryCustomizer_Support.UpdateBlock = false;
 
                 //Load to controller (Maker只有從Coordinate存才能運作)
                 HairAccessoryCustomizer_Support.SetControllerFromExtData(chaCtrl);
@@ -887,6 +894,10 @@ namespace KK_CoordinateLoadOption {
                 ABMX_Support.CopyABMXData(tmpChaCtrl, chaCtrl);
                 ABMX_Support.SetExtDataFromController(chaCtrl);
             }
+
+            if (!SCLO.insideStudio)
+                Singleton<CustomBase>.Instance.updateCustomUI = true;
+
 
             //Reload
             chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);

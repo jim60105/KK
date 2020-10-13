@@ -1,5 +1,6 @@
 ﻿using ExtensibleSaveFormat;
 using Extension;
+using HarmonyLib;
 using MessagePack;
 using System;
 using System.Collections;
@@ -31,6 +32,19 @@ namespace KK_CoordinateLoadOption {
                 Logger.LogDebug(ex.Message);
                 return false;
             }
+        }
+
+        internal static bool UpdateBlock = false;
+        public static bool UpdateAccessoriesPrefix() {
+            //Logger.LogWarning("Trigger Update Block " + UpdateBlock);
+            return !UpdateBlock;
+        }
+
+        public static void Patch(Harmony harmonyInstance) {
+            harmonyInstance.Patch(HairAccessoryControllerType.GetMethod("UpdateAccessory", AccessTools.all),
+                prefix: new HarmonyMethod(typeof(HairAccessoryCustomizer_Support), nameof(HairAccessoryCustomizer_Support.UpdateAccessoriesPrefix)));
+            harmonyInstance.Patch(HairAccessoryControllerType.GetMethod("UpdateAccessories", AccessTools.all),
+                prefix: new HarmonyMethod(typeof(HairAccessoryCustomizer_Support), nameof(HairAccessoryCustomizer_Support.UpdateAccessoriesPrefix)));
         }
 
         /// <summary>
@@ -105,9 +119,9 @@ namespace KK_CoordinateLoadOption {
         public static void DisableColorMatches(ChaControl chaCtrl) {
             MonoBehaviour HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
             Dictionary<int, object> HairAccessories = HairAccCusController?.GetField("HairAccessories").ToDictionary<int, object>();
-            if(HairAccessories.TryGetValue(chaCtrl.fileStatus.coordinateType,out object hairAcc) && null!= hairAcc && hairAcc.Count() is int amount) {
-                for(int i=0;i< amount; i++) {
-                    HairAccCusController.Invoke("SetColorMatch", new object[] { false, i });
+            if (HairAccessories.TryGetValue(chaCtrl.fileStatus.coordinateType, out object hairAcc) && null != hairAcc) {
+                foreach (KeyValuePair<int, object> kvp in hairAcc.ToDictionary<int, object>()) {
+                    HairAccCusController.Invoke("SetColorMatch", new object[] { false, kvp.Key });
                 }
             }
         }
@@ -151,7 +165,7 @@ namespace KK_CoordinateLoadOption {
         }
 
         /// <summary>
-        /// 由Coordinate載入HairAcc至Controller內
+        /// 由Coordinate載入HairAcc至Controller內，注意這條是異步執行
         /// </summary>
         /// <param name="chaCtrl">要被設定的ChaControl</param>
         /// <param name="coordinate">要載入的coordibate</param>
@@ -179,7 +193,7 @@ namespace KK_CoordinateLoadOption {
         public static void SetControllerFromExtData(ChaControl chaCtrl) {
             MonoBehaviour HairAccCusController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "HairAccessoryController"));
             //注意這條是異步執行
-            HairAccCusController.Invoke("OnReload", new object[] { 2, false });
+            HairAccCusController.Invoke("OnReload", new object[] { KK_CoordinateLoadOption.insideStudio ? 2 : 1, false });
         }
 
         /// <summary>
@@ -208,13 +222,7 @@ namespace KK_CoordinateLoadOption {
                     allExtData = new Dictionary<int, Dictionary<int, object>>();
                     Logger.LogDebug($"HairAccCustomizer info not found while saving.");
                 }
-                if (allExtData.ContainsKey(coorType)) {
-                    allExtData[coorType].Clear();
-                    allExtData.Remove(coorType);
-                }
-                if (null != dict) {
-                    allExtData[coorType] = dict;
-                }
+                allExtData[coorType] = dict;
                 data.data.Add("HairAccessories", MessagePackSerializer.Serialize(allExtData));
             }
 
@@ -331,7 +339,7 @@ namespace KK_CoordinateLoadOption {
 
             TargerHairAccCusController.SetField("HairAccessories", SourceHairAccCusController.GetField("HairAccessories"));
 
-            Logger.LogDebug($"Copy all HairAcc in the Controller: {sourceCtrl.fileParam.fullname} -> {targetCtrl.fileParam.fullname} ");
+            Logger.LogDebug($"Copy(Ref) all HairAcc in the Controller: {sourceCtrl.fileParam.fullname} -> {targetCtrl.fileParam.fullname} ");
             return true;
         }
 
