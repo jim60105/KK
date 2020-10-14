@@ -55,8 +55,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.10.14.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.0.6";
+        internal const string PLUGIN_VERSION = "20.10.15.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.1";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -557,6 +557,10 @@ namespace KK_CoordinateLoadOption {
                 coordinatePath = (__instance.GetField("fileSort") as CharaFileSort)?.selectPath ?? "";
             } else {
                 object customFileInfoComponent = __instance.GetField("listCtrl")?.Invoke("GetSelectTopItem");
+
+                //OnDeslect in Maker
+                if (null == customFileInfoComponent) return;
+
                 if (null != customFileInfoComponent.GetType().GetField("info")) {
                     coordinatePath = customFileInfoComponent.GetField("info").GetField("FullPath") as string ?? "";
                 } else {
