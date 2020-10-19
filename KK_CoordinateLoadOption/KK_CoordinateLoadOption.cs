@@ -56,8 +56,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.10.20.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.1.2";
+        internal const string PLUGIN_VERSION = "20.10.20.1";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.2";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -654,6 +654,7 @@ namespace KK_CoordinateLoadOption {
                     foreach (OCIChar ocichar in array) {
                         ocichar.LoadClothesFile(coordinatePath);
                     }
+                    Illusion.Game.Utils.Sound.Play(Illusion.Game.SystemSE.ok_s);
                 } else {
                     //建立tmpChara並等待載入完成，然後再呼叫換衣
                     CoordinateLoad.oCICharArray = array;
@@ -680,6 +681,7 @@ namespace KK_CoordinateLoadOption {
                     chaCtrl.Reload(false, true, true, true);
                     chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.chaFile.status.coordinateType);
                     Singleton<CustomBase>.Instance.updateCustomUI = true;
+                    Illusion.Game.Utils.Sound.Play(Illusion.Game.SystemSE.ok_s);
                 } else {
                     //建立tmpChara並等待載入完成，然後再呼叫換衣
                     CoordinateLoad.MakeTmpChara(CoordinateLoad.ChangeCoordinate);
@@ -971,6 +973,7 @@ namespace KK_CoordinateLoadOption {
             } else {
                 oCICharQueue.Clear();
                 Logger.LogInfo($"Load End");
+                Illusion.Game.Utils.Sound.Play(Illusion.Game.SystemSE.ok_s);
 
                 if (forceClean) {
                     Logger.Log(LogLevel.Message | LogLevel.Error | LogLevel.Warning, "Coordinate Load ended unexpectedly.");
