@@ -56,8 +56,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.10.19.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.1.1";
+        internal const string PLUGIN_VERSION = "20.10.20.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.1.2";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -160,6 +160,7 @@ namespace KK_CoordinateLoadOption {
 
     class Patches {
         private static readonly ManualLogSource Logger = SCLO.Logger;
+        private static CustomFileWindow CustomFileWindow;
         internal static string coordinatePath;
 
         public static string[] ClothesKindName;
@@ -557,6 +558,7 @@ namespace KK_CoordinateLoadOption {
             if (SCLO.insideStudio) {
                 coordinatePath = (__instance.GetField("fileSort") as CharaFileSort)?.selectPath ?? "";
             } else {
+                CustomFileWindow = (CustomFileWindow)__instance.GetField("fileWindow");
                 object customFileInfoComponent = __instance.GetField("listCtrl")?.Invoke("GetSelectTopItem");
 
                 //OnDeslect in Maker
@@ -664,7 +666,17 @@ namespace KK_CoordinateLoadOption {
                     //未展開Panel
                     Logger.LogInfo("Use original game function");
                     ChaControl chaCtrl = Singleton<CustomBase>.Instance.chaCtrl;
+                    bool flag = CustomFileWindow.tglCoordeLoadClothes && CustomFileWindow.tglCoordeLoadClothes.isOn;
+                    bool flag2 = CustomFileWindow.tglCoordeLoadAcs && CustomFileWindow.tglCoordeLoadAcs.isOn;
+                    byte[] bytes = MessagePackSerializer.Serialize<ChaFileClothes>(chaCtrl.nowCoordinate.clothes);
+                    byte[] bytes2 = MessagePackSerializer.Serialize<ChaFileAccessory>(chaCtrl.nowCoordinate.accessory);
                     chaCtrl.nowCoordinate.LoadFile(coordinatePath);
+                    if (!flag) {
+                        chaCtrl.nowCoordinate.clothes = MessagePackSerializer.Deserialize<ChaFileClothes>(bytes);
+                    }
+                    if (!flag2) {
+                        chaCtrl.nowCoordinate.accessory = MessagePackSerializer.Deserialize<ChaFileAccessory>(bytes2);
+                    }
                     chaCtrl.Reload(false, true, true, true);
                     chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.chaFile.status.coordinateType);
                     Singleton<CustomBase>.Instance.updateCustomUI = true;
