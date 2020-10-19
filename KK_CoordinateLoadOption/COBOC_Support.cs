@@ -7,15 +7,30 @@ using UnityEngine;
 namespace KK_CoordinateLoadOption {
     class COBOC_Support {
         private static readonly BepInEx.Logging.ManualLogSource Logger = KK_CoordinateLoadOption.Logger;
+        public static readonly string GUID = "com.jim60105.kk.charaoverlaysbasedoncoordinate";
+        public static int IrisDisplaySide = 0;
 
         public static bool LoadAssembly() {
-            if (null != Extension.Extension.TryGetPluginInstance("com.jim60105.kk.charaoverlaysbasedoncoordinate", new System.Version(20, 4, 28, 0))) {
+            if (null != Extension.Extension.TryGetPluginInstance(GUID, new System.Version(20, 4, 28, 0))) {
                 Logger.LogDebug("KK_CharaOverlayBasedOnCoordinate found");
                 return true;
             } else {
                 Logger.LogDebug("Load assembly FAILED: KK_CharaOverlayBasedOnCoordinate");
                 return false;
             }
+        }
+
+        public static void SetIrisDisplaySide(ChaControl chaCtrl) {
+            MonoBehaviour Controller = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "CharaOverlaysBasedOnCoordinateController"));
+            if (Controller.GetField("IrisDisplaySide") is int[] arr) {
+                arr[chaCtrl.fileStatus.coordinateType] = IrisDisplaySide;
+                //Controller.SetField("IrisDisplaySide", arr);
+            }
+        }
+
+        public static void GetIrisDisplaySide(ChaControl chaCtrl) {
+            MonoBehaviour Controller = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "CharaOverlaysBasedOnCoordinateController"));
+            IrisDisplaySide = (Controller.GetField("IrisDisplaySide") as int[])[chaCtrl.fileStatus.coordinateType];
         }
 
         public static void CopyCurrentCharaOverlayByController(ChaControl sourceChaCtrl, ChaControl targetChaCtrl, bool[] isChecked) {
@@ -81,6 +96,8 @@ namespace KK_CoordinateLoadOption {
         public static void SetExtDataFromController(ChaControl chaCtrl) {
             MonoBehaviour COBOCController = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, "CharaOverlaysBasedOnCoordinateController"));
 
+            COBOCController.SetField("BackCoordinateType", (ChaFileDefine.CoordinateType)10);
+            COBOCController.Invoke("ChangeCoordinate");
             COBOCController.Invoke("SavePluginData", new object[] { false });
         }
 

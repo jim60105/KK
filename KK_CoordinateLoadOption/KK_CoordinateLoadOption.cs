@@ -22,6 +22,7 @@ using BepInEx.Configuration;
 using BepInEx.Logging;
 using ChaCustom;
 using ExIni;
+using ExtensibleSaveFormat;
 using Extension;
 using HarmonyLib;
 using MessagePack;
@@ -55,8 +56,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.10.15.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.1";
+        internal const string PLUGIN_VERSION = "20.10.19.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.1.1";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -715,6 +716,11 @@ namespace KK_CoordinateLoadOption {
                 chaCtrl = ocichar.charInfo;
             } else {
                 chaCtrl = Singleton<CustomBase>.Instance.chaCtrl;
+                //KK_COBOC
+                if (SCLO._isCharaOverlayBasedOnCoordinateExist) {
+                    COBOC_Support.SetExtDataFromController(chaCtrl);
+                    COBOC_Support.GetIrisDisplaySide(chaCtrl);
+                }
             }
             if (SCLO._isHairAccessoryCustomizerExist) {
                 HairAccessoryCustomizer_Support.GetControllerAndBackupData(targetChaCtrl: chaCtrl);
@@ -862,27 +868,26 @@ namespace KK_CoordinateLoadOption {
                 HairAccessoryCustomizer_Support.SetControllerFromCoordinate(chaCtrl);
             }
 
-            //KCOX
-            if (SCLO._isKCOXExist) {
-                KCOX_Support.SetExtDataFromController(chaCtrl);
-                chaCtrl.StartCoroutine(KCOX_Support.Update(chaCtrl));
-            }
-
             //Material Editor
             if (SCLO._isMaterialEditorExist)
                 MaterialEditor_Support.SetExtDataFromController(chaCtrl);
 
-            //KK_COBOC
-            if (SCLO._isCharaOverlayBasedOnCoordinateExist) {
-                COBOC_Support.SetControllerFromExtData(chaCtrl);
-                if (Patches.charaOverlay.ToList().Where((x) => x).Count() > 0) {
-                    COBOC_Support.CopyCurrentCharaOverlayByController(tmpChaCtrl, chaCtrl, Patches.charaOverlay);
-                    KCOX_Support.SetExtDataFromController(chaCtrl);
-                } else {
-                    Logger.LogDebug("Skip load CharaOverlay");
+            //KCOX
+            if (SCLO._isKCOXExist) {
+                //KK_COBOC
+                if (SCLO._isCharaOverlayBasedOnCoordinateExist) {
+                    if (Patches.charaOverlay.ToList().Where((x) => x).Count() > 0 && null != ExtendedSave.GetExtendedDataById(backupTmpCoordinate, COBOC_Support.GUID)) {
+                        COBOC_Support.SetControllerFromExtData(chaCtrl);
+                        COBOC_Support.CopyCurrentCharaOverlayByController(tmpChaCtrl, chaCtrl, Patches.charaOverlay);
+                        COBOC_Support.SetExtDataFromController(chaCtrl);
+                    } else {
+                        COBOC_Support.SetIrisDisplaySide(chaCtrl);
+                        Logger.LogDebug("Skip load CharaOverlay");
+                    }
                 }
 
-                COBOC_Support.SetExtDataFromController(chaCtrl);
+                KCOX_Support.SetExtDataFromController(chaCtrl);
+                chaCtrl.StartCoroutine(KCOX_Support.Update(chaCtrl));
             }
 
             //MoreAcc
