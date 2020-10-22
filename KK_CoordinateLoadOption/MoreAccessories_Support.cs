@@ -255,9 +255,6 @@ namespace KK_CoordinateLoadOption {
                 }
             }
 
-            ////由後往前刪除空欄
-            RemoveEmptyFromBackToFront(tempLoadedAccessories);
-
             return tempLoadedAccessories.Select(x => CoordinateLoad.GetNameFromIDAndType(x.id, (ChaListDefine.CategoryNo)x.type)).ToArray();
         }
 
