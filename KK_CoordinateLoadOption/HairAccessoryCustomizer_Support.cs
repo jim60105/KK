@@ -270,23 +270,25 @@ namespace KK_CoordinateLoadOption {
             GetDataFromController(chaCtrl, out Dictionary<int, object> dataFromCon);
 
             //過濾假的HairAccInfo
-            if (null != dataFromCon) {
-                foreach (KeyValuePair<int, object> rk in dataFromCon.Where(x => null == CoordinateLoad.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
-                    dataFromCon.Remove(rk.Key);
-                }
-                Logger.LogDebug($"Test with {dataFromCon.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromCon.Select(x => x.Key.ToString()).ToArray())}");
-            }
             if (null != dataFromBackCoor) {
                 foreach (KeyValuePair<int, object> rk in dataFromBackCoor.Where(x => null == CoordinateLoad.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
                     dataFromBackCoor.Remove(rk.Key);
                 }
                 Logger.LogDebug($"Test with {dataFromBackCoor.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromBackCoor.Select(x => x.Key.ToString()).ToArray())}");
             }
+            if (null != dataFromCon) {
+                foreach (KeyValuePair<int, object> rk in dataFromCon.Where(x => null == CoordinateLoad.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
+                    dataFromCon.Remove(rk.Key);
+                }
+                Logger.LogDebug($"Test with {dataFromCon.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromCon.Select(x => x.Key.ToString()).ToArray())}");
+            }
 
             if (null != dataFromCon && dataFromCon.Count > 0) {
-                if (null != dataFromBackCoor && dataFromBackCoor.Count == dataFromCon.Count) {
+                //若現正選中的飾品是髮飾品，則Controller上會有data
+                //故Controller上有可能會比衣裝中多出一個選中的髮飾品資料
+                if (null != dataFromBackCoor && (dataFromBackCoor.Count == dataFromCon.Count || dataFromBackCoor.Count == dataFromCon.Count - 1)) {
                     foreach (KeyValuePair<int, object> kv in dataFromCon) {
-                        if (dataFromBackCoor.ContainsKey(kv.Key)) {
+                        if (dataFromBackCoor.ContainsKey(kv.Key) || kv.Key == Singleton<ChaCustom.CustomBase>.Instance.selectSlot) {
                             continue;
                         } else { flag = false; break; }
                     }
