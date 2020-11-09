@@ -65,7 +65,7 @@ namespace Extension {
 
             return (bool)method.Invoke(self, new object[] { self, name, value });
         }
-        public static bool SetFieldStatic(this Type type, string name,object value) {
+        public static bool SetFieldStatic(this Type type, string name, object value) {
             MethodInfo method = typeof(Extension).GetMethods(BindingFlags.Public | BindingFlags.Static).Where(m => m.Name == nameof(Extension.SetField) && m.IsGenericMethod).First();
             method = method.MakeGenericMethod(type);
 
@@ -302,26 +302,24 @@ namespace Extension {
 
         public static bool TryGetValue(this object self, object key, out object value) {
             value = null;
-            if (self is IDictionary dic) {
-                Type keyType = null;
-                foreach (Type interfaceType in self.GetType().GetInterfaces()) {
-                    if (interfaceType.IsGenericType &&
-                       interfaceType.GetGenericTypeDefinition() == typeof(IDictionary<,>)) {
-                        keyType = self.GetType().GetGenericArguments()[0];
-                    }
-                }
+            Type paramTypes = self.GetType().GetInterfaces()
+                .SingleOrDefault(p =>
+                    p.IsGenericType &&
+                    p.GetGenericTypeDefinition() == typeof(IDictionary<,>)
+                )?.GetGenericArguments()[0];
 
-                if (null != keyType && key.GetType() == keyType && dic.Contains(key)) {
-                    value = dic[key];
-                    return true;
-                    //Console.WriteLine($"{LogPrefix} AddRange: Add {listToAdd.Count} item.");
-                } else {
-                    Console.WriteLine($"{LogPrefix} Key not found! Cannot Get {key.GetType().FullName} from object");
-                }
-            } else {
-                Console.WriteLine($"{LogPrefix} Type is not Dictionary! Cannot Get {key.GetType().FullName} from object");
+            if (null == paramTypes || !paramTypes.IsAssignableFrom(key.GetType())) {
+                Console.WriteLine($"{LogPrefix} Key type not match! Cannot Get {key.GetType().FullName} from object");
+                return false;
             }
-            return false;
+
+            if (!(bool)self.Invoke("ContainsKey", new object[] { key })) {
+                Console.WriteLine($"{LogPrefix} Key not found! Cannot Get {key.GetType().FullName} from object");
+                return false;
+            }
+
+            value = self.Invoke("get_Item", new object[] { key });
+            return true;
         }
         #endregion
 

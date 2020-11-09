@@ -56,8 +56,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.11.02.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.2.2";
+        internal const string PLUGIN_VERSION = "20.11.09.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.2.3";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
