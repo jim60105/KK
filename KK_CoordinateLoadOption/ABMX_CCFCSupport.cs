@@ -1,20 +1,22 @@
-﻿using Extension;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Extension;
 using UnityEngine;
 
 namespace KK_CoordinateLoadOption {
     class ABMX_CCFCSupport : CCFCSupport {
         public override string GUID => "KKABMX.Core";
         public override string ControllerName => "BoneController";
-        public override string CCCName => "ABMX";
+        public override string CCFCName => "ABMX";
 
-        internal new Dictionary<string, object> SourceBackup { get => CCFCSupport.SourceBackup.ToDictionary<string, object>(); set => CCFCSupport.SourceBackup = value; }
-        //internal new Dictionary<string, object> TargetBackup { get => CCCSupport.TargetBackup.ToDictionary<string, object>(); set => CCCSupport.TargetBackup = value; }
+        internal new Dictionary<string, object> SourceBackup { get => base.SourceBackup.ToDictionary<string, object>(); set => base.SourceBackup = value; }
+        //internal new Dictionary<string, object> TargetBackup { get => base.TargetBackup.ToDictionary<string, object>(); set => base.TargetBackup = value; }
 
-        public ABMX_CCFCSupport(ChaControl chaCtrl) : base(chaCtrl) { }
+        public ABMX_CCFCSupport(ChaControl chaCtrl) : base(chaCtrl) {
+            isExist = KK_CoordinateLoadOption._isABMXExist;
+        }
 
         private static Type BoneModifierType = null;
 
@@ -86,7 +88,7 @@ namespace KK_CoordinateLoadOption {
             }
             //Logger.LogDebug("Clear all Modifiers");
 
-            if (null != TargetController && null != CCFCSupport.SourceBackup) {
+            if (null != TargetController && null != base.SourceBackup) {
                 foreach (KeyValuePair<string, object> modifierDict in SourceBackup) {
                     object target = TargetController.Invoke("GetModifier", new object[] { modifierDict.Key });
                     if (target == null) {

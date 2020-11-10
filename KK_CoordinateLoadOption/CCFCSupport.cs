@@ -1,7 +1,7 @@
-﻿using Extension;
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
+using Extension;
 using UnityEngine;
 
 namespace KK_CoordinateLoadOption {
@@ -10,7 +10,8 @@ namespace KK_CoordinateLoadOption {
         internal static readonly BepInEx.Logging.ManualLogSource Logger = KK_CoordinateLoadOption.Logger;
         public abstract string GUID { get; }
         public abstract string ControllerName { get; }
-        public abstract string CCCName { get; }
+        public abstract string CCFCName { get; }
+        public bool isExist { get; internal set; }
         public CCFCSupport(ChaControl chaCtrl) {
             if (null != chaCtrl) {
                 DefaultController = GetController(chaCtrl);
@@ -26,15 +27,16 @@ namespace KK_CoordinateLoadOption {
             try {
                 path = Extension.Extension.TryGetPluginInstance(GUID, version)?.Info.Location;
                 if (!File.Exists(path)) {
-                    throw new Exception($"Load assembly FAILED: {CCCName}");
+                    throw new Exception($"Load assembly FAILED: {CCFCName}");
                 }
-                Logger.LogDebug($"{CCCName} found");
-                return true;
+                Logger.LogDebug($"{CCFCName} found");
+                isExist = true;
             } catch (Exception ex) {
                 Logger.LogDebug(ex.Message);
                 path = "";
-                return false;
+                isExist = false;
             }
+            return isExist;
         }
 
         /// <summary>
@@ -50,7 +52,7 @@ namespace KK_CoordinateLoadOption {
             if (DefaultChaCtrl == chaCtrl) return DefaultController;
 
             MonoBehaviour controller = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, ControllerName));
-            if (null == controller) { Logger.LogDebug($"No {CCCName} Controller found"); }
+            if (null == controller) { Logger.LogDebug($"No {CCFCName} Controller found"); }
 
             return controller;
         }
@@ -122,12 +124,12 @@ namespace KK_CoordinateLoadOption {
             controller.Invoke("OnCoordinateBeingSaved", new object[] { coordinate });
         }
 
-        internal static ChaControl SourceChaCtrl;
-        internal static ChaControl TargetChaCtrl;
-        internal static MonoBehaviour SourceController;
-        internal static MonoBehaviour TargetController;
-        internal static object SourceBackup = null;
-        internal static object TargetBackup = null;
+        internal ChaControl SourceChaCtrl;
+        internal ChaControl TargetChaCtrl;
+        internal MonoBehaviour SourceController;
+        internal MonoBehaviour TargetController;
+        internal object SourceBackup = null;
+        internal object TargetBackup = null;
 
         /// <summary>
         /// Copy前準備Source和Target資料
@@ -136,22 +138,22 @@ namespace KK_CoordinateLoadOption {
         /// <param name="targetChaCtrl">目標ChaControl</param>
         public bool GetControllerAndBackupData(ChaControl sourceChaCtrl = null, ChaControl targetChaCtrl = null) {
             if (null != sourceChaCtrl) {
-                Logger.LogDebug($"Source {CCCName}-----");
+                Logger.LogDebug($"Source {CCFCName}-----");
                 SourceChaCtrl = sourceChaCtrl;
                 SourceController = GetController(sourceChaCtrl);
                 if (null == SourceController) {
-                    Logger.LogDebug($"No Source {CCCName} Controller found on {sourceChaCtrl.fileParam.fullname}");
+                    Logger.LogDebug($"No Source {CCFCName} Controller found on {sourceChaCtrl.fileParam.fullname}");
                     return false;
                 }
                 SourceBackup = GetExtDataFromController(sourceChaCtrl);
             }
 
             if (null != targetChaCtrl) {
-                Logger.LogDebug($"Target {CCCName}-----");
+                Logger.LogDebug($"Target {CCFCName}-----");
                 TargetChaCtrl = targetChaCtrl;
                 TargetController = GetController(targetChaCtrl);
                 if (null == TargetController) {
-                    Logger.LogDebug($"No Target {CCCName} Controller found on {targetChaCtrl.fileParam.fullname}");
+                    Logger.LogDebug($"No Target {CCFCName} Controller found on {targetChaCtrl.fileParam.fullname}");
                     return false;
                 }
                 TargetBackup = GetExtDataFromController(targetChaCtrl);
@@ -172,7 +174,17 @@ namespace KK_CoordinateLoadOption {
         /// <returns>ExtData</returns>
         public abstract object GetExtDataFromController(ChaControl chaCtrl);
 
-        public static void ClearBackup() {
+        public virtual bool CheckControllerPrepared() => CheckControllerPrepared(DefaultChaCtrl);
+        public virtual bool CheckControllerPrepared(ChaControl chaCtrl) => CheckControllerPrepared(chaCtrl, (_) => true);
+        public virtual bool CheckControllerPrepared(Func<MonoBehaviour, bool> func) => CheckControllerPrepared(DefaultChaCtrl, func);
+        public virtual bool CheckControllerPrepared(ChaControl chaCtrl, Func<MonoBehaviour, bool> func) {
+            if (!isExist) return true;
+
+            MonoBehaviour controller = GetController(chaCtrl);
+            return null != controller && func(controller);
+        }
+
+        public void ClearBackup() {
             SourceChaCtrl = null;
             TargetChaCtrl = null;
             SourceBackup = null;

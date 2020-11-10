@@ -17,6 +17,12 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 */
 
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
@@ -27,12 +33,6 @@ using Extension;
 using HarmonyLib;
 using MessagePack;
 using Studio;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
 using UILib;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -56,7 +56,7 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.11.10.0";
+        internal const string PLUGIN_VERSION = "20.11.11.0";
         internal const string PLUGIN_RELEASE_VERSION = "1.1.2.4";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
@@ -113,7 +113,7 @@ namespace KK_CoordinateLoadOption {
         public static ConfigEntry<Vector3> Studio_Panel_Position { get; private set; }
 
         public void Start() {
-            _isKCOXExist = KCOX_Support.LoadAssembly();
+            _isKCOXExist = new KCOX_CCFCSupport(null).LoadAssembly();
             _isABMXExist = new ABMX_CCFCSupport(null).LoadAssembly();
             _isMoreAccessoriesExist = MoreAccessories_Support.LoadAssembly();
             _isMaterialEditorExist = MaterialEditor_Support.LoadAssembly();
@@ -789,7 +789,7 @@ namespace KK_CoordinateLoadOption {
 
             bool CheckPluginPrepared(ChaFileCoordinate backCoordinate = null) =>
                 null != tmpChaCtrl &&
-                KCOX_Support.CheckControllerPrepared(tmpChaCtrl) &&
+                new KCOX_CCFCSupport(tmpChaCtrl).CheckControllerPrepared() &&
                 (null == backCoordinate || HairAccessoryCustomizer_Support.CheckControllerPrepared(tmpChaCtrl, backCoordinate)) &&
                 MaterialEditor_Support.CheckControllerPrepared(tmpChaCtrl);
         }
@@ -808,6 +808,9 @@ namespace KK_CoordinateLoadOption {
                 }
             } catch (Exception) { return; };
             chaCtrl.StopAllCoroutines();
+
+            KCOX_CCFCSupport kcox = new KCOX_CCFCSupport(chaCtrl);
+            ABMX_CCFCSupport abmx = new ABMX_CCFCSupport(chaCtrl);
 
             //Load Coordinate
             Queue<int> accQueue = new Queue<int>();
@@ -850,8 +853,8 @@ namespace KK_CoordinateLoadOption {
                         chaCtrl.nowCoordinate.clothes.parts[kind] = MessagePackSerializer.Deserialize<ChaFileClothes.PartsInfo>(tmp);
                         chaCtrl.ChangeClothes(kind, tmpChaCtrl.nowCoordinate.clothes.parts[kind].id, tmpChaCtrl.nowCoordinate.clothes.subPartsId[0], tmpChaCtrl.nowCoordinate.clothes.subPartsId[1], tmpChaCtrl.nowCoordinate.clothes.subPartsId[2], true);
 
-                        if (SCLO._isKCOXExist)
-                            KCOX_Support.CopyKCOXData(tmpChaCtrl, chaCtrl, kind);
+                        if (kcox.isExist)
+                            kcox.CopyKCOXData(tmpChaCtrl, kind);
 
                         if (SCLO._isMaterialEditorExist)
                             MaterialEditor_Support.CopyMaterialEditorData(tmpChaCtrl, kind, chaCtrl, kind, chaCtrl.objClothes[kind], MaterialEditor_Support.ObjectType.Clothing);
@@ -887,7 +890,7 @@ namespace KK_CoordinateLoadOption {
                 MaterialEditor_Support.SetExtDataFromController(chaCtrl);
 
             //KCOX
-            if (SCLO._isKCOXExist) {
+            if (kcox.isExist) {
                 //KK_COBOC
                 if (SCLO._isCharaOverlayBasedOnCoordinateExist) {
                     if (Patches.charaOverlay.ToList().Where((x) => x).Count() > 0 && null != ExtendedSave.GetExtendedDataById(backupTmpCoordinate, COBOC_Support.GUID)) {
@@ -900,8 +903,8 @@ namespace KK_CoordinateLoadOption {
                     }
                 }
 
-                KCOX_Support.SetExtDataFromController(chaCtrl);
-                chaCtrl.StartCoroutine(KCOX_Support.Update(chaCtrl));
+                kcox.SetExtDataFromController();
+                chaCtrl.StartCoroutine(kcox.Update());
             }
 
             //MoreAcc
@@ -913,8 +916,7 @@ namespace KK_CoordinateLoadOption {
             }
 
             //ABMX
-            if (SCLO._isABMXExist && Patches.readABMX) {
-                ABMX_CCFCSupport abmx = new ABMX_CCFCSupport(chaCtrl);
+            if (abmx.isExist && Patches.readABMX) {
                 abmx.CopyABMXData(tmpChaCtrl);
                 abmx.SetExtDataFromController();
             }
@@ -961,8 +963,8 @@ namespace KK_CoordinateLoadOption {
         private static void End(bool forceClean = false) {
             HairAccessoryCustomizer_Support.ClearHairAccBackup();
             MaterialEditor_Support.ClearMaterialBackup();
-            KCOX_Support.ClearKCOXBackup();
-            ABMX_CCFCSupport.ClearBackup();
+            //KCOX_Support.ClearBackup();
+            //ABMX_CCFCSupport.ClearBackup();
             tmpChaCtrl.StopAllCoroutines();
             backupTmpCoordinate = null;
             Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
