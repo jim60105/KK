@@ -118,7 +118,7 @@ namespace KK_CoordinateLoadOption {
             _isMoreAccessoriesExist = MoreAccessories_Support.LoadAssembly();
             _isMaterialEditorExist = MaterialEditor_Support.LoadAssembly();
             _isHairAccessoryCustomizerExist = HairAccessoryCustomizer_Support.LoadAssembly();
-            _isCharaOverlayBasedOnCoordinateExist = COBOC_Support.LoadAssembly();
+            _isCharaOverlayBasedOnCoordinateExist = new COBOC_CCFCSupport(null).LoadAssembly();
 
             //Patch other plugins at Start()
             HairAccessoryCustomizer_Support.Patch(harmonyInstance);
@@ -691,13 +691,14 @@ namespace KK_CoordinateLoadOption {
     }
 
     class CoordinateLoad {
-        private static ManualLogSource Logger = SCLO.Logger;
+        private static readonly ManualLogSource Logger = SCLO.Logger;
         internal static OCIChar[] oCICharArray;
         internal static Queue<OCIChar> oCICharQueue = new Queue<OCIChar>();
         internal static int finishedCount = 0;
         internal static ChaControl tmpChaCtrl;
         private static ChaFileCoordinate backupTmpCoordinate;
         private static int forceCleanCount = SCLO.FORCECLEANCOUNT;
+        private static COBOC_CCFCSupport coboc;
 
         internal static void Update() {
             if (null != tmpChaCtrl) {
@@ -730,11 +731,13 @@ namespace KK_CoordinateLoadOption {
                 chaCtrl = ocichar.charInfo;
             } else {
                 chaCtrl = Singleton<CustomBase>.Instance.chaCtrl;
-                //KK_COBOC
-                if (SCLO._isCharaOverlayBasedOnCoordinateExist) {
-                    COBOC_Support.SetExtDataFromController(chaCtrl);
-                    COBOC_Support.GetIrisDisplaySide(chaCtrl);
-                }
+            }
+            //KK_COBOC
+            if (SCLO._isCharaOverlayBasedOnCoordinateExist) {
+                coboc = new COBOC_CCFCSupport(chaCtrl);
+                //coboc.SetExtDataFromController();
+                coboc.GetControllerAndBackupData(targetChaCtrl: chaCtrl);
+                coboc.GetIrisDisplaySide();
             }
             if (SCLO._isHairAccessoryCustomizerExist) {
                 HairAccessoryCustomizer_Support.GetControllerAndBackupData(targetChaCtrl: chaCtrl);
@@ -891,18 +894,6 @@ namespace KK_CoordinateLoadOption {
 
             //KCOX
             if (kcox.isExist) {
-                //KK_COBOC
-                if (SCLO._isCharaOverlayBasedOnCoordinateExist) {
-                    if (Patches.charaOverlay.ToList().Where((x) => x).Count() > 0 && null != ExtendedSave.GetExtendedDataById(backupTmpCoordinate, COBOC_Support.GUID)) {
-                        COBOC_Support.SetControllerFromExtData(chaCtrl);
-                        COBOC_Support.CopyCurrentCharaOverlayByController(tmpChaCtrl, chaCtrl, Patches.charaOverlay);
-                        COBOC_Support.SetExtDataFromController(chaCtrl);
-                    } else {
-                        COBOC_Support.SetIrisDisplaySide(chaCtrl);
-                        Logger.LogDebug("Skip load CharaOverlay");
-                    }
-                }
-
                 kcox.SetExtDataFromController();
                 chaCtrl.StartCoroutine(kcox.Update());
             }
@@ -924,13 +915,23 @@ namespace KK_CoordinateLoadOption {
             if (!SCLO.insideStudio)
                 Singleton<CustomBase>.Instance.updateCustomUI = true;
 
-
             //Reload
             chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
             chaCtrl.ChangeCoordinateType((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, false);
             chaCtrl.Reload();   //全false的Reload會觸發KKAPI的hook
 
             //---存入至ExtendedData，然後Reload
+
+            //KK_COBOC
+            if (kcox.isExist && coboc.isExist) {
+                if (Patches.charaOverlay.ToList().Where((x) => x).Count() > 0 && null != ExtendedSave.GetExtendedDataById(backupTmpCoordinate, coboc.GUID)) {
+                    coboc.CopyCurrentCharaOverlayByController(tmpChaCtrl, Patches.charaOverlay);
+                    coboc.SetExtDataFromController();
+                } else {
+                    coboc.SetIrisDisplaySide();
+                    Logger.LogDebug("Skip load CharaOverlay");
+                }
+            }
 
             finishedCount++;
 
@@ -963,8 +964,7 @@ namespace KK_CoordinateLoadOption {
         private static void End(bool forceClean = false) {
             HairAccessoryCustomizer_Support.ClearHairAccBackup();
             MaterialEditor_Support.ClearMaterialBackup();
-            //KCOX_Support.ClearBackup();
-            //ABMX_CCFCSupport.ClearBackup();
+            //coboc.ClearBackup();
             tmpChaCtrl.StopAllCoroutines();
             backupTmpCoordinate = null;
             Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);

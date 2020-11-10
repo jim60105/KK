@@ -32,9 +32,8 @@ namespace KK_CoordinateLoadOption {
         internal new Dictionary<string, object> SourceBackup { get => base.SourceBackup.ToDictionary<string, object>(); set => base.SourceBackup = value; }
         //internal new Dictionary<string, object> TargetBackup { get => base.TargetBackup.ToDictionary<string, object>(); set => base.TargetBackup = value; }
 
-        public KCOX_CCFCSupport(ChaControl chaCtrl) : base(chaCtrl) {
-            isExist = KK_CoordinateLoadOption._isKCOXExist;
-        }
+        public KCOX_CCFCSupport(ChaControl chaCtrl) : base(chaCtrl)
+            => isExist = KK_CoordinateLoadOption._isKCOXExist;
 
         public override bool LoadAssembly() => LoadAssembly(out _, new Version(5, 2));
 

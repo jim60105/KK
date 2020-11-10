@@ -82,7 +82,7 @@ namespace KK_CoordinateLoadOption {
         /// </summary>
         /// <param name="chaCtrl">要被設定的ChaControl</param>
         /// <returns></returns>
-        public void SetExtDataFromController(ChaControl chaCtrl) {
+        public virtual void SetExtDataFromController(ChaControl chaCtrl) {
             MonoBehaviour controller = GetController(chaCtrl);
             controller.Invoke("OnCardBeingSaved", new object[] { 1 });
         }
@@ -138,7 +138,7 @@ namespace KK_CoordinateLoadOption {
         /// <param name="targetChaCtrl">目標ChaControl</param>
         public bool GetControllerAndBackupData(ChaControl sourceChaCtrl = null, ChaControl targetChaCtrl = null) {
             if (null != sourceChaCtrl) {
-                Logger.LogDebug($"Source {CCFCName}-----");
+                Logger.LogDebug($"----- Source {CCFCName} -----");
                 SourceChaCtrl = sourceChaCtrl;
                 SourceController = GetController(sourceChaCtrl);
                 if (null == SourceController) {
@@ -149,7 +149,7 @@ namespace KK_CoordinateLoadOption {
             }
 
             if (null != targetChaCtrl) {
-                Logger.LogDebug($"Target {CCFCName}-----");
+                Logger.LogDebug($"----- Target {CCFCName} -----");
                 TargetChaCtrl = targetChaCtrl;
                 TargetController = GetController(targetChaCtrl);
                 if (null == TargetController) {
