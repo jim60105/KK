@@ -56,8 +56,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.11.09.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.2.3";
+        internal const string PLUGIN_VERSION = "20.11.10.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.2.4";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -114,7 +114,7 @@ namespace KK_CoordinateLoadOption {
 
         public void Start() {
             _isKCOXExist = KCOX_Support.LoadAssembly();
-            _isABMXExist = ABMX_Support.LoadAssembly();
+            _isABMXExist = new ABMX_CCFCSupport(null).LoadAssembly();
             _isMoreAccessoriesExist = MoreAccessories_Support.LoadAssembly();
             _isMaterialEditorExist = MaterialEditor_Support.LoadAssembly();
             _isHairAccessoryCustomizerExist = HairAccessoryCustomizer_Support.LoadAssembly();
@@ -914,8 +914,9 @@ namespace KK_CoordinateLoadOption {
 
             //ABMX
             if (SCLO._isABMXExist && Patches.readABMX) {
-                ABMX_Support.CopyABMXData(tmpChaCtrl, chaCtrl);
-                ABMX_Support.SetExtDataFromController(chaCtrl);
+                ABMX_CCFCSupport abmx = new ABMX_CCFCSupport(chaCtrl);
+                abmx.CopyABMXData(tmpChaCtrl);
+                abmx.SetExtDataFromController();
             }
 
             if (!SCLO.insideStudio)
@@ -961,7 +962,7 @@ namespace KK_CoordinateLoadOption {
             HairAccessoryCustomizer_Support.ClearHairAccBackup();
             MaterialEditor_Support.ClearMaterialBackup();
             KCOX_Support.ClearKCOXBackup();
-            ABMX_Support.ClearABMXBackup();
+            ABMX_CCFCSupport.ClearBackup();
             tmpChaCtrl.StopAllCoroutines();
             backupTmpCoordinate = null;
             Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
