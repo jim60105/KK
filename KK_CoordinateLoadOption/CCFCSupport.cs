@@ -12,14 +12,22 @@ namespace KK_CoordinateLoadOption {
         public abstract string ControllerName { get; }
         public abstract string CCFCName { get; }
         public bool isExist { get; internal set; }
+
+        internal ChaControl DefaultChaCtrl;
+        internal ChaControl SourceChaCtrl;
+        internal ChaControl TargetChaCtrl;
+        internal MonoBehaviour DefaultController;
+        internal MonoBehaviour SourceController;
+        internal MonoBehaviour TargetController;
+        internal object SourceBackup = null;
+        internal object TargetBackup = null;
+
         public CCFCSupport(ChaControl chaCtrl) {
             if (null != chaCtrl) {
-                DefaultController = GetController(chaCtrl);
                 DefaultChaCtrl = chaCtrl;
+                DefaultController = GetController(DefaultChaCtrl);
             }
         }
-        internal ChaControl DefaultChaCtrl;
-        internal MonoBehaviour DefaultController;
 
         public virtual bool LoadAssembly() => LoadAssembly(out _);
 
@@ -49,7 +57,7 @@ namespace KK_CoordinateLoadOption {
                 Logger.LogDebug("No ChaControl found");
                 return null;
             }
-            if (DefaultChaCtrl == chaCtrl) return DefaultController;
+            if (DefaultChaCtrl == chaCtrl && null != DefaultController) return DefaultController;
 
             MonoBehaviour controller = chaCtrl.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Name, ControllerName));
             if (null == controller) { Logger.LogDebug($"No {CCFCName} Controller found"); }
@@ -124,21 +132,14 @@ namespace KK_CoordinateLoadOption {
             controller.Invoke("OnCoordinateBeingSaved", new object[] { coordinate });
         }
 
-        internal ChaControl SourceChaCtrl;
-        internal ChaControl TargetChaCtrl;
-        internal MonoBehaviour SourceController;
-        internal MonoBehaviour TargetController;
-        internal object SourceBackup = null;
-        internal object TargetBackup = null;
-
         /// <summary>
         /// Copy前準備Source和Target資料
         /// </summary>
         /// <param name="sourceChaCtrl">來源ChaControl</param>
         /// <param name="targetChaCtrl">目標ChaControl</param>
-        public bool GetControllerAndBackupData(ChaControl sourceChaCtrl = null, ChaControl targetChaCtrl = null) {
+        public virtual bool GetControllerAndBackupData(ChaControl sourceChaCtrl = null, ChaControl targetChaCtrl = null) {
             if (null != sourceChaCtrl) {
-                Logger.LogDebug($"----- Source {CCFCName} -----");
+                Logger.LogDebug($"----- Get Source {CCFCName} -----");
                 SourceChaCtrl = sourceChaCtrl;
                 SourceController = GetController(sourceChaCtrl);
                 if (null == SourceController) {
@@ -149,7 +150,7 @@ namespace KK_CoordinateLoadOption {
             }
 
             if (null != targetChaCtrl) {
-                Logger.LogDebug($"----- Target {CCFCName} -----");
+                Logger.LogDebug($"----- Get Target {CCFCName} -----");
                 TargetChaCtrl = targetChaCtrl;
                 TargetController = GetController(targetChaCtrl);
                 if (null == TargetController) {
@@ -184,7 +185,7 @@ namespace KK_CoordinateLoadOption {
             return null != controller && func(controller);
         }
 
-        public void ClearBackup() {
+        public virtual void ClearBackup() {
             SourceChaCtrl = null;
             TargetChaCtrl = null;
             SourceBackup = null;

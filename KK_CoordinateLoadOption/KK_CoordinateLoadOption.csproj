@@ -47,7 +47,7 @@
     <Compile Include="COBOC_CCFCSupport.cs" />
     <Compile Include="KCOX_CCFCSupport.cs" />
     <Compile Include="KK_CoordinateLoadOption.cs" />
-    <Compile Include="MaterialEditor_Support.cs" />
+    <Compile Include="MaterialEditor_CCCFCSupport.cs" />
     <Compile Include="StringResources\StringResources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

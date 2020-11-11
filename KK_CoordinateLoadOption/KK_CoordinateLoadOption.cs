@@ -116,7 +116,7 @@ namespace KK_CoordinateLoadOption {
             _isKCOXExist = new KCOX_CCFCSupport(null).LoadAssembly();
             _isABMXExist = new ABMX_CCFCSupport(null).LoadAssembly();
             _isMoreAccessoriesExist = MoreAccessories_Support.LoadAssembly();
-            _isMaterialEditorExist = MaterialEditor_Support.LoadAssembly();
+            _isMaterialEditorExist = new MaterialEditor_CCCFCSupport(null).LoadAssembly();
             _isHairAccessoryCustomizerExist = HairAccessoryCustomizer_Support.LoadAssembly();
             _isCharaOverlayBasedOnCoordinateExist = new COBOC_CCFCSupport(null).LoadAssembly();
 
@@ -794,7 +794,7 @@ namespace KK_CoordinateLoadOption {
                 null != tmpChaCtrl &&
                 new KCOX_CCFCSupport(tmpChaCtrl).CheckControllerPrepared() &&
                 (null == backCoordinate || HairAccessoryCustomizer_Support.CheckControllerPrepared(tmpChaCtrl, backCoordinate)) &&
-                MaterialEditor_Support.CheckControllerPrepared(tmpChaCtrl);
+                new MaterialEditor_CCCFCSupport(tmpChaCtrl).CheckControllerPrepared();
         }
 
         internal static void ChangeCoordinate(object OcicharOrChaCtrl) {
@@ -814,6 +814,7 @@ namespace KK_CoordinateLoadOption {
 
             KCOX_CCFCSupport kcox = new KCOX_CCFCSupport(chaCtrl);
             ABMX_CCFCSupport abmx = new ABMX_CCFCSupport(chaCtrl);
+            MaterialEditor_CCCFCSupport me = new MaterialEditor_CCCFCSupport(chaCtrl);
 
             //Load Coordinate
             Queue<int> accQueue = new Queue<int>();
@@ -859,8 +860,8 @@ namespace KK_CoordinateLoadOption {
                         if (kcox.isExist)
                             kcox.CopyKCOXData(tmpChaCtrl, kind);
 
-                        if (SCLO._isMaterialEditorExist)
-                            MaterialEditor_Support.CopyMaterialEditorData(tmpChaCtrl, kind, chaCtrl, kind, chaCtrl.objClothes[kind], MaterialEditor_Support.ObjectType.Clothing);
+                        if (me.isExist)
+                            me.CopyMaterialEditorData(tmpChaCtrl, kind, kind, chaCtrl.objClothes[kind], MaterialEditor_CCCFCSupport.ObjectType.Clothing);
 
                         Logger.LogDebug("->Changed: " + tgl.name + " / ID: " + chaCtrl.nowCoordinate.clothes.parts[kind].id);
                     }
@@ -890,7 +891,7 @@ namespace KK_CoordinateLoadOption {
 
             //Material Editor
             if (SCLO._isMaterialEditorExist)
-                MaterialEditor_Support.SetExtDataFromController(chaCtrl);
+                me.SetExtDataFromController();
 
             //KCOX
             if (kcox.isExist) {
@@ -963,8 +964,7 @@ namespace KK_CoordinateLoadOption {
 
         private static void End(bool forceClean = false) {
             HairAccessoryCustomizer_Support.ClearHairAccBackup();
-            MaterialEditor_Support.ClearMaterialBackup();
-            //coboc.ClearBackup();
+            coboc.ClearBackup();
             tmpChaCtrl.StopAllCoroutines();
             backupTmpCoordinate = null;
             Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
@@ -1004,12 +1004,13 @@ namespace KK_CoordinateLoadOption {
             }
             Logger.LogDebug($"Acc Count : {Patches.tgls2.Length}");
 
+            MaterialEditor_CCCFCSupport me = new MaterialEditor_CCCFCSupport(targetChaCtrl);
             for (int i = 0; i < targetParts.Length && i < Patches.tgls2.Length; i++) {
                 if ((bool)Patches.tgls2[i]?.isOn) {
                     if (Patches.addAccModeFlag) {
                         //增加模式
                         if (targetParts[i].type == 120) {
-                            DoChangeAccessory(sourceChaCtrl, sourceParts, i, targetChaCtrl, targetParts, i);
+                            DoChangeAccessory(i, i);
                         } else {
                             EnQueue();
                         }
@@ -1019,7 +1020,7 @@ namespace KK_CoordinateLoadOption {
                             EnQueue();
                         } else {
                             //如果是取代模式且非髮飾品則取代
-                            DoChangeAccessory(sourceChaCtrl, sourceParts, i, targetChaCtrl, targetParts, i);
+                            DoChangeAccessory(i, i);
                         }
                     }
                 } else {
@@ -1043,48 +1044,39 @@ namespace KK_CoordinateLoadOption {
             for (int j = 0; j < targetParts.Length && accQueue.Count > 0; j++) {
                 if (targetParts[j].type == 120) {
                     int slot = accQueue.Dequeue();
-                    DoChangeAccessory(sourceChaCtrl, sourceParts, slot, targetChaCtrl, targetParts, j);
+                    DoChangeAccessory(slot, j);
                     Logger.LogDebug($"->DeQueue: Acc{j} / Part: {(ChaListDefine.CategoryNo)targetParts[j].type} / ID: {targetParts[j].id}");
                 } //else continue;
             }
-        }
 
-        /// <summary>
-        /// 換飾品
-        /// </summary>
-        /// <param name="sourceChaCtrl">來源ChaControl</param>
-        /// <param name="sourceParts">來源PartsInfo list</param>
-        /// <param name="sourceSlot">來源slot</param>
-        /// <param name="targetChaCtrl">目標ChaControl</param>
-        /// <param name="targetParts">目標PartsInfo list</param>
-        /// <param name="targetSlot">目標slot</param>
-        public static void DoChangeAccessory(ChaControl sourceChaCtrl,
-                                           ChaFileAccessory.PartsInfo[] sourceParts,
-                                           int sourceSlot,
-                                           ChaControl targetChaCtrl,
-                                           ChaFileAccessory.PartsInfo[] targetParts,
-                                           int targetSlot) {
-            //來源目標都空著就跳過
-            if (sourceParts[sourceSlot].type == 120 && targetParts[targetSlot].type == 120) {
-                Logger.LogDebug($"->BothEmpty: SourceAcc{sourceSlot}, TargetAcc{targetSlot}");
-                return;
+            /// <summary>
+            /// 換飾品
+            /// </summary>
+            /// <param name="sourceSlot">來源slot</param>
+            /// <param name="targetSlot">目標slot</param>
+            void DoChangeAccessory(int sourceSlot, int targetSlot) {
+                //來源目標都空著就跳過
+                if (sourceParts[sourceSlot].type == 120 && targetParts[targetSlot].type == 120) {
+                    Logger.LogDebug($"->BothEmpty: SourceAcc{sourceSlot}, TargetAcc{targetSlot}");
+                    return;
+                }
+
+                if (SCLO._isMaterialEditorExist) {
+                    me.RemoveMaterialEditorData(targetSlot, GetChaAccessoryComponent(targetChaCtrl, targetSlot)?.gameObject, MaterialEditor_CCCFCSupport.ObjectType.Accessory);
+                }
+
+                byte[] tmp = MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(sourceParts[sourceSlot]);
+                targetParts[targetSlot] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tmp);
+
+                if (SCLO._isHairAccessoryCustomizerExist) {
+                    HairAccessoryCustomizer_Support.CopyHairAcc(sourceChaCtrl, sourceSlot, targetChaCtrl, targetSlot);
+                }
+
+                if (SCLO._isMaterialEditorExist) {
+                    me.CopyMaterialEditorData(sourceChaCtrl, sourceSlot, targetSlot, GetChaAccessoryComponent(sourceChaCtrl, sourceSlot)?.gameObject, MaterialEditor_CCCFCSupport.ObjectType.Accessory);
+                }
+                Logger.LogDebug($"->Changed: Acc{targetSlot} / Part: {(ChaListDefine.CategoryNo)targetParts[targetSlot].type} / ID: {targetParts[targetSlot].id}");
             }
-
-            if (SCLO._isMaterialEditorExist) {
-                MaterialEditor_Support.RemoveMaterialEditorData(targetChaCtrl, targetSlot, GetChaAccessoryComponent(targetChaCtrl, targetSlot)?.gameObject, MaterialEditor_Support.ObjectType.Accessory);
-            }
-
-            byte[] tmp = MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(sourceParts[sourceSlot]);
-            targetParts[targetSlot] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tmp);
-
-            if (SCLO._isHairAccessoryCustomizerExist) {
-                HairAccessoryCustomizer_Support.CopyHairAcc(sourceChaCtrl, sourceSlot, targetChaCtrl, targetSlot);
-            }
-
-            if (SCLO._isMaterialEditorExist) {
-                MaterialEditor_Support.CopyMaterialEditorData(sourceChaCtrl, sourceSlot, targetChaCtrl, targetSlot, GetChaAccessoryComponent(sourceChaCtrl, sourceSlot)?.gameObject, MaterialEditor_Support.ObjectType.Accessory);
-            }
-            Logger.LogDebug($"->Changed: Acc{targetSlot} / Part: {(ChaListDefine.CategoryNo)targetParts[targetSlot].type} / ID: {targetParts[targetSlot].id}");
         }
 
         public static void ClearAccessories(ChaControl chaCtrl) {
