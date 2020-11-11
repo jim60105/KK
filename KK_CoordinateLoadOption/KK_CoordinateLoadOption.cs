@@ -56,8 +56,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.11.11.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.2.4";
+        internal const string PLUGIN_VERSION = "20.11.12.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.3";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -117,11 +117,11 @@ namespace KK_CoordinateLoadOption {
             _isABMXExist = new ABMX_CCFCSupport(null).LoadAssembly();
             _isMoreAccessoriesExist = MoreAccessories_Support.LoadAssembly();
             _isMaterialEditorExist = new MaterialEditor_CCCFCSupport(null).LoadAssembly();
-            _isHairAccessoryCustomizerExist = HairAccessoryCustomizer_Support.LoadAssembly();
+            _isHairAccessoryCustomizerExist = new HairAccessoryCustomizer_CCFCSupport(null).LoadAssembly();
             _isCharaOverlayBasedOnCoordinateExist = new COBOC_CCFCSupport(null).LoadAssembly();
 
             //Patch other plugins at Start()
-            HairAccessoryCustomizer_Support.Patch(harmonyInstance);
+            HairAccessoryCustomizer_CCFCSupport.Patch(harmonyInstance);
 
             StringResources.StringResourcesManager.SetUICulture();
 
@@ -506,6 +506,7 @@ namespace KK_CoordinateLoadOption {
                     Singleton<CustomBase>.Instance.updateCustomUI = true;
                 }
 
+                Illusion.Game.Utils.Sound.Play(Illusion.Game.SystemSE.ok_s);
                 Logger.LogDebug("Clear accessories Finish");
             });
             btnReverseHairAcc.onClick.RemoveAllListeners();
@@ -699,6 +700,7 @@ namespace KK_CoordinateLoadOption {
         private static ChaFileCoordinate backupTmpCoordinate;
         private static int forceCleanCount = SCLO.FORCECLEANCOUNT;
         private static COBOC_CCFCSupport coboc;
+        private static HairAccessoryCustomizer_CCFCSupport hairacc;
 
         internal static void Update() {
             if (null != tmpChaCtrl) {
@@ -718,14 +720,10 @@ namespace KK_CoordinateLoadOption {
                 ocichar = oCICharQueue.Dequeue();
 
                 //Bone
-                foreach (OCIChar.BoneInfo boneInfo in (from v in ocichar.listBones
-                                                       where v.boneGroup == OIBoneInfo.BoneGroup.Hair
-                                                       select v).ToList<OCIChar.BoneInfo>()) {
+                foreach (OCIChar.BoneInfo boneInfo in ocichar.listBones.Where(b => b.boneGroup == OIBoneInfo.BoneGroup.Hair)) {
                     Singleton<GuideObjectManager>.Instance.Delete(boneInfo.guideObject, true);
                 }
-                ocichar.listBones = (from v in ocichar.listBones
-                                     where v.boneGroup != OIBoneInfo.BoneGroup.Hair
-                                     select v).ToList<OCIChar.BoneInfo>();
+                ocichar.listBones = ocichar.listBones.Where(b => b.boneGroup != OIBoneInfo.BoneGroup.Hair).ToList<OCIChar.BoneInfo>();
                 ocichar.hairDynamic = null;
                 ocichar.skirtDynamic = null;
                 chaCtrl = ocichar.charInfo;
@@ -740,8 +738,9 @@ namespace KK_CoordinateLoadOption {
                 coboc.GetIrisDisplaySide();
             }
             if (SCLO._isHairAccessoryCustomizerExist) {
-                HairAccessoryCustomizer_Support.GetControllerAndBackupData(targetChaCtrl: chaCtrl);
-                HairAccessoryCustomizer_Support.UpdateBlock = true;
+                hairacc = new HairAccessoryCustomizer_CCFCSupport(chaCtrl);
+                hairacc.GetControllerAndBackupData(targetChaCtrl: chaCtrl);
+                HairAccessoryCustomizer_CCFCSupport.UpdateBlock = true;
             }
 
             backupTmpCoordinate = new ChaFileCoordinate();
@@ -756,20 +755,20 @@ namespace KK_CoordinateLoadOption {
             tmpChaCtrl.fileStatus.coordinateType = chaCtrl.fileStatus.coordinateType;
             if (SCLO._isHairAccessoryCustomizerExist) {
                 //取得BackupData
-                HairAccessoryCustomizer_Support.GetControllerAndBackupData(tmpChaCtrl, backupTmpCoordinate);
+                hairacc.GetControllerAndBackupData(sourceChaCtrl: tmpChaCtrl, sourceCoordinate: backupTmpCoordinate);
 
                 //禁用ColorMatch: 這在Maker中必要 (在Studio會被內部檢核阻擋)
                 //在Maker中，若原本的HairAccData有啟用ColorMatch，會在換完Acc後把飾品原生顏色回寫為HairMatchColor
                 //所以在此取得Backup後、開始換衣前將所有的ColorMatch禁用
-                HairAccessoryCustomizer_Support.DisableColorMatches(chaCtrl);
+                hairacc.DisableColorMatches();
 
                 //將Controller中之HairAccessories拷貝到tmpChaCtrl
                 //這是Ref Copy，這是MakerAPI並無區分多ChaControl的對應
                 //且Maker換衣時無法呼叫HairAccCusController.LoadData()，只能呼叫LoadCoordinate()
                 //故必須在tmpChaCtrl上完整複製chaCtrl資料，並在換裝完後由Coordinate寫回
-                HairAccessoryCustomizer_Support.SetExtDataFromController(chaCtrl);
-                HairAccessoryCustomizer_Support.CopyHairAccBetweenControllers(chaCtrl, tmpChaCtrl);
-                HairAccessoryCustomizer_Support.CopyAllHairAccExtdata(chaCtrl, tmpChaCtrl);
+                hairacc.SetExtDataFromController();
+                hairacc.CopyHairAccBetweenControllers(chaCtrl, tmpChaCtrl);
+                hairacc.CopyAllHairAccExtdata(chaCtrl, tmpChaCtrl);
             }
 
             tmpChaCtrl.StartCoroutine(LoadTmpChara());
@@ -793,7 +792,7 @@ namespace KK_CoordinateLoadOption {
             bool CheckPluginPrepared(ChaFileCoordinate backCoordinate = null) =>
                 null != tmpChaCtrl &&
                 new KCOX_CCFCSupport(tmpChaCtrl).CheckControllerPrepared() &&
-                (null == backCoordinate || HairAccessoryCustomizer_Support.CheckControllerPrepared(tmpChaCtrl, backCoordinate)) &&
+                (null == backCoordinate || hairacc.CheckControllerPrepared(tmpChaCtrl, backCoordinate)) &&
                 new MaterialEditor_CCCFCSupport(tmpChaCtrl).CheckControllerPrepared();
         }
 
@@ -873,20 +872,20 @@ namespace KK_CoordinateLoadOption {
             //HairAcc
             if (SCLO._isHairAccessoryCustomizerExist) {
                 //寫入 (即使未載入Acc，也需要將一開始的備份寫回)
-                HairAccessoryCustomizer_Support.SetToExtData(chaCtrl, HairAccessoryCustomizer_Support.targetHairBackup);
-                HairAccessoryCustomizer_Support.SetDataToCoordinate(chaCtrl.nowCoordinate, HairAccessoryCustomizer_Support.targetHairBackup);
+                hairacc.SetToExtData();
+                hairacc.SetDataToCoordinate();
 
                 //讀出驗證
-                HairAccessoryCustomizer_Support.GetDataFromExtData(chaCtrl, out Dictionary<int, object> nowCoor);
-                if (null != nowCoor) {
-                    Logger.LogDebug($"->Hair Count {nowCoor.Count}: {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
-                }
+                hairacc.GetCoordinateData(hairacc.GetDataFromExtData(chaCtrl), (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, out Dictionary<int, object> nowCoor);
+                //if (null != nowCoor) {
+                //    Logger.LogDebug($"->Hair Count {nowCoor.Count}: {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
+                //}
 
-                HairAccessoryCustomizer_Support.UpdateBlock = false;
+                HairAccessoryCustomizer_CCFCSupport.UpdateBlock = false;
 
                 //Load to controller (Maker只有從Coordinate存才能運作)
-                HairAccessoryCustomizer_Support.SetControllerFromExtData(chaCtrl);
-                HairAccessoryCustomizer_Support.SetControllerFromCoordinate(chaCtrl);
+                hairacc.SetControllerFromExtData();
+                hairacc.SetControllerFromCoordinate();
             }
 
             //Material Editor
@@ -963,7 +962,7 @@ namespace KK_CoordinateLoadOption {
         }
 
         private static void End(bool forceClean = false) {
-            HairAccessoryCustomizer_Support.ClearHairAccBackup();
+            hairacc.ClearBackup();
             coboc.ClearBackup();
             tmpChaCtrl.StopAllCoroutines();
             backupTmpCoordinate = null;
@@ -1069,7 +1068,7 @@ namespace KK_CoordinateLoadOption {
                 targetParts[targetSlot] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tmp);
 
                 if (SCLO._isHairAccessoryCustomizerExist) {
-                    HairAccessoryCustomizer_Support.CopyHairAcc(sourceChaCtrl, sourceSlot, targetChaCtrl, targetSlot);
+                    hairacc.CopyHairAcc(sourceChaCtrl, sourceSlot, targetChaCtrl, targetSlot);
                 }
 
                 if (SCLO._isMaterialEditorExist) {
@@ -1125,9 +1124,7 @@ namespace KK_CoordinateLoadOption {
         /// <param name="chaCtrl">對象角色</param>
         /// <param name="index">飾品欄位index</param>
         /// <returns></returns>
-        public static bool IsHairAccessory(ChaControl chaCtrl, int index) {
-            return GetChaAccessoryComponent(chaCtrl, index)?.gameObject.GetComponent<ChaCustomHairComponent>() != null;
-        }
+        public static bool IsHairAccessory(ChaControl chaCtrl, int index) => GetChaAccessoryComponent(chaCtrl, index)?.gameObject.GetComponent<ChaCustomHairComponent>() != null;
 
         /// <summary>
         /// 取得ChaAccessoryComponent

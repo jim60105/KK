@@ -77,7 +77,7 @@ namespace KK_CoordinateLoadOption {
         /// <returns></returns>
         public void SetControllerFromExtData(ChaControl chaCtrl) {
             MonoBehaviour controller = GetController(chaCtrl);
-            controller.Invoke("OnReload", new object[] { 2, false });
+            controller.Invoke("OnReload", new object[] { KK_CoordinateLoadOption.insideStudio ? 2 : 1, false });
         }
 
         /// <summary>
@@ -118,13 +118,13 @@ namespace KK_CoordinateLoadOption {
         /// 將Controller內之ExtData儲存至Coordinate ExtendedData內
         /// </summary>
         /// <param name="coordinate">目標Coordinate</param>
-        public void SetCoordinateExtDataFromController(ChaFileCoordinate coordinate = null) => SetCoordinateExtDataFromController(DefaultChaCtrl, coordinate);
+        public void SetCoordinateDataFromController(ChaFileCoordinate coordinate = null) => SetCoordinateDataFromController(DefaultChaCtrl, coordinate);
         /// <summary>
         /// 將Controller內之ExtData儲存至Coordinate ExtendedData內
         /// </summary>
         /// <param name="chaCtrl">來源ChaControl</param>
         /// <param name="coordinate">目標Coordinate</param>
-        public void SetCoordinateExtDataFromController(ChaControl chaCtrl, ChaFileCoordinate coordinate = null) {
+        public void SetCoordinateDataFromController(ChaControl chaCtrl, ChaFileCoordinate coordinate = null) {
             if (null == coordinate) {
                 coordinate = chaCtrl.nowCoordinate;
             }
@@ -146,7 +146,7 @@ namespace KK_CoordinateLoadOption {
                     Logger.LogDebug($"No Source {CCFCName} Controller found on {sourceChaCtrl.fileParam.fullname}");
                     return false;
                 }
-                SourceBackup = GetExtDataFromController(sourceChaCtrl);
+                SourceBackup = GetDataFromController(sourceChaCtrl);
             }
 
             if (null != targetChaCtrl) {
@@ -157,7 +157,7 @@ namespace KK_CoordinateLoadOption {
                     Logger.LogDebug($"No Target {CCFCName} Controller found on {targetChaCtrl.fileParam.fullname}");
                     return false;
                 }
-                TargetBackup = GetExtDataFromController(targetChaCtrl);
+                TargetBackup = GetDataFromController(targetChaCtrl);
             }
             return true;
         }
@@ -166,14 +166,14 @@ namespace KK_CoordinateLoadOption {
         /// 從Controller取得給定ChaControl的ExtData
         /// </summary>
         /// <returns>ExtData</returns>
-        public object GetExtDataFromController() => GetExtDataFromController(DefaultChaCtrl);
+        public object GetDataFromController() => GetDataFromController(DefaultChaCtrl);
 
         /// <summary>
         /// 從Controller取得給定ChaControl的ExtData
         /// </summary>
         /// <param name="chaCtrl">要查詢的ChaControl</param>
         /// <returns>ExtData</returns>
-        public abstract object GetExtDataFromController(ChaControl chaCtrl);
+        public abstract object GetDataFromController(ChaControl chaCtrl);
 
         public virtual bool CheckControllerPrepared() => CheckControllerPrepared(DefaultChaCtrl);
         public virtual bool CheckControllerPrepared(ChaControl chaCtrl) => CheckControllerPrepared(chaCtrl, (_) => true);

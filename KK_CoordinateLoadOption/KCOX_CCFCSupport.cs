@@ -43,7 +43,7 @@ namespace KK_CoordinateLoadOption {
         /// <param name="chaCtrl">對象ChaControl</param>
         /// <param name="dict">Output KCOX Data Backup</param>
         /// <returns>KCOX Controller</returns>
-        public override object GetExtDataFromController(ChaControl chaCtrl) {
+        public override object GetDataFromController(ChaControl chaCtrl) {
             MonoBehaviour controller = GetController(chaCtrl);
 
             Dictionary<string, object> dict = new Dictionary<string, object>();

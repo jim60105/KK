@@ -43,7 +43,7 @@
   <ItemGroup>
     <Compile Include="ABMX_CCFCSupport.cs" />
     <Compile Include="CCFCSupport.cs" />
-    <Compile Include="HairAccessoryCustomizer_Support.cs" />
+    <Compile Include="HairAccessoryCustomizer_CCFCSupport.cs" />
     <Compile Include="COBOC_CCFCSupport.cs" />
     <Compile Include="KCOX_CCFCSupport.cs" />
     <Compile Include="KK_CoordinateLoadOption.cs" />

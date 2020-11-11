@@ -89,7 +89,7 @@ namespace KK_CoordinateLoadOption {
         public Dictionary<int, object> GetTextureDictionaryFromController(ChaControl chaCtrl)
             => GetController(chaCtrl).GetField("TextureDictionary").ToDictionary<int, object>();
 
-        public override object GetExtDataFromController(ChaControl chaCtrl) {
+        public override object GetDataFromController(ChaControl chaCtrl) {
             Dictionary<string, object> MaterialBackup = new Dictionary<string, object>();
             MonoBehaviour controller = GetController(chaCtrl);
 
@@ -119,7 +119,7 @@ namespace KK_CoordinateLoadOption {
 
             MonoBehaviour controller = GetController(chaCtrl);
             if (null == MaterialBackup) {
-                MaterialBackup = GetExtDataFromController(chaCtrl).ToDictionary<string, object>();
+                MaterialBackup = GetDataFromController(chaCtrl).ToDictionary<string, object>();
             }
 
             if (null != controller && null != MaterialBackup) {
@@ -139,7 +139,7 @@ namespace KK_CoordinateLoadOption {
 
                     if (doFlag2) {
                         controller.SetField(storedValue.listName, target);
-                        GetExtDataFromController(chaCtrl).TryGetValue(storedValue.listName, out object val);
+                        GetDataFromController(chaCtrl).TryGetValue(storedValue.listName, out object val);
                         Logger.LogDebug($"--->{storedValue.className}: { val.Count() }");
                     }
 
@@ -263,7 +263,7 @@ namespace KK_CoordinateLoadOption {
 
                 if (doFlag2) {
                     if (objRemoved.Count() > 0) {
-                        TargetBackup = GetExtDataFromController(targetChaCtrl) as Dictionary<string, object>;
+                        TargetBackup = GetDataFromController(targetChaCtrl) as Dictionary<string, object>;
                         TargetTextureDictionaryBackup = GetTextureDictionaryFromController(targetChaCtrl);
                         Logger.LogDebug($"--->Remove {objRemoved.Count()} {storedValue.className}");
                     }
@@ -275,13 +275,13 @@ namespace KK_CoordinateLoadOption {
                 if (doFlag) {
                     Logger.LogDebug($"-->Remove Material Editor Data: {targetChaCtrl.fileParam.fullname} Slot{targetSlot}");
                 } else {
-                    Logger.LogDebug($"-->No Material Editor Backup to remove: {targetChaCtrl.fileParam.fullname} Slot{targetSlot}");
+                    //Logger.LogDebug($"-->No Material Editor Backup to remove: {targetChaCtrl.fileParam.fullname} Slot{targetSlot}");
                 }
             } else if (objectType == ObjectType.Clothing) {
                 if (doFlag) {
                     Logger.LogDebug($"-->Remove Material Editor Data: {targetChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), targetSlot)}");
                 } else {
-                    Logger.LogDebug($"-->No Material Editor Backup to remove: {targetChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), targetSlot)}");
+                    //Logger.LogDebug($"-->No Material Editor Backup to remove: {targetChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), targetSlot)}");
                 }
             }
         }
@@ -431,7 +431,7 @@ namespace KK_CoordinateLoadOption {
 
                 if (doFlag2) {
                     if (objAdded.Count() > 0) {
-                        TargetBackup = GetExtDataFromController(targetChaCtrl) as Dictionary<string, object>;
+                        TargetBackup = GetDataFromController(targetChaCtrl) as Dictionary<string, object>;
                         TargetTextureDictionaryBackup = GetTextureDictionaryFromController(targetChaCtrl);
                         Logger.LogDebug($"--->Change {objAdded.Count()} {storedValue.className}");
                     }
@@ -443,13 +443,13 @@ namespace KK_CoordinateLoadOption {
                 if (doFlag) {
                     Logger.LogDebug($"-->Set Material Editor Data: {sourceChaCtrl.fileParam.fullname} Slot{sourceSlot} -> {targetChaCtrl.fileParam.fullname} Slot{targetSlot}");
                 } else {
-                    Logger.LogDebug($"-->No Material Editor Backup to set: {sourceChaCtrl.fileParam.fullname} {sourceSlot}");
+                    //Logger.LogDebug($"-->No Material Editor Backup to set: {sourceChaCtrl.fileParam.fullname} {sourceSlot}");
                 }
             } else if (objectType == ObjectType.Clothing) {
                 if (doFlag) {
                     Logger.LogDebug($"-->Set Material Editor Data: {sourceChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), sourceSlot)} -> {targetChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), targetSlot)}");
                 } else {
-                    Logger.LogDebug($"-->No Material Editor Backup to set: {sourceChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), sourceSlot)}");
+                    //Logger.LogDebug($"-->No Material Editor Backup to set: {sourceChaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.ClothesKind), sourceSlot)}");
                 }
             }
         }

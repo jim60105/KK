@@ -32,7 +32,7 @@ namespace KK_CoordinateLoadOption {
         /// </summary>
         /// <param name="chaCtrl">對象ChaControl</param>
         /// <returns>ExtDataData</returns>
-        public override object GetExtDataFromController(ChaControl chaCtrl) {
+        public override object GetDataFromController(ChaControl chaCtrl) {
             MonoBehaviour controller = GetController(chaCtrl);
 
             List<object> Modifiers = new List<object>();

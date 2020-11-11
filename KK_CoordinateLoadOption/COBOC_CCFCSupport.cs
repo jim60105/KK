@@ -30,7 +30,7 @@ namespace KK_CoordinateLoadOption {
             IrisDisplaySide = (Controller.GetField("IrisDisplaySide") as int[])[chaCtrl.fileStatus.coordinateType];
         }
 
-        public override object GetExtDataFromController(ChaControl chaCtrl)
+        public override object GetDataFromController(ChaControl chaCtrl)
             => GetController(chaCtrl).GetProperty("CurrentOverlay").ToDictionaryWithoutType();
 
         public void CopyCurrentCharaOverlayByController(ChaControl sourceChaCtrl, bool[] isChecked) {
