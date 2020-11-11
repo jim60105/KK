@@ -41,12 +41,13 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ABMX_Support.cs" />
-    <Compile Include="HairAccessoryCustomizer_Support.cs" />
-    <Compile Include="COBOC_Support.cs" />
-    <Compile Include="KCOX_Support.cs" />
+    <Compile Include="ABMX_CCFCSupport.cs" />
+    <Compile Include="CCFCSupport.cs" />
+    <Compile Include="HairAccessoryCustomizer_CCFCSupport.cs" />
+    <Compile Include="COBOC_CCFCSupport.cs" />
+    <Compile Include="KCOX_CCFCSupport.cs" />
     <Compile Include="KK_CoordinateLoadOption.cs" />
-    <Compile Include="MaterialEditor_Support.cs" />
+    <Compile Include="MaterialEditor_CCCFCSupport.cs" />
     <Compile Include="StringResources\StringResources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

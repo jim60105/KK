@@ -3,7 +3,6 @@ using Extension;
 //using HarmonyLib;
 using MessagePack;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -71,7 +70,7 @@ namespace KK_CoordinateLoadOption {
         /// </summary>
         /// <param name="chaCtrl">清空對象</param>
         public static void ClearMoreAccessoriesData(ChaControl chaCtrl, bool force = false) {
-            TryGetValueFromWeakKeyDict(MoreAccObj.GetField("_accessoriesByChar"), chaCtrl.chaFile as ChaFile, out object charAdditionalData);
+            MoreAccObj.GetField("_accessoriesByChar").TryGetValue(chaCtrl.chaFile, out object charAdditionalData);
             charAdditionalData.GetField("rawAccessoriesInfos").ToDictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>>()
                 .TryGetValue((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, out List<ChaFileAccessory.PartsInfo> parts);
             for (int i = 0; i < parts.Count; i++) {
@@ -81,7 +80,7 @@ namespace KK_CoordinateLoadOption {
                     Logger.LogDebug($"Keep HairAcc{i}: {parts[i].id}");
                 }
             }
-            RemoveEmptyFromBackToFront(parts,0);
+            RemoveEmptyFromBackToFront(parts, 0);
             //charAdditionalData.SetField("rawAccessoriesInfos", rawAccessoriesInfos);
             //charAdditionalData.SetField("nowAccessories", rawAccessoriesInfos[(ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType]);
 
@@ -102,8 +101,8 @@ namespace KK_CoordinateLoadOption {
         /// <param name="targetChaCtrl">目標</param>
         public static void CopyMoreAccessories(ChaControl sourceChaCtrl, ChaControl targetChaCtrl) {
             Queue<int> accQueue = new Queue<int>();
-            TryGetValueFromWeakKeyDict(MoreAccObj.GetField("_accessoriesByChar"), sourceChaCtrl.chaFile as ChaFile, out object sourceCharAdditionalData);
-            TryGetValueFromWeakKeyDict(MoreAccObj.GetField("_accessoriesByChar"), targetChaCtrl.chaFile as ChaFile, out object targetCharAdditionalData);
+            MoreAccObj.GetField("_accessoriesByChar").TryGetValue(sourceChaCtrl.chaFile, out object sourceCharAdditionalData);
+            MoreAccObj.GetField("_accessoriesByChar").TryGetValue(targetChaCtrl.chaFile, out object targetCharAdditionalData);
 
             sourceCharAdditionalData.GetField("rawAccessoriesInfos").ToDictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>>()
                 .TryGetValue((ChaFileDefine.CoordinateType)sourceChaCtrl.fileStatus.coordinateType, out List<ChaFileAccessory.PartsInfo> sourceParts);
@@ -235,7 +234,7 @@ namespace KK_CoordinateLoadOption {
                         part.hideCategory = XmlConvert.ToInt32(accessoryNode.Attributes["hideCategory"].Value);
 
                         //Only Darkness has this
-                        if(null!= part.GetType().GetProperty("noShake")) {
+                        if (null != part.GetType().GetProperty("noShake")) {
                             part.SetProperty("noShake", accessoryNode.Attributes["noShake"] != null && XmlConvert.ToBoolean(accessoryNode.Attributes["noShake"].Value));
                         }
 
@@ -262,7 +261,7 @@ namespace KK_CoordinateLoadOption {
         /// 由後往前刪除空欄
         /// </summary>
         /// <param name="partsInfos"></param>
-        public static void RemoveEmptyFromBackToFront(List<ChaFileAccessory.PartsInfo> partsInfos,int lowerLimit = 20) {
+        public static void RemoveEmptyFromBackToFront(List<ChaFileAccessory.PartsInfo> partsInfos, int lowerLimit = 20) {
             for (int i = partsInfos.Count - 1; i >= lowerLimit; i--) {
                 if (partsInfos[i].type == 120) {
                     partsInfos.RemoveAt(i);
@@ -288,32 +287,9 @@ namespace KK_CoordinateLoadOption {
         /// <param name="chaFile"></param>
         /// <returns></returns>
         public static int GetAccessoriesAmount(ChaFile chaFile) {
-            return TryGetValueFromWeakKeyDict(MoreAccObj.GetField("_accessoriesByChar"), chaFile, out object _acc) ?
+            return MoreAccObj.GetField("_accessoriesByChar").TryGetValue(chaFile, out object _acc) ?
                 _acc.GetField("nowAccessories").ToList<ChaFileAccessory.PartsInfo>().Count + 20
                 : 20;
-        }
-        
-        private static bool TryGetValueFromWeakKeyDict<TKey>(object weakDict, TKey Key, out object result) where TKey : class {
-            result = null;
-            if (null == weakDict || null == Key) {
-                Logger.LogError("WeakDict or Key is null!!");
-                return false;
-            }
-
-            if (weakDict.GetType().GetGenericArguments()[0] == typeof(TKey)) {
-                //以Enumerator遍歷WeakKeyDictionary
-                object enumerator = weakDict.Invoke("GetEnumerator");
-                if ((bool)weakDict.Invoke("ContainsKey", new object[] { Key })) {
-                    while ((bool)enumerator.Invoke("MoveNext")) {
-                        object current = enumerator.GetProperty("Current");
-                        if (current?.GetProperty("Key") == Key) {
-                            result = current?.GetProperty("Value");
-                            return true;
-                        }
-                    }
-                } else Logger.LogError("WeakDict does not contain the key!!");
-            } else Logger.LogError("WeakDict key type does not match!!");
-            return false;
         }
 
         public static void Update() => MoreAccObj.Invoke("UpdateUI");
