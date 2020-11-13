@@ -56,8 +56,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.11.12.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.3";
+        internal const string PLUGIN_VERSION = "20.11.13.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.3.1";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -65,7 +65,7 @@ namespace KK_CoordinateLoadOption {
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
-            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Extension.Extension.BepLogger = Logger;
             UIUtility.Init();
             harmonyInstance = Harmony.CreateAndPatchAll(typeof(Patches));
             //harmonyInstance.PatchAll(typeof(MoreAccessories_Support));
@@ -494,10 +494,9 @@ namespace KK_CoordinateLoadOption {
             btnClearAcc.onClick.RemoveAllListeners();
             btnClearAcc.onClick.AddListener(() => {
                 if (SCLO.insideStudio) {
-                    OCIChar[] array = (from v in Singleton<GuideObjectManager>.Instance.selectObjectKey
-                                       select Studio.Studio.GetCtrlInfo(v) as OCIChar into v
-                                       where v != null
-                                       select v).ToArray();
+                    IEnumerable<OCIChar> array = Singleton<GuideObjectManager>.Instance.selectObjectKey
+                        .Select(p => (OCIChar)Studio.Studio.GetCtrlInfo(p))
+                        .Where(p => null != p);
                     foreach (OCIChar ocichar in array) {
                         CoordinateLoad.ClearAccessories(ocichar.charInfo);
                     }
@@ -511,7 +510,7 @@ namespace KK_CoordinateLoadOption {
             });
             btnReverseHairAcc.onClick.RemoveAllListeners();
             btnReverseHairAcc.onClick.AddListener(() => {
-                CoordinateLoad.MakeTmpChara(delegate {
+                CoordinateLoad.MakeTmpChara((_) => {
                     CoordinateLoad.tmpChaCtrl.StopAllCoroutines();
                     for (int i = 0; i < MoreAccessories_Support.GetAccessoriesAmount(CoordinateLoad.tmpChaCtrl.chaFile); i++) {
                         if (i < tgls2.Length) {
@@ -524,6 +523,7 @@ namespace KK_CoordinateLoadOption {
                     Singleton<Manager.Character>.Instance.DeleteChara(CoordinateLoad.tmpChaCtrl);
                     CoordinateLoad.tmpChaCtrl = null;
                     Logger.LogDebug($"Delete Temp Chara");
+                    Illusion.Game.Utils.Sound.Play(Illusion.Game.SystemSE.ok_s);
                     Logger.LogDebug("Reverse Hair Acc. toggles.");
                 });
             });
@@ -641,11 +641,10 @@ namespace KK_CoordinateLoadOption {
             }
 
             if (SCLO.insideStudio) {
-                OCIChar[] array = (from v in GuideObjectManager.Instance.selectObjectKey
-                                   select Studio.Studio.GetCtrlInfo(v) into v
-                                   where null != v
-                                   select v).OfType<OCIChar>().ToArray();
-                if (array.Length == 0) {
+                IEnumerable<OCIChar> array = GuideObjectManager.Instance.selectObjectKey
+                    .Select(p => (OCIChar)Studio.Studio.GetCtrlInfo(p))
+                    .Where(p => null != p).OfType<OCIChar>();
+                if (array.Count() == 0) {
                     //沒選中人
                     Logger.LogMessage("No available characters selected");
                     Logger.LogDebug("Studio Coordinate Load Option Finish");
@@ -658,7 +657,7 @@ namespace KK_CoordinateLoadOption {
                     Illusion.Game.Utils.Sound.Play(Illusion.Game.SystemSE.ok_s);
                 } else {
                     //建立tmpChara並等待載入完成，然後再呼叫換衣
-                    CoordinateLoad.oCICharArray = array;
+                    CoordinateLoad.totalAmount = array.Count();
                     CoordinateLoad.oCICharQueue = new Queue<OCIChar>(array);
                     CoordinateLoad.finishedCount = 0;
                     CoordinateLoad.MakeTmpChara(CoordinateLoad.ChangeCoordinate);
@@ -693,7 +692,7 @@ namespace KK_CoordinateLoadOption {
 
     class CoordinateLoad {
         private static readonly ManualLogSource Logger = SCLO.Logger;
-        internal static OCIChar[] oCICharArray;
+        internal static int totalAmount = 0;
         internal static Queue<OCIChar> oCICharQueue = new Queue<OCIChar>();
         internal static int finishedCount = 0;
         internal static ChaControl tmpChaCtrl;
@@ -717,27 +716,31 @@ namespace KK_CoordinateLoadOption {
             ChaControl chaCtrl = null;
             OCIChar ocichar = null;
             if (SCLO.insideStudio) {
-                ocichar = oCICharQueue.Dequeue();
+                if (oCICharQueue.Count != 0) {
+                    ocichar = oCICharQueue.Dequeue();
 
-                //Bone
-                foreach (OCIChar.BoneInfo boneInfo in ocichar.listBones.Where(b => b.boneGroup == OIBoneInfo.BoneGroup.Hair)) {
-                    Singleton<GuideObjectManager>.Instance.Delete(boneInfo.guideObject, true);
+                    //Bone
+                    foreach (OCIChar.BoneInfo boneInfo in ocichar.listBones.Where(b => b.boneGroup == OIBoneInfo.BoneGroup.Hair)) {
+                        Singleton<GuideObjectManager>.Instance.Delete(boneInfo.guideObject, true);
+                    }
+                    ocichar.listBones = ocichar.listBones.Where(b => b.boneGroup != OIBoneInfo.BoneGroup.Hair).ToList<OCIChar.BoneInfo>();
+                    ocichar.hairDynamic = null;
+                    ocichar.skirtDynamic = null;
+                    chaCtrl = ocichar.charInfo;
                 }
-                ocichar.listBones = ocichar.listBones.Where(b => b.boneGroup != OIBoneInfo.BoneGroup.Hair).ToList<OCIChar.BoneInfo>();
-                ocichar.hairDynamic = null;
-                ocichar.skirtDynamic = null;
-                chaCtrl = ocichar.charInfo;
+                // 如果是ReverseHairAcc功能，chaCtrl就會保持null
+                // 後續用到chaCtrl都應該檢核
             } else {
                 chaCtrl = Singleton<CustomBase>.Instance.chaCtrl;
             }
             //KK_COBOC
-            if (SCLO._isCharaOverlayBasedOnCoordinateExist) {
+            if (SCLO._isCharaOverlayBasedOnCoordinateExist && null != chaCtrl) {
                 coboc = new COBOC_CCFCSupport(chaCtrl);
                 //coboc.SetExtDataFromController();
                 coboc.GetControllerAndBackupData(targetChaCtrl: chaCtrl);
                 coboc.GetIrisDisplaySide();
             }
-            if (SCLO._isHairAccessoryCustomizerExist) {
+            if (SCLO._isHairAccessoryCustomizerExist && null != chaCtrl) {
                 hairacc = new HairAccessoryCustomizer_CCFCSupport(chaCtrl);
                 hairacc.GetControllerAndBackupData(targetChaCtrl: chaCtrl);
                 HairAccessoryCustomizer_CCFCSupport.UpdateBlock = true;
@@ -752,8 +755,8 @@ namespace KK_CoordinateLoadOption {
             tmpChaCtrl.Load(true);
             tmpChaCtrl.fileParam.lastname = "黑肉";
             tmpChaCtrl.fileParam.firstname = "舔舔";
-            tmpChaCtrl.fileStatus.coordinateType = chaCtrl.fileStatus.coordinateType;
-            if (SCLO._isHairAccessoryCustomizerExist) {
+            tmpChaCtrl.fileStatus.coordinateType = chaCtrl?.fileStatus.coordinateType ?? 0;
+            if (SCLO._isHairAccessoryCustomizerExist && null != chaCtrl) {
                 //取得BackupData
                 hairacc.GetControllerAndBackupData(sourceChaCtrl: tmpChaCtrl, sourceCoordinate: backupTmpCoordinate);
 
@@ -792,7 +795,7 @@ namespace KK_CoordinateLoadOption {
             bool CheckPluginPrepared(ChaFileCoordinate backCoordinate = null) =>
                 null != tmpChaCtrl &&
                 new KCOX_CCFCSupport(tmpChaCtrl).CheckControllerPrepared() &&
-                (null == backCoordinate || hairacc.CheckControllerPrepared(tmpChaCtrl, backCoordinate)) &&
+                (null == backCoordinate || new HairAccessoryCustomizer_CCFCSupport(tmpChaCtrl).CheckControllerPrepared(backCoordinate)) &&
                 new MaterialEditor_CCCFCSupport(tmpChaCtrl).CheckControllerPrepared();
         }
 
@@ -952,7 +955,7 @@ namespace KK_CoordinateLoadOption {
                 ocichar.ChangeBlink(ocichar.charFileStatus.eyesBlink);
                 ocichar.ChangeMouthOpen(ocichar.oiCharInfo.mouthOpen);
 
-                Logger.LogInfo($"Loaded: {finishedCount}/{oCICharArray.Length}");
+                Logger.LogInfo($"Loaded: {finishedCount}/{totalAmount}");
             } else {
                 Singleton<CustomBase>.Instance.updateCustomUI = true;
             }
@@ -974,12 +977,15 @@ namespace KK_CoordinateLoadOption {
                 MakeTmpChara(ChangeCoordinate);
             } else {
                 oCICharQueue.Clear();
+                totalAmount = 0;
                 Logger.LogInfo($"Load End");
-                Illusion.Game.Utils.Sound.Play(Illusion.Game.SystemSE.ok_s);
 
                 if (forceClean) {
                     Logger.Log(LogLevel.Message | LogLevel.Error | LogLevel.Warning, "Coordinate Load ended unexpectedly.");
                     Logger.Log(LogLevel.Message | LogLevel.Error, "Please call the original game function manually instead.");
+                    Illusion.Game.Utils.Sound.Play(Illusion.Game.SystemSE.cancel);
+                } else {
+                    Illusion.Game.Utils.Sound.Play(Illusion.Game.SystemSE.ok_s); 
                 }
             }
         }

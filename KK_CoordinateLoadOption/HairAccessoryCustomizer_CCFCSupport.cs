@@ -16,8 +16,8 @@ namespace KK_CoordinateLoadOption {
         public override string ControllerName => "HairAccessoryController";
         public override string CCFCName => "HairAccessoryCustomizer";
 
-        internal new Dictionary<int, object> SourceBackup { get => base.SourceBackup.ToDictionary<int, object>(); set => base.SourceBackup = value; }
-        internal new Dictionary<int, object> TargetBackup { get => base.TargetBackup.ToDictionary<int, object>(); set => base.TargetBackup = value; }
+        internal new Dictionary<int, object> SourceBackup { get => base.SourceBackup?.ToDictionary<int, object>(); set => base.SourceBackup = value; }
+        internal new Dictionary<int, object> TargetBackup { get => base.TargetBackup?.ToDictionary<int, object>(); set => base.TargetBackup = value; }
 
         public HairAccessoryCustomizer_CCFCSupport(ChaControl chaCtrl) : base(chaCtrl) => isExist = KK_CoordinateLoadOption._isHairAccessoryCustomizerExist;
 
@@ -75,6 +75,7 @@ namespace KK_CoordinateLoadOption {
             return HairAccessories;
         }
 
+        //Not tested
         private object CopyHairAccData_ControllerData(object HairAccessories) {
             Dictionary<int, Dictionary<int, object>> result = null;
             if (null != HairAccessories && HairAccessories.Count() != 0) {
@@ -244,53 +245,54 @@ namespace KK_CoordinateLoadOption {
         /// <summary>
         /// 檢核LoadState，這是因為異步流程所需，檢查Extdata是否已從Coordinate載入完成
         /// </summary>
-        /// <param name="chaCtrl">檢核的ChaControl</param>
         /// <returns>檢核通過</returns>
-        public bool CheckControllerPrepared(ChaControl chaCtrl, ChaFileCoordinate backCoordinate) {
-            if (!KK_CoordinateLoadOption._isHairAccessoryCustomizerExist || null == backCoordinate) {
-                return true;
-            }
-            bool? flag = true;
-
-            //Dictionary<int, object> dataFromChaCtrlExt = GetDataFromCoordinate(chaCtrl.nowCoordinate);
-            Dictionary<int, object> dataFromBackCoor = GetDataFromCoordinate(backCoordinate);
-            GetCoordinateData(GetDataFromController(chaCtrl), (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, out Dictionary<int, object> dataFromCon);
-
-            //過濾假的HairAccInfo
-            if (null != dataFromBackCoor) {
-                foreach (KeyValuePair<int, object> rk in dataFromBackCoor.Where(x => null == CoordinateLoad.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
-                    dataFromBackCoor.Remove(rk.Key);
+        public bool CheckControllerPrepared(ChaFileCoordinate backCoordinate) => CheckControllerPrepared(DefaultChaCtrl, backCoordinate);
+        public bool CheckControllerPrepared(ChaControl chaCtrl, ChaFileCoordinate backCoordinate)
+            => base.CheckControllerPrepared(chaCtrl, (_) => {
+                if (!KK_CoordinateLoadOption._isHairAccessoryCustomizerExist || null == backCoordinate) {
+                    return true;
                 }
-                Logger.LogDebug($"Test with {dataFromBackCoor.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromBackCoor.Select(x => x.Key.ToString()).ToArray())}");
-            }
-            if (null != dataFromCon) {
-                foreach (KeyValuePair<int, object> rk in dataFromCon.Where(x => null == CoordinateLoad.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
-                    dataFromCon.Remove(rk.Key);
-                }
-                Logger.LogDebug($"Test with {dataFromCon.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromCon.Select(x => x.Key.ToString()).ToArray())}");
-            }
+                bool? flag = true;
 
-            if (null != dataFromCon && dataFromCon.Count > 0) {
-                //若現正選中的飾品是髮飾品，則Controller上會有data
-                //故Controller上有可能會比衣裝中多出一個選中的髮飾品資料
-                if (null != dataFromBackCoor && (dataFromBackCoor.Count == dataFromCon.Count || dataFromBackCoor.Count == dataFromCon.Count - 1)) {
-                    foreach (KeyValuePair<int, object> kv in dataFromCon) {
-                        if (dataFromBackCoor.ContainsKey(kv.Key) || kv.Key == Singleton<ChaCustom.CustomBase>.Instance.selectSlot) {
-                            continue;
-                        } else { flag = false; break; }
+                //Dictionary<int, object> dataFromChaCtrlExt = GetDataFromCoordinate(chaCtrl.nowCoordinate);
+                Dictionary<int, object> dataFromBackCoor = GetDataFromCoordinate(backCoordinate);
+                GetCoordinateData(GetDataFromController(chaCtrl), (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, out Dictionary<int, object> dataFromCon);
+
+                //過濾假的HairAccInfo
+                if (null != dataFromBackCoor) {
+                    foreach (KeyValuePair<int, object> rk in dataFromBackCoor.Where(x => null == CoordinateLoad.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
+                        dataFromBackCoor.Remove(rk.Key);
                     }
-                } else { flag = false; }
-            } else {
-                //No data from coordinate extData 
-                if (null != dataFromBackCoor && dataFromBackCoor.Count != 0) {
-                    flag = false;
-                } else {
-                    flag = null;
+                    Logger.LogDebug($"Test with {dataFromBackCoor.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromBackCoor.Select(x => x.Key.ToString()).ToArray())}");
                 }
-            }
+                if (null != dataFromCon) {
+                    foreach (KeyValuePair<int, object> rk in dataFromCon.Where(x => null == CoordinateLoad.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
+                        dataFromCon.Remove(rk.Key);
+                    }
+                    Logger.LogDebug($"Test with {dataFromCon.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromCon.Select(x => x.Key.ToString()).ToArray())}");
+                }
 
-            return flag ?? true;
-        }
+                if (null != dataFromCon && dataFromCon.Count > 0) {
+                    //若現正選中的飾品是髮飾品，則Controller上會有data
+                    //故Controller上有可能會比衣裝中多出一個選中的髮飾品資料
+                    if (null != dataFromBackCoor && (dataFromBackCoor.Count == dataFromCon.Count || dataFromBackCoor.Count == dataFromCon.Count - 1)) {
+                        foreach (KeyValuePair<int, object> kv in dataFromCon) {
+                            if (dataFromBackCoor.ContainsKey(kv.Key) || kv.Key == Singleton<ChaCustom.CustomBase>.Instance.selectSlot) {
+                                continue;
+                            } else { flag = false; break; }
+                        }
+                    } else { flag = false; }
+                } else {
+                    //No data from coordinate extData 
+                    if (null != dataFromBackCoor && dataFromBackCoor.Count != 0) {
+                        flag = false;
+                    } else {
+                        flag = null;
+                    }
+                }
+
+                return flag ?? true;
+            });
 
         /// <summary>
         /// 拷貝整個髮飾品資料

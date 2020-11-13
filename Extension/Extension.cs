@@ -1,16 +1,19 @@
-﻿using BepInEx;
-using HarmonyLib;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using BepInEx;
+using HarmonyLib;
 using UnityEngine;
 
 namespace Extension {
     public static class Extension {
-        public static string LogPrefix = "{LogPrefix}";
+        public static object BepLogger;
+        private static void LogDebug(string data) => BepLogger?.Invoke("LogDebug", new object[] { data });
+        private static void LogWarning(string data) => BepLogger?.Invoke("LogWarning", new object[] { data });
+        private static void LogError(string data) => BepLogger?.Invoke("LogError", new object[] { data });
 
         #region Reflection Stuff
         private struct Key {
@@ -25,9 +28,7 @@ namespace Extension {
                 _hashCode = (Types.GetHashCode() ^ Name.GetHashCode());
             }
 
-            public override int GetHashCode() {
-                return _hashCode;
-            }
+            public override int GetHashCode() => _hashCode;
         }
 
         private static readonly Dictionary<Key, FieldInfo> _fieldCache = new Dictionary<Key, FieldInfo>();
@@ -58,7 +59,7 @@ namespace Extension {
         }
 
         public static bool SetField(this object self, string name, object value) {
-            //Console.WriteLine($"SetField with no type");
+            //LogDebug($"SetField with no type");
             Type type = self.GetType();
             MethodInfo method = typeof(Extension).GetMethods(BindingFlags.Public | BindingFlags.Static).Where(m => m.Name == nameof(Extension.SetField) && m.IsGenericMethod).First();
             method = method.MakeGenericMethod(type);
@@ -81,8 +82,8 @@ namespace Extension {
                 field.SetValue(self, value);
                 return true;
             } catch (ArgumentException ae) {
-                Console.WriteLine($"{LogPrefix} Set Field is not the same type as input: {name}");
-                Console.WriteLine($"{LogPrefix} {ae.Message}");
+                LogError($"Set Field is not the same type as input: {name}");
+                LogError($"{ae.Message}");
                 return false;
             }
         }
@@ -129,8 +130,8 @@ namespace Extension {
                 property.SetValue(self as T, value, null);
                 return true;
             } catch (ArgumentException ae) {
-                Console.WriteLine($"{LogPrefix} Set Property is not the same type as input: {name}");
-                Console.WriteLine($"{LogPrefix} {ae.Message}");
+                LogError($"Set Property is not the same type as input: {name}");
+                LogError($"{ae.Message}");
                 return false;
             }
         }
@@ -167,10 +168,10 @@ namespace Extension {
                     return methodInfo.Invoke(null, p);
                 } else { throw new Exception($"Invoke as static on a not static method"); }
             } catch (ArgumentException ae) {
-                Console.WriteLine($"{LogPrefix} Invoke Method is not the same type as input: {name}");
-                Console.WriteLine($"{LogPrefix} {ae.Message}");
+                LogError($"Invoke Method is not the same type as input: {name}");
+                LogError($"{ae.Message}");
             } catch (Exception e) {
-                Console.WriteLine($"{LogPrefix} {e.GetType().Name} {e.Message}");
+                LogError($"{e.GetType().Name} {e.Message}");
             }
             return null;
         }
@@ -181,16 +182,16 @@ namespace Extension {
             } else {
                 FieldInfo[] fieldInfos = fieldKey.Type.GetFields(AccessTools.all);
                 System.Text.StringBuilder printArray = new System.Text.StringBuilder();
-                printArray.AppendLine($"{LogPrefix} Field Not Found : {fieldKey.Name} on {fieldKey.Type.FullName}");
-                printArray.AppendLine($"{LogPrefix} Get {fieldInfos.Length} Fields.");
                 foreach (FieldInfo fi in fieldInfos) {
                     if (fi.Name == fieldKey.Name) {
                         _fieldCache.Add(fieldKey, fi);
                         return true;
                     }
-                    printArray.Add($"{LogPrefix} Field Name/ Type: {fi.Name}/ {fi.FieldType}");
+                    printArray.Add($"Field Name/ Type: {fi.Name}/ {fi.FieldType}");
                 }
-                Console.WriteLine(printArray.ToString());
+                LogError($"Field Not Found : {fieldKey.Name} on {fieldKey.Type.FullName}");
+                LogDebug($"Get {fieldInfos.Length} Fields.");
+                LogDebug(printArray.ToString());
                 return false;
             }
         }
@@ -201,16 +202,16 @@ namespace Extension {
             } else {
                 PropertyInfo[] propertyInfos = propertyKey.Type.GetProperties(AccessTools.all);
                 System.Text.StringBuilder printArray = new System.Text.StringBuilder();
-                printArray.AppendLine($"{LogPrefix} Property Not Found : {propertyKey.Name} on {propertyKey.Type.FullName}");
-                printArray.AppendLine($"{LogPrefix} Get {propertyInfos.Length} Properties.");
                 foreach (PropertyInfo pi in propertyInfos) {
                     if (pi.Name == propertyKey.Name) {
                         _propertyCache.Add(propertyKey, pi);
                         return true;
                     }
-                    printArray.AppendLine($"{LogPrefix} Property Name/ Type: {pi.Name}/ {pi.PropertyType}");
+                    printArray.AppendLine($"Property Name/ Type: {pi.Name}/ {pi.PropertyType}");
                 }
-                Console.WriteLine(printArray.ToString());
+                LogError($"Property Not Found : {propertyKey.Name} on {propertyKey.Type.FullName}");
+                LogDebug($"Get {propertyInfos.Length} Properties.");
+                LogDebug(printArray.ToString());
                 return false;
             }
         }
@@ -221,10 +222,6 @@ namespace Extension {
             } else {
                 MethodInfo[] methodInfos = methodKey.Type.GetMethods(AccessTools.all);
                 System.Text.StringBuilder printArray = new System.Text.StringBuilder();
-                printArray.AppendLine($"{LogPrefix} Method Not Found: {methodKey.Name} on {methodKey.Type.FullName}");
-                printArray.AppendLine($"{LogPrefix} Search for Types and Params: " +
-                    string.Join($", ", methodKey.Types.Select<Type, string>(x => x.Name).ToArray()));
-                printArray.AppendLine($"{LogPrefix} Get {methodInfos.Length} Methods.");
                 foreach (MethodInfo me in methodInfos) {
                     if (me.Name == methodKey.Name &&
                         me.GetParameters().Length + 1 == methodKey.Types.Length &&
@@ -235,9 +232,12 @@ namespace Extension {
                         _methodCache.Add(methodKey, me);
                         return true;
                     }
-                    printArray.AppendLine($"{LogPrefix} Method Name: ReturnType/ ParamsType: {me.Name}: {me.ReturnType.Name}/ {string.Join($", ", me.GetParameters().Select<ParameterInfo, string>(pi => pi.ParameterType.Name).ToArray())}");
+                    printArray.AppendLine($"Method Name: ReturnType/ ParamsType: {me.Name}: {me.ReturnType.Name}/ {string.Join($", ", me.GetParameters().Select<ParameterInfo, string>(pi => pi.ParameterType.Name).ToArray())}");
                 }
-                Console.WriteLine(printArray.ToString());
+                LogError($"Method Not Found: {methodKey.Name} on {methodKey.Type.FullName}");
+                LogError($"Search for Types and Params: " + string.Join($", ", methodKey.Types.Select<Type, string>(x => x.Name).ToArray()));
+                LogDebug($"Get {methodInfos.Length} Methods.");
+                LogDebug(printArray.ToString());
                 return false;
             }
         }
@@ -253,7 +253,7 @@ namespace Extension {
 
         public static Dictionary<TKey, TValue> ToDictionary<TKey, TValue>(this object self) {
             if (!(self is IDictionary dictionary)) {
-                Console.WriteLine($"{LogPrefix} Faild to cast to Dictionary!");
+                LogError($"Faild to cast to Dictionary!");
                 return null;
             }
             Dictionary<TKey, TValue> newDictionary =
@@ -271,7 +271,7 @@ namespace Extension {
 
         public static List<T> ToList<T>(this object self) {
             if (!(self is IEnumerable<T> iEnumerable)) {
-                Console.WriteLine($"{LogPrefix} Faild to cast to List!");
+                LogError($"Faild to cast to List!");
                 return null;
             }
             List<T> newList = new List<T>(iEnumerable);
@@ -283,7 +283,7 @@ namespace Extension {
         public static object ToDictionaryWithoutType(this object self) {
             Type type = self.GetType();
             foreach (Type interfaceType in type.GetInterfaces()) {
-                //Console.WriteLine(interfaceType.ToString());
+                //LogDebug(interfaceType.ToString());
                 if (interfaceType.IsGenericType &&
                    interfaceType.GetGenericTypeDefinition() == typeof(IDictionary<,>)) {
                     Type KeyType = type.GetGenericArguments()[0];
@@ -296,7 +296,7 @@ namespace Extension {
                     return method.Invoke(null, new object[] { self });
                 }
             }
-            Console.WriteLine($"{LogPrefix} Faild to cast to Dictionary<unknown>!");
+            LogError($"Faild to cast to Dictionary<unknown>!");
             return null;
         }
 
@@ -309,12 +309,12 @@ namespace Extension {
                 )?.GetGenericArguments()[0];
 
             if (null == paramTypes || !paramTypes.IsAssignableFrom(key.GetType())) {
-                Console.WriteLine($"{LogPrefix} Key type not match! Cannot Get {key.GetType().FullName} from object");
+                LogError($"Key type not match! Cannot Get {key.GetType().FullName} from object");
                 return false;
             }
 
             if (!(bool)self.Invoke("ContainsKey", new object[] { key })) {
-                Console.WriteLine($"{LogPrefix} Key not found! Cannot Get {key.GetType().FullName} from object");
+                LogError($"Key not found! Cannot Get {key.GetType().FullName} from object");
                 return false;
             }
 
@@ -338,7 +338,7 @@ namespace Extension {
                     return method.Invoke(null, new object[] { self });
                 }
             }
-            Console.WriteLine($"{LogPrefix} Faild to cast to List<unknown>!");
+            LogError($"Faild to cast to List<unknown>!");
             return null;
         }
 
@@ -362,9 +362,9 @@ namespace Extension {
                     foreach (object o in listToAdd) {
                         oriList.Add(o);
                     }
-                    //Console.WriteLine($"{LogPrefix} AddRange: Add {listToAdd.Count} item.");
+                    //LogDebug($"AddRange: Add {listToAdd.Count} item."});
                 } else {
-                    Console.WriteLine($"{LogPrefix} Type not Match! Cannot Add {addItemType.FullName} into {selfItemType.FullName}");
+                    LogError($"Type not Match! Cannot Add {addItemType.FullName} into {selfItemType.FullName}");
                 }
             }
         }
@@ -379,7 +379,7 @@ namespace Extension {
                         list.RemoveAt(i);
                         amount++;
                         i--;
-                        //Console.WriteLine($"{LogPrefix} Remove at {i}/{list.Count}");
+                        //LogDebug($"Remove at {i}/{list.Count}"});
                     }
                 }
             } else if (self is IDictionary dic) {
@@ -387,7 +387,7 @@ namespace Extension {
                 foreach (object key in dic.Keys) {
                     if (match(new KeyValuePair<object, object>(key, dic[key]))) {
                         keysToRemove.Enqueue(key);
-                        //Console.WriteLine($"{LogPrefix} Remove at {i}/{list.Count}");
+                        //LogDebug($"Remove at {i}/{list.Count}"});
                     }
                 }
                 amount = keysToRemove.Count;
@@ -396,9 +396,9 @@ namespace Extension {
                     dic.Remove(key);
                 }
             } else {
-                Console.WriteLine($"{LogPrefix} RemoveAll: Input Object is not type of List<unknown> or Dictionary<unknown>!");
+                LogError($"RemoveAll: Input Object is not type of List<unknown> or Dictionary<unknown>!");
             }
-            //Console.WriteLine($"{LogPrefix} RemoveAll: Output Obj Count {list.Count}");
+            //LogDebug($"RemoveAll: Output Obj Count {list.Count}"});
             return amount;
         }
 
@@ -409,7 +409,7 @@ namespace Extension {
             if (self is IDictionary dic) {
                 return dic.Count;
             } else {
-                Console.WriteLine($"{LogPrefix} Count: Input Object is not type of List<unknown> or Dictionary<unknown>!");
+                LogError($"Count: Input Object is not type of List<unknown> or Dictionary<unknown>!");
                 return -1;
             }
         }
@@ -426,7 +426,7 @@ namespace Extension {
                 }
                 return dic;
             } else {
-                Console.WriteLine($"{LogPrefix} Select: Input Object is not type of List<unknown>!");
+                LogError($"Select: Input Object is not type of List<unknown>!");
                 return null;
             }
         }
@@ -441,7 +441,7 @@ namespace Extension {
                     action(d);
                 }
             } else {
-                Console.WriteLine($"{LogPrefix} Select: Input Object is not type of Dictionary<unknown> or List<unknown>!");
+                LogError($"Select: Input Object is not type of Dictionary<unknown> or List<unknown>!");
                 return null;
             }
             return self;
@@ -459,7 +459,7 @@ namespace Extension {
                 result.RemoveAll(x => !match(x));
                 return result;
             } else {
-                Console.WriteLine($"{LogPrefix} Where: Input Object is not type of List<unknown>!");
+                LogError($"Where: Input Object is not type of List<unknown>!");
             }
             return null;
         }
@@ -475,9 +475,9 @@ namespace Extension {
                 }
                 if (null != selfItemType && obj2Add.GetType() == selfItemType) {
                     oriList.Add(obj2Add);
-                    //Console.WriteLine($"{LogPrefix} AddRange: Add {listToAdd.Count} item.");
+                    //LogDebug($"AddRange: Add {listToAdd.Count} item."});
                 } else {
-                    Console.WriteLine($"{LogPrefix} Type not Match! Cannot Add {obj2Add.GetType().FullName} into {selfItemType.FullName}");
+                    LogError($"Type not Match! Cannot Add {obj2Add.GetType().FullName} into {selfItemType.FullName}");
                 }
             }
         }
@@ -495,9 +495,9 @@ namespace Extension {
                 }
                 if (null != keyType && null != valueType && key2Add.GetType() == keyType && value2Add.GetType() == valueType) {
                     dic.Add(key2Add, value2Add);
-                    //Console.WriteLine($"{LogPrefix} AddRange: Add {listToAdd.Count} item.");
+                    //LogDebug($"AddRange: Add {listToAdd.Count} item."});
                 } else {
-                    Console.WriteLine($"{LogPrefix} Type not Match! Cannot Add <{key2Add.GetType().FullName}, <{value2Add.GetType().FullName}> into Dictionary<{keyType.FullName}, {valueType.FullName}>");
+                    LogError($"Type not Match! Cannot Add <{key2Add.GetType().FullName}, <{value2Add.GetType().FullName}> into Dictionary<{keyType.FullName}, {valueType.FullName}>");
                 }
             }
         }
@@ -557,7 +557,7 @@ namespace Extension {
                     }
                     return texture;
                 } else {
-                    Console.WriteLine($"Missing Dll resource: {FilePath}");
+                    LogError($"Missing Dll resource: {FilePath}");
                 }
             }
             return null;
@@ -683,15 +683,15 @@ namespace Extension {
                 if (target.Metadata.Version >= minimumVersion) {
                     return target.Instance;
                 }
-                Console.WriteLine($"{LogPrefix} {pluginName} v{target.Metadata.Version.ToString()} is detacted OUTDATED.");
-                Console.WriteLine($"{LogPrefix} Please update {pluginName} to at least v{minimumVersion.ToString()} to enable related feature.");
+                LogWarning($"{pluginName} v{target.Metadata.Version.ToString()} is detacted OUTDATED.");
+                LogWarning($"Please update {pluginName} to at least v{minimumVersion.ToString()} to enable related feature.");
             }
             return null;
         }
 
         //public static bool IsSteam() {
         //    if (typeof(DownloadScene).GetProperty($"isSteam", AccessTools.all) != null) {
-        //        Console.WriteLine($"{LogPrefix} This Plugin is not working in Koikatu Party (Steam version)");
+        //        LogDebug($"This Plugin is not working in Koikatu Party (Steam version)");
         //        return true;
         //    }
         //    return false;
@@ -699,7 +699,7 @@ namespace Extension {
 
         //public static bool IsDarkness() {
         //    if (null == typeof(ChaFileParameter).GetProperty($"exType")) {
-        //        Console.WriteLine($"{LogPrefix} This Plugin is not working without Darkness.");
+        //        LogDebug($"This Plugin is not working without Darkness.");
         //        return false;
         //    }
         //    return true;

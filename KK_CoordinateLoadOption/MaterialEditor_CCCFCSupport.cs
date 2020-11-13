@@ -12,8 +12,8 @@ namespace KK_CoordinateLoadOption {
         public override string ControllerName => "MaterialEditorCharaController";
         public override string CCFCName => "MaterialEditor";
 
-        internal new Dictionary<string, object> SourceBackup { get => base.SourceBackup.ToDictionary<string, object>(); set => base.SourceBackup = value; }
-        internal new Dictionary<string, object> TargetBackup { get => base.TargetBackup.ToDictionary<string, object>(); set => base.TargetBackup = value; }
+        internal new Dictionary<string, object> SourceBackup { get => base.SourceBackup?.ToDictionary<string, object>(); set => base.SourceBackup = value; }
+        internal new Dictionary<string, object> TargetBackup { get => base.TargetBackup?.ToDictionary<string, object>(); set => base.TargetBackup = value; }
 
         public MaterialEditor_CCCFCSupport(ChaControl chaCtrl) : base(chaCtrl)
             => isExist = KK_CoordinateLoadOption._isMaterialEditorExist;
@@ -250,13 +250,34 @@ namespace KK_CoordinateLoadOption {
                             });
                             break;
                         case 4: //MaterialTexture
-                            TargetController.Invoke(storedValue.removeFunctionName, new object[] {
+                            //Offset
+                            if (null != x.GetField("OffsetOriginal")) {
+                                TargetController.Invoke("RemoveMaterialTextureOffset", new object[] {
                                     targetSlot,
                                     m,
                                     x.GetField("Property"),
                                     gameObject,
-                                    false
+                                    true
                                 });
+                            }
+                            //Scale
+                            if (null != x.GetField("ScaleOriginal")) {
+                                TargetController.Invoke("RemoveMaterialTextureScale", new object[] {
+                                    targetSlot,
+                                    m,
+                                    x.GetField("Property"),
+                                    gameObject,
+                                    true
+                                });
+                            }
+                            //Texture
+                            TargetController.Invoke(storedValue.removeFunctionName, new object[] {
+                                targetSlot,
+                                m,
+                                x.GetField("Property"),
+                                gameObject,
+                                false
+                            });
                             break;
                     }
                 });
@@ -368,7 +389,7 @@ namespace KK_CoordinateLoadOption {
                                 targetSlot,
                                 m,
                                 x.GetField("Property"),
-                                (float)Convert.ToDouble( x.GetField("Value")),
+                                (float)Convert.ToDouble(x.GetField("Value")),
                                 gameObject,
                                 true
                             });
@@ -401,29 +422,28 @@ namespace KK_CoordinateLoadOption {
                                 });
 
                                 File.Delete(tempPath);
-
+                            }
+                            if (null != x.GetField("OffsetOriginal")) {
                                 //Offset
-                                if (null != x.GetField("OffsetOriginal")) {
-                                    TargetController.Invoke("SetMaterialTextureOffset", new object[] {
-                                        targetSlot,
-                                        m,
-                                        x.GetField("Property"),
-                                        x.GetField("Offset"),
-                                        gameObject,
-                                        true
-                                    });
-                                }
-                                //Scale
-                                if (null != x.GetField("ScaleOriginal")) {
-                                    TargetController.Invoke("SetMaterialTextureScale", new object[] {
-                                        targetSlot,
-                                        m,
-                                        x.GetField("Property"),
-                                        x.GetField("Scale"),
-                                        gameObject,
-                                        true
-                                    });
-                                }
+                                TargetController.Invoke("SetMaterialTextureOffset", new object[] {
+                                    targetSlot,
+                                    m,
+                                    x.GetField("Property"),
+                                    x.GetField("Offset"),
+                                    gameObject,
+                                    true
+                                });
+                            }
+                            //Scale
+                            if (null != x.GetField("ScaleOriginal")) {
+                                TargetController.Invoke("SetMaterialTextureScale", new object[] {
+                                    targetSlot,
+                                    m,
+                                    x.GetField("Property"),
+                                    x.GetField("Scale"),
+                                    gameObject,
+                                    true
+                                });
                             }
                             break;
                     }
@@ -433,7 +453,7 @@ namespace KK_CoordinateLoadOption {
                     if (objAdded.Count() > 0) {
                         TargetBackup = GetDataFromController(targetChaCtrl) as Dictionary<string, object>;
                         TargetTextureDictionaryBackup = GetTextureDictionaryFromController(targetChaCtrl);
-                        Logger.LogDebug($"--->Change {objAdded.Count()} {storedValue.className}");
+                        Logger.LogDebug($"--->Set {objAdded.Count()} {storedValue.className}");
                     }
                 }
                 doFlag |= doFlag2;
