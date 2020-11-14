@@ -102,13 +102,16 @@ namespace KK_CoordinateLoadOption {
                     target.SetProperty("CoordinateModifiers", tmp);
                     Logger.LogDebug("->Insert Modifier: " + modifierDict.Key);
                 }
-                TargetController.Invoke("StartCoroutine", new object[] {
-                    TargetController.Invoke("OnDataChangedCo")
-                }); //StartCoroutine(OnDataChangedCo());
+                TargetController.SetProperty("NeedsFullRefresh", true); 
                 Logger.LogDebug("->ABMX Bone Rollback complete");
             } else {
                 Logger.LogDebug("->ABMX Bone not found");
             }
+        }
+
+        public override void SetExtDataFromController(ChaControl chaCtrl) {
+            base.SetExtDataFromController(chaCtrl);
+            GetController(chaCtrl).SetProperty("NeedsFullRefresh", true); 
         }
     }
 }

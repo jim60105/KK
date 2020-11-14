@@ -56,8 +56,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.11.13.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.3.1";
+        internal const string PLUGIN_VERSION = "20.11.15.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.3.3";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -678,6 +678,10 @@ namespace KK_CoordinateLoadOption {
                     if (!flag2) {
                         chaCtrl.nowCoordinate.accessory = MessagePackSerializer.Deserialize<ChaFileAccessory>(bytes2);
                     }
+
+                    //強制重整，修正ABMX在讀取衣裝後，不會正常反應
+                    new ABMX_CCFCSupport(chaCtrl).SetExtDataFromController();
+
                     chaCtrl.Reload(false, true, true, true);
                     chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.chaFile.status.coordinateType);
                     Singleton<CustomBase>.Instance.updateCustomUI = true;
@@ -910,8 +914,8 @@ namespace KK_CoordinateLoadOption {
             }
 
             //ABMX
-            if (abmx.isExist && Patches.readABMX) {
-                abmx.CopyABMXData(tmpChaCtrl);
+            if (abmx.isExist) {
+                if (Patches.readABMX) abmx.CopyABMXData(tmpChaCtrl);
                 abmx.SetExtDataFromController();
             }
 
@@ -985,7 +989,7 @@ namespace KK_CoordinateLoadOption {
                     Logger.Log(LogLevel.Message | LogLevel.Error, "Please call the original game function manually instead.");
                     Illusion.Game.Utils.Sound.Play(Illusion.Game.SystemSE.cancel);
                 } else {
-                    Illusion.Game.Utils.Sound.Play(Illusion.Game.SystemSE.ok_s); 
+                    Illusion.Game.Utils.Sound.Play(Illusion.Game.SystemSE.ok_s);
                 }
             }
         }
