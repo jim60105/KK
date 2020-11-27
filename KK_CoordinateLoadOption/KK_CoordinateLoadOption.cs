@@ -56,8 +56,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.11.15.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.4";
+        internal const string PLUGIN_VERSION = "20.11.28.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.5";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -121,7 +121,8 @@ namespace KK_CoordinateLoadOption {
             _isCharaOverlayBasedOnCoordinateExist = new COBOC_CCFCSupport(null).LoadAssembly();
 
             //Patch other plugins at Start()
-            HairAccessoryCustomizer_CCFCSupport.Patch(harmonyInstance);
+            if(_isHairAccessoryCustomizerExist)
+                HairAccessoryCustomizer_CCFCSupport.Patch(harmonyInstance);
 
             StringResources.StringResourcesManager.SetUICulture();
 
@@ -738,14 +739,14 @@ namespace KK_CoordinateLoadOption {
                 chaCtrl = Singleton<CustomBase>.Instance.chaCtrl;
             }
             //KK_COBOC
+            coboc = new COBOC_CCFCSupport(chaCtrl);
             if (SCLO._isCharaOverlayBasedOnCoordinateExist && null != chaCtrl) {
-                coboc = new COBOC_CCFCSupport(chaCtrl);
                 //coboc.SetExtDataFromController();
                 coboc.GetControllerAndBackupData(targetChaCtrl: chaCtrl);
                 coboc.GetIrisDisplaySide();
             }
+            hairacc = new HairAccessoryCustomizer_CCFCSupport(chaCtrl);
             if (SCLO._isHairAccessoryCustomizerExist && null != chaCtrl) {
-                hairacc = new HairAccessoryCustomizer_CCFCSupport(chaCtrl);
                 hairacc.GetControllerAndBackupData(targetChaCtrl: chaCtrl);
                 HairAccessoryCustomizer_CCFCSupport.UpdateBlock = true;
             }
@@ -760,7 +761,7 @@ namespace KK_CoordinateLoadOption {
             tmpChaCtrl.fileParam.lastname = "黑肉";
             tmpChaCtrl.fileParam.firstname = "舔舔";
             tmpChaCtrl.fileStatus.coordinateType = chaCtrl?.fileStatus.coordinateType ?? 0;
-            if (SCLO._isHairAccessoryCustomizerExist && null != chaCtrl) {
+            if (hairacc.isExist && null != chaCtrl) {
                 //取得BackupData
                 hairacc.GetControllerAndBackupData(sourceChaCtrl: tmpChaCtrl, sourceCoordinate: backupTmpCoordinate);
 
@@ -877,7 +878,7 @@ namespace KK_CoordinateLoadOption {
             //存入至ExtendedData，然後Reload---
 
             //HairAcc
-            if (SCLO._isHairAccessoryCustomizerExist) {
+            if (hairacc.isExist) {
                 //寫入 (即使未載入Acc，也需要將一開始的備份寫回)
                 hairacc.SetToExtData();
                 hairacc.SetDataToCoordinate();
@@ -896,7 +897,7 @@ namespace KK_CoordinateLoadOption {
             }
 
             //Material Editor
-            if (SCLO._isMaterialEditorExist)
+            if (me.isExist)
                 me.SetExtDataFromController();
 
             //KCOX
@@ -970,7 +971,10 @@ namespace KK_CoordinateLoadOption {
 
         private static void End(bool forceClean = false) {
             hairacc.ClearBackup();
+            hairacc = null;
             coboc.ClearBackup();
+            coboc = null;
+
             tmpChaCtrl.StopAllCoroutines();
             backupTmpCoordinate = null;
             Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
@@ -1014,6 +1018,7 @@ namespace KK_CoordinateLoadOption {
             Logger.LogDebug($"Acc Count : {Patches.tgls2.Length}");
 
             MaterialEditor_CCCFCSupport me = new MaterialEditor_CCCFCSupport(targetChaCtrl);
+
             for (int i = 0; i < targetParts.Length && i < Patches.tgls2.Length; i++) {
                 if ((bool)Patches.tgls2[i]?.isOn) {
                     if (Patches.addAccModeFlag) {
@@ -1070,18 +1075,18 @@ namespace KK_CoordinateLoadOption {
                     return;
                 }
 
-                if (SCLO._isMaterialEditorExist) {
+                if (me.isExist) {
                     me.RemoveMaterialEditorData(targetSlot, GetChaAccessoryComponent(targetChaCtrl, targetSlot)?.gameObject, MaterialEditor_CCCFCSupport.ObjectType.Accessory);
                 }
 
                 byte[] tmp = MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(sourceParts[sourceSlot]);
                 targetParts[targetSlot] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tmp);
 
-                if (SCLO._isHairAccessoryCustomizerExist) {
+                if (hairacc.isExist) {
                     hairacc.CopyHairAcc(sourceChaCtrl, sourceSlot, targetChaCtrl, targetSlot);
                 }
 
-                if (SCLO._isMaterialEditorExist) {
+                if (me.isExist) {
                     me.CopyMaterialEditorData(sourceChaCtrl, sourceSlot, targetSlot, GetChaAccessoryComponent(sourceChaCtrl, sourceSlot)?.gameObject, MaterialEditor_CCCFCSupport.ObjectType.Accessory);
                 }
                 Logger.LogDebug($"->Changed: Acc{targetSlot} / Part: {(ChaListDefine.CategoryNo)targetParts[targetSlot].type} / ID: {targetParts[targetSlot].id}");
