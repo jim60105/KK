@@ -95,21 +95,112 @@ namespace KK_SaveLoadCompression {
     }
 
     class Patches {
+        private static ManualLogSource Logger = KK_SaveLoadCompression.Logger;
+
         #region Save
         //Studio Save
         [HarmonyPostfix, HarmonyPatch(typeof(SceneInfo), "Save", new Type[] { typeof(string) })]
         public static void SavePostfix(string _path)
-            => SaveLoadCompression.Save(_path, SaveLoadCompression.Token.StudioToken);
+            => Save(_path, SaveLoadCompression.Token.StudioToken);
 
         //Chara Save
         [HarmonyPostfix, HarmonyPatch(typeof(ChaFileControl), "SaveCharaFile", new Type[] { typeof(string), typeof(byte), typeof(bool) })]
         public static void SaveCharaFilePostfix(ChaFileControl __instance, string filename, byte sex)
-            => SaveLoadCompression.Save(__instance.ConvertCharaFilePath(filename, sex), SaveLoadCompression.Token.CharaToken + "】" + SaveLoadCompression.Token.SexToken + sex);  //】:為了通過CharacterReplacer
+            => Save(__instance.ConvertCharaFilePath(filename, sex), SaveLoadCompression.Token.CharaToken + "】" + SaveLoadCompression.Token.SexToken + sex);  //】:為了通過CharacterReplacer
 
         //Coordinate Save
         [HarmonyPostfix, HarmonyPatch(typeof(ChaFileCoordinate), "SaveFile", new Type[] { typeof(string) })]
         public static void SaveFilePostfix(string path)
-            => SaveLoadCompression.Save(path, SaveLoadCompression.Token.CoordinateToken);
+            => Save(path, SaveLoadCompression.Token.CoordinateToken);
+
+        public static void Save(string path, string token) {
+            if (!KK_SaveLoadCompression.Enable.Value || !KK_SaveLoadCompression.Notice.Value) return;
+
+            //這裡用cleanedPath作"_compressed"字串清理
+            string cleanedPath = path;
+            while (cleanedPath.Contains("_compressed")) {
+                cleanedPath = cleanedPath.Replace("_compressed", "");
+            }
+
+            if (cleanedPath != path) {
+                File.Copy(path, cleanedPath, true);
+                Logger.LogDebug($"Clean Path: {cleanedPath}");
+            }
+
+            string compressedPath = cleanedPath;
+            if (!KK_SaveLoadCompression.DeleteTheOri.Value) {
+                compressedPath = cleanedPath.Substring(0, cleanedPath.Length - 4) + "_compressed.png";
+            }
+
+            //Update Cache
+            string decompressPath = Path.Combine(KK_SaveLoadCompression.CacheDirectory.CreateSubdirectory("Decompressed").FullName, Path.GetFileName(cleanedPath));
+            File.Copy(path, decompressPath, true);
+
+            //New Thread, No Freeze 
+            Thread newThread = new Thread(saveThread);
+            newThread.Start();
+
+            void saveThread() {
+                Logger.LogInfo("Start Compress");
+                long newSize = 0;
+                long originalSize = 0;
+                float startTime = Time.time;
+                string TempPath = Path.Combine(KK_SaveLoadCompression.CacheDirectory.CreateSubdirectory("Compressed").FullName, Path.GetFileName(path));
+                try {
+                    originalSize = new FileInfo(path).Length;
+                    KK_SaveLoadCompression.Progress = "";
+                    newSize = new SaveLoadCompression().Save(
+                        path,
+                        TempPath,
+                        token,
+                        (decimal progress) => KK_SaveLoadCompression.Progress = $"Compressing: {progress:p2}",
+                        (decimal progress) => KK_SaveLoadCompression.Progress = $"Comparing: {progress:p2}");
+                    KK_SaveLoadCompression.Progress = "";
+
+                    //複製或刪除檔案
+                    if (newSize > 0) {
+                        LogLevel logLevel = KK_SaveLoadCompression.DisplayMessage.Value ? (LogLevel.Message | LogLevel.Info) : LogLevel.Info;
+                        Logger.LogInfo($"Compression test SUCCESS");
+                        Logger.Log(logLevel, $"Compression finish in {Time.time - startTime:n2} seconds");
+                        Logger.Log(logLevel, $"Size compress from {originalSize} bytes to {newSize} bytes");
+                        Logger.Log(logLevel, $"Compress ratio: {Convert.ToDecimal(originalSize) / newSize:n3}/1, which means it is now {Convert.ToDecimal(newSize) / originalSize:p3} big.");
+
+                        File.Copy(TempPath, compressedPath, true);
+                        Logger.LogDebug($"Write to: {compressedPath}");
+
+                        //因為File.Delete()不是立即執行完畢，不能有「砍掉以後立即在同位置寫入」的操作，所以是這個邏輯順序
+                        //如果相同的話，上方就已經覆寫了；不同的話此處再做刪除
+                        if (path != compressedPath && path != cleanedPath) {
+                            File.Delete(path);
+                            Logger.LogDebug($"Delete Original File: {path}");
+                        }
+                    } else {
+                        Logger.LogError($"Compression FAILED");
+                    }
+                } catch (Exception e) {
+                    if (e is IOException && newSize > 0) {
+                        //覆寫時遇到讀取重整會IOException: Sharing violation on path，這在Compress太快時會發生
+                        //Retry
+                        try {
+                            if (File.Exists(TempPath)) {
+                                if (KK_SaveLoadCompression.DeleteTheOri.Value) {
+                                    File.Copy(TempPath, path, true);
+                                }
+                            }
+                        } catch (Exception) {
+                            //Copy to a new name if failed twice
+                            File.Copy(TempPath, path.Substring(0, path.Length - 4) + "_compressed2.png");
+                            Logger.LogError("Overwrite was FAILED twice. Fallback to use the '_compressed2' path.");
+                        }
+                    } else {
+                        Logger.Log(LogLevel.Error | LogLevel.Message, $"An unknown error occurred. If your files are lost, please find them at %TEMP%/{KK_SaveLoadCompression.GUID}");
+                        throw;
+                    }
+                } finally {
+                    if (File.Exists(TempPath)) File.Delete(TempPath);
+                }
+            }
+        }
         #endregion
 
         #region Load
@@ -151,105 +242,23 @@ namespace KK_SaveLoadCompression {
             //private const string PoseToken = "【pose】";
         }
 
-        private static ManualLogSource Logger = KK_SaveLoadCompression.Logger;
-
-        public static void Save(string path, string token) {
-            if (!KK_SaveLoadCompression.Enable.Value || !KK_SaveLoadCompression.Notice.Value) return;
-            string TempPath = Path.Combine(KK_SaveLoadCompression.CacheDirectory.CreateSubdirectory("Compressed").FullName, Path.GetFileName(path));
-
-            //這裡用cleanedPath作"_compressed"字串清理
-            string cleanedPath = path;
-            while (cleanedPath.Contains("_compressed")) {
-                cleanedPath = cleanedPath.Replace("_compressed", "");
-            }
-
-            if (cleanedPath != path) {
-                File.Copy(path, cleanedPath, true);
-                Logger.LogDebug($"Clean Path: {cleanedPath}");
-            }
-
-            //Update Cache
-            string decompressPath = Path.Combine(KK_SaveLoadCompression.CacheDirectory.CreateSubdirectory("Decompressed").FullName, Path.GetFileName(cleanedPath));
-            File.Copy(path, decompressPath, true);
-
-            //Make png watermarked
-            using (FileStream fileStreamReader = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-            }
-
-            //New Thread, No Freeze 
-            Thread newThread = new Thread(doMain);
-            newThread.Start();
-
-            void doMain() {
-                Logger.LogInfo("Start Compress");
-                    long newSize = 0;
-                    float startTime = Time.time;
-                try {
-                    using (FileStream fileStreamReader = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-                        using (FileStream fileStreamWriter = new FileStream(TempPath, FileMode.Create, FileAccess.Write)) {
-                            KK_SaveLoadCompression.Progress = "";
-                            newSize = Save(fileStreamReader,
-                                           fileStreamWriter,
-                                           token,
-                                           (decimal progress) => KK_SaveLoadCompression.Progress = $"Compressing: {progress:p2}",
-                                           (decimal progress) => KK_SaveLoadCompression.Progress = $"Comparing: {progress:p2}");
-                            KK_SaveLoadCompression.Progress = "";
-
-                            //複製或刪除檔案
-                            if (newSize > 0) {
-                                LogLevel logLevel = KK_SaveLoadCompression.DisplayMessage.Value ? (LogLevel.Message | LogLevel.Info) : LogLevel.Info;
-                                Logger.LogInfo($"Compression test SUCCESS");
-                                Logger.Log(logLevel, $"Compression finish in {Time.time - startTime:n2} seconds");
-                                Logger.Log(logLevel, $"Size compress from {fileStreamReader.Length} bytes to {newSize} bytes");
-                                Logger.Log(logLevel, $"Compress ratio: {Convert.ToDecimal(fileStreamReader.Length) / newSize:n3}/1, which means it is now {Convert.ToDecimal(newSize) / fileStreamReader.Length:p3} big.");
-
-                                string compressedPath = cleanedPath;
-                                if (!KK_SaveLoadCompression.DeleteTheOri.Value) {
-                                    compressedPath = cleanedPath.Substring(0, cleanedPath.Length - 4) + "_compressed.png";
-                                }
-
-                                File.Copy(TempPath, compressedPath, true);
-                                Logger.LogDebug($"Write to: {compressedPath}");
-
-                                //因為File.Delete()不是立即執行完畢，不能有「砍掉以後立即在同位置寫入」的操作，所以是這個邏輯順序
-                                //如果相同的話，上方就已經覆寫了；不同的話此處再做刪除
-                                if (path != compressedPath && path != cleanedPath) {
-                                    File.Delete(path);
-                                    Logger.LogDebug($"Delete Original File: {path}");
-                                }
-                            } else {
-                                Logger.LogError($"Compression FAILED");
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    if (e is IOException && newSize > 0) {
-                        //覆寫時遇到讀取重整會IOException: Sharing violation on path，這在Compress太快時會發生
-                        //Retry
-                        try {
-                            if (File.Exists(TempPath)) {
-                                if (KK_SaveLoadCompression.DeleteTheOri.Value) {
-                                    File.Copy(TempPath, path, true);
-                                }
-                            }
-                        } catch (Exception) {
-                            //Copy to a new name if failed twice
-                            File.Copy(TempPath, path.Substring(0, path.Length - 4) + "_compressed2.png");
-                            Logger.LogError("Overwrite was FAILED twice. Fallback to use the '_compressed2' path.");
-                        }
-                    } else {
-                        Logger.Log(LogLevel.Error | LogLevel.Message, $"An unknown error occurred. If your files are lost, please find them at %TEMP%/{KK_SaveLoadCompression.GUID}");
-                        throw;
-                    }
-                } finally {
-                    if (File.Exists(TempPath)) File.Delete(TempPath);
+        public long Save(string inputPath, string outputPath, string token, Action<decimal> compressProgress = null, Action<decimal> compareProgress = null) {
+            using (FileStream fileStreamReader = new FileStream(inputPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                using (FileStream fileStreamWriter = new FileStream(outputPath, FileMode.Create, FileAccess.Write)) {
+                    return Save(fileStreamReader,
+                                fileStreamWriter,
+                                token,
+                                compressProgress,
+                                compareProgress);
                 }
             }
         }
 
-        public static long Save(Stream input, Stream output, string token, Action<decimal> compressProgress = null, Action<decimal> compareProgress = null) {
+        public long Save(Stream inputStream, Stream outputStream, string token, Action<decimal> compressProgress = null, Action<decimal> compareProgress = null) {
             byte[] pngData;
-            using (BinaryReader binaryReader = new BinaryReader(input)) {
+
+            //Make png watermarked
+            using (BinaryReader binaryReader = new BinaryReader(inputStream)) {
                 pngData = PngFile.LoadPngBytes(binaryReader);
                 Texture2D png = new Texture2D(2, 2);
                 png.LoadImage(pngData);
@@ -266,7 +275,7 @@ namespace KK_SaveLoadCompression {
                 pngData = png.EncodeToPNG();
             }
 
-            using (BinaryWriter binaryWriter = new BinaryWriter(output)) {
+            using (BinaryWriter binaryWriter = new BinaryWriter(outputStream)) {
                 binaryWriter.Write(pngData);
 
                 switch (token) {
@@ -292,12 +301,12 @@ namespace KK_SaveLoadCompression {
                 binaryWriter.Write(token);
 
                 using (MemoryStream msCompressed = new MemoryStream()) {
-                    PngFile.SkipPng(input);
+                    PngFile.SkipPng(inputStream);
 
-                    long fileStreamPos = input.Position;
-                    LZMA.Compress(input, msCompressed, LzmaSpeed.Fastest, KK_SaveLoadCompression.DictionarySize.Value,
+                    long fileStreamPos = inputStream.Position;
+                    LZMA.Compress(inputStream, msCompressed, LzmaSpeed.Fastest, KK_SaveLoadCompression.DictionarySize.Value,
                         delegate (long inSize, long _) {
-                            compressProgress(Convert.ToDecimal(inSize) / (input.Length - fileStreamPos));
+                            compressProgress(Convert.ToDecimal(inSize) / (inputStream.Length - fileStreamPos));
                         }
                     );
 
@@ -307,12 +316,12 @@ namespace KK_SaveLoadCompression {
                             msCompressed.Seek(0, SeekOrigin.Begin);
 
                             LZMA.Decompress(msCompressed, msDecompressed);
-                            input.Seek(fileStreamPos, SeekOrigin.Begin);
+                            inputStream.Seek(fileStreamPos, SeekOrigin.Begin);
                             msDecompressed.Seek(0, SeekOrigin.Begin);
 
                             for (long i = 0; i < msDecompressed.Length; i++) {
                                 compareProgress(Convert.ToDecimal(i) / msDecompressed.Length);
-                                int aByte = input.ReadByte();
+                                int aByte = inputStream.ReadByte();
                                 int bByte = msDecompressed.ReadByte();
                                 if (aByte.CompareTo(bByte) != 0) {
                                     return 0;
@@ -327,9 +336,8 @@ namespace KK_SaveLoadCompression {
         }
 
         public static void Load(ref string path, string token) {
-            string n = Path.GetFileName(path);
-            DirectoryInfo d = KK_SaveLoadCompression.CacheDirectory.CreateSubdirectory("Decompressed");
-            string tmpPath = Path.Combine(d.FullName, n);
+            string fileName = Path.GetFileName(path);
+            string tmpPath = Path.Combine(KK_SaveLoadCompression.CacheDirectory.CreateSubdirectory("Decompressed").FullName, fileName);
             if (File.Exists(tmpPath)) {
                 path = tmpPath;
                 Logger.LogDebug("Load from cache: " + path);
@@ -385,9 +393,9 @@ namespace KK_SaveLoadCompression {
 
                         path = tmpPath;
                         if (Time.time - startTime == 0) {
-                            Logger.LogDebug($"Decompressed: {n}");
+                            Logger.LogDebug($"Decompressed: {fileName}");
                         } else {
-                            Logger.LogDebug($"Decompressed: {n}, finish in {Time.time - startTime} seconds");
+                            Logger.LogDebug($"Decompressed: {fileName}, finish in {Time.time - startTime} seconds");
                         }
                     } catch (Exception) {
                         Logger.LogError($"Decompression FAILDED. The file was corrupted during compression or storage.");
@@ -397,5 +405,8 @@ namespace KK_SaveLoadCompression {
                 }
             }
         }
+
+        //public static long Load(Stream inputStream, Stream outputStream, string token, Action<decimal> compressProgress = null, Action<decimal> compareProgress = null) {
+        //}
     }
 }
