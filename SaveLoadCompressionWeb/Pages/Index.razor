@@ -1,0 +1,19 @@
+﻿@page "/"
+@using Microsoft.Extensions.Logging
+@using KK_SaveLoadCompression;
+@inject ILogger<Index> logger;
+
+<InputFile OnChange="@OnSelectedFile"></InputFile>
+
+@code{
+    private SaveLoadCompression SaveLoad;
+    public Index(SaveLoadCompression sl) {
+        this.SaveLoad = sl;
+    }
+    private void OnSelectedFile(InputFileChangeEventArgs e) {
+        logger.LogDebug(e.File.Name);
+        using (System.IO.Stream stream = e.File.OpenReadStream()) {
+        }
+    }
+}
+
