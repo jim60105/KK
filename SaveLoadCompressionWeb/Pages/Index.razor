@@ -21,6 +21,10 @@
     private byte[] buffer = { };
     private long inputFileSize = 0;
 
+    public Index() {
+        Extension.Logger.logger = logger;
+    }
+
     private async void OnSelectedFile(InputFileChangeEventArgs e) {
         logger.LogDebug(e.File.Name);
         long newSize;

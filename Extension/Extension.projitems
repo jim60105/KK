@@ -9,9 +9,10 @@
     <Import_RootNamespace>Extension</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)Extension.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ImageHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)KoikatuHelper.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Linq.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Logger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Reflection.cs" />
   </ItemGroup>
 </Project>

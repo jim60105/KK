@@ -211,28 +211,64 @@ namespace KK_SaveLoadCompression {
         //Studio Load
         [HarmonyPriority(Priority.First)]
         public static void LoadPrefix(ref string _path)
-            => SaveLoadCompression.Load(ref _path, SaveLoadCompression.Token.StudioToken);
+            => Load(ref _path, SaveLoadCompression.Token.StudioToken);
 
         //Studio Import
         [HarmonyPrefix, HarmonyPriority(Priority.First), HarmonyPatch(typeof(SceneInfo), "Import", new Type[] { typeof(string) })]
         public static void ImportPrefix(ref string _path)
-            => SaveLoadCompression.Load(ref _path, SaveLoadCompression.Token.StudioToken);
+            => Load(ref _path, SaveLoadCompression.Token.StudioToken);
 
         //Chara Load
         [HarmonyPrefix, HarmonyPriority(Priority.First), HarmonyPatch(typeof(ChaFile), "LoadFile", new Type[] { typeof(string), typeof(bool), typeof(bool) })]
         public static void LoadFilePrefix(ref string path)
-            => SaveLoadCompression.Load(ref path, SaveLoadCompression.Token.CharaToken);
+            => Load(ref path, SaveLoadCompression.Token.CharaToken);
 
         [HarmonyPrefix, HarmonyPriority(Priority.First), HarmonyPatch(typeof(ChaFileControl), "LoadCharaFile", new Type[] { typeof(string), typeof(byte), typeof(bool), typeof(bool) })]
         public static void LoadCharaFilePrefix(ChaFileControl __instance, ref string filename, byte sex) {
             filename = __instance.ConvertCharaFilePath(filename, sex);
-            SaveLoadCompression.Load(ref filename, SaveLoadCompression.Token.CharaToken);
+            Load(ref filename, SaveLoadCompression.Token.CharaToken);
         }
 
         //Coordinate Load
         [HarmonyPrefix, HarmonyPriority(Priority.First), HarmonyPatch(typeof(ChaFileCoordinate), "LoadFile", new Type[] { typeof(string) })]
         public static void LoadFilePrefix(ChaFileCoordinate __instance, ref string path)
-            => SaveLoadCompression.Load(ref path, SaveLoadCompression.Token.CoordinateToken);
+            => Load(ref path, SaveLoadCompression.Token.CoordinateToken);
+
+        public static void Load(ref string path, string token) {
+            string fileName = Path.GetFileName(path);
+            string tmpPath = Path.Combine(KK_SaveLoadCompression.CacheDirectory.CreateSubdirectory("Decompressed").FullName, fileName);
+            if (File.Exists(tmpPath)) {
+                path = tmpPath;
+                Logger.LogDebug("Load from cache: " + path);
+                return;
+            }
+            float startTime = Time.time;
+
+            KK_SaveLoadCompression.Progress = "";
+            //KK_Fix_CharacterListOptimizations依賴檔名做比對
+            //這裡必須寫為實體檔案供它使用
+            try {
+                new SaveLoadCompression().Load(
+                    path,
+                    tmpPath,
+                    token,
+                    (decimal progress) => KK_SaveLoadCompression.Progress = $"Decompressing: {progress:p2}");
+            }catch (Exception) {
+                //在這裡發生讀取錯誤，那大概不是個正確的存檔
+                //因為已經有其它檢核的plugin存在，直接返回
+                Logger.Log(LogLevel.Error | LogLevel.Message, $"Decompressed failed: {fileName}");
+                return;
+            } finally {
+                KK_SaveLoadCompression.Progress = "";
+            }
+
+            path = tmpPath; //change path result by ref
+            if (Time.time - startTime == 0) {
+                Logger.LogDebug($"Decompressed: {fileName}");
+            } else {
+                Logger.LogDebug($"Decompressed: {fileName}, finish in {Time.time - startTime} seconds");
+            }
+        }
         #endregion
     }
 
@@ -352,78 +388,63 @@ namespace KK_SaveLoadCompression {
             }
         }
 
-        public static void Load(ref string path, string token) {
-            //string fileName = Path.GetFileName(path);
-            //string tmpPath = Path.Combine(KK_SaveLoadCompression.CacheDirectory.CreateSubdirectory("Decompressed").FullName, fileName);
-            //if (File.Exists(tmpPath)) {
-            //    path = tmpPath;
-            //    Logger.LogDebug("Load from cache: " + path);
-            //    return;
-            //}
-
-            //using (FileStream fileStreamReader = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
-            //    using (BinaryReader binaryReader = new BinaryReader(fileStreamReader)) {
-            //        byte[] pngData;
-            //        float startTime = Time.time;
-            //        try {
-            //            bool checkfail = false;
-            //            pngData = PngFile.LoadPngBytes(binaryReader);
-
-            //            switch (token) {
-            //                case Token.StudioToken:
-            //                    checkfail = !new Version(binaryReader.ReadString()).Equals(new Version(101, 0, 0, 0));
-            //                    break;
-            //                case Token.CoordinateToken:
-            //                case Token.CharaToken:
-            //                    checkfail = 101 != binaryReader.ReadInt32();
-            //                    break;
-            //            }
-
-            //            if (checkfail) {
-            //                return;
-            //            }
-            //        } catch (Exception) {
-            //            //在這裡發生讀取錯誤，那大概不是個正確的存檔
-            //            //因為已經有其它檢核的plugin存在，直接拋給他處理
-            //            Logger.Log(LogLevel.Error | LogLevel.Message, "Corrupted file: " + path);
-            //            return;
-            //        }
-            //        try {
-            //            //Discard token string
-            //            binaryReader.ReadString();
-
-            //            //Logger.LogDebug("Start Decompress...");
-            //            //KK_Fix_CharacterListOptimizations依賴檔名做比對
-            //            using (FileStream fileStreamWriter = new FileStream(tmpPath, FileMode.Create, FileAccess.Write)) {
-            //                using (BinaryWriter binaryWriter = new BinaryWriter(fileStreamWriter)) {
-            //                    binaryWriter.Write(pngData);
-
-            //                    long fileStreamPos = fileStreamReader.Position;
-            //                    LZMA.Decompress(fileStreamReader, fileStreamWriter,
-            //                        delegate (long inSize, long _) {
-            //                            KK_SaveLoadCompression.Progress = $"Decompressing: {Convert.ToDecimal(inSize) / (fileStreamReader.Length - fileStreamPos):p2}";
-            //                        }
-            //                    );
-            //                    KK_SaveLoadCompression.Progress = "";
-            //                }
-            //            }
-
-            //            path = tmpPath;
-            //            if (Time.time - startTime == 0) {
-            //                Logger.LogDebug($"Decompressed: {fileName}");
-            //            } else {
-            //                Logger.LogDebug($"Decompressed: {fileName}, finish in {Time.time - startTime} seconds");
-            //            }
-            //        } catch (Exception) {
-            //            Logger.LogError($"Decompression FAILDED. The file was corrupted during compression or storage.");
-            //            Logger.LogError($"Do not disable the byte comparison setting next time to avoid this.");
-            //            return;
-            //        }
-            //    }
-            //}
+        public void Load(string inputPath, string outputPath, string token = null, Action<decimal> decompressProgress = null) {
+            using (FileStream fileStreamReader = new FileStream(inputPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (FileStream fileStreamWriter = new FileStream(outputPath, FileMode.Create, FileAccess.Write)) {
+                Load(
+                    fileStreamReader,
+                    fileStreamWriter,
+                    token,
+                    (decimal progress) => KK_SaveLoadCompression.Progress = $"Decompressing: {progress:p2}");
+            }
         }
 
-        //public static long Load(Stream inputStream, Stream outputStream, string token, Action<decimal> compressProgress = null, Action<decimal> compareProgress = null) {
-        //}
+        public void Load(Stream inputStream, Stream outputStream, string token = null, Action<decimal> decompressProgress = null) {
+            long dataSize = 0;
+            Action<long, long> _decompressProgress = null;
+            if (null != decompressProgress) {
+                _decompressProgress = (long inSize, long _) => decompressProgress(Convert.ToDecimal(inSize) / dataSize);
+            }
+
+            using (BinaryReader binaryReader = new BinaryReader(inputStream))
+            using (BinaryWriter binaryWriter = new BinaryWriter(outputStream)) {
+                byte[] pngData;
+                try {
+                    bool checkfail = false;
+                    pngData = ImageHelper.LoadPngBytes(binaryReader);
+
+                    switch (token) {
+                        case Token.StudioToken:
+                            checkfail = !new Version(binaryReader.ReadString()).Equals(new Version(101, 0, 0, 0));
+                            break;
+                        case Token.CoordinateToken:
+                        case Token.CharaToken:
+                            checkfail = 101 != binaryReader.ReadInt32();
+                            break;
+                    }
+
+                    if (checkfail) {
+                        return;
+                    }
+                } catch (Exception e) {
+                    Extension.Logger.LogError("Corrupted file");
+                    throw e;
+                }
+                try {
+                    //Discard token string
+                    binaryReader.ReadString();
+
+                    //Logger.LogDebug("Start Decompress...");
+                    binaryWriter.Write(pngData);
+
+                    dataSize = inputStream.Length - inputStream.Position;
+                    LZMA.Decompress(inputStream, outputStream, _decompressProgress);
+                } catch (Exception e) {
+                    Extension.Logger.LogError($"Decompression FAILDED. The file was corrupted during compression or storage.");
+                    Extension.Logger.LogError($"Do not disable the byte comparison setting next time to avoid this.");
+                    throw e;
+                }
+            }
+        }
     }
 }

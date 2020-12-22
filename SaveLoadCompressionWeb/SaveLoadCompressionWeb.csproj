@@ -27,10 +27,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Assembly-CSharp">
-      <HintPath>Assembly-CSharp.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
     <Reference Include="KK_SaveLoadCompression">
       <HintPath>..\KK_SaveLoadCompression\bin\Debug\KK_SaveLoadCompression.dll</HintPath>
       <Private>true</Private>
