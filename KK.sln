@@ -57,7 +57,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_CoordinateLoadOption", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_StudioMenuScrollingText", "KK_StudioMenuScrollingText\KK_StudioMenuScrollingText.csproj", "{B27D7AED-568B-462F-BACA-BA2A19CCF9F6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SaveLoadCompressionWeb", "SaveLoadCompressionWeb\SaveLoadCompressionWeb.csproj", "{7ACB48D7-A67B-4458-9241-F64ADE3E9028}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SaveLoadCompressionWeb", "SaveLoadCompressionWeb\SaveLoadCompressionWeb.csproj", "{7ACB48D7-A67B-4458-9241-F64ADE3E9028}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -264,8 +264,8 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {9C634E2C-489D-470F-94E5-72383D9364B5}
-		RESX_NeutralResourcesLanguage = en-US
 		RESX_Rules = {"EnabledRules":["StringFormat","WhiteSpaceLead","WhiteSpaceTail"]}
+		RESX_NeutralResourcesLanguage = en-US
+		SolutionGuid = {9C634E2C-489D-470F-94E5-72383D9364B5}
 	EndGlobalSection
 EndGlobal

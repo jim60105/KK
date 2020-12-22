@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using BepInEx;
-using HarmonyLib;
 using UnityEngine;
 
 namespace Extension {
@@ -16,6 +15,8 @@ namespace Extension {
         private static void LogError(string data) => BepLogger?.Invoke("LogError", new object[] { data });
 
         #region Reflection Stuff
+        public static BindingFlags BindFlagAll = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.GetField | BindingFlags.SetField | BindingFlags.GetProperty | BindingFlags.SetProperty;
+
         private struct Key {
             public readonly Type[] Types;
             public readonly string Name;
@@ -180,7 +181,7 @@ namespace Extension {
             if (_fieldCache.ContainsKey(fieldKey)) {
                 return true;
             } else {
-                FieldInfo[] fieldInfos = fieldKey.Type.GetFields(AccessTools.all);
+                FieldInfo[] fieldInfos = fieldKey.Type.GetFields(BindFlagAll);
                 System.Text.StringBuilder printArray = new System.Text.StringBuilder();
                 foreach (FieldInfo fi in fieldInfos) {
                     if (fi.Name == fieldKey.Name) {
@@ -200,7 +201,7 @@ namespace Extension {
             if (_propertyCache.ContainsKey(propertyKey)) {
                 return true;
             } else {
-                PropertyInfo[] propertyInfos = propertyKey.Type.GetProperties(AccessTools.all);
+                PropertyInfo[] propertyInfos = propertyKey.Type.GetProperties(BindFlagAll);
                 System.Text.StringBuilder printArray = new System.Text.StringBuilder();
                 foreach (PropertyInfo pi in propertyInfos) {
                     if (pi.Name == propertyKey.Name) {
@@ -220,7 +221,7 @@ namespace Extension {
             if (_methodCache.ContainsKey(methodKey)) {
                 return true;
             } else {
-                MethodInfo[] methodInfos = methodKey.Type.GetMethods(AccessTools.all);
+                MethodInfo[] methodInfos = methodKey.Type.GetMethods(BindFlagAll);
                 System.Text.StringBuilder printArray = new System.Text.StringBuilder();
                 foreach (MethodInfo me in methodInfos) {
                     if (me.Name == methodKey.Name &&
@@ -690,7 +691,7 @@ namespace Extension {
         }
 
         //public static bool IsSteam() {
-        //    if (typeof(DownloadScene).GetProperty($"isSteam", AccessTools.all) != null) {
+        //    if (typeof(DownloadScene).GetProperty($"isSteam", all) != null) {
         //        LogDebug($"This Plugin is not working in Koikatu Party (Steam version)");
         //        return true;
         //    }
