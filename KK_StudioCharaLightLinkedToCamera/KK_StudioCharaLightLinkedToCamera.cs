@@ -41,7 +41,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
-            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Extension.Logger.logger = Logger;
             Harmony harmonyInstance = Harmony.CreateAndPatchAll(typeof(Patches));
 
             harmonyInstance.Patch(
@@ -74,7 +74,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
             LockBtn.name = "Chara Light Lock Btn";
             LockBtn.transform.localPosition = new Vector3(157.5f, -59f, 0);
             LockBtn.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(157.5f, -82f), new Vector2(180.5f, -59));
-            LockBtn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaLightLinkedToCamera.Resources.lock_open.png", 36, 36);
+            LockBtn.GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("KK_StudioCharaLightLinkedToCamera.Resources.lock_open.png", 36, 36);
             LockBtn.GetComponent<Button>().onClick.RemoveAllListeners();
             LockBtn.GetComponent<Button>().interactable = true;
 
@@ -94,7 +94,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
             }
 
             if (Locked) {
-                LockBtn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaLightLinkedToCamera.Resources.lock.png", 36, 36);
+                LockBtn.GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("KK_StudioCharaLightLinkedToCamera.Resources.lock.png", 36, 36);
 
                 //Set value for calc
                 Vector3 ligLocal = (studioLightCalc.GetField("light") as Light).transform.localEulerAngles;
@@ -104,7 +104,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
                     cameraControl.cameraAngle
                 );
             } else {
-                LockBtn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaLightLinkedToCamera.Resources.lock_open.png", 36, 36);
+                LockBtn.GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("KK_StudioCharaLightLinkedToCamera.Resources.lock_open.png", 36, 36);
             }
 
             Logger.LogDebug("Locked status: " + Locked);

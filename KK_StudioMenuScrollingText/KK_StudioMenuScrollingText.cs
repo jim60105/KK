@@ -47,7 +47,7 @@ namespace KK_StudioMenuScrollingText {
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
-            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Extension.Logger.logger = Logger;
 
             AddtionalFolder = Config.Bind<string>("Config", "Menu Addtional Text Folder", GetRelativePath(BepInEx.Paths.BepInExRootPath, Path.Combine(Path.GetDirectoryName(base.Info.Location), nameof(KK_StudioMenuScrollingText))));
             Speed = Config.Bind<int>("Config", "Scrolling speed", 777, new ConfigDescription("σ`∀´)σ", new AcceptableValueRange<int>(666, 888))); 

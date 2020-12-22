@@ -46,7 +46,7 @@ namespace KK_StudioSimpleColorOnGirls {
         internal static new ManualLogSource Logger;
         public void Start() {
             Logger = base.Logger;
-            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Extension.Logger.logger = Logger;
 
             Force_Reset_Color_Girl = Config.Bind<bool>("Config", "Reset color on Girls", false);
             Force_Reset_Color_Boy = Config.Bind<bool>("Config", "Reset color on Boys", false);
@@ -102,7 +102,7 @@ namespace KK_StudioSimpleColorOnGirls {
 
         public static void OnValueChangedSimplePostfix(object __instance, bool _value) {
             Type CommonInfoType = typeof(MPCharCtrl).GetNestedType("CommonInfo", BindingFlags.NonPublic);
-            MethodInfo getProMethod = typeof(Extension.Extension).GetMethods(BindingFlags.Public | BindingFlags.Static).Where(m => m.Name == nameof(Extension.Extension.GetProperty) && m.IsGenericMethod).First();
+            MethodInfo getProMethod = typeof(Extension.Reflection).GetMethods(BindingFlags.Public | BindingFlags.Static).Where(m => m.Name == nameof(Extension.Reflection.GetProperty) && m.IsGenericMethod).First();
             getProMethod = getProMethod.MakeGenericMethod(CommonInfoType);
             if (getProMethod.Invoke(__instance, new object[] { __instance, "isUpdateInfo" }) is bool b && b) {
                 return;

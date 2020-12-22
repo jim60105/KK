@@ -42,7 +42,7 @@ namespace KK_StudioDualScreen {
 
         public void Start() {
             Logger = base.Logger;
-            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Extension.Logger.logger = Logger;
             Harmony.CreateAndPatchAll(typeof(Patches));
 
             Hotkey = Config.Bind<KeyboardShortcut>("Hotkey", "Active Key", new KeyboardShortcut(KeyCode.None), "You must have two monitors to make it work.");
@@ -146,7 +146,7 @@ namespace KK_StudioDualScreen {
 
                 //Reset VMD
                 try {
-                    string path = Extension.Extension.TryGetPluginInstance("KKVMDPlayPlugin.KKVMDPlayPlugin")?.Info.Location;
+                    string path = KoikatuHelper.TryGetPluginInstance("KKVMDPlayPlugin.KKVMDPlayPlugin")?.Info.Location;
                     Assembly ass = Assembly.LoadFrom(path);
                     System.Type VMDCamMgrType = ass.GetType("KKVMDPlayPlugin.VMDCameraMgr");
                     if (null != VMDCamMgrType) {

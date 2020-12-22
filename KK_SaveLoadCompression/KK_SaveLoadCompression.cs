@@ -19,6 +19,7 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using BepInEx;
 using BepInEx.Configuration;
@@ -47,6 +48,8 @@ namespace KK_SaveLoadCompression {
         internal static DirectoryInfo CacheDirectory;
         public void Awake() {
             Logger = base.Logger;
+            Extension.Logger.logger = Logger;
+
             CleanCacheFolder();
 
             Enable = Config.Bind<bool>("Config", "Enable", false, "!!!NOTICE!!!");
@@ -86,7 +89,7 @@ namespace KK_SaveLoadCompression {
         void OnApplicationQuit() => CleanCacheFolder();
         void OnDestroy() => CleanCacheFolder();
 
-        private static void CleanCacheFolder() {
+        private void CleanCacheFolder() {
             CacheDirectory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), GUID));
             foreach (FileInfo file in CacheDirectory.GetFiles()) file.Delete();
             foreach (DirectoryInfo subDirectory in CacheDirectory.GetDirectories()) subDirectory.Delete(true);
@@ -154,6 +157,7 @@ namespace KK_SaveLoadCompression {
                         TempPath,
                         token,
                         (decimal progress) => KK_SaveLoadCompression.Progress = $"Compressing: {progress:p2}",
+                        !KK_SaveLoadCompression.SkipSaveCheck.Value,
                         (decimal progress) => KK_SaveLoadCompression.Progress = $"Comparing: {progress:p2}");
                     KK_SaveLoadCompression.Progress = "";
 
@@ -242,18 +246,19 @@ namespace KK_SaveLoadCompression {
             //private const string PoseToken = "【pose】";
         }
 
-        public long Save(string inputPath, string outputPath, string token = null, Action<decimal> compressProgress = null, Action<decimal> compareProgress = null) {
+        public long Save(string inputPath, string outputPath, string token = null, Action<decimal> compressProgress = null, bool doComapre = true, Action<decimal> compareProgress = null) {
             using (FileStream fileStreamReader = new FileStream(inputPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (FileStream fileStreamWriter = new FileStream(outputPath, FileMode.Create, FileAccess.Write)) {
                 return Save(fileStreamReader,
                             fileStreamWriter,
                             token,
                             compressProgress,
+                            doComapre,
                             compareProgress);
             }
         }
 
-        public long Save(Stream inputStream, Stream outputStream, string token = null, Action<decimal> compressProgress = null, Action<decimal> compareProgress = null) {
+        public long Save(Stream inputStream, Stream outputStream, string token = null, Action<decimal> compressProgress = null, bool doComapre = true, Action<decimal> compareProgress = null) {
             byte[] pngData;
             long dataSize = 0;
             DictionarySize dictionarySize = DictionarySize.VeryLarge;
@@ -267,7 +272,7 @@ namespace KK_SaveLoadCompression {
             //Make png watermarked
             using (BinaryReader binaryReader = new BinaryReader(inputStream))
             using (BinaryWriter binaryWriter = new BinaryWriter(outputStream)) {
-                pngData = PngFile.LoadPngBytes(binaryReader);
+                pngData = ImageHelper.LoadPngBytes(binaryReader);
                 //Texture2D png = new Texture2D(2, 2);
                 //png.LoadImage(pngData);
 
@@ -310,6 +315,7 @@ namespace KK_SaveLoadCompression {
 
                 using (MemoryStream msCompressed = new MemoryStream()) {
                     //PngFile.SkipPng(inputStream);
+                    long fileStreamPos = inputStream.Position;
 
                     LZMA.Compress(
                         inputStream,
@@ -319,27 +325,27 @@ namespace KK_SaveLoadCompression {
                         _compressProgress
                     );
 
-                    ////Logger.LogInfo("Start compression test...");
-                    //using (MemoryStream msDecompressed = new MemoryStream()) {
-                    //    if (!KK_SaveLoadCompression.SkipSaveCheck.Value) {
-                    //        msCompressed.Seek(0, SeekOrigin.Begin);
+                    //Logger.LogInfo("Start compression test...");
+                    if (doComapre) {
+                        using (MemoryStream msDecompressed = new MemoryStream()) {
+                            msCompressed.Seek(0, SeekOrigin.Begin);
 
-                    //        LZMA.Decompress(msCompressed, msDecompressed);
-                    //        inputStream.Seek(fileStreamPos, SeekOrigin.Begin);
-                    //        msDecompressed.Seek(0, SeekOrigin.Begin);
-                    //            byte[] aByteA = new byte[(int)dictionarySize];
-                    //            byte[] bByteA = new byte[(int)dictionarySize];
+                            LZMA.Decompress(msCompressed, msDecompressed);
+                            inputStream.Seek(fileStreamPos, SeekOrigin.Begin);
+                            msDecompressed.Seek(0, SeekOrigin.Begin);
+                            byte[] aByteA = new byte[(int)dictionarySize];
+                            byte[] bByteA = new byte[(int)dictionarySize];
 
-                    //        for (long i = 0; i < msDecompressed.Length; ) {
-                    //            compareProgress(Convert.ToDecimal(i) / msDecompressed.Length);
-                    //            inputStream.Read(aByteA, 0, (int)dictionarySize);
-                    //            i += msDecompressed.Read(bByteA, 0, (int)dictionarySize);
-                    //            if (!aByteA.SequenceEqual(bByteA)) {
-                    //                return 0;
-                    //            }
-                    //        }
-                    //    }
-                    //}
+                            for (long i = 0; i < msDecompressed.Length;) {
+                                compareProgress(Convert.ToDecimal(i) / msDecompressed.Length);
+                                inputStream.Read(aByteA, 0, (int)dictionarySize);
+                                i += msDecompressed.Read(bByteA, 0, (int)dictionarySize);
+                                if (!aByteA.SequenceEqual(bByteA)) {
+                                    return 0;
+                                }
+                            }
+                        }
+                    }
                     binaryWriter.Write(msCompressed.ToArray());
                     return msCompressed.Length + token.Length + pngData.Length;
                 }

@@ -36,7 +36,7 @@ namespace KK_StudioSaveWorkspaceOrderFix {
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
-            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Extension.Logger.logger = Logger;
             Harmony.CreateAndPatchAll(typeof(Patches));
         }
     }

@@ -38,7 +38,7 @@ namespace KK_StudioAutoCloseLoadingSceneWindow {
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
-            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Extension.Logger.logger = Logger;
             Harmony.CreateAndPatchAll(typeof(Patches));
 
             EnableOnLoad = Config.Bind("Config", "Auto close after scene Loaded.", true);

@@ -43,7 +43,7 @@ namespace KK_PluginListTool {
             Enable = Config.Bind<bool>("Config", "Enable", true, "Re-enable to output again immediately");
             SavePath = Config.Bind<string>("Config", "Output Directory(Relative)", GetRelativePath(BepInEx.Paths.BepInExRootPath, Path.Combine(Path.GetDirectoryName(base.Info.Location), "KK_PluginListTool")), "Where do you want to store them?");
             Logger = base.Logger;
-            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Extension.Logger.logger = Logger;
             _isInited = !Enable.Value;
             Enable.SettingChanged += delegate {
                 _isInited = !Enable.Value;
@@ -62,7 +62,7 @@ namespace KK_PluginListTool {
                 #region GetPlugins
                 //IPA
                 Logger.LogDebug($">>Try load IPA plugin infos");
-                string IPAAssPath = Extension.Extension.TryGetPluginInstance("BepInEx.IPALoader", new Version(1, 2))?.Info.Location;
+                string IPAAssPath = KoikatuHelper.TryGetPluginInstance("BepInEx.IPALoader", new Version(1, 2))?.Info.Location;
                 //Logger.LogDebug($"Path: {IPAAssPath}");
                 if (null != IPAAssPath && File.Exists(IPAAssPath)) {
                     Type IPlugin = Assembly.LoadFrom(IPAAssPath).GetType("IllusionPlugin.IPlugin");

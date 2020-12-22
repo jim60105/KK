@@ -57,7 +57,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
 
         public void Awake() {
             Logger = base.Logger;
-            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Extension.Logger.logger = Logger;
             Enable_Saving_To_Chara = Config.Bind<bool>("Main Config", "Saving to character outfits (7 outfits)", true, "Enable this to save the plugin data to the character file");
             Enable_Saving_To_Coordinate = Config.Bind<bool>("Main Config", "Saving to Coordinate files", false, "[Warning] It is highly recommended to enable this ONLY WHEN NEEDED");
             Warning_Message = Config.Bind<bool>("Main Config", "Warning Message", true, "Enable/Disable warning message when saving files");
@@ -178,7 +178,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
                 foreach (KeyValuePair<TexType, byte[]> kvp in EyeTexture) {
                     controller.OverwriteOverlayWithoutUpdate(kvp.Key, kvp.Value);
                 }
-                Extension.Extension.TryGetPluginInstance("KSOX_GUI")?.Invoke<KoiSkinOverlayGui>("OnChaFileLoaded");
+                KoikatuHelper.TryGetPluginInstance("KSOX_GUI")?.Invoke<KoiSkinOverlayGui>("OnChaFileLoaded");
             }
         }
     }
@@ -292,7 +292,7 @@ namespace KK_CharaOverlaysBasedOnCoordinate {
         }
 
         protected override void Start() {
-            KoiSkinOverlayGui = Extension.Extension.TryGetPluginInstance("KSOX_GUI") as KoiSkinOverlayGui;
+            KoiSkinOverlayGui = KoikatuHelper.TryGetPluginInstance("KSOX_GUI") as KoiSkinOverlayGui;
             CurrentCoordinate.Subscribe(onNext: delegate { ChangeCoordinate(); });
 
             base.Start();

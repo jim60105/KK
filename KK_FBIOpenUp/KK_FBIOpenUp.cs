@@ -66,7 +66,7 @@ namespace KK_FBIOpenUp {
         public void Awake() {
             Logger = base.Logger;
             UIUtility.Init();
-            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Extension.Logger.logger = Logger;
             Harmony harmonyInstance = Harmony.CreateAndPatchAll(typeof(Patches));
             harmonyInstance.PatchAll(typeof(Hooks));
         }
@@ -80,7 +80,7 @@ namespace KK_FBIOpenUp {
             SetEnabled(false);
 
             Effect_on_ABMX = Config.Bind<bool>("Config", "Effect on ABMX", false, "In most cases, it is not recommended to enable.");
-            _isABMXExist = null != Extension.Extension.TryGetPluginInstance("KKABMX.Core", new Version(3, 5, 1));
+            _isABMXExist = null != KoikatuHelper.TryGetPluginInstance("KKABMX.Core", new Version(3, 5, 1));
 
             Sample_chara = Config.Bind<string>("Config", "Sample chara", "", "Leave blank to use my default loli, or use paths like UserData/chara/female/*.png");
             Sample_chara.SettingChanged += SetCharaPath;

@@ -10,5 +10,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Extension.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ImageHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)KoikatuHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Linq.cs" />
   </ItemGroup>
 </Project>

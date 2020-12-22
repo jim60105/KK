@@ -38,7 +38,7 @@ namespace KK_StudioTransgenderLoading {
         internal const string PLUGIN_RELEASE_VERSION = "1.0.2";
 
         public void Awake() {
-            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Extension.Logger.logger = Logger;
             Harmony.CreateAndPatchAll(typeof(Patches));
         }
     }
