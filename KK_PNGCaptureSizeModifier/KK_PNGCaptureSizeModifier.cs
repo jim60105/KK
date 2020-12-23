@@ -87,7 +87,7 @@ namespace KK_PNGCaptureSizeModifier {
             }
 
             if (null == fontTexture) {
-                fontTexture = ImageHelper.LoadDllResource($"KK_PNGCaptureSizeModifier.Resources.ArialFont.png", 1024, 1024);
+                fontTexture = ImageHelper.LoadDllResourceToTexture2D($"KK_PNGCaptureSizeModifier.Resources.ArialFont.png", 1024, 1024);
                 Logger.LogDebug($"Load original font pic");
             }
 
@@ -217,7 +217,7 @@ namespace KK_PNGCaptureSizeModifier {
 
             //浮水印
             if (doWatermarkFlag) {
-                Texture2D watermark = ImageHelper.LoadDllResource($"KK_PNGCaptureSizeModifier.Resources.{wmFileName}");
+                Texture2D watermark = ImageHelper.LoadDllResourceToTexture2D($"KK_PNGCaptureSizeModifier.Resources.{wmFileName}");
                 watermark = watermark.Scale((int)(watermark.width * times.Value / (float)times.DefaultValue), (int)(watermark.height * times.Value / (float)times.DefaultValue));
                 screenshot = screenshot.OverwriteTexture(
                     watermark,

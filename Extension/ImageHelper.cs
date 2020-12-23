@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace Extension {
     public static class ImageHelper{
+        #region Png Stuff
         public static long GetPngSize(BinaryReader br) {
             return GetPngSize(br.BaseStream);
         }
@@ -99,7 +100,9 @@ namespace Extension {
 
             return br.ReadBytes((int)pngSize);
         }
+        #endregion
 
+        #region Unity Stuff
         /// <summary>
         /// Load a PNG or JPG file to a Sprite 
         /// </summary>
@@ -108,7 +111,7 @@ namespace Extension {
         public static Sprite LoadNewSprite(string FilePath, int width = -1, int height = -1, float PixelsPerUnit = 100.0f) {
             Texture2D SpriteTexture = LoadTexture(FilePath, width, height);
             if (null == SpriteTexture || SpriteTexture.width == 0) {
-                SpriteTexture = LoadDllResource(FilePath, width, height);
+                SpriteTexture = LoadDllResourceToTexture2D(FilePath, width, height);
             }
 
             return Sprite.Create(SpriteTexture, new Rect(0, 0, SpriteTexture.width, SpriteTexture.height), Vector2.zero, PixelsPerUnit);
@@ -140,8 +143,20 @@ namespace Extension {
         /// Load a embedded PNG or JPG resource to a Texture2D
         /// </summary>
         /// <param name="FilePath"></param>
+        /// <returns>byte array</returns>
+        public static byte[] LoadDllResourceToBytes(string FilePath) {
+            Assembly myAssembly = Assembly.GetExecutingAssembly();
+            using (Stream myStream = myAssembly.GetManifestResourceStream(FilePath)) {
+                return ReadToEnd(myStream);
+            }
+        }
+
+        /// <summary>
+        /// Load a embedded PNG or JPG resource to a Texture2D
+        /// </summary>
+        /// <param name="FilePath"></param>
         /// <returns>Texture, or Null if load fails</returns>
-        public static Texture2D LoadDllResource(string FilePath, int width = -1, int height = -1) {
+        public static Texture2D LoadDllResourceToTexture2D(string FilePath, int width = -1, int height = -1) {
             Assembly myAssembly = Assembly.GetExecutingAssembly();
             Texture2D texture = new Texture2D(2, 2, TextureFormat.ARGB32, false);
             using (Stream myStream = myAssembly.GetManifestResourceStream(FilePath)) {
@@ -269,6 +284,9 @@ namespace Extension {
             newTex.Apply();
             return newTex;
         }
+        #endregion
+
+
     }
 }
 
