@@ -2,10 +2,11 @@
 @using System.IO;
 @using Microsoft.Extensions.Logging
 @using Token = KK_SaveLoadCompression.SaveLoadCompression.Token;
-@inject ILogger<Index> logger;
 @inject KK_SaveLoadCompression.SaveLoadCompression slc;
+@inject IJSRuntime JS;
+@inject ILogger<Index> logger;
 
-<InputFile OnChange="@OnSelectedFile"></InputFile>
+<InputFile OnChange="@OnSelectedFile" AllowedExtensions=".png;" ></InputFile>
 <br />
 
 @if (null != buffer && buffer.Length > 0) {
@@ -30,17 +31,35 @@
         long newSize;
         using (MemoryStream inputStream = new MemoryStream())
         using (MemoryStream writeStream = new MemoryStream()) {
-            await e.File.OpenReadStream().CopyToAsync(inputStream);
+            await e.File.OpenReadStream(524288000).CopyToAsync(inputStream);
             inputFileSize = inputStream.Length;
-            logger.LogDebug("Input file length:" + inputStream.Length);
+            logger.LogDebug("Input file length: {size}", inputStream.Length);
 
+            byte[] pngData = { };
             inputStream.Seek(0, SeekOrigin.Begin);
-            newSize = slc.Save(inputStream, writeStream, Token.CoordinateToken);
-            buffer = writeStream.ToArray();
+            using (BinaryReader binaryReader = new BinaryReader(inputStream)) {
+                pngData = Extension.ImageHelper.LoadPngBytes(binaryReader);
+                pngData = await MakeWatermarkPic(pngData);
+                logger.LogDebug("New pngData size: {size}", pngData.Length);
+                inputStream.Seek(0, SeekOrigin.Begin);
+                newSize = slc.Save(inputStream, writeStream, Token.CoordinateToken, pngData: pngData);
+                buffer = writeStream.ToArray();
+            }
 
-            logger.LogDebug("Output file length:" + buffer.Length);
+            logger.LogDebug("Output file length: {size}", buffer.Length);
             base.StateHasChanged();
         }
+    }
+
+    private async Task<byte[]> MakeWatermarkPic(byte[] pngData) {
+        string background_base64URI = $"data:image;base64,{System.Convert.ToBase64String(pngData)}";
+        var watermark = Extension.ImageHelper.LoadDllResourceToBytes($"KK_SaveLoadCompression.Resources.zip_watermark.png");
+        string watermark_base64URI = $"data:image;base64,{System.Convert.ToBase64String(watermark)}";
+        double scale = (double)(slc.GetScaleTimes(Token.CoordinateToken) * Extension.ImageHelper.GetDimensions(pngData)[0]) / Extension.ImageHelper.GetDimensions(watermark)[0];
+        logger.LogDebug("Png width: {widthBack} : {widthWater}", Extension.ImageHelper.GetDimensions(pngData)[0], Extension.ImageHelper.GetDimensions(watermark)[0]);
+        logger.LogDebug("Watermark Scale : {scale}", scale);
+        var base64 = await JS.InvokeAsync<string>("indexJs.addWatermark", background_base64URI, watermark_base64URI, scale);
+        return System.Convert.FromBase64String(base64);
     }
 }
 

@@ -253,7 +253,7 @@ namespace KK_SaveLoadCompression {
                     tmpPath,
                     token,
                     (decimal progress) => KK_SaveLoadCompression.Progress = $"Decompressing: {progress:p2}");
-            }catch (Exception) {
+            } catch (Exception) {
                 //在這裡發生讀取錯誤，那大概不是個正確的存檔
                 //因為已經有其它檢核的plugin存在，直接返回
                 Logger.Log(LogLevel.Error | LogLevel.Message, $"Decompressed failed: {fileName}");
@@ -282,6 +282,8 @@ namespace KK_SaveLoadCompression {
             //private const string PoseToken = "【pose】";
         }
 
+        public float GetScaleTimes(string token) => (token == Token.StudioToken) ? .14375f : .30423f;
+
         public long Save(string inputPath, string outputPath, string token = null, Action<decimal> compressProgress = null, bool doComapre = true, Action<decimal> compareProgress = null) {
             using (FileStream fileStreamReader = new FileStream(inputPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (FileStream fileStreamWriter = new FileStream(outputPath, FileMode.Create, FileAccess.Write)) {
@@ -294,34 +296,49 @@ namespace KK_SaveLoadCompression {
             }
         }
 
-        public long Save(Stream inputStream, Stream outputStream, string token = null, Action<decimal> compressProgress = null, bool doComapre = true, Action<decimal> compareProgress = null) {
-            byte[] pngData;
+        private byte[] MakeWatermarkPic(byte[] pngData, string token) {
+            try {
+                Texture2D png = new Texture2D(2, 2);
+                png.LoadImage(pngData);
+
+                Texture2D watermark = ImageHelper.LoadDllResourceToTexture2D($"KK_SaveLoadCompression.Resources.zip_watermark.png");
+                float scaleTimes = GetScaleTimes(token);
+                watermark = watermark.Scale(Convert.ToInt32(png.width * scaleTimes), Convert.ToInt32(png.width * scaleTimes));
+                png = png.OverwriteTexture(
+                    watermark,
+                    0,
+                    png.height - watermark.height
+                );
+                Extension.Logger.LogDebug($"Add Watermark: zip");
+                return png.EncodeToPNG();
+            } catch (FileNotFoundException) {
+                // This may happen if it's not inside Unity Game
+                // Then directly throw back the input pngData
+                // >> System.IO.FileNotFoundException: Could not load file or assembly 'UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null' or one of its dependencies.
+                Extension.Logger.LogWarning("No png data && No UnityEngine.dll loaded!");
+                return pngData;
+            }
+        }
+
+        public long Save(Stream inputStream, Stream outputStream, string token = null, Action<decimal> compressProgress = null, bool doComapre = true, Action<decimal> compareProgress = null, byte[] pngData = null) {
             long dataSize = 0;
             DictionarySize dictionarySize = DictionarySize.VeryLarge;
             //dictionarySize = KK_SaveLoadCompression.DictionarySize.Value;
 
             Action<long, long> _compressProgress = null;
-            if (null != compareProgress) {
+            if (null != compressProgress) {
                 _compressProgress = (long inSize, long _) => compressProgress(Convert.ToDecimal(inSize) / dataSize);
             }
 
             //Make png watermarked
             using (BinaryReader binaryReader = new BinaryReader(inputStream))
             using (BinaryWriter binaryWriter = new BinaryWriter(outputStream)) {
-                pngData = ImageHelper.LoadPngBytes(binaryReader);
-                //Texture2D png = new Texture2D(2, 2);
-                //png.LoadImage(pngData);
-
-                //Texture2D watermark = Extension.Extension.LoadDllResource($"KK_SaveLoadCompression.Resources.zip_watermark.png");
-                //float scaleTimes = (token == Token.StudioToken) ? .14375f : .30423f;
-                //watermark = watermark.Scale(Convert.ToInt32(png.width * scaleTimes), Convert.ToInt32(png.width * scaleTimes));
-                //png = png.OverwriteTexture(
-                //    watermark,
-                //    0,
-                //    png.height - watermark.height
-                //);
-                ////Logger.LogDebug($"Add Watermark: zip");
-                //pngData = png.EncodeToPNG();
+                if (null == pngData) {
+                    pngData = MakeWatermarkPic(ImageHelper.LoadPngBytes(binaryReader), token);
+                } else {
+                    ImageHelper.SkipPng(binaryReader);
+                    Extension.Logger.LogDebug("Skip Png:" + inputStream.Position);
+                }
 
                 dataSize = inputStream.Length - inputStream.Position;
 
@@ -361,7 +378,7 @@ namespace KK_SaveLoadCompression {
                         _compressProgress
                     );
 
-                    //Logger.LogInfo("Start compression test...");
+                    Extension.Logger.LogDebug("Start compression test...");
                     if (doComapre) {
                         using (MemoryStream msDecompressed = new MemoryStream()) {
                             msCompressed.Seek(0, SeekOrigin.Begin);
@@ -373,7 +390,7 @@ namespace KK_SaveLoadCompression {
                             byte[] bByteA = new byte[(int)dictionarySize];
 
                             for (long i = 0; i < msDecompressed.Length;) {
-                                compareProgress(Convert.ToDecimal(i) / msDecompressed.Length);
+                                if (null != compressProgress) compareProgress(Convert.ToDecimal(i) / msDecompressed.Length);
                                 inputStream.Read(aByteA, 0, (int)dictionarySize);
                                 i += msDecompressed.Read(bByteA, 0, (int)dictionarySize);
                                 if (!aByteA.SequenceEqual(bByteA)) {

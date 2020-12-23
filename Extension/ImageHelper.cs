@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
@@ -99,6 +101,64 @@ namespace Extension {
             }
 
             return br.ReadBytes((int)pngSize);
+        }
+
+        // https://stackoverflow.com/a/112711
+        private static Dictionary<byte[], Func<BinaryReader, int[]>> imageFormatDecoders = new Dictionary<byte[], Func<BinaryReader, int[]>>()
+        {
+            { new byte[]{ 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }, DecodePng }
+        };
+
+        /// <summary>
+        /// Gets the dimensions of an image.
+        /// </summary>
+        /// <param name="path">The path of the image to get the dimensions of.</param>
+        /// <returns>The dimensions of the specified image.</returns>
+        /// <exception cref="ArgumentException">The image was of an unrecognized format.</exception>    
+        public static int[] GetDimensions(byte[] bytes) {
+            using (MemoryStream ms = new MemoryStream(bytes))
+            using (BinaryReader binaryReader = new BinaryReader(ms)) {
+
+                int maxMagicBytesLength = imageFormatDecoders.Keys.OrderByDescending(x => x.Length).First().Length;
+
+                byte[] magicBytes = new byte[maxMagicBytesLength];
+
+                for (int i = 0; i < maxMagicBytesLength; i += 1) {
+                    magicBytes[i] = binaryReader.ReadByte();
+
+                    foreach (var kvPair in imageFormatDecoders) {
+                        if (magicBytes.StartsWith(kvPair.Key)) {
+                            return kvPair.Value(binaryReader);
+                        }
+                    }
+                }
+            }
+
+            throw new ArgumentException("binaryReader");
+        }
+
+        private static bool StartsWith(this byte[] thisBytes, byte[] thatBytes) {
+            for (int i = 0; i < thatBytes.Length; i += 1) {
+                if (thisBytes[i] != thatBytes[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static int ReadLittleEndianInt32(this BinaryReader binaryReader) {
+            byte[] bytes = new byte[sizeof(int)];
+            for (int i = 0; i < sizeof(int); i += 1) {
+                bytes[sizeof(int) - 1 - i] = binaryReader.ReadByte();
+            }
+            return BitConverter.ToInt32(bytes, 0);
+        }
+
+        private static int[] DecodePng(BinaryReader binaryReader) {
+            binaryReader.ReadBytes(8);
+            int width = binaryReader.ReadLittleEndianInt32();
+            int height = binaryReader.ReadLittleEndianInt32();
+            return new int[] { width, height };
         }
         #endregion
 

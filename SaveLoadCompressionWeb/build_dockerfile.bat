@@ -1,4 +1,4 @@
 ﻿@ECHO OFF
 cd ..
-docker build -t test -f .\SaveLoadCompressionWeb\Dockerfile .
+docker build -t web -f .\SaveLoadCompressionWeb\Dockerfile .
 PAUSE
