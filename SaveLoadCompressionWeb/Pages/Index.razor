@@ -5,6 +5,7 @@
 @inject KK_SaveLoadCompression.SaveLoadCompression slc;
 @inject IJSRuntime JS;
 @inject ILogger<Index> logger;
+@inject BlazorDownloadFile.IBlazorDownloadFileService BlazorDownloadFileService;
 
 <InputFile OnChange="@OnSelectedFile" AllowedExtensions=".png;" ></InputFile>
 <br />
@@ -15,12 +16,14 @@
         @*Compression finish in {Time.time - startTime:n2} seconds<br />*@
         Size compress from @inputFileSize bytes to @buffer.Length bytes<br />
         Compress ratio: @($"{Convert.ToDecimal(inputFileSize) / buffer.Length:n3}")/1, which means it is now @($"{Convert.ToDecimal(buffer.Length) / inputFileSize:p3}") big.
+        <button @onclick=@(async () => await BlazorDownloadFileService.DownloadFile(filename, buffer, "application/octet-stream"))>Dowload</button>
     </p>
 }
 
 @code{
     private byte[] buffer = { };
     private long inputFileSize = 0;
+    private string filename = "";
 
     public Index() {
         Extension.Logger.logger = logger;
@@ -32,6 +35,7 @@
         using (MemoryStream inputStream = new MemoryStream())
         using (MemoryStream writeStream = new MemoryStream()) {
             await e.File.OpenReadStream(524288000).CopyToAsync(inputStream);
+            filename = e.File.Name;
             inputFileSize = inputStream.Length;
             logger.LogDebug("Input file length: {size}", inputStream.Length);
 
