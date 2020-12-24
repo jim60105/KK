@@ -390,13 +390,21 @@ namespace KK_SaveLoadCompression {
                             LZMA.Decompress(msCompressed, msDecompressed);
                             inputStream.Seek(fileStreamPos, SeekOrigin.Begin);
                             msDecompressed.Seek(0, SeekOrigin.Begin);
-                            byte[] aByteA = new byte[(int)dictionarySize];
-                            byte[] bByteA = new byte[(int)dictionarySize];
+                            int bufferSize = 1 << 10;
+                            byte[] aByteA = new byte[(int)bufferSize];
+                            byte[] bByteA = new byte[(int)bufferSize];
+
+                            if ((inputStream.Length - inputStream.Position) != msDecompressed.Length) {
+                                return 0;
+                            }
 
                             for (long i = 0; i < msDecompressed.Length;) {
-                                if (null != compressProgress) compareProgress(Convert.ToDecimal(i) / msDecompressed.Length);
-                                inputStream.Read(aByteA, 0, (int)dictionarySize);
-                                i += msDecompressed.Read(bByteA, 0, (int)dictionarySize);
+                                if (null != compressProgress) {
+                                    compareProgress(Convert.ToDecimal(i) / msDecompressed.Length);
+                                }
+
+                                inputStream.Read(aByteA, 0, (int)bufferSize);
+                                i += msDecompressed.Read(bByteA, 0, (int)bufferSize);
                                 if (!aByteA.SequenceEqual(bByteA)) {
                                     return 0;
                                 }

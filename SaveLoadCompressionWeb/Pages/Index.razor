@@ -7,8 +7,12 @@
 @inject ILogger<Index> logger;
 @inject BlazorDownloadFile.IBlazorDownloadFileService BlazorDownloadFileService;
 
-<InputFile OnChange="@OnSelectedFile" AllowedExtensions=".png;" ></InputFile>
+<InputFile OnChange="@OnSelectedFile" AllowedExtensions=".png;"></InputFile>
 <br />
+
+@if (loading) {
+    <div class="lds-dual-ring"></div>
+}
 
 @if (null != buffer && buffer.Length > 0) {
     <img src="data:image;base64,@System.Convert.ToBase64String(buffer)" />
@@ -24,16 +28,22 @@
     private byte[] buffer = { };
     private long inputFileSize = 0;
     private string filename = "";
+    private bool loading = false;
 
     public Index() {
         Extension.Logger.logger = logger;
     }
 
     private async void OnSelectedFile(InputFileChangeEventArgs e) {
+        //Extension.Logger.logger = logger;
         logger.LogDebug(e.File.Name);
         long newSize;
         using (MemoryStream inputStream = new MemoryStream())
         using (MemoryStream writeStream = new MemoryStream()) {
+            loading = true;
+            buffer = null;
+            base.StateHasChanged();
+
             await e.File.OpenReadStream(524288000).CopyToAsync(inputStream);
             filename = e.File.Name.Replace(".png", "");
             inputFileSize = inputStream.Length;
@@ -44,19 +54,27 @@
             using (BinaryReader binaryReader = new BinaryReader(inputStream)) {
                 pngData = Extension.ImageHelper.LoadPngBytes(binaryReader);
                 string token = slc.GuessToken(binaryReader);
-                pngData = await MakeWatermarkPic(pngData,token);
+                pngData = await MakeWatermarkPic(pngData, token);
                 logger.LogDebug("New pngData size: {size}", pngData.Length);
                 inputStream.Seek(0, SeekOrigin.Begin);
-                newSize = slc.Save(inputStream, writeStream,token: token, pngData: pngData);
-                buffer = writeStream.ToArray();
+                newSize = slc.Save(inputStream, writeStream,
+                    token: token,
+                    pngData: pngData,
+                    compressProgress: (pg) => {
+                        logger.LogDebug("Compress Progress: {pg:p3}", pg);
+                    },
+                    compareProgress: (pg) => {
+                        logger.LogDebug("Compare Progress: {pg:p3}", pg);
+                    });
             }
-
-            logger.LogDebug("Output file length: {size}", buffer.Length);
+            buffer = writeStream.ToArray();
+            logger.LogDebug("Output file length: {size}", newSize);
+            loading = false;
             base.StateHasChanged();
         }
     }
 
-    private async Task<byte[]> MakeWatermarkPic(byte[] pngData,string token) {
+    private async Task<byte[]> MakeWatermarkPic(byte[] pngData, string token) {
         string background_base64URI = $"data:image;base64,{System.Convert.ToBase64String(pngData)}";
         var watermark = Extension.ImageHelper.LoadDllResourceToBytes($"KK_SaveLoadCompression.Resources.zip_watermark.png");
         string watermark_base64URI = $"data:image;base64,{System.Convert.ToBase64String(watermark)}";
