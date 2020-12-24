@@ -412,7 +412,7 @@ namespace KK_SaveLoadCompression {
                         }
                     }
                     binaryWriter.Write(msCompressed.ToArray());
-                    return msCompressed.Length + token.Length + pngData.Length;
+                    return binaryWriter.BaseStream.Length;
                 }
             }
         }
@@ -428,7 +428,7 @@ namespace KK_SaveLoadCompression {
             }
         }
 
-        public void Load(Stream inputStream, Stream outputStream, string token = null, Action<decimal> decompressProgress = null) {
+        public long Load(Stream inputStream, Stream outputStream, string token = null, Action<decimal> decompressProgress = null) {
             long dataSize = 0;
             Action<long, long> _decompressProgress = null;
             if (null != decompressProgress) {
@@ -463,12 +463,13 @@ namespace KK_SaveLoadCompression {
                     }
                 } catch (FileLoadException) {
                     Extension.Logger.LogError("Corrupted file");
+                    return 0;
                 }
                 try {
                     //Discard token string
                     binaryReader.ReadString();
 
-                    //Logger.LogDebug("Start Decompress...");
+                    Extension.Logger.LogDebug("Start Decompress...");
                     binaryWriter.Write(pngData);
 
                     dataSize = inputStream.Length - inputStream.Position;
@@ -478,6 +479,7 @@ namespace KK_SaveLoadCompression {
                     Extension.Logger.LogError($"Do not disable the byte comparison setting next time to avoid this.");
                     throw e;
                 }
+                return binaryWriter.BaseStream.Length;
             }
         }
 
@@ -485,7 +487,7 @@ namespace KK_SaveLoadCompression {
             long position = binaryReader.BaseStream.Position;
             try {
                 int r = binaryReader.ReadInt32();
-                if (r != 101 || r != 100) {
+                if (r != 101 && r != 100) {
                     return Token.StudioToken;
                 }
                 string token = binaryReader.ReadString();
@@ -500,6 +502,27 @@ namespace KK_SaveLoadCompression {
                 binaryReader.BaseStream.Seek(position, SeekOrigin.Begin);
             }
             return null;
+        }
+
+        public bool GuessCompressed(BinaryReader binaryReader) {
+            long position = binaryReader.BaseStream.Position;
+            try {
+                int r = binaryReader.ReadInt32();
+                switch (r) {
+                    case 101:
+                        return true;
+                    case 100:
+                        return false;
+                    default:
+                        // Studio
+                        binaryReader.BaseStream.Seek(position, SeekOrigin.Begin);
+                        var st = binaryReader.ReadString();
+                        var version = new Version(st);
+                        return version.Major == 101;
+                }
+            } finally {
+                binaryReader.BaseStream.Seek(position, SeekOrigin.Begin);
+            }
         }
     }
 }
