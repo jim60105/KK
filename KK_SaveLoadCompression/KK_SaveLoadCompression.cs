@@ -344,6 +344,10 @@ namespace KK_SaveLoadCompression {
 
                 binaryWriter.Write(pngData);
 
+                if (null == token) {
+                    token = GuessToken(binaryReader);
+                }
+
                 switch (token) {
                     case Token.StudioToken:
                         //Studio
@@ -423,12 +427,18 @@ namespace KK_SaveLoadCompression {
                 _decompressProgress = (long inSize, long _) => decompressProgress(Convert.ToDecimal(inSize) / dataSize);
             }
 
+            byte[] pngData;
             using (BinaryReader binaryReader = new BinaryReader(inputStream))
             using (BinaryWriter binaryWriter = new BinaryWriter(outputStream)) {
-                byte[] pngData;
+                pngData = ImageHelper.LoadPngBytes(binaryReader);
                 try {
+                    if (null == token) {
+                        token = GuessToken(binaryReader);
+                        if (null == token) {
+                            throw new FileLoadException();
+                        }
+                    }
                     bool checkfail = false;
-                    pngData = ImageHelper.LoadPngBytes(binaryReader);
 
                     switch (token) {
                         case Token.StudioToken:
@@ -441,11 +451,10 @@ namespace KK_SaveLoadCompression {
                     }
 
                     if (checkfail) {
-                        return;
+                        throw new FileLoadException();
                     }
-                } catch (Exception e) {
+                } catch (FileLoadException) {
                     Extension.Logger.LogError("Corrupted file");
-                    throw e;
                 }
                 try {
                     //Discard token string
@@ -462,6 +471,27 @@ namespace KK_SaveLoadCompression {
                     throw e;
                 }
             }
+        }
+
+        public string GuessToken(BinaryReader binaryReader) {
+            long position = binaryReader.BaseStream.Position;
+            try {
+                int r = binaryReader.ReadInt32();
+                if (r != 101 || r != 100) {
+                    return Token.StudioToken;
+                }
+                string token = binaryReader.ReadString();
+                if (token.IndexOf(Token.CharaToken) >= 0) {
+                    // 這裡不知道角色性別，直接給1(女性)
+                    // 跨性別讀取基本上夠完善，我想可以略過判別
+                    return Token.CharaToken + "】" + Token.SexToken + 1;
+                } else if (token == Token.CoordinateToken) {
+                    return Token.CoordinateToken;
+                }
+            } finally {
+                binaryReader.BaseStream.Seek(position, SeekOrigin.Begin);
+            }
+            return null;
         }
     }
 }
