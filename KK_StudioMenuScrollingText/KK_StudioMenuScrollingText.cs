@@ -36,8 +36,8 @@ namespace KK_StudioMenuScrollingText {
     public class KK_StudioMenuScrollingText : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Menu Scrolling Text";
         internal const string GUID = "com.jim60105.kk.studiomenuscrollingtext";
-        internal const string PLUGIN_VERSION = "20.09.10.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
+        internal const string PLUGIN_VERSION = "20.12.25.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.1";
 
         public static ConfigEntry<string> AddtionalFolder { get; private set; }
         public static ConfigEntry<int> Speed { get; private set; }
@@ -47,7 +47,7 @@ namespace KK_StudioMenuScrollingText {
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
-            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Extension.Extension.BepLogger = Logger;
 
             AddtionalFolder = Config.Bind<string>("Config", "Menu Addtional Text Folder", GetRelativePath(BepInEx.Paths.BepInExRootPath, Path.Combine(Path.GetDirectoryName(base.Info.Location), nameof(KK_StudioMenuScrollingText))));
             Speed = Config.Bind<int>("Config", "Scrolling speed", 777, new ConfigDescription("σ`∀´)σ", new AcceptableValueRange<int>(666, 888))); 
@@ -95,9 +95,7 @@ namespace KK_StudioMenuScrollingText {
                 t.horizontalOverflow = HorizontalWrapMode.Overflow;
                 t.fontSize = 13;
                 t.alignment = TextAnchor.MiddleCenter;
-                if (System.Text.Encoding.Default.GetBytes(node.text).Length > segmentLength) {
-                    FullText = node.text + "      " + node.text;
-                }
+                Set(segmentLength, node.text);
             }
         }
 
@@ -105,7 +103,7 @@ namespace KK_StudioMenuScrollingText {
             segmentLength = s;
             if (null != text) {
                 node.text = text;
-                if (System.Text.Encoding.Default.GetBytes(text).Length > segmentLength) {
+                if (text.Length + ((System.Text.Encoding.Default.GetBytes(text).Length - text.Length) / 3 * 2) > segmentLength) {
                     FullText = text + "      " + text;
                 } else {
                     FullText = "";
