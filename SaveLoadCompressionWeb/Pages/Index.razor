@@ -1,28 +1,36 @@
 ﻿@page "/"
 @using System.IO;
 @using Microsoft.Extensions.Logging
-@using Token = KK_SaveLoadCompression.SaveLoadCompression.Token;
 @inject KK_SaveLoadCompression.SaveLoadCompression slc;
 @inject IJSRuntime JS;
 @inject ILogger<Index> logger;
 @inject BlazorDownloadFile.IBlazorDownloadFileService BlazorDownloadFileService;
 
-<EditForm Model="this">
-    <label> <InputCheckbox @bind-Value="@doCompare"></InputCheckbox>Do Compare</label> <br />
-    <InputFile OnChange="@OnSelectedFile" AllowedExtensions=".png;"></InputFile>
-</EditForm>
-
-@if (loading) {
-    <div class="lds-dual-ring"></div>
-}
-
+<p class="lead">
+    @if (loading) {
+        <div class="lds-dual-ring"></div>
+    }
+    <EditForm Model="this" @bind-hidden="loading">
+        <label style="display: flex; text-align: center; ">
+            <span class="btn btn-lg btn-outline-secondary" style="color:white;font-size: xx-large; display: flex; align-items: center; margin: auto; ">Choose your Koikatu png</span>
+            <InputFile OnChange="@OnSelectedFile" accept="image/png" hidden></InputFile>
+        </label>
+        <br />
+        <label data-toggle="tooltip" title="Skip the compare can reduce the computing time on compressing, but please bear the risk."> <InputCheckbox @bind-Value="@doCompare"></InputCheckbox>Do Compare</label>
+    </EditForm>
+</p>
 @if (null != buffer && buffer.Length > 0) {
-    <img src="data:image;base64,@System.Convert.ToBase64String(buffer)" />
-    <p>
-        @*Compression finish in {Time.time - startTime:n2} seconds<br />*@
-        Size from @inputFileSize bytes to @buffer.Length bytes<br />
-        Compress ratio: @($"{Convert.ToDecimal(inputFileSize) / buffer.Length:n3}")/1, which means it is now @($"{Convert.ToDecimal(buffer.Length) / inputFileSize:p3}") big.
-        <button @onclick=@(async () => await BlazorDownloadFileService.DownloadFile(filename+"_compressed.png", buffer, "application/octet-stream"))>Dowload</button>
+    <img src="data:image;base64,@System.Convert.ToBase64String(buffer)" style="max-height:50vh"/>
+    <p class="lead">
+        @if (compress) {
+            @:Compression
+        } else {
+            @:Decompression
+        } is complete.
+        The processing is completed within @(Convert.ToInt32(DateTime.UtcNow.AddHours(8).Subtract(new DateTime(1970, 1, 1)).TotalSeconds) - startTime) seconds.<br />
+        Size from @($"{(Convert.ToDecimal(inputFileSize) / 1048576):n2} MB to {(Convert.ToDecimal(buffer.Length) / 1048576):n2} MB.")<br />
+        It is now @($"{Convert.ToDecimal(buffer.Length) / inputFileSize:p3}") big.<br />
+        <a @onclick=@(async () => await BlazorDownloadFileService.DownloadFile(filename, buffer, "application/octet-stream")) class="btn btn-lg btn-outline-secondary">Save</a>
     </p>
 }
 
@@ -32,15 +40,18 @@
     private string filename = "";
     private bool loading = false;
     private bool doCompare = true;
+    private int startTime = 0;
+    private bool compress = true;
 
     public Index() {
         Extension.Logger.logger = logger;
     }
 
     private async void OnSelectedFile(InputFileChangeEventArgs e) {
-        //Extension.Logger.logger = logger;
-        logger.LogDebug(e.File.Name);
+        if (!await JS.InvokeAsync<bool>("confirm", "The browser page will be completely frozen during execution. Do you want to continue?")) return;
+
         long newSize;
+        startTime = Convert.ToInt32(DateTime.UtcNow.AddHours(8).Subtract(new DateTime(1970, 1, 1)).TotalSeconds);
         using (MemoryStream inputStream = new MemoryStream())
         using (MemoryStream writeStream = new MemoryStream()) {
             loading = true;
@@ -70,6 +81,8 @@
                         decompressProgress: (pg) => {
                             logger.LogDebug("Decompress Progress: {pg:p3}", pg);
                         });
+                    filename += "_decompressed.png";
+                    compress = false;
                 } else {
                     // Not compressed, do compress
                     logger.LogDebug("Get not compressed file. Start compress.");
@@ -86,6 +99,8 @@
                         compareProgress: (pg) => {
                             logger.LogDebug("Compare Progress: {pg:p3}", pg);
                         });
+                    filename += "_compressed.png";
+                    compress = true; 
                 }
             }
             buffer = writeStream.ToArray();
@@ -99,9 +114,11 @@
         string background_base64URI = $"data:image;base64,{System.Convert.ToBase64String(pngData)}";
         var watermark = Extension.ImageHelper.LoadDllResourceToBytes($"KK_SaveLoadCompression.Resources.zip_watermark.png");
         string watermark_base64URI = $"data:image;base64,{System.Convert.ToBase64String(watermark)}";
+
         double scale = (double)(slc.GetScaleTimes(token) * Extension.ImageHelper.GetDimensions(pngData)[0]) / Extension.ImageHelper.GetDimensions(watermark)[0];
         logger.LogDebug("Png width: {widthBack} : {widthWater}", Extension.ImageHelper.GetDimensions(pngData)[0], Extension.ImageHelper.GetDimensions(watermark)[0]);
         logger.LogDebug("Watermark Scale : {scale}", scale);
+
         var base64 = await JS.InvokeAsync<string>("indexJs.addWatermark", background_base64URI, watermark_base64URI, scale);
         return System.Convert.FromBase64String(base64);
     }
