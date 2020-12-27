@@ -10,6 +10,29 @@
             });
         watermark.destroy();
         return result;
+    },
+    noticeBoxInit: function () {
+        //註冊滑鼠事件
+        var noticeTitle = document.getElementById("noticeTitle");
+        noticeTitle.addEventListener("mouseup", function () {
+            window.indexJs.noticeBoxtoggleDisplay(noticeTitle.style.left=="0vw");
+        }, false);
+        window.indexJs.noticeBoxtoggleDisplay(true);
+    },
+    noticeBoxtoggleDisplay: function (open) {
+        var viewWidth = 30;
+        var noticeBox = document.getElementById("noticeBox");
+        var noticeTitle = document.getElementById("noticeTitle");
+
+        if (open) {
+            //開啟清單
+            noticeBox.style.left = "0vw";
+            noticeTitle.style.left = viewWidth + "vw";
+        } else {
+            //關閉清單
+            noticeBox.style.left = "-" + viewWidth + "vw";
+            noticeTitle.style.left = "0vw";
+        }
     }
 };
 
@@ -52,4 +75,3 @@ function dataURItoBlob(dataURI, scale = -1) {
         return (new Blob([ia], { type: mimeString }));
     });
 }
-
