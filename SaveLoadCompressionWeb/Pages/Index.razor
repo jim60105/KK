@@ -7,8 +7,9 @@
 @inject BlazorDownloadFile.IBlazorDownloadFileService BlazorDownloadFileService;
 
 <p class="lead">
-    @if (loading) {
+    @if (loading && null==buffer) {
         <div class="lds-dual-ring"></div>
+        <div>Please be patient...</div>
     }
     <EditForm Model="this" @bind-hidden="loading">
         <label style="display: flex; text-align: center; ">
@@ -20,7 +21,7 @@
     </EditForm>
 </p>
 @if (null != buffer && buffer.Length > 0) {
-    <img src="data:image;base64,@System.Convert.ToBase64String(buffer)" style="max-height:50vh" />
+    <img src="data:image;base64,@System.Convert.ToBase64String(buffer)" style="max-height:45vh" />
     <p class="lead">
         @if (compress) {
             @:Compression
@@ -29,7 +30,13 @@
         } is completed in @(Convert.ToInt32(DateTime.UtcNow.AddHours(8).Subtract(new DateTime(1970, 1, 1)).TotalSeconds) - startTime) seconds.<br />
         Size from @($"{(Convert.ToDecimal(inputFileSize) / 1048576):n2} MB to {(Convert.ToDecimal(buffer.Length) / 1048576):n2} MB.")<br />
         It is now @($"{Convert.ToDecimal(buffer.Length) / inputFileSize:p3}") big.<br />
-        <a @onclick="@DownloadFile" class="btn btn-lg btn-outline-secondary">Save</a>
+
+        @if (loading) {
+            <div class="lds-dual-ring"></div>
+            <div>Please be patient...</div>
+        } else {
+            <a @onclick="@DownloadFile" class="btn btn-lg btn-outline-secondary">Save</a>
+        }
     </p>
 }
 
@@ -73,7 +80,7 @@
                 inputStream.Seek(pngEndPosition, SeekOrigin.Begin);
                 if (slc.GuessCompressed(binaryReader)) {
                     // Compressed, do decompressed
-                    logger.LogDebug("Get compressed file. Start decompress.");
+                    logger.LogInformation("Get compressed file. Start decompress.");
                     pngData = await MakeWatermarkPic(pngData, token, false);
                     logger.LogDebug("New pngData size: {size}", pngData.Length);
                     inputStream.Seek(0, SeekOrigin.Begin);
@@ -81,13 +88,13 @@
                         token: token,
                         pngData: pngData,
                         decompressProgress: (pg) => {
-                            logger.LogDebug("Decompress Progress: {pg:p3}", pg);
+                            logger.LogInformation("Decompress Progress: {pg:p3}", pg);
                         });
                     filename += "_decompressed.png";
                     compress = false;
                 } else {
                     // Not compressed, do compress
-                    logger.LogDebug("Get not compressed file. Start compress.");
+                    logger.LogInformation("Get not compressed file. Start compress.");
                     pngData = await MakeWatermarkPic(pngData, token, true);
                     logger.LogDebug("New pngData size: {size}", pngData.Length);
                     inputStream.Seek(0, SeekOrigin.Begin);
@@ -95,11 +102,11 @@
                         token: token,
                         pngData: pngData,
                         compressProgress: (pg) => {
-                            logger.LogDebug("Compress Progress: {pg:p3}", pg);
+                            logger.LogInformation("Compress Progress: {pg:p3}", pg);
                         },
                         doComapre: doCompare,
                         compareProgress: (pg) => {
-                            logger.LogDebug("Compare Progress: {pg:p3}", pg);
+                            logger.LogInformation("Compare Progress: {pg:p3}", pg);
                         });
                     filename += "_compressed.png";
                     compress = true;
@@ -119,7 +126,6 @@
             watermark = Extension.ImageHelper.LoadDllResourceToBytes($"KK_SaveLoadCompression.Resources.zip_watermark.png");
         } else {
             watermark = Extension.ImageHelper.LoadDllResourceToBytes($"KK_SaveLoadCompression.Resources.unzip_watermark.png");
-            logger.LogWarning("Get unzip watermark");
         }
         string watermark_base64URI = $"data:image;base64,{System.Convert.ToBase64String(watermark)}";
 
@@ -132,10 +138,19 @@
     }
 
     private async void DownloadFile() {
+        logger.LogInformation("Start download: {filename}", filename);
+        logger.LogDebug("File size: {filesize}", buffer.Length);
+        loading = true;
+        base.StateHasChanged();
+        await Task.Yield();
+
         await BlazorDownloadFileService.AddBuffer(buffer);
         await BlazorDownloadFileService.DownloadBinaryBuffers(filename);
 
         await BlazorDownloadFileService.ClearBuffers();
+
+        loading = false;
+        base.StateHasChanged();
     }
 }
 
