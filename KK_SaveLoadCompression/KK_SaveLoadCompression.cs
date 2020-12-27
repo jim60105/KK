@@ -57,7 +57,6 @@ namespace KK_SaveLoadCompression {
             DeleteTheOri = Config.Bind<bool>("Settings", "Delete the original file", false, "The original saved file will be automatically overwritten.");
             DisplayMessage = Config.Bind<bool>("Settings", "Display compression message on screen", true);
             SkipSaveCheck = Config.Bind<bool>("Settings", "Skip bytes compare when saving", false, "!!!Use this at your own risk!!!!");
-            //DictionarySize = Config.Bind<DictionarySize>("Settings", "Compress Dictionary Size", SevenZip.DictionarySize.VeryLarge, "If compression FAILs, try changing it to a smaller size.");
             Harmony harmonyInstance = Harmony.CreateAndPatchAll(typeof(Patches));
             harmonyInstance.Patch(
                 typeof(SceneInfo).GetMethod(nameof(SceneInfo.Load), new[] { typeof(string), typeof(Version).MakeByRefType() }),
@@ -117,17 +116,10 @@ namespace KK_SaveLoadCompression {
             => Save(path, SaveLoadCompression.Token.CoordinateToken);
 
         public static void Save(string path, string token) {
-            if (!KK_SaveLoadCompression.Enable.Value || !KK_SaveLoadCompression.Notice.Value) return;
-
             //這裡用cleanedPath作"_compressed"字串清理
             string cleanedPath = path;
             while (cleanedPath.Contains("_compressed")) {
                 cleanedPath = cleanedPath.Replace("_compressed", "");
-            }
-
-            if (cleanedPath != path) {
-                File.Copy(path, cleanedPath, true);
-                Logger.LogDebug($"Clean Path: {cleanedPath}");
             }
 
             string compressedPath = cleanedPath;
@@ -136,8 +128,23 @@ namespace KK_SaveLoadCompression {
             }
 
             //Update Cache
-            string decompressPath = Path.Combine(KK_SaveLoadCompression.CacheDirectory.CreateSubdirectory("Decompressed").FullName, Path.GetFileName(cleanedPath));
-            File.Copy(path, decompressPath, true);
+            string decompressCacheDirName = KK_SaveLoadCompression.CacheDirectory.CreateSubdirectory("Decompressed").FullName;
+            if (!KK_SaveLoadCompression.Enable.Value || !KK_SaveLoadCompression.Notice.Value) {
+                //Clear cache and out
+                File.Delete(Path.Combine(decompressCacheDirName, Path.GetFileName(path)));
+                File.Delete(Path.Combine(decompressCacheDirName, Path.GetFileName(cleanedPath)));
+                File.Delete(Path.Combine(decompressCacheDirName, Path.GetFileName(compressedPath)));
+                return;
+            }
+            File.Copy(path, Path.Combine(decompressCacheDirName, Path.GetFileName(compressedPath)), true);
+
+            if (cleanedPath != path) {
+                File.Copy(path, cleanedPath, true);
+                Logger.LogDebug($"Clean Path: {cleanedPath}");
+            }
+
+            byte[] pngData = MakeWatermarkPic(ImageHelper.LoadPngBytes(path), token, true);
+            byte[] unzipPngData = MakeWatermarkPic(ImageHelper.LoadPngBytes(path), token, false);
 
             //New Thread, No Freeze 
             Thread newThread = new Thread(saveThread);
@@ -149,17 +156,18 @@ namespace KK_SaveLoadCompression {
                 long originalSize = 0;
                 float startTime = Time.time;
                 string TempPath = Path.Combine(KK_SaveLoadCompression.CacheDirectory.CreateSubdirectory("Compressed").FullName, Path.GetFileName(path));
+                KK_SaveLoadCompression.Progress = "";
                 try {
                     originalSize = new FileInfo(path).Length;
-                    KK_SaveLoadCompression.Progress = "";
+
                     newSize = new SaveLoadCompression().Save(
                         path,
                         TempPath,
-                        token,
-                        (decimal progress) => KK_SaveLoadCompression.Progress = $"Compressing: {progress:p2}",
-                        !KK_SaveLoadCompression.SkipSaveCheck.Value,
-                        (decimal progress) => KK_SaveLoadCompression.Progress = $"Comparing: {progress:p2}");
-                    KK_SaveLoadCompression.Progress = "";
+                        token: token,
+                        pngData: pngData,
+                        compressProgress: (decimal progress) => KK_SaveLoadCompression.Progress = $"Compressing: {progress:p2}",
+                        doComapre: !KK_SaveLoadCompression.SkipSaveCheck.Value,
+                        compareProgress: (decimal progress) => KK_SaveLoadCompression.Progress = $"Comparing: {progress:p2}");
 
                     //複製或刪除檔案
                     if (newSize > 0) {
@@ -169,9 +177,17 @@ namespace KK_SaveLoadCompression {
                         Logger.Log(logLevel, $"Size compress from {originalSize} bytes to {newSize} bytes");
                         Logger.Log(logLevel, $"Compress ratio: {Convert.ToDecimal(originalSize) / newSize:n3}/1, which means it is now {Convert.ToDecimal(newSize) / originalSize:p3} big.");
 
+                        //寫入壓縮結果
                         File.Copy(TempPath, compressedPath, true);
                         Logger.LogDebug($"Write to: {compressedPath}");
 
+                        //如果壓縮路徑未覆寫，將原始圖檔加上unzip浮水印
+                        if(cleanedPath != compressedPath) {
+                            ChangePNG(cleanedPath, unzipPngData);
+                            Logger.LogDebug($"Overwrite unzip watermark: {cleanedPath}");
+                        }
+
+                        //如果原始路徑和上二存檔都不相同，刪除之
                         //因為File.Delete()不是立即執行完畢，不能有「砍掉以後立即在同位置寫入」的操作，所以是這個邏輯順序
                         //如果相同的話，上方就已經覆寫了；不同的話此處再做刪除
                         if (path != compressedPath && path != cleanedPath) {
@@ -201,6 +217,7 @@ namespace KK_SaveLoadCompression {
                         throw;
                     }
                 } finally {
+                    KK_SaveLoadCompression.Progress = "";
                     if (File.Exists(TempPath)) File.Delete(TempPath);
                 }
             }
@@ -248,28 +265,73 @@ namespace KK_SaveLoadCompression {
             //KK_Fix_CharacterListOptimizations依賴檔名做比對
             //這裡必須寫為實體檔案供它使用
             try {
-                new SaveLoadCompression().Load(
-                    path,
-                    tmpPath,
-                    token,
-                    (decimal progress) => KK_SaveLoadCompression.Progress = $"Decompressing: {progress:p2}");
+                if (0 != new SaveLoadCompression().Load(path,
+                                                        tmpPath,
+                                                        token,
+                                                        (decimal progress) => KK_SaveLoadCompression.Progress = $"Decompressing: {progress:p2}")) {
+                    path = tmpPath; //change path result by ref
+                    if (Time.time - startTime == 0) {
+                        Logger.LogDebug($"Decompressed: {fileName}");
+                    } else {
+                        Logger.LogDebug($"Decompressed: {fileName}, finish in {Time.time - startTime} seconds");
+                    }
+                } else {
+                    // 非壓縮存檔，退出且不報錯
+                    File.Delete(tmpPath);
+                }
             } catch (Exception) {
                 //在這裡發生讀取錯誤，那大概不是個正確的存檔
                 //因為已經有其它檢核的plugin存在，直接返回
                 Logger.Log(LogLevel.Error | LogLevel.Message, $"Decompressed failed: {fileName}");
+                File.Delete(tmpPath);
                 return;
             } finally {
                 KK_SaveLoadCompression.Progress = "";
             }
-
-            path = tmpPath; //change path result by ref
-            if (Time.time - startTime == 0) {
-                Logger.LogDebug($"Decompressed: {fileName}");
-            } else {
-                Logger.LogDebug($"Decompressed: {fileName}, finish in {Time.time - startTime} seconds");
-            }
         }
         #endregion
+
+        /// <summary>
+        /// 以Unity方式壓上浮水印
+        /// </summary>
+        /// <param name="pngData"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        internal static byte[] MakeWatermarkPic(byte[] pngData, string token, bool zip) {
+            Texture2D png = new Texture2D(1, 1);
+            png.LoadImage(pngData);
+
+            Texture2D watermark;
+            if (zip) {
+                watermark = ImageHelper.LoadDllResourceToTexture2D($"KK_SaveLoadCompression.Resources.zip_watermark.png");
+            } else {
+                watermark = ImageHelper.LoadDllResourceToTexture2D($"KK_SaveLoadCompression.Resources.unzip_watermark.png");
+            }
+            float scaleTimes = new SaveLoadCompression().GetScaleTimes(token);
+            watermark = watermark.Scale(Convert.ToInt32(png.width * scaleTimes), Convert.ToInt32(png.width * scaleTimes));
+            png = png.OverwriteTexture(
+                watermark,
+                0,
+                png.height - watermark.height
+            );
+            Extension.Logger.LogDebug($"Add Watermark: zip");
+            return png.EncodeToPNG();
+        }
+
+        private static void ChangePNG(string path, byte[] pngData) {
+            byte[] data;
+            using (FileStream fileStreamReader = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                ImageHelper.SkipPng(fileStreamReader);
+                data = ImageHelper.ReadToEnd(fileStreamReader);
+            }
+            string tmpPath = Path.GetTempFileName();
+            using (FileStream fileStreamWriter = new FileStream(tmpPath, FileMode.Create, FileAccess.Write))
+            using (BinaryWriter binaryWriter = new BinaryWriter(fileStreamWriter)) {
+                binaryWriter.Write(pngData);
+                binaryWriter.Write(data);
+            }
+            File.Copy(tmpPath, path, true);
+        }
     }
 
     public class SaveLoadCompression {
@@ -282,54 +344,34 @@ namespace KK_SaveLoadCompression {
             //private const string PoseToken = "【pose】";
         }
 
+        /// <summary>
+        /// 取得浮水印的縮放倍率
+        /// </summary>
+        /// <param name="token"></param>
+        /// <returns></returns>
         public float GetScaleTimes(string token) => (token == Token.StudioToken) ? .14375f : .30423f;
 
-        public long Save(string inputPath, string outputPath, string token = null, Action<decimal> compressProgress = null, bool doComapre = true, Action<decimal> compareProgress = null) {
+        public long Save(string inputPath, string outputPath, string token = null, byte[] pngData = null, Action<decimal> compressProgress = null, bool doComapre = true, Action<decimal> compareProgress = null) {
             using (FileStream fileStreamReader = new FileStream(inputPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (FileStream fileStreamWriter = new FileStream(outputPath, FileMode.Create, FileAccess.Write)) {
                 return Save(fileStreamReader,
                             fileStreamWriter,
-                            token,
-                            compressProgress,
-                            doComapre,
-                            compareProgress);
-            }
-        }
-
-        private byte[] MakeWatermarkPic(byte[] pngData, string token) {
-            try {
-                Texture2D png = new Texture2D(2, 2);
-                png.LoadImage(pngData);
-
-                Texture2D watermark = ImageHelper.LoadDllResourceToTexture2D($"KK_SaveLoadCompression.Resources.zip_watermark.png");
-                float scaleTimes = GetScaleTimes(token);
-                watermark = watermark.Scale(Convert.ToInt32(png.width * scaleTimes), Convert.ToInt32(png.width * scaleTimes));
-                png = png.OverwriteTexture(
-                    watermark,
-                    0,
-                    png.height - watermark.height
-                );
-                Extension.Logger.LogDebug($"Add Watermark: zip");
-                return png.EncodeToPNG();
-            } catch (FileNotFoundException) {
-                // This may happen if it's not inside Unity Game
-                // Then directly throw back the input pngData
-                // >> System.IO.FileNotFoundException: Could not load file or assembly 'UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null' or one of its dependencies.
-                Extension.Logger.LogWarning("No png data && No UnityEngine.dll loaded!");
-                return pngData;
+                            token: token,
+                            pngData: pngData,
+                            compressProgress: compressProgress,
+                            doComapre: doComapre,
+                            compareProgress: compareProgress);
             }
         }
 
         public long Save(Stream inputStream,
                          Stream outputStream,
                          string token = null,
+                         byte[] pngData = null,
                          Action<decimal> compressProgress = null,
                          bool doComapre = true,
-                         Action<decimal> compareProgress = null,
-                         byte[] pngData = null) {
+                         Action<decimal> compareProgress = null) {
             long dataSize = 0;
-            DictionarySize dictionarySize = DictionarySize.VeryLarge;
-            //dictionarySize = KK_SaveLoadCompression.DictionarySize.Value;
 
             Action<long, long> _compressProgress = null;
             if (null != compressProgress) {
@@ -340,7 +382,7 @@ namespace KK_SaveLoadCompression {
             using (BinaryReader binaryReader = new BinaryReader(inputStream))
             using (BinaryWriter binaryWriter = new BinaryWriter(outputStream)) {
                 if (null == pngData) {
-                    pngData = MakeWatermarkPic(ImageHelper.LoadPngBytes(binaryReader), token);
+                    pngData = ImageHelper.LoadPngBytes(binaryReader);
                 } else {
                     ImageHelper.SkipPng(binaryReader);
                     Extension.Logger.LogDebug("Skip Png:" + inputStream.Position);
@@ -384,7 +426,7 @@ namespace KK_SaveLoadCompression {
                         inputStream,
                         msCompressed,
                         LzmaSpeed.Fastest,
-                        dictionarySize,
+                        DictionarySize.VeryLarge,
                         _compressProgress
                     );
 
@@ -423,10 +465,10 @@ namespace KK_SaveLoadCompression {
             }
         }
 
-        public void Load(string inputPath, string outputPath, string token = null, Action<decimal> decompressProgress = null) {
+        public long Load(string inputPath, string outputPath, string token = null, Action<decimal> decompressProgress = null) {
             using (FileStream fileStreamReader = new FileStream(inputPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
             using (FileStream fileStreamWriter = new FileStream(outputPath, FileMode.Create, FileAccess.Write)) {
-                Load(
+                return Load(
                     fileStreamReader,
                     fileStreamWriter,
                     token: token,
@@ -454,6 +496,11 @@ namespace KK_SaveLoadCompression {
                     Extension.Logger.LogDebug("Skip Png:" + inputStream.Position);
                 }
 
+                if (!GuessCompressed(binaryReader)) {
+                    //Extension.Logger.LogDebug("Not a compressed file.");
+                    return 0;
+                }
+
                 try {
                     if (null == token) {
                         token = GuessToken(binaryReader);
@@ -476,9 +523,9 @@ namespace KK_SaveLoadCompression {
                     if (checkfail) {
                         throw new FileLoadException();
                     }
-                } catch (FileLoadException) {
+                } catch (FileLoadException e) {
                     Extension.Logger.LogError("Corrupted file");
-                    return 0;
+                    throw e;
                 }
                 try {
                     //Discard token string
@@ -498,6 +545,11 @@ namespace KK_SaveLoadCompression {
             }
         }
 
+        /// <summary>
+        /// 偵測token。BinaryReader之Position必須處在pngData之後。
+        /// </summary>
+        /// <param name="binaryReader"></param>
+        /// <returns></returns>
         public string GuessToken(BinaryReader binaryReader) {
             long position = binaryReader.BaseStream.Position;
             try {
@@ -519,6 +571,11 @@ namespace KK_SaveLoadCompression {
             return null;
         }
 
+        /// <summary>
+        /// 偵測是否為已壓縮存檔。BinaryReader之Position必須處在pngData之後。
+        /// </summary>
+        /// <param name="binaryReader"></param>
+        /// <returns></returns>
         public bool GuessCompressed(BinaryReader binaryReader) {
             long position = binaryReader.BaseStream.Position;
             try {
@@ -531,8 +588,8 @@ namespace KK_SaveLoadCompression {
                     default:
                         // Studio
                         binaryReader.BaseStream.Seek(position, SeekOrigin.Begin);
-                        var st = binaryReader.ReadString();
-                        var version = new Version(st);
+                        string st = binaryReader.ReadString();
+                        Version version = new Version(st);
                         return version.Major == 101;
                 }
             } finally {

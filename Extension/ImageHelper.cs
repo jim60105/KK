@@ -232,7 +232,7 @@ namespace Extension {
             return null;
         }
 
-        private static byte[] ReadToEnd(Stream stream) {
+        public static byte[] ReadToEnd(Stream stream) {
             long originalPosition = stream.Position;
             //stream.Position = 0;
 
