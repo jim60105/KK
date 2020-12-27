@@ -121,16 +121,13 @@
   <ItemGroup>
     <None Include="ILMerge.props" />
     <None Include="packages.config" />
-    <None Include="Resources\zip_icon_ori.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\zip_icon.png" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\zip_watermark.png" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="ILMergeOrder.txt" />
+    <EmbeddedResource Include="Resources\unzip_watermark.png" />
   </ItemGroup>
   <Import Project="..\Extension\Extension.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

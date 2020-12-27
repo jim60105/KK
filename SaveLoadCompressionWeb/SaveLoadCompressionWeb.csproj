@@ -28,14 +28,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="KK_SaveLoadCompression">
-      <HintPath>..\KK_SaveLoadCompression\bin\Debug\KK_SaveLoadCompression.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
+    <Folder Include="wwwroot\javascript\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\javascript\" />
+    <Reference Include="KK_SaveLoadCompression">
+      <HintPath>..\KK_SaveLoadCompression\bin\Release\KK_SaveLoadCompression.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

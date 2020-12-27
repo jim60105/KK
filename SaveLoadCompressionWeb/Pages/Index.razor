@@ -20,13 +20,13 @@
     </EditForm>
 </p>
 @if (null != buffer && buffer.Length > 0) {
-    <img src="data:image;base64,@System.Convert.ToBase64String(buffer)" style="max-height:50vh"/>
+    <img src="data:image;base64,@System.Convert.ToBase64String(buffer)" style="max-height:50vh" />
     <p class="lead">
         @if (compress) {
             @:Compression
         } else {
             @:Decompression
-        } is completed within @(Convert.ToInt32(DateTime.UtcNow.AddHours(8).Subtract(new DateTime(1970, 1, 1)).TotalSeconds) - startTime) seconds.<br />
+        } is completed in @(Convert.ToInt32(DateTime.UtcNow.AddHours(8).Subtract(new DateTime(1970, 1, 1)).TotalSeconds) - startTime) seconds.<br />
         Size from @($"{(Convert.ToDecimal(inputFileSize) / 1048576):n2} MB to {(Convert.ToDecimal(buffer.Length) / 1048576):n2} MB.")<br />
         It is now @($"{Convert.ToDecimal(buffer.Length) / inputFileSize:p3}") big.<br />
         <a @onclick="@DownloadFile" class="btn btn-lg btn-outline-secondary">Save</a>
@@ -74,9 +74,12 @@
                 if (slc.GuessCompressed(binaryReader)) {
                     // Compressed, do decompressed
                     logger.LogDebug("Get compressed file. Start decompress.");
+                    pngData = await MakeWatermarkPic(pngData, token, false);
+                    logger.LogDebug("New pngData size: {size}", pngData.Length);
                     inputStream.Seek(0, SeekOrigin.Begin);
                     newSize = slc.Load(inputStream, writeStream,
                         token: token,
+                        pngData: pngData,
                         decompressProgress: (pg) => {
                             logger.LogDebug("Decompress Progress: {pg:p3}", pg);
                         });
@@ -85,7 +88,7 @@
                 } else {
                     // Not compressed, do compress
                     logger.LogDebug("Get not compressed file. Start compress.");
-                    pngData = await MakeWatermarkPic(pngData, token);
+                    pngData = await MakeWatermarkPic(pngData, token, true);
                     logger.LogDebug("New pngData size: {size}", pngData.Length);
                     inputStream.Seek(0, SeekOrigin.Begin);
                     newSize = slc.Save(inputStream, writeStream,
@@ -109,9 +112,15 @@
         }
     }
 
-    private async Task<byte[]> MakeWatermarkPic(byte[] pngData, string token) {
+    private async Task<byte[]> MakeWatermarkPic(byte[] pngData, string token, bool zip) {
         string background_base64URI = $"data:image;base64,{System.Convert.ToBase64String(pngData)}";
-        var watermark = Extension.ImageHelper.LoadDllResourceToBytes($"KK_SaveLoadCompression.Resources.zip_watermark.png");
+        var watermark = new byte[] { };
+        if (zip) {
+            watermark = Extension.ImageHelper.LoadDllResourceToBytes($"KK_SaveLoadCompression.Resources.zip_watermark.png");
+        } else {
+            watermark = Extension.ImageHelper.LoadDllResourceToBytes($"KK_SaveLoadCompression.Resources.unzip_watermark.png");
+            logger.LogWarning("Get unzip watermark");
+        }
         string watermark_base64URI = $"data:image;base64,{System.Convert.ToBase64String(watermark)}";
 
         double scale = (double)(slc.GetScaleTimes(token) * Extension.ImageHelper.GetDimensions(pngData)[0]) / Extension.ImageHelper.GetDimensions(watermark)[0];

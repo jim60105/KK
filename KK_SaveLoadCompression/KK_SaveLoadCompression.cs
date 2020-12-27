@@ -320,7 +320,13 @@ namespace KK_SaveLoadCompression {
             }
         }
 
-        public long Save(Stream inputStream, Stream outputStream, string token = null, Action<decimal> compressProgress = null, bool doComapre = true, Action<decimal> compareProgress = null, byte[] pngData = null) {
+        public long Save(Stream inputStream,
+                         Stream outputStream,
+                         string token = null,
+                         Action<decimal> compressProgress = null,
+                         bool doComapre = true,
+                         Action<decimal> compareProgress = null,
+                         byte[] pngData = null) {
             long dataSize = 0;
             DictionarySize dictionarySize = DictionarySize.VeryLarge;
             //dictionarySize = KK_SaveLoadCompression.DictionarySize.Value;
@@ -423,22 +429,31 @@ namespace KK_SaveLoadCompression {
                 Load(
                     fileStreamReader,
                     fileStreamWriter,
-                    token,
-                    (decimal progress) => KK_SaveLoadCompression.Progress = $"Decompressing: {progress:p2}");
+                    token: token,
+                    decompressProgress: (decimal progress) => KK_SaveLoadCompression.Progress = $"Decompressing: {progress:p2}");
             }
         }
 
-        public long Load(Stream inputStream, Stream outputStream, string token = null, Action<decimal> decompressProgress = null) {
+        public long Load(Stream inputStream,
+                         Stream outputStream,
+                         string token = null,
+                         byte[] pngData = null,
+                         Action<decimal> decompressProgress = null) {
             long dataSize = 0;
             Action<long, long> _decompressProgress = null;
             if (null != decompressProgress) {
                 _decompressProgress = (long inSize, long _) => decompressProgress(Convert.ToDecimal(inSize) / dataSize);
             }
 
-            byte[] pngData;
             using (BinaryReader binaryReader = new BinaryReader(inputStream))
             using (BinaryWriter binaryWriter = new BinaryWriter(outputStream)) {
-                pngData = ImageHelper.LoadPngBytes(binaryReader);
+                if (null == pngData) {
+                    pngData = ImageHelper.LoadPngBytes(binaryReader);
+                } else {
+                    ImageHelper.SkipPng(binaryReader);
+                    Extension.Logger.LogDebug("Skip Png:" + inputStream.Position);
+                }
+
                 try {
                     if (null == token) {
                         token = GuessToken(binaryReader);
