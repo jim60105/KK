@@ -26,11 +26,10 @@
             @:Compression
         } else {
             @:Decompression
-        } is complete.
-        The processing is completed within @(Convert.ToInt32(DateTime.UtcNow.AddHours(8).Subtract(new DateTime(1970, 1, 1)).TotalSeconds) - startTime) seconds.<br />
+        } is completed within @(Convert.ToInt32(DateTime.UtcNow.AddHours(8).Subtract(new DateTime(1970, 1, 1)).TotalSeconds) - startTime) seconds.<br />
         Size from @($"{(Convert.ToDecimal(inputFileSize) / 1048576):n2} MB to {(Convert.ToDecimal(buffer.Length) / 1048576):n2} MB.")<br />
         It is now @($"{Convert.ToDecimal(buffer.Length) / inputFileSize:p3}") big.<br />
-        <a @onclick=@(async () => await BlazorDownloadFileService.DownloadFile(filename, buffer, "application/octet-stream")) class="btn btn-lg btn-outline-secondary">Save</a>
+        <a @onclick="@DownloadFile" class="btn btn-lg btn-outline-secondary">Save</a>
     </p>
 }
 
@@ -100,7 +99,7 @@
                             logger.LogDebug("Compare Progress: {pg:p3}", pg);
                         });
                     filename += "_compressed.png";
-                    compress = true; 
+                    compress = true;
                 }
             }
             buffer = writeStream.ToArray();
@@ -121,6 +120,13 @@
 
         var base64 = await JS.InvokeAsync<string>("indexJs.addWatermark", background_base64URI, watermark_base64URI, scale);
         return System.Convert.FromBase64String(base64);
+    }
+
+    private async void DownloadFile() {
+        await BlazorDownloadFileService.AddBuffer(buffer);
+        await BlazorDownloadFileService.DownloadBinaryBuffers(filename);
+
+        await BlazorDownloadFileService.ClearBuffers();
     }
 }
 
