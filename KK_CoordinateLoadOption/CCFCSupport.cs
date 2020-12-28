@@ -33,7 +33,7 @@ namespace KK_CoordinateLoadOption {
 
         internal bool LoadAssembly(out string path, Version version = null) {
             try {
-                path = Extension.Extension.TryGetPluginInstance(GUID, version)?.Info.Location;
+                path = KoikatuHelper.TryGetPluginInstance(GUID, version)?.Info.Location;
                 if (!File.Exists(path)) {
                     throw new Exception($"Load assembly FAILED: {CCFCName}");
                 }

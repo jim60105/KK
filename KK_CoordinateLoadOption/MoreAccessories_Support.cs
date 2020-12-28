@@ -18,7 +18,7 @@ namespace KK_CoordinateLoadOption {
 
         public static bool LoadAssembly() {
             try {
-                string path = Extension.Extension.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories", new Version(1, 1))?.Info.Location;
+                string path = KoikatuHelper.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories", new Version(1, 1))?.Info.Location;
                 Assembly ass = Assembly.LoadFrom(path);
                 MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
                 MoreAccObj = MoreAccessories?.GetFieldStatic("_self");

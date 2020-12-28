@@ -38,7 +38,7 @@ namespace KK_StudioReflectFKFix {
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
-            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Extension.Logger.logger = Logger;
             UIUtility.Init();
             Harmony.CreateAndPatchAll(typeof(Patches));
         }
@@ -85,7 +85,7 @@ namespace KK_StudioReflectFKFix {
             btn.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -117), new Vector2(191, -95));
             btn.GetComponent<Button>().onClick.RemoveAllListeners();
             btn.GetComponent<Button>().onClick.SetPersistentListenerState(0, UnityEngine.Events.UnityEventCallState.Off);
-            btn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioReflectFKFix.Resources.CopyFKNeck.png", 191, 22);
+            btn.GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("KK_StudioReflectFKFix.Resources.CopyFKNeck.png", 191, 22);
             btn.GetComponent<Button>().interactable = true;
 
             btn.GetComponent<Button>().onClick.AddListener(() => {

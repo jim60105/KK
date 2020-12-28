@@ -54,7 +54,7 @@ namespace KK_PNGCaptureSizeModifier {
         internal static Texture2D fontTexture;
         public void Awake() {
             Logger = base.Logger;
-            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Extension.Logger.logger = Logger;
             TimesOfMaker = Config.Bind<float>("Config", "Times of multiplication (Maker)", 3.0f, "The game needs to be restarted for changes to take effect.");
             TimesOfStudio = Config.Bind<float>("Config", "Times of multiplication (Studio)", 5.0f, "The game needs to be restarted for changes to take effect.");
             PNGColumnCount = Config.Bind<int>("Config", "Number of PNG rows in File List View", 3, new ConfigDescription("Must be a natural number",new AcceptableValueRange<int>(1,30)));
@@ -78,7 +78,7 @@ namespace KK_PNGCaptureSizeModifier {
         private void SetFontPic() {
             fontTexture = null;
             if (PathToTheFontResource.Value.Length != 0 && File.Exists(PathToTheFontResource.Value)) {
-                fontTexture = Extension.Extension.LoadTexture(PathToTheFontResource.Value);
+                fontTexture = ImageHelper.LoadTexture(PathToTheFontResource.Value);
                 if (null != fontTexture) {
                     Logger.LogDebug($"Load font pic: {PathToTheFontResource.Value}");
                 } else {
@@ -87,7 +87,7 @@ namespace KK_PNGCaptureSizeModifier {
             }
 
             if (null == fontTexture) {
-                fontTexture = Extension.Extension.LoadDllResource($"KK_PNGCaptureSizeModifier.Resources.ArialFont.png", 1024, 1024);
+                fontTexture = ImageHelper.LoadDllResourceToTexture2D($"KK_PNGCaptureSizeModifier.Resources.ArialFont.png", 1024, 1024);
                 Logger.LogDebug($"Load original font pic");
             }
 
@@ -217,7 +217,7 @@ namespace KK_PNGCaptureSizeModifier {
 
             //浮水印
             if (doWatermarkFlag) {
-                Texture2D watermark = Extension.Extension.LoadDllResource($"KK_PNGCaptureSizeModifier.Resources.{wmFileName}");
+                Texture2D watermark = ImageHelper.LoadDllResourceToTexture2D($"KK_PNGCaptureSizeModifier.Resources.{wmFileName}");
                 watermark = watermark.Scale((int)(watermark.width * times.Value / (float)times.DefaultValue), (int)(watermark.height * times.Value / (float)times.DefaultValue));
                 screenshot = screenshot.OverwriteTexture(
                     watermark,

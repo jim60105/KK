@@ -130,7 +130,7 @@ namespace KK_FBIOpenUp {
             redBagBtn.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), offsetMin, offsetMax);
 
             redBagBtn.GetComponent<Button>().spriteState = new SpriteState();
-            redBagBtn.GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_FBIOpenUp.Resources.redBag.png", 100, 100);
+            redBagBtn.GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("KK_FBIOpenUp.Resources.redBag.png", 100, 100);
             redBagBtn.GetComponent<Button>().onClick.RemoveAllListeners();
             for (int i = 0; i < redBagBtn.GetComponent<Button>().onClick.GetPersistentEventCount(); i++) {
                 redBagBtn.GetComponent<Button>().onClick.SetPersistentListenerState(i, UnityEngine.Events.UnityEventCallState.Off);
@@ -296,21 +296,21 @@ namespace KK_FBIOpenUp {
                 case 1:
                     //小學生真是太棒了
                     shiftPicture.type = ShiftPicture.Type.picture;
-                    shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, Extension.Extension.LoadNewSprite("KK_FBIOpenUp.Resources.saikodaze.jpg", 800, 657));
+                    shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, ImageHelper.LoadNewSprite("KK_FBIOpenUp.Resources.saikodaze.jpg", 800, 657));
                     shiftPicture.image.rectTransform.sizeDelta = new Vector2(Screen.height / 1.5f * 800 / 657, Screen.height / 1.5f);
                     Right2Center();
                     break;
                 case 2:
                     //熊吉逮捕
                     shiftPicture.type = ShiftPicture.Type.picture;
-                    shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, Extension.Extension.LoadNewSprite("KK_FBIOpenUp.Resources.Kumakichi.jpg", 640, 480));
+                    shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, ImageHelper.LoadNewSprite("KK_FBIOpenUp.Resources.Kumakichi.jpg", 640, 480));
                     shiftPicture.image.rectTransform.sizeDelta = new Vector2(Screen.height / 1.5f * 640 / 480, Screen.height / 1.5f);
                     Left2Center();
                     break;
                 case 10:
                     //幼女退光線
                     shiftPicture.type = ShiftPicture.Type.picture;
-                    shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, Extension.Extension.LoadNewSprite("KK_FBIOpenUp.Resources.beam.png", 700, 700));
+                    shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, ImageHelper.LoadNewSprite("KK_FBIOpenUp.Resources.beam.png", 700, 700));
                     shiftPicture.image.rectTransform.sizeDelta = new Vector2(Screen.height / 1.25f, Screen.height / 1.25f);
                     Right2Center();
                     break;

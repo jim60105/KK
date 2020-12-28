@@ -65,7 +65,7 @@ namespace KK_CoordinateLoadOption {
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
-            Extension.Extension.BepLogger = Logger;
+            Extension.Logger.logger = Logger;
             UIUtility.Init();
             harmonyInstance = Harmony.CreateAndPatchAll(typeof(Patches));
             //harmonyInstance.PatchAll(typeof(MoreAccessories_Support));
@@ -178,7 +178,7 @@ namespace KK_CoordinateLoadOption {
 
         public static void InitPostfix(object __instance) {
             //如果啟動機翻就一律顯示英文，否則機翻會毀了我的文字
-            if (null != Extension.Extension.TryGetPluginInstance("gravydevsupreme.xunity.autotranslator")) {
+            if (null != KoikatuHelper.TryGetPluginInstance("gravydevsupreme.xunity.autotranslator")) {
                 string XUAConfigPath = Path.Combine(Paths.ConfigPath, "AutoTranslatorConfig.ini");
                 if (IniFile.FromFile(XUAConfigPath).GetSection("TextFrameworks").GetKey("EnableUGUI").Value == "True") {
                     StringResources.StringResourcesManager.SetUICulture("en-US");

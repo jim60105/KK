@@ -43,7 +43,7 @@ namespace KK_StudioTextPlugin {
         internal static new ManualLogSource Logger;
         public void Awake() {
             Logger = base.Logger;
-            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Extension.Logger.logger = Logger;
             if (TextPlugin.Awake()) {
                 UIUtility.Init();
                 Harmony.CreateAndPatchAll(typeof(Patches));

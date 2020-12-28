@@ -51,7 +51,7 @@ namespace KK_StudioCharaOnlyLoadBody {
         public void Awake() {
             Logger = base.Logger;
             UIUtility.Init();
-            Extension.Extension.LogPrefix = $"[{PLUGIN_NAME}]";
+            Extension.Logger.logger = Logger;
             Harmony.CreateAndPatchAll(typeof(Patches));
 
             string[] SampleArray = {
@@ -91,13 +91,13 @@ namespace KK_StudioCharaOnlyLoadBody {
             //依照語言選擇圖片
             switch (Application.systemLanguage) {
                 case SystemLanguage.Chinese:
-                    btn[i].GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaOnlyLoadBody.Resources.buttonChange.png", 183, 20);
+                    btn[i].GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("KK_StudioCharaOnlyLoadBody.Resources.buttonChange.png", 183, 20);
                     break;
                 case SystemLanguage.Japanese:
-                    btn[i].GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaOnlyLoadBody.Resources.buttonChange_JP.png", 183, 20);
+                    btn[i].GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("KK_StudioCharaOnlyLoadBody.Resources.buttonChange_JP.png", 183, 20);
                     break;
                 default:
-                    btn[i].GetComponent<Image>().sprite = Extension.Extension.LoadNewSprite("KK_StudioCharaOnlyLoadBody.Resources.buttonChange_EN.png", 183, 20);
+                    btn[i].GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("KK_StudioCharaOnlyLoadBody.Resources.buttonChange_EN.png", 183, 20);
                     break;
             }
 
@@ -155,7 +155,7 @@ namespace KK_StudioCharaOnlyLoadBody {
 
         internal static void Awake() {
             //MoreAcc相關
-            string path = Extension.Extension.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories")?.Info.Location;
+            string path = KoikatuHelper.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories")?.Info.Location;
             if (null != path && path.Length != 0) {
                 Assembly ass = Assembly.LoadFrom(path);
                 ChaFile_CopyAll_Patches = ass.GetType("MoreAccessoriesKOI.ChaFile_CopyAll_Patches");

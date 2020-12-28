@@ -63,19 +63,9 @@ namespace KK_SaveLoadCompression.Properties {
         /// <summary>
         ///   查詢類型 System.Drawing.Bitmap 的當地語系化資源。
         /// </summary>
-        internal static System.Drawing.Bitmap zip_icon {
+        internal static System.Drawing.Bitmap unzip_watermark {
             get {
-                object obj = ResourceManager.GetObject("zip_icon", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   查詢類型 System.Drawing.Bitmap 的當地語系化資源。
-        /// </summary>
-        internal static System.Drawing.Bitmap zip_icon_ori {
-            get {
-                object obj = ResourceManager.GetObject("zip_icon_ori", resourceCulture);
+                object obj = ResourceManager.GetObject("unzip_watermark", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

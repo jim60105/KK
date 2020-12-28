@@ -10,7 +10,7 @@ namespace KK_FBIOpenUp {
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "InitCharaList")]
         public static void InitCharaListPostfix(CharaList __instance) {
             bool flag = string.Equals(__instance.name, "00_Female") == (SampleChara.chaFile.parameter.sex == 1);
-            if (Extension.Extension.TryGetPluginInstance("com.jim60105.kk.studioallgirlsplugin")) { flag = true; }
+            if (KoikatuHelper.TryGetPluginInstance("com.jim60105.kk.studioallgirlsplugin")) { flag = true; }
             if (flag && null == UnityEngine.GameObject.Find($"StudioScene/Canvas Main Menu/01_Add/{__instance.name}/redBagBtn")) {
                 KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.Studio;
                 UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.Studio, __instance);

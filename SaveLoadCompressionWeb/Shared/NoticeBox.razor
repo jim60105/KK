@@ -1,0 +1,24 @@
+﻿@inject IJSRuntime JS
+@inject IStringLocalizer<Index> Loc
+
+<link href="/css/noticeBox.css" rel="stylesheet" />
+
+<div id="noticeBox">
+    <h2 id="noticeTitle">@Title</h2>
+    <div class="d-flex flex-column overflow-auto">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Title { get; set; }
+    [Parameter]
+    public RenderFragment ChildContent { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender) {
+        if (firstRender) {
+            await JS.InvokeVoidAsync("indexJs.noticeBoxInit");
+        }
+    }
+}
