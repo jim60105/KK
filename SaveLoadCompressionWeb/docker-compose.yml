@@ -1,0 +1,18 @@
+version: '3.7'
+
+services:
+  saveloadcompressionweb :
+    image: jim60105/saveloadcompressionweb
+    restart: always
+    environment:
+      - VIRTUAL_HOST=slcweb.maki0419.com
+      - LETSENCRYPT_HOST=slcweb.maki0419.com
+      - LETSENCRYPT_EMAIL=jim60105@gmail.com
+      - LETSENCRYPT_TEST=true
+    networks:
+      - proxy-tier
+
+networks:
+  proxy-tier:
+    external: true
+    name: proxy-tier
