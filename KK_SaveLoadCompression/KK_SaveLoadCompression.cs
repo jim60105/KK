@@ -515,7 +515,8 @@ namespace KK_SaveLoadCompression {
                             checkfail = !new Version(binaryReader.ReadString()).Equals(new Version(101, 0, 0, 0));
                             break;
                         case Token.CoordinateToken:
-                        case Token.CharaToken:
+                        default:
+                            //Token.CharaToken
                             checkfail = 101 != binaryReader.ReadInt32();
                             break;
                     }
