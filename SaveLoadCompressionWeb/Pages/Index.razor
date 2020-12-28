@@ -1,94 +1,179 @@
 ﻿@page "/"
 @using System.IO;
 @using Microsoft.Extensions.Logging
-@inject KK_SaveLoadCompression.SaveLoadCompression slc;
-@inject IJSRuntime JS;
-@inject ILogger<Index> logger;
-@inject BlazorDownloadFile.IBlazorDownloadFileService BlazorDownloadFileService;
+@inject KK_SaveLoadCompression.SaveLoadCompression slc
+@inject IJSRuntime JS
+@inject ILogger<Index> logger
+@inject BlazorDownloadFile.IBlazorDownloadFileService BlazorDownloadFileService
+@inject IStringLocalizer<Index> Loc
 
-<div class="text-center">
-    <p class="lead">
-        @if (loading && null == buffer) {
-            <div class="lds-dual-ring"></div>
-            <div>Please be patient...</div>
-        }
-        <EditForm Model="this" @bind-hidden="loading">
-            <div class="d-flex justify-content-center">
-                <label>
-                    <a class="btn btn-lg btn-outline-secondary text-white" style="font-size: xx-large;cursor:pointer">Choose your Koikatu png</a>
-                    <InputFile OnChange="@OnSelectedFile" accept="image/png" hidden></InputFile>
-                </label>
-            </div>
-            <br />
-            <label data-toggle="tooltip" title="Skip the compare can reduce the computing time on compressing, but please bear the risk."> <InputCheckbox @bind-Value="@doCompare"></InputCheckbox>Do Compare</label>
-        </EditForm>
-    </p>
-    @if (null != buffer && buffer.Length > 0) {
-        <hr />
-        <img src="data:image;base64,@System.Convert.ToBase64String(buffer)" style="max-height:45vh" />
-        <p class="lead">
-            @if (compress) {
-                @:Compression
-            } else {
-                @:Decompression
-            } is completed in @(Convert.ToInt32(DateTime.UtcNow.AddHours(8).Subtract(new DateTime(1970, 1, 1)).TotalSeconds) - startTime) seconds.<br />
-            Size from @($"{(Convert.ToDecimal(inputFileSize) / 1048576):n2} MB to {(Convert.ToDecimal(buffer.Length) / 1048576):n2} MB.")<br />
-            It is now @($"{Convert.ToDecimal(buffer.Length) / inputFileSize:p3}") big.<br />
+<div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
+    <header class="masthead mb-auto">
+        <Header></Header>
+    </header>
 
-            @if (loading) {
-                <div class="lds-dual-ring"></div>
-                <div>Please be patient...</div>
-            } else {
-                <a @onclick="@DownloadFile" class="btn btn-lg btn-outline-secondary">Save</a>
+    <main role="main" class="inner cover">
+        <div class="text-center">
+            <p class="lead">
+                @if (loading && null == buffer) {
+                    <div class="lds-dual-ring"></div>
+                    <div>@Loc["Please be patient"]...</div>
+                }
+                <EditForm Model="this" @bind-hidden="loading">
+                    <div class="d-flex justify-content-center">
+                        <label>
+                            <a class="btn btn-lg btn-outline-secondary text-white" style="font-size: xx-large;cursor:pointer">@Loc["Choose your Koikatu png"]</a>
+                            <InputFile OnChange="@OnSelectedFile" accept="image/png" hidden></InputFile>
+                        </label>
+                    </div>
+                    <br />
+                    <label data-toggle="tooltip" title=@Loc["doCompareTooltip"]> <InputCheckbox @bind-Value="@doCompare"></InputCheckbox>@Loc["Do Compare"]</label>
+                </EditForm>
+            </p>
+            @if (null != buffer && buffer.Length > 0) {
+                <hr />
+                <img src="data:image;base64,@System.Convert.ToBase64String(buffer)" style="max-height:45vh" />
+                <p class="lead">
+                    @String.Format(Loc["CompletedSeconds"],
+                        (compress) ? Loc["Compression"] : Loc["Decompression"],
+                        (Convert.ToInt32(DateTime.UtcNow.AddHours(8).Subtract(new DateTime(1970, 1, 1)).TotalSeconds) - startTime)
+                    )<br />
+                    @String.Format(Loc["SizeFromTo"],
+                        (Convert.ToDecimal(inputFileSize) / 1048576),
+                        (Convert.ToDecimal(buffer.Length) / 1048576)
+                    )<br />
+                    @String.Format(Loc["NowHowBig"],
+                        ($"{Convert.ToDecimal(buffer.Length) / inputFileSize:p3}")
+                    )<br />
+
+                    @if (loading) {
+                        <div class="lds-dual-ring"></div>
+                        <div>@Loc["Please be patient"]...</div>
+                    } else {
+                        <a @onclick="@DownloadFile" class="btn btn-lg btn-outline-secondary">@Loc["Save"]</a>
+                    }
+                </p>
             }
-        </p>
-    }
-</div>
-
-<div id="noticeBox">
-    <h2 id="noticeTitle">!!Notice!!</h2>
-    <div class="d-flex flex-column ">
-        <div>
-            <h4>Q: 你會如何使用我的存檔?</h4>
-            <p>
-                本工具使用<a href="https://docs.microsoft.com/zh-tw/aspnet/core/blazor/?view=aspnetcore-5.0#blazor-webassembly" target="_blank">Blazor wasm技術</a>實做<br />
-                完全在瀏覧器內執行C#計算<br />
-                我不會將任何使用者資料傳回伺服器<br />
-                我不會取得你的存檔
-            </p>
-            <hr />
         </div>
+        <NoticeBox Title=@Loc["Notice"]>
+            @switch (System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName) {
+                case "zh":
+                    <div class="alert-dark text-center" style="font-size:x-large">壓縮存檔必須使用插件才能讀取</div>
+                    <hr />
 
-        <div>
-            <h4>Q: 為何會頁面凍結?</h4>
-            <p>
-                <a href="https://docs.microsoft.com/zh-tw/aspnet/core/blazor/hosting-models?view=aspnetcore-5.0#blazor-webassembly" target="_blank">Blazor wasm是直接在UI thread上執行</a><br />
-                故長運算中無法更新頁面<br />
-                這是技術限制<br />
-                <b>請由F12開啟DevTools</b>，我會將執行狀態輸出在console中
-            </p>
-            <hr />
+                    <div>
+                        <h4>Q: 你會如何使用我的存檔?</h4>
+                        <p>
+                            本工具使用<a href="https://docs.microsoft.com/zh-tw/aspnet/core/blazor/?view=aspnetcore-5.0#blazor-webassembly" target="_blank">Blazor wasm技術</a>實做<br />
+                            完全在瀏覧器內執行C#計算<br />
+                            我不會將任何使用者資料傳回伺服器<br />
+                            我不會取得你的存檔
+                        </p>
+                        <hr />
+                    </div>
+
+                    <div>
+                        <h4>Q: 為何會頁面凍結?</h4>
+                        <p>
+                            <a href="https://docs.microsoft.com/zh-tw/aspnet/core/blazor/hosting-models?view=aspnetcore-5.0#blazor-webassembly" target="_blank">Blazor wasm是直接在UI thread上執行</a><br />
+                            故長運算中無法更新頁面<br />
+                            這是技術限制<br />
+                            <b>請由F12開啟DevTools</b>，我會將執行狀態輸出在console中
+                        </p>
+                        <hr />
+                    </div>
+
+                    <div>
+                        <h4>Q: 有沒有辦法減少運算時間?</h4>
+                        <p>
+                            遊戲內的運算效能，是在瀏覧器上執行時的數倍強。<br />
+                            請使用<a href="https://blog.maki0419.com/2020/06/koikatu-save-load-compression.html" target="_blank">插件</a>。
+                        </p>
+                        <hr />
+                    </div>
+
+                    <div>
+                        <h4>Q: 我該如何選擇要壓縮，或是解壓縮?</h4>
+                        <p>
+                            工具會自動判斷，將一般存檔壓縮；將壓縮檔解壓縮。
+                        </p>
+                        <hr />
+                    </div>
+
+                    <div>
+                        <h4>Q: 請解釋「執行比對」功能</h4>
+                        <p>
+                            啟用「執行比對」功能時，會在壓縮完畢後再解壓做內容比對，確保內容一致。<br />
+                            禁用此功能可以節省時間，這只是個保險功能。<br />
+                            補充參考，目前我尚未遇過比對失敗的案例。
+                        </p>
+                        <hr />
+                    </div>
+
+                    break;
+                default:
+                    <div class="alert-dark text-center" style="font-size:x-large">Compressed files MUST read with the in-game plugin</div>
+                    <hr />
+
+                    <div>
+                        <h4>Q: How will you use my data?</h4>
+                        <p>
+                            This tool is implemented using <a href="https://docs.microsoft.com/zh-tw/aspnet/core/blazor/?view=aspnetcore-5.0#blazor-webassembly" target="_blank">Blazor wasm technology</a><br />
+                            Perform C# calculations entirely in the browser.<br />
+                            I will NOT send any user data back to the server.<br />
+                            I will NOT get your data.
+                        </p>
+                        <hr />
+                    </div>
+
+                    <div>
+                        <h4>Q: Why does the page freeze?</h4>
+                        <p>
+                            <a href="https://docs.microsoft.com/zh-tw/aspnet/core/blazor/hosting-models?view=aspnetcore-5.0#blazor-webassembly" target="_blank">Blazor wasm is executed directly on the UI thread.</a><br />
+                            Therefore, the page cannot be updated during long calculations.<br />
+                            This is a technical limitation.<br />
+                            <b>Please open DevTools by F12</b>, I will output the execution status in the console.
+                        </p>
+                        <hr />
+                    </div>
+
+                    <div>
+                        <h4>Q: Is there a way to reduce computing time?</h4>
+                        <p>
+                            The computing performance in the game is several times stronger than when running on the browser.<br />
+                            Please use the <a href="https://blog.maki0419.com/2020/06/koikatu-save-load-compression.html" target="_blank">in-game plugin</a>.
+                        </p>
+                        <hr />
+                    </div>
+
+                    <div>
+                        <h4>Q: How do I choose to compress or decompress?</h4>
+                        <p>
+                            The tool will automatically determine, compress the general file; decompress the compressed file.
+                        </p>
+                        <hr />
+                    </div>
+
+                    <div>
+                        <h4>Q: Please explain the "Do Comparison" function</h4>
+                        <p>
+                            When the "Do Comparison" is enabled, it will decompresse again after the compression is completed for content comparison to ensure that the content is consistent.<br />
+                            Disabling this feature can save time, it's just an insurance feature.<br />
+                            For additional reference, I have not encountered a case of comparison failure.<br />
+                        </p>
+                        <hr />
+                    </div>
+
+                    break;
+            }
+        </NoticeBox>
+    </main>
+
+    <footer class="mastfoot mt-auto text-center">
+        <div class="inner">
+            Copyright © by 琳(jim60105) Since 2010. Theme: Bootstrap 4 Example - Cover
         </div>
-
-        <div>
-            <h4>Q: 有沒有辦法減少運算時間?</h4>
-            <p>
-                遊戲內的運算效能，是在瀏覧器上執行時的數倍強。<br />
-                請使用<a href="https://blog.maki0419.com/2020/06/koikatu-save-load-compression.html" target="_blank">插件</a>。
-            </p>
-            <hr />
-        </div>
-
-        <div>
-            <h4>Q: 我該如何選擇要壓縮，或是解壓縮?</h4>
-            <p>
-                工具會自動判斷，將一般存檔壓縮；將壓縮檔解壓縮。
-            </p>
-            <hr />
-        </div>
-
-        <div class="alert-danger" style="font-size:x-large"><a href="https://blog.maki0419.com/2020/06/koikatu-save-load-compression.html" target="_blank">壓縮存檔必須使用插件才能讀取</a></div>
-    </div>
+    </footer>
 </div>
 
 @code{
@@ -102,12 +187,6 @@
 
     public Index() {
         Extension.Logger.logger = logger;
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender) {
-        if (firstRender) {
-            await JS.InvokeVoidAsync("indexJs.noticeBoxInit");
-        }
     }
 
     private async void OnSelectedFile(InputFileChangeEventArgs e) {
@@ -170,7 +249,7 @@
                 }
             }
             buffer = writeStream.ToArray();
-            logger.LogDebug("Output file length: {size}", newSize);
+            logger.LogDebug("Process Finish. Output file length: {size}", newSize);
             loading = false;
             base.StateHasChanged();
         }

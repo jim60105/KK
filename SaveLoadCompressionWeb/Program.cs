@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Net.Http;
 using System.Threading.Tasks;
 using BlazorDownloadFile;
@@ -16,6 +17,7 @@ namespace SaveLoadCompressionWeb {
             builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
 
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+            builder.Services.AddLocalization();
             builder.Services.AddScoped(typeof(KK_SaveLoadCompression.SaveLoadCompression));
             builder.Services.AddSingleton(sp => (IJSInProcessRuntime)sp.GetRequiredService<IJSRuntime>());
             builder.Services.AddBlazorDownloadFile();

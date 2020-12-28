@@ -20,7 +20,7 @@
         window.indexJs.noticeBoxtoggleDisplay(true);
     },
     noticeBoxtoggleDisplay: function (open) {
-        var viewWidth = 30;
+        var viewWidth = 35; //vw
         var noticeBox = document.getElementById("noticeBox");
         var noticeTitle = document.getElementById("noticeTitle");
 
