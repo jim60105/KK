@@ -35,8 +35,8 @@ namespace KK_SaveLoadCompression {
     public class KK_SaveLoadCompression : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Save Load Compression";
         internal const string GUID = "com.jim60105.kk.saveloadcompression";
-        internal const string PLUGIN_VERSION = "20.09.07.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.5";
+        internal const string PLUGIN_VERSION = "20.12.29.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.4.0";
         public static ConfigEntry<DictionarySize> DictionarySize { get; private set; }
         public static ConfigEntry<bool> Enable { get; private set; }
         public static ConfigEntry<bool> Notice { get; private set; }

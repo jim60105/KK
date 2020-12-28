@@ -32,7 +32,7 @@
             </p>
             @if (null != buffer && buffer.Length > 0) {
                 <hr />
-                <img id="resultImg" src="data:image;base64,@System.Convert.ToBase64String(pngData)"/>
+                <img id="resultImg" src="data:image;base64,@System.Convert.ToBase64String(pngData)" />
                 <p class="lead">
                     @String.Format(Loc["CompletedSeconds"],
                         (compress) ? Loc["Compression"] : Loc["Decompression"],
@@ -169,7 +169,7 @@
 
     <footer class="mastfoot mt-auto text-center">
         <div class="inner">
-             <a href="https://jim60105.github.io/KK/LICENSE" target="_blank">Copyright © by 琳(jim60105) Since 2010.</a> Theme: <a href="https://getbootstrap.com/docs/4.5/examples/" target="_blank">Bootstrap 4 Example - Cover</a>
+            v20.12.29.0 <a href="https://jim60105.github.io/KK/LICENSE" target="_blank">Copyright © by 琳(jim60105) Since 2010.</a> Theme: <a href="https://getbootstrap.com/docs/4.5/examples/" target="_blank">Bootstrap 4 Example - Cover</a>
         </div>
     </footer>
 </div>
