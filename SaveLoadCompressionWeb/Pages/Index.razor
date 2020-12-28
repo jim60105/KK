@@ -26,14 +26,13 @@
                             <InputFile OnChange="@OnSelectedFile" accept="image/png" hidden></InputFile>
                         </label>
                     </div>
-                    <br />
                     <label data-toggle="tooltip" title=@Loc["doCompareTooltip"]> <InputCheckbox @bind-Value="@doCompare"></InputCheckbox>@Loc["Do Compare"]</label>
                 </EditForm>
             </p>
             @if (null != buffer && buffer.Length > 0) {
-                <hr />
                 <img id="resultImg" src="data:image;base64,@System.Convert.ToBase64String(pngData)" />
                 <p class="lead">
+                    <br />
                     @String.Format(Loc["CompletedSeconds"],
                         (compress) ? Loc["Compression"] : Loc["Decompression"],
                         (timeSpend.TotalSeconds)
@@ -46,6 +45,7 @@
                         ($"{Convert.ToDecimal(buffer.Length) / inputFileSize:p3}")
                     )<br />
 
+                    <br />
                     @if (loading) {
                         <div class="lds-dual-ring"></div>
                         <div>@Loc["Please be patient"]...</div>
@@ -101,7 +101,7 @@
 
                     <div>
                         <hr />
-                        <h4>Q: 請解釋「執行比對」功能</h4>
+                        <h4>Q: 請說明「執行比對」功能</h4>
                         <p>
                             啟用「執行比對」功能時，會在壓縮完畢後再解壓做內容比對，確保內容一致。<br />
                             禁用此功能可以節省時間，這只是個保險功能。<br />
@@ -169,7 +169,7 @@
 
     <footer class="mastfoot mt-auto text-center">
         <div class="inner">
-            v20.12.29.0 <a href="https://jim60105.github.io/KK/LICENSE" target="_blank">Copyright © by 琳(jim60105) Since 2010.</a> Theme: <a href="https://getbootstrap.com/docs/4.5/examples/" target="_blank">Bootstrap 4 Example - Cover</a>
+            v20.12.29.1 <a href="https://jim60105.github.io/KK/LICENSE" target="_blank">Copyright © by 琳(jim60105) Since 2010.</a> Theme: <a href="https://getbootstrap.com/docs/4.5/examples/" target="_blank">Bootstrap 4 Example - Cover</a>
         </div>
     </footer>
 </div>
@@ -185,7 +185,7 @@
     private bool compress = true;
 
     private async void OnSelectedFile(InputFileChangeEventArgs e) {
-        if (!await JS.InvokeAsync<bool>("confirm", "The browser page will be completely frozen during execution. Do you want to continue?")) return;
+        if (!await JS.InvokeAsync<bool>("confirm", Loc["FrozenConfirm"].ToString())) return;
 
         long newSize;
         var startTime = DateTime.Now;

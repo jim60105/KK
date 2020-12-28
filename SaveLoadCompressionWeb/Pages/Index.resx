@@ -130,4 +130,7 @@
   <data name="NowHowBig" xml:space="preserve">
     <value>It is now {0} big.</value>
   </data>
+  <data name="FrozenConfirm" xml:space="preserve">
+    <value>The browser page will be completely frozen during execution. Do you want to continue?</value>
+  </data>
 </root>

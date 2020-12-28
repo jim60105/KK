@@ -145,9 +145,12 @@
     <value>{0}已完成，花費時間為 {1:n2} 秒</value>
   </data>
   <data name="SizeFromTo" xml:space="preserve">
-    <value>容量由 {0:n2} MB至 {1:n2} MB</value>
+    <value>容量由 {0:n2} MB 至 {1:n2} MB</value>
   </data>
   <data name="NowHowBig" xml:space="preserve">
-    <value>現在是 {0}</value>
+    <value>是原本的 {0}</value>
+  </data>
+  <data name="FrozenConfirm" xml:space="preserve">
+    <value>程式運算時網頁會完全凍結。要繼續嗎?</value>
   </data>
 </root>
