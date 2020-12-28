@@ -142,7 +142,7 @@
     <value>存檔</value>
   </data>
   <data name="CompletedSeconds" xml:space="preserve">
-    <value>{0}已完成，花費時間為 {1} 秒</value>
+    <value>{0}已完成，花費時間為 {1:n2} 秒</value>
   </data>
   <data name="SizeFromTo" xml:space="preserve">
     <value>容量由 {0:n2} MB至 {1:n2} MB</value>

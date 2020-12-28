@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Save Load Compression Web" xml:space="preserve">
-    <value>存檔壓縮網頁版</value>
+    <value>存檔壓縮網頁版工具</value>
   </data>
   <data name="Home" xml:space="preserve">
     <value>首頁</value>

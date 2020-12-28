@@ -13,6 +13,9 @@
     }
 }
 
+/*
+ * Loading Circle
+ */
 .lds-dual-ring {
     display: inline-block;
     width: 80px;
@@ -40,6 +43,7 @@
         transform: rotate(360deg);
     }
 }
+
 /*
  * Globals
  */
@@ -67,13 +71,13 @@ a:hover {
  */
 
 html,
-body{
+body {
     height: 100%;
     background-color: #333;
     width: 100%;
 }
 
-body{
+body {
     display: -ms-flexbox;
     display: flex;
     color: #fff;
@@ -146,6 +150,12 @@ body{
 /*
  * Footer
  */
-.mastfoot {
+.mastfoot,
+.mastfoot a:link,
+.mastfoot a:hover {
     color: rgba(255, 255, 255, .5);
+}
+
+#resultImg{
+    max-height: 45vh;
 }

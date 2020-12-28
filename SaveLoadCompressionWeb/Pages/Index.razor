@@ -32,11 +32,11 @@
             </p>
             @if (null != buffer && buffer.Length > 0) {
                 <hr />
-                <img src="data:image;base64,@System.Convert.ToBase64String(buffer)" style="max-height:45vh" />
+                <img id="resultImg" src="data:image;base64,@System.Convert.ToBase64String(pngData)"/>
                 <p class="lead">
                     @String.Format(Loc["CompletedSeconds"],
                         (compress) ? Loc["Compression"] : Loc["Decompression"],
-                        (Convert.ToInt32(DateTime.UtcNow.AddHours(8).Subtract(new DateTime(1970, 1, 1)).TotalSeconds) - startTime)
+                        (timeSpend.TotalSeconds)
                     )<br />
                     @String.Format(Loc["SizeFromTo"],
                         (Convert.ToDecimal(inputFileSize) / 1048576),
@@ -59,74 +59,73 @@
             @switch (System.Globalization.CultureInfo.CurrentCulture.TwoLetterISOLanguageName) {
                 case "zh":
                     <div class="alert-dark text-center" style="font-size:x-large">壓縮存檔必須使用插件才能讀取</div>
-                    <hr />
 
                     <div>
+                        <hr />
                         <h4>Q: 你會如何使用我的存檔?</h4>
                         <p>
-                            本工具使用<a href="https://docs.microsoft.com/zh-tw/aspnet/core/blazor/?view=aspnetcore-5.0#blazor-webassembly" target="_blank">Blazor wasm技術</a>實做<br />
-                            完全在瀏覧器內執行C#計算<br />
+                            本工具使用<a href="https://docs.microsoft.com/zh-tw/aspnet/core/blazor/?view=aspnetcore-5.0#blazor-webassembly" target="_blank">Blazor wasm技術</a>實做，完全在瀏覧器內執行C#計算<br />
                             我不會將任何使用者資料傳回伺服器<br />
-                            我不會取得你的存檔
+                            我不會取得你的存檔<br />
+                            此頁面在<a href="https://github.com/jim60105/KK/tree/master/SaveLoadCompressionWeb">Github</a>上開源
                         </p>
-                        <hr />
                     </div>
 
                     <div>
-                        <h4>Q: 為何會頁面凍結?</h4>
+                        <hr />
+                        <h4>Q: 為何頁面會凍結?</h4>
                         <p>
                             <a href="https://docs.microsoft.com/zh-tw/aspnet/core/blazor/hosting-models?view=aspnetcore-5.0#blazor-webassembly" target="_blank">Blazor wasm是直接在UI thread上執行</a><br />
                             故長運算中無法更新頁面<br />
                             這是技術限制<br />
                             <b>請由F12開啟DevTools</b>，我會將執行狀態輸出在console中
                         </p>
-                        <hr />
                     </div>
 
                     <div>
+                        <hr />
                         <h4>Q: 有沒有辦法減少運算時間?</h4>
                         <p>
                             遊戲內的運算效能，是在瀏覧器上執行時的數倍強。<br />
                             請使用<a href="https://blog.maki0419.com/2020/06/koikatu-save-load-compression.html" target="_blank">插件</a>。
                         </p>
-                        <hr />
                     </div>
 
                     <div>
+                        <hr />
                         <h4>Q: 我該如何選擇要壓縮，或是解壓縮?</h4>
                         <p>
                             工具會自動判斷，將一般存檔壓縮；將壓縮檔解壓縮。
                         </p>
-                        <hr />
                     </div>
 
                     <div>
+                        <hr />
                         <h4>Q: 請解釋「執行比對」功能</h4>
                         <p>
                             啟用「執行比對」功能時，會在壓縮完畢後再解壓做內容比對，確保內容一致。<br />
                             禁用此功能可以節省時間，這只是個保險功能。<br />
                             補充參考，目前我尚未遇過比對失敗的案例。
                         </p>
-                        <hr />
                     </div>
 
                     break;
                 default:
                     <div class="alert-dark text-center" style="font-size:x-large">Compressed files MUST read with the in-game plugin</div>
-                    <hr />
 
                     <div>
+                        <hr />
                         <h4>Q: How will you use my data?</h4>
                         <p>
-                            This tool is implemented using <a href="https://docs.microsoft.com/zh-tw/aspnet/core/blazor/?view=aspnetcore-5.0#blazor-webassembly" target="_blank">Blazor wasm technology</a><br />
-                            Perform C# calculations entirely in the browser.<br />
+                            This tool is implemented with <a href="https://docs.microsoft.com/zh-tw/aspnet/core/blazor/?view=aspnetcore-5.0#blazor-webassembly" target="_blank">Blazor WebAssembly technology</a> and performs C# calculations entirely in the browser.<br />
                             I will NOT send any user data back to the server.<br />
-                            I will NOT get your data.
+                            I will NOT get your data.<br />
+                            This page is open source on <a href="https://github.com/jim60105/KK/tree/master/SaveLoadCompressionWeb">Github</a>.
                         </p>
-                        <hr />
                     </div>
 
                     <div>
+                        <hr />
                         <h4>Q: Why does the page freeze?</h4>
                         <p>
                             <a href="https://docs.microsoft.com/zh-tw/aspnet/core/blazor/hosting-models?view=aspnetcore-5.0#blazor-webassembly" target="_blank">Blazor wasm is executed directly on the UI thread.</a><br />
@@ -134,34 +133,33 @@
                             This is a technical limitation.<br />
                             <b>Please open DevTools by F12</b>, I will output the execution status in the console.
                         </p>
-                        <hr />
                     </div>
 
                     <div>
+                        <hr />
                         <h4>Q: Is there a way to reduce computing time?</h4>
                         <p>
                             The computing performance in the game is several times stronger than when running on the browser.<br />
                             Please use the <a href="https://blog.maki0419.com/2020/06/koikatu-save-load-compression.html" target="_blank">in-game plugin</a>.
                         </p>
-                        <hr />
                     </div>
 
                     <div>
+                        <hr />
                         <h4>Q: How do I choose to compress or decompress?</h4>
                         <p>
                             The tool will automatically determine, compress the general file; decompress the compressed file.
                         </p>
-                        <hr />
                     </div>
 
                     <div>
+                        <hr />
                         <h4>Q: Please explain the "Do Comparison" function</h4>
                         <p>
                             When the "Do Comparison" is enabled, it will decompresse again after the compression is completed for content comparison to ensure that the content is consistent.<br />
                             Disabling this feature can save time, it's just an insurance feature.<br />
-                            For additional reference, I have not encountered a case of comparison failure.<br />
+                            For additional reference, I haven't encountered any comparative failures.<br />
                         </p>
-                        <hr />
                     </div>
 
                     break;
@@ -171,41 +169,39 @@
 
     <footer class="mastfoot mt-auto text-center">
         <div class="inner">
-            Copyright © by 琳(jim60105) Since 2010. Theme: Bootstrap 4 Example - Cover
+             <a href="https://jim60105.github.io/KK/LICENSE" target="_blank">Copyright © by 琳(jim60105) Since 2010.</a> Theme: <a href="https://getbootstrap.com/docs/4.5/examples/" target="_blank">Bootstrap 4 Example - Cover</a>
         </div>
     </footer>
 </div>
 
 @code{
     private byte[] buffer = { };
+    private byte[] pngData = { };
     private long inputFileSize = 0;
     private string filename = "";
     private bool loading = false;
     private bool doCompare = true;
-    private int startTime = 0;
+    private TimeSpan timeSpend;
     private bool compress = true;
-
-    public Index() {
-        Extension.Logger.logger = logger;
-    }
 
     private async void OnSelectedFile(InputFileChangeEventArgs e) {
         if (!await JS.InvokeAsync<bool>("confirm", "The browser page will be completely frozen during execution. Do you want to continue?")) return;
 
         long newSize;
-        startTime = Convert.ToInt32(DateTime.UtcNow.AddHours(8).Subtract(new DateTime(1970, 1, 1)).TotalSeconds);
+        var startTime = DateTime.Now;
         using (MemoryStream inputStream = new MemoryStream())
         using (MemoryStream writeStream = new MemoryStream()) {
             loading = true;
             buffer = null;
             base.StateHasChanged();
+            await Task.Yield();
 
             await e.File.OpenReadStream(524288000).CopyToAsync(inputStream);
             filename = e.File.Name.Replace(".png", "");
             inputFileSize = inputStream.Length;
             logger.LogDebug("Input file length: {size}", inputStream.Length);
 
-            byte[] pngData = { };
+            pngData = new byte[0];
             inputStream.Seek(0, SeekOrigin.Begin);
             using (BinaryReader binaryReader = new BinaryReader(inputStream)) {
                 pngData = Extension.ImageHelper.LoadPngBytes(binaryReader);
@@ -216,40 +212,42 @@
                 inputStream.Seek(pngEndPosition, SeekOrigin.Begin);
                 if (slc.GuessCompressed(binaryReader)) {
                     // Compressed, do decompressed
-                    logger.LogInformation("Get compressed file. Start decompress.");
+                    logger.LogInformation("Get compressed file. Start making png data...");
                     pngData = await MakeWatermarkPic(pngData, token, false);
-                    logger.LogDebug("New pngData size: {size}", pngData.Length);
                     inputStream.Seek(0, SeekOrigin.Begin);
+                    logger.LogInformation("Start decompress...");
                     newSize = slc.Load(inputStream, writeStream,
                         token: token,
                         pngData: pngData,
-                        decompressProgress: (pg) => {
-                            logger.LogInformation("Decompress Progress: {pg:p3}", pg);
+                        decompressProgress: (progress) => {
+                            logger.LogInformation("Decompress Progress: {progress:p3}", progress);
                         });
                     filename += "_decompressed.png";
                     compress = false;
                 } else {
                     // Not compressed, do compress
-                    logger.LogInformation("Get not compressed file. Start compress.");
+                    logger.LogInformation("Get not compressed file. Start making png data...");
                     pngData = await MakeWatermarkPic(pngData, token, true);
-                    logger.LogDebug("New pngData size: {size}", pngData.Length);
                     inputStream.Seek(0, SeekOrigin.Begin);
+                    logger.LogInformation("Start compress...");
                     newSize = slc.Save(inputStream, writeStream,
                         token: token,
                         pngData: pngData,
-                        compressProgress: (pg) => {
-                            logger.LogInformation("Compress Progress: {pg:p3}", pg);
+                        compressProgress: (progress) => {
+                            logger.LogInformation("Compress Progress: {progress:p3}", progress);
                         },
                         doComapre: doCompare,
-                        compareProgress: (pg) => {
-                            logger.LogInformation("Compare Progress: {pg:p3}", pg);
+                        compareProgress: (progress) => {
+                            logger.LogInformation("Compare Progress: {progress:p3}", progress);
                         });
                     filename += "_compressed.png";
                     compress = true;
                 }
             }
+            logger.LogInformation("Process finish");
             buffer = writeStream.ToArray();
-            logger.LogDebug("Process Finish. Output file length: {size}", newSize);
+            logger.LogDebug("Output file length: {size}", newSize);
+            timeSpend = DateTime.Now - startTime;
             loading = false;
             base.StateHasChanged();
         }
@@ -257,11 +255,14 @@
 
     private async Task<byte[]> MakeWatermarkPic(byte[] pngData, string token, bool zip) {
         string background_base64URI = $"data:image;base64,{System.Convert.ToBase64String(pngData)}";
+        logger.LogDebug("Load background image");
         var watermark = new byte[] { };
         if (zip) {
             watermark = Extension.ImageHelper.LoadDllResourceToBytes($"KK_SaveLoadCompression.Resources.zip_watermark.png");
+            logger.LogDebug("Load zip watermark image");
         } else {
             watermark = Extension.ImageHelper.LoadDllResourceToBytes($"KK_SaveLoadCompression.Resources.unzip_watermark.png");
+            logger.LogDebug("Load unzip watermark image");
         }
         string watermark_base64URI = $"data:image;base64,{System.Convert.ToBase64String(watermark)}";
 
@@ -270,21 +271,26 @@
         logger.LogDebug("Watermark Scale : {scale}", scale);
 
         var base64 = await JS.InvokeAsync<string>("indexJs.addWatermark", background_base64URI, watermark_base64URI, scale);
-        return System.Convert.FromBase64String(base64);
+        logger.LogDebug("Add watermark finish");
+        var resultData = System.Convert.FromBase64String(base64);
+        logger.LogDebug("New pngData size: {size}", resultData.Length);
+        return resultData;
     }
 
     private async void DownloadFile() {
-        logger.LogInformation("Start download: {filename}", filename);
+        logger.LogInformation("Download: {filename}", filename);
         logger.LogDebug("File size: {filesize}", buffer.Length);
         loading = true;
         base.StateHasChanged();
         await Task.Yield();
 
+        logger.LogInformation("Start generating file...");
         await BlazorDownloadFileService.AddBuffer(buffer);
+        logger.LogDebug("Done buffer transfer");
         await BlazorDownloadFileService.DownloadBinaryBuffers(filename);
 
         await BlazorDownloadFileService.ClearBuffers();
-
+        logger.LogInformation("Finish download");
         loading = false;
         base.StateHasChanged();
     }

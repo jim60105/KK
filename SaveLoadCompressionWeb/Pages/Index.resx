@@ -122,7 +122,7 @@
     <value>Save</value>
   </data>
   <data name="CompletedSeconds" xml:space="preserve">
-    <value>{0} is completed in {1} seconds.</value>
+    <value>{0} is completed in {1:n2} seconds.</value>
   </data>
   <data name="SizeFromTo" xml:space="preserve">
     <value>Size from {0:n2} MB to {1:n2} MB.</value>
