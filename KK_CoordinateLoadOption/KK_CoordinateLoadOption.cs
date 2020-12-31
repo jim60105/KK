@@ -56,8 +56,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "20.11.28.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.5";
+        internal const string PLUGIN_VERSION = "20.12.31.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.5.1";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -1149,9 +1149,6 @@ namespace KK_CoordinateLoadOption {
         /// <returns>ChaAccessoryComponent</returns>
         public static ChaAccessoryComponent GetChaAccessoryComponent(ChaControl chaCtrl, int index) {
             if (SCLO._isMoreAccessoriesExist) {
-                if (index >= MoreAccessories_Support.GetAccessoriesAmount(chaCtrl.chaFile)) {
-                    return null;
-                }
                 return MoreAccessories_Support.GetChaAccessoryComponent(chaCtrl, index);
             } else {
                 return chaCtrl.GetAccessoryComponent(index);

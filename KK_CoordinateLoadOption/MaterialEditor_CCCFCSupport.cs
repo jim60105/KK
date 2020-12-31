@@ -23,11 +23,21 @@ namespace KK_CoordinateLoadOption {
         internal static DirectoryInfo CacheDirectory;
 
         private static Type MaterialAPI = null;
+        private static Type ObjectTypeME = null;
         public override bool LoadAssembly() {
             bool loadSuccess = LoadAssembly(out string path, new Version(2, 0, 7));
             if (loadSuccess && !path.IsNullOrEmpty()) {
                 Assembly ass = Assembly.LoadFrom(path);
-                MaterialAPI = ass.GetType("KK_Plugins.MaterialEditor.MaterialAPI");
+                MaterialAPI = ass.GetType("MaterialEditorAPI.MaterialAPI");
+                if (null==MaterialAPI) {
+                    Logger.LogError("Get MaterialAPI type failed");
+                    loadSuccess = false;
+                }
+                ObjectTypeME = ass.GetType("KK_Plugins.MaterialEditor.MaterialEditorCharaController").GetNestedType("ObjectType");
+                if (null == ObjectTypeME || !ObjectTypeME.IsEnum) {
+                    Logger.LogError("Get ObjectType Enum failed");
+                    loadSuccess = false;
+                }
                 MakeCacheDirectory();
             }
             return loadSuccess;
@@ -180,6 +190,9 @@ namespace KK_CoordinateLoadOption {
         public void RemoveMaterialEditorData(ChaControl targetChaCtrl, int targetSlot, GameObject gameObject, ObjectType objectType) {
             if (targetChaCtrl != TargetChaCtrl) GetControllerAndBackupData(targetChaCtrl: targetChaCtrl);
 
+            // 轉換ObjectType
+            object _objectType = Enum.Parse(ObjectTypeME, Enum.GetName(typeof(ObjectType), objectType));
+
             //是否有執行到
             bool doFlag = false;
 
@@ -196,6 +209,7 @@ namespace KK_CoordinateLoadOption {
                 ).ForEach((x) => {
                     if (null == x) return;
                     doFlag2 = true;
+
                     Renderer r = null;
                     Material m = null;
 
@@ -205,8 +219,8 @@ namespace KK_CoordinateLoadOption {
                             doFlag2 = false;
                             return;
                         }
-                    } else {
-                        m = MaterialAPI.InvokeStatic("GetMaterials", new object[] { gameObject, (string)x.GetField("MaterialName") })?.ToList<Material>()?.FirstOrDefault();
+                    } else { 
+                        m = MaterialAPI.InvokeStatic("GetObjectMaterials", new object[] { gameObject, (string)x.GetField("MaterialName") })?.ToList<Material>()?.FirstOrDefault();
                         if (m == null) {
                             doFlag2 = false;
                             return;
@@ -217,6 +231,7 @@ namespace KK_CoordinateLoadOption {
                         case 0: //MaterialShader
                             TargetController.Invoke(storedValue.removeFunctionName, new object[] {
                                 targetSlot,
+                                _objectType,
                                 m,
                                 gameObject,
                                 true
@@ -224,6 +239,7 @@ namespace KK_CoordinateLoadOption {
                             if (null != x.GetField("RenderQueueOriginal")) {
                                 TargetController.Invoke("RemoveMaterialShaderRenderQueue", new object[] {
                                     targetSlot,
+                                _objectType,
                                     m,
                                     gameObject,
                                     true
@@ -233,6 +249,7 @@ namespace KK_CoordinateLoadOption {
                         case 1: //RendererProperty
                             TargetController.Invoke(storedValue.removeFunctionName, new object[] {
                                 targetSlot,
+                                _objectType,
                                 r,
                                 x.GetField("Property") ,
                                 gameObject,
@@ -243,6 +260,7 @@ namespace KK_CoordinateLoadOption {
                         case 3: //MaterialColorProperty
                             TargetController.Invoke(storedValue.removeFunctionName, new object[] {
                                 targetSlot,
+                                _objectType,
                                 m,
                                 x.GetField("Property") ,
                                 gameObject,
@@ -254,6 +272,7 @@ namespace KK_CoordinateLoadOption {
                             if (null != x.GetField("OffsetOriginal")) {
                                 TargetController.Invoke("RemoveMaterialTextureOffset", new object[] {
                                     targetSlot,
+                                _objectType,
                                     m,
                                     x.GetField("Property"),
                                     gameObject,
@@ -264,6 +283,7 @@ namespace KK_CoordinateLoadOption {
                             if (null != x.GetField("ScaleOriginal")) {
                                 TargetController.Invoke("RemoveMaterialTextureScale", new object[] {
                                     targetSlot,
+                                _objectType,
                                     m,
                                     x.GetField("Property"),
                                     gameObject,
@@ -273,6 +293,7 @@ namespace KK_CoordinateLoadOption {
                             //Texture
                             TargetController.Invoke(storedValue.removeFunctionName, new object[] {
                                 targetSlot,
+                                _objectType,
                                 m,
                                 x.GetField("Property"),
                                 gameObject,
@@ -321,6 +342,12 @@ namespace KK_CoordinateLoadOption {
             if (sourceChaCtrl != SourceChaCtrl) GetControllerAndBackupData(sourceChaCtrl: sourceChaCtrl);
             if (targetChaCtrl != TargetChaCtrl) GetControllerAndBackupData(targetChaCtrl: targetChaCtrl);
 
+            // 轉換ObjectType
+            object _objectType = Enum.Parse(ObjectTypeME, Enum.GetName(typeof(ObjectType), objectType));
+
+            if (gameObject?.gameObject != null) {
+
+            }
             //是否有執行到
             bool doFlag = false;
 
@@ -336,6 +363,7 @@ namespace KK_CoordinateLoadOption {
                     (int)x.GetField("Slot") == sourceSlot
                 ).ForEach((x) => {
                     doFlag2 = true;
+
                     Renderer r = null;
                     Material m = null;
 
@@ -346,8 +374,8 @@ namespace KK_CoordinateLoadOption {
                             doFlag2 = false;
                             return;
                         }
-                    } else {
-                        m = MaterialAPI.InvokeStatic("GetMaterials", new object[] { gameObject, (string)x.GetField("MaterialName") })?.ToList<Material>()?.FirstOrDefault();
+                    } else { 
+                        m = MaterialAPI.InvokeStatic("GetObjectMaterials", new object[] { gameObject, (string)x.GetField("MaterialName") })?.ToList<Material>()?.FirstOrDefault();
                         if (m == null) {
                             Logger.LogWarning($"Missing Material: {(string)x.GetField("MaterialName")}!");
                             doFlag2 = false;
@@ -359,6 +387,7 @@ namespace KK_CoordinateLoadOption {
                         case 0: //MaterialShader
                             TargetController.Invoke(storedValue.setFunctionName, new object[] {
                                 targetSlot,
+                                _objectType,
                                 m,
                                 x.GetField("ShaderName"),
                                 gameObject,
@@ -367,6 +396,7 @@ namespace KK_CoordinateLoadOption {
                             if (null != x.GetField("RenderQueueOriginal")) {
                                 TargetController.Invoke("SetMaterialShaderRenderQueue", new object[] {
                                     targetSlot,
+                                _objectType,
                                     m,
                                     x.GetField("RenderQueue"),
                                     gameObject,
@@ -377,6 +407,7 @@ namespace KK_CoordinateLoadOption {
                         case 1: //RendererProperty
                             TargetController.Invoke(storedValue.setFunctionName, new object[] {
                                 targetSlot,
+                                _objectType,
                                 r,
                                 x.GetField("Property"),
                                 x.GetField("Value"),
@@ -387,6 +418,7 @@ namespace KK_CoordinateLoadOption {
                         case 2: //MaterialFloatProperty
                             TargetController.Invoke(storedValue.setFunctionName, new object[] {
                                 targetSlot,
+                                _objectType,
                                 m,
                                 x.GetField("Property"),
                                 (float)Convert.ToDouble(x.GetField("Value")),
@@ -397,6 +429,7 @@ namespace KK_CoordinateLoadOption {
                         case 3: //MaterialColorProperty
                             TargetController.Invoke(storedValue.setFunctionName, new object[] {
                                 targetSlot,
+                                _objectType,
                                 m,
                                 x.GetField("Property"),
                                 x.GetField("Value"),
@@ -414,6 +447,7 @@ namespace KK_CoordinateLoadOption {
                                 File.WriteAllBytes(tempPath, BA);
                                 TargetController.Invoke("SetMaterialTextureFromFile", new object[] {
                                     targetSlot,
+                                _objectType,
                                     m,
                                     x.GetField("Property"),
                                     tempPath,
@@ -427,6 +461,7 @@ namespace KK_CoordinateLoadOption {
                                 //Offset
                                 TargetController.Invoke("SetMaterialTextureOffset", new object[] {
                                     targetSlot,
+                                _objectType,
                                     m,
                                     x.GetField("Property"),
                                     x.GetField("Offset"),
@@ -438,6 +473,7 @@ namespace KK_CoordinateLoadOption {
                             if (null != x.GetField("ScaleOriginal")) {
                                 TargetController.Invoke("SetMaterialTextureScale", new object[] {
                                     targetSlot,
+                                _objectType,
                                     m,
                                     x.GetField("Property"),
                                     x.GetField("Scale"),
