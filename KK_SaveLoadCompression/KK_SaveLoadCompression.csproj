@@ -1,7 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.props" Condition="Exists('..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.props')" />
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <OutputType>Library</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
@@ -28,12 +28,6 @@
     </Reference>
     <Reference Include="BepInEx">
       <HintPath>C:\illusion\Koikatu\BepInEx\core\BepInEx.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Update="System">
-      <Private>False</Private>
-    </Reference>
-    <Reference Update="System.Drawing">
       <Private>False</Private>
     </Reference>
     <Reference Include="UnityEngine">
@@ -69,6 +63,7 @@
     <PackageReference Include="ILMerge" Version="2.13.0307" />
     <PackageReference Include="ImageLibrary" Version="3.0.2" />
     <PackageReference Include="MSBuild.ILMerge.Task" Version="1.0.5" />
+    <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="7zip\Compress\LzmaAlone\LzmaAlone.cs" />

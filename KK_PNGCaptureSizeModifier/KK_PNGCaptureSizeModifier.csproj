@@ -57,5 +57,8 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\ArialFont.png" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
+  </ItemGroup>
   <Import Project="..\Extension\Extension.projitems" Label="Shared" />
 </Project>
