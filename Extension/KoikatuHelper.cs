@@ -14,21 +14,5 @@ namespace Extension {
             }
             return null;
         }
-
-        public static bool IsSteam() {
-            if (typeof(DownloadScene).GetProperty($"isSteam", Reflection.BindFlagAll) != null) {
-                Logger.LogDebug($"This Plugin is not working in Koikatu Party (Steam version)");
-                return true;
-            }
-            return false;
-        }
-
-        public static bool IsDarkness() {
-            if (null == typeof(ChaFileParameter).GetProperty($"exType")) {
-                Logger.LogDebug($"This Plugin is not working without Darkness.");
-                return false;
-            }
-            return true;
-        }
     }
 }
