@@ -31,13 +31,15 @@ using System.Reflection.Emit;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace KK_PNGCaptureSizeModifier {
+namespace PNGCaptureSizeModifier
+{
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
-    public class KK_PNGCaptureSizeModifier : BaseUnityPlugin {
+    public class PNGCaptureSizeModifier : BaseUnityPlugin
+    {
         internal const string PLUGIN_NAME = "PNG Capture Size Modifier";
-        internal const string GUID = "com.jim60105.kk.pngcapturesizemodifier";
-        internal const string PLUGIN_VERSION = "20.08.06.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.5.5";
+        internal const string GUID = "com.jim60105.kks.pngcapturesizemodifier";
+        internal const string PLUGIN_VERSION = "21.08.28.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.6.0";
 
         public static ConfigEntry<float> TimesOfMaker { get; private set; }
         public static ConfigEntry<float> TimesOfStudio { get; private set; }
@@ -52,12 +54,13 @@ namespace KK_PNGCaptureSizeModifier {
         public static ConfigEntry<int> PositionY { get; private set; }
         internal static new ManualLogSource Logger;
         internal static Texture2D fontTexture;
-        public void Awake() {
+        public void Awake()
+        {
             Logger = base.Logger;
             Extension.Logger.logger = Logger;
             TimesOfMaker = Config.Bind<float>("Config", "Times of multiplication (Maker)", 3.0f, "The game needs to be restarted for changes to take effect.");
             TimesOfStudio = Config.Bind<float>("Config", "Times of multiplication (Studio)", 5.0f, "The game needs to be restarted for changes to take effect.");
-            PNGColumnCount = Config.Bind<int>("Config", "Number of PNG rows in File List View", 3, new ConfigDescription("Must be a natural number",new AcceptableValueRange<int>(1,30)));
+            PNGColumnCount = Config.Bind<int>("Config", "Number of PNG rows in File List View", 3, new ConfigDescription("Must be a natural number", new AcceptableValueRange<int>(1, 30)));
             StudioSceneWatermark = Config.Bind<bool>("Config", "Use Studio Scene Watermark", true, "It is extremely NOT recommended to disable the watermark function, which is for distinguishing between scene data and normal image.");
             CharaMakerWatermark = Config.Bind<bool>("Config", "Use Character Watermark", true);
             ResolutionWaterMark = Config.Bind<bool>("Config", "Use Resolution Watermark", true, "When the StudioScene/Character watermark is enabled, the resolution watermark will be forced to use.");
@@ -75,19 +78,25 @@ namespace KK_PNGCaptureSizeModifier {
             Harmony.CreateAndPatchAll(typeof(Patches));
         }
 
-        private void SetFontPic() {
+        private void SetFontPic()
+        {
             fontTexture = null;
-            if (PathToTheFontResource.Value.Length != 0 && File.Exists(PathToTheFontResource.Value)) {
+            if (PathToTheFontResource.Value.Length != 0 && File.Exists(PathToTheFontResource.Value))
+            {
                 fontTexture = ImageHelper.LoadTexture(PathToTheFontResource.Value);
-                if (null != fontTexture) {
+                if (null != fontTexture)
+                {
                     Logger.LogDebug($"Load font pic: {PathToTheFontResource.Value}");
-                } else {
+                }
+                else
+                {
                     Logger.LogError("Load font picture FAILED: " + PathToTheFontResource.Value);
                 }
             }
 
-            if (null == fontTexture) {
-                fontTexture = ImageHelper.LoadDllResourceToTexture2D($"KK_PNGCaptureSizeModifier.Resources.ArialFont.png", 1024, 1024);
+            if (null == fontTexture)
+            {
+                fontTexture = ImageHelper.LoadDllResourceToTexture2D($"PNGCaptureSizeModifier.Resources.ArialFont.png", 1024, 1024);
                 Logger.LogDebug($"Load original font pic");
             }
 
@@ -95,24 +104,28 @@ namespace KK_PNGCaptureSizeModifier {
         }
     }
 
-    class Patches {
+    class Patches
+    {
         //PNG存檔放大
         [HarmonyTranspiler, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CapCharaCard")]
         public static IEnumerable<CodeInstruction> CapCharaCardTranspiler(IEnumerable<CodeInstruction> instructions)
-            => PngTranspiler(instructions, KK_PNGCaptureSizeModifier.TimesOfMaker.Value);
+            => PngTranspiler(instructions, PNGCaptureSizeModifier.TimesOfMaker.Value);
 
         [HarmonyTranspiler, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CapCoordinateCard")]
         public static IEnumerable<CodeInstruction> CapCoordinateCardTranspiler(IEnumerable<CodeInstruction> instructions)
-            => PngTranspiler(instructions, KK_PNGCaptureSizeModifier.TimesOfMaker.Value);
+            => PngTranspiler(instructions, PNGCaptureSizeModifier.TimesOfMaker.Value);
 
         [HarmonyTranspiler, HarmonyPatch(typeof(Studio.SceneInfo), "Save", new Type[] { typeof(string) })]
-        public static IEnumerable<CodeInstruction> SaveTranspiler(IEnumerable<CodeInstruction> instructions) {
-            return PngTranspiler(instructions, KK_PNGCaptureSizeModifier.TimesOfStudio.Value);
+        public static IEnumerable<CodeInstruction> SaveTranspiler(IEnumerable<CodeInstruction> instructions)
+        {
+            return PngTranspiler(instructions, PNGCaptureSizeModifier.TimesOfStudio.Value);
         }
 
-        private static IEnumerable<CodeInstruction> PngTranspiler(IEnumerable<CodeInstruction> instructions, float times) {
+        private static IEnumerable<CodeInstruction> PngTranspiler(IEnumerable<CodeInstruction> instructions, float times)
+        {
             List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
-            for (int i = 0; i < codes.Count; i++) {
+            for (int i = 0; i < codes.Count; i++)
+            {
                 if (codes[i].opcode == OpCodes.Ldc_I4) //width
                 {
                     if (codes[i + 1].opcode == OpCodes.Ldc_I4) //height
@@ -127,35 +140,39 @@ namespace KK_PNGCaptureSizeModifier {
         }
 
         //CharaMaker存檔顯示放大
-        [HarmonyPostfix, HarmonyPatch(typeof(ChaCustom.CustomFileListCtrl), "Update")]
-        public static void UpdatePostFix(ChaCustom.CustomFileListCtrl __instance)
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaCustom.CustomFileListCtrl), "Start")]
+        public static void StartPostFix(ChaCustom.CustomFileListCtrl __instance)
             => ChangeRowCount((ChaCustom.CustomFileWindow)__instance.GetField("cfWindow"));
 
         [HarmonyPostfix, HarmonyPatch(typeof(ChaCustom.CustomCoordinateFile), "Start")]
-        public static void StartPostFix(ChaCustom.CustomCoordinateFile __instance)
+        public static void Start2PostFix(ChaCustom.CustomCoordinateFile __instance)
             => ChangeRowCount((ChaCustom.CustomFileWindow)__instance.GetField("fileWindow"));
 
-        public static void ChangeRowCount(ChaCustom.CustomFileWindow window) {
+        public static void ChangeRowCount(ChaCustom.CustomFileWindow window)
+        {
             if (null == Singleton<ChaCustom.CustomBase>.Instance) return;   //Block HScene
 
-            int count = KK_PNGCaptureSizeModifier.PNGColumnCount.Value;
-            if (count == 0) {
-                KK_PNGCaptureSizeModifier.PNGColumnCount.Value = (int)KK_PNGCaptureSizeModifier.PNGColumnCount.DefaultValue;
+            int count = PNGCaptureSizeModifier.PNGColumnCount.Value;
+            if (count == 0)
+            {
+                PNGCaptureSizeModifier.PNGColumnCount.Value = (int)PNGCaptureSizeModifier.PNGColumnCount.DefaultValue;
             }
             GridLayoutGroup component = window.gameObject.GetComponentInChildren<GridLayoutGroup>();
-            if (count != component.constraintCount) {
+            if (count != component.constraintCount)
+            {
                 component.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
                 component.constraintCount = count;
                 Singleton<ChaCustom.CustomBase>.Instance.StartCoroutine(UpdateWidth());
             }
 
-            IEnumerator UpdateWidth() {
+            IEnumerator UpdateWidth()
+            {
                 //切換到System頁的下一幀再計算，否則width會不對
                 Toggle tgl = GameObject.Find("CustomScene/CustomRoot/FrontUIGroup/CustomUIGroup/CvsMainMenu/BaseTop/tglSystem").GetComponentInChildren<Toggle>();
                 yield return new WaitUntil(() => tgl.isOn);
                 yield return new WaitForFixedUpdate();
 
-                count = KK_PNGCaptureSizeModifier.PNGColumnCount.Value; //重抓，以免設定值在此期間有改變
+                count = PNGCaptureSizeModifier.PNGColumnCount.Value; //重抓，以免設定值在此期間有改變
                 RectTransform rect = component.transform as RectTransform;
                 float width = (rect.rect.width - (9 * (count - 1)) - 20) / count;
                 component.cellSize = new Vector2(width, width / component.cellSize.x * component.cellSize.y);
@@ -177,9 +194,11 @@ namespace KK_PNGCaptureSizeModifier {
         public static void SavePrefix() => SDFlag = true;
 
         [HarmonyPriority(Priority.Last), HarmonyPostfix, HarmonyPatch(typeof(Studio.GameScreenShot), "CreatePngScreen")]
-        public static void CreatePngScreenPostfix(ref byte[] __result) {
-            if (SDFlag) {
-                AddWatermark(KK_PNGCaptureSizeModifier.StudioSceneWatermark.Value, ref __result, "sd_watermark.png", KK_PNGCaptureSizeModifier.TimesOfStudio);
+        public static void CreatePngScreenPostfix(ref byte[] __result)
+        {
+            if (SDFlag)
+            {
+                AddWatermark(PNGCaptureSizeModifier.StudioSceneWatermark.Value, ref __result, "sd_watermark.png", PNGCaptureSizeModifier.TimesOfStudio);
                 SDFlag = false;
             }
         }
@@ -188,43 +207,48 @@ namespace KK_PNGCaptureSizeModifier {
         public static void CapCharaCardPrefix() => CMFlag = true;
 
         [HarmonyPriority(Priority.Last), HarmonyPostfix, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CreatePng")]
-        public static void CreatePngPostfix(ref byte[] pngData) {
-            if (CMFlag) {
-                AddWatermark(KK_PNGCaptureSizeModifier.CharaMakerWatermark.Value, ref pngData, "chara_watermark.png", KK_PNGCaptureSizeModifier.TimesOfMaker);
+        public static void CreatePngPostfix(ref byte[] pngData)
+        {
+            if (CMFlag)
+            {
+                AddWatermark(PNGCaptureSizeModifier.CharaMakerWatermark.Value, ref pngData, "chara_watermark.png", PNGCaptureSizeModifier.TimesOfMaker);
                 CMFlag = false;
             }
         }
 
-        private static void AddWatermark(bool doWatermarkFlag, ref byte[] basePng, string wmFileName, ConfigEntry<float> times) {
-            if (!doWatermarkFlag && !KK_PNGCaptureSizeModifier.ResolutionWaterMark.Value) return;
+        private static void AddWatermark(bool doWatermarkFlag, ref byte[] basePng, string wmFileName, ConfigEntry<float> times)
+        {
+            if (!doWatermarkFlag && !PNGCaptureSizeModifier.ResolutionWaterMark.Value) return;
 
             Texture2D screenshot = new Texture2D(2, 2);
             screenshot.LoadImage(basePng);
 
             //圖片分辨率
-            if (KK_PNGCaptureSizeModifier.ResolutionWaterMark.Value || doWatermarkFlag) {
+            if (PNGCaptureSizeModifier.ResolutionWaterMark.Value || doWatermarkFlag)
+            {
                 string text = $"{screenshot.width}x{screenshot.height}";
-                int textureWidth = TextToTexture.CalcTextWidthPlusTrailingBuffer(text, KK_PNGCaptureSizeModifier.CharacterSize.Value);
-                Texture2D capsize = TextToTexture.CreateTextToTexture(text, 0, 0, textureWidth, KK_PNGCaptureSizeModifier.CharacterSize.Value);
+                int textureWidth = TextToTexture.CalcTextWidthPlusTrailingBuffer(text, PNGCaptureSizeModifier.CharacterSize.Value);
+                Texture2D capsize = TextToTexture.CreateTextToTexture(text, 0, 0, textureWidth, PNGCaptureSizeModifier.CharacterSize.Value);
                 capsize = capsize.Scale((int)(capsize.width * times.Value / (float)times.DefaultValue), (int)(capsize.height * times.Value / (float)times.DefaultValue));
                 screenshot = screenshot.OverwriteTexture(
                     capsize,
-                    screenshot.width * KK_PNGCaptureSizeModifier.PositionX.Value / 100 - capsize.width,
-                    screenshot.height * KK_PNGCaptureSizeModifier.PositionY.Value / 100
+                    screenshot.width * PNGCaptureSizeModifier.PositionX.Value / 100 - capsize.width,
+                    screenshot.height * PNGCaptureSizeModifier.PositionY.Value / 100
                 );
-                KK_PNGCaptureSizeModifier.Logger.LogDebug($"Add Resolution: {text}");
+                PNGCaptureSizeModifier.Logger.LogDebug($"Add Resolution: {text}");
             }
 
             //浮水印
-            if (doWatermarkFlag) {
-                Texture2D watermark = ImageHelper.LoadDllResourceToTexture2D($"KK_PNGCaptureSizeModifier.Resources.{wmFileName}");
+            if (doWatermarkFlag)
+            {
+                Texture2D watermark = ImageHelper.LoadDllResourceToTexture2D($"PNGCaptureSizeModifier.Resources.{wmFileName}");
                 watermark = watermark.Scale((int)(watermark.width * times.Value / (float)times.DefaultValue), (int)(watermark.height * times.Value / (float)times.DefaultValue));
                 screenshot = screenshot.OverwriteTexture(
                     watermark,
                     0,
                     screenshot.height - watermark.height
                 );
-                KK_PNGCaptureSizeModifier.Logger.LogDebug($"Add Watermark: {wmFileName}");
+                PNGCaptureSizeModifier.Logger.LogDebug($"Add Watermark: {wmFileName}");
             }
 
             basePng = screenshot.EncodeToPNG();

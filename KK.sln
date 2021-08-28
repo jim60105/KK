@@ -29,7 +29,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_PNGCaptureSizeModifier", "KK_PNGCaptureSizeModifier\KK_PNGCaptureSizeModifier.csproj", "{2D638E6E-8295-40D9-B76E-6F5A06779C6B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PNGCaptureSizeModifier", "KK_PNGCaptureSizeModifier\PNGCaptureSizeModifier.csproj", "{2D638E6E-8295-40D9-B76E-6F5A06779C6B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioChikaReplacer", "KK_StudioChikaReplacer\KK_StudioChikaReplacer.csproj", "{3438C334-6A7E-47CC-B243-0A3410FDC44F}"
 EndProject

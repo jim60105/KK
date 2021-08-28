@@ -32,6 +32,6 @@ using System.Runtime.InteropServices;
 // 您可以指定所有的值，也可以使用 '*' 將組建和修訂編號
 // 設為預設，如下所示:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion(KK_PNGCaptureSizeModifier.KK_PNGCaptureSizeModifier.PLUGIN_VERSION)]
+[assembly: AssemblyVersion(PNGCaptureSizeModifier.PNGCaptureSizeModifier.PLUGIN_VERSION)]
 //[assembly: AssemblyFileVersion(KK_StudioReflectFKFix.KK_StudioReflectFKFix.PLUGIN_VERSION)]
-[assembly: AssemblyInformationalVersion(KK_PNGCaptureSizeModifier.KK_PNGCaptureSizeModifier.PLUGIN_RELEASE_VERSION)]
+[assembly: AssemblyInformationalVersion(PNGCaptureSizeModifier.PNGCaptureSizeModifier.PLUGIN_RELEASE_VERSION)]
