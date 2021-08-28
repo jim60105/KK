@@ -47,7 +47,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="ILMergeOrder.txt" />
     <EmbeddedResource Update="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -94,8 +93,7 @@
     <ProjectReference Include="..\UIUtility\UIUtility.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="ILMerge" Version="2.13.0307" />
-    <PackageReference Include="MSBuild.ILMerge.Task" Version="1.0.5" />
+    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18.2" />
     <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
   </ItemGroup>
   <Import Project="..\Extension\Extension.projitems" Label="Shared" />

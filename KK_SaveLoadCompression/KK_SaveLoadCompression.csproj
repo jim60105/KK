@@ -56,13 +56,10 @@
     <EmbeddedResource Include="Resources\zip_watermark.png" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="ILMergeOrder.txt" />
     <EmbeddedResource Include="Resources\unzip_watermark.png" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="ILMerge" Version="2.13.0307" />
     <PackageReference Include="ImageLibrary" Version="3.0.2" />
-    <PackageReference Include="MSBuild.ILMerge.Task" Version="1.0.5" />
     <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
   </ItemGroup>
   <ItemGroup>

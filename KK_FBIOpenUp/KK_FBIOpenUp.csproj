@@ -81,7 +81,6 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="ILMergeOrder.txt" />
     <Content Include="Resources\D0KmKMMUUAEigFR.jpg" />
     <Content Include="Resources\FBI.mp4" />
     <Content Include="Resources\istockphoto-941388108-1024x1024.jpg" />
@@ -95,8 +94,7 @@
     <ProjectReference Include="..\UIUtility\UIUtility.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="ILMerge" Version="2.13.0307" />
-    <PackageReference Include="MSBuild.ILMerge.Task" Version="1.0.5" />
+    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18.2" />
     <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
   </ItemGroup>
   <Import Project="..\Extension\Extension.projitems" Label="Shared" />

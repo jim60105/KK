@@ -12,6 +12,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="0Harmony">
       <HintPath>C:\illusion\Koikatu\BepInEx\core\0Harmony.dll</HintPath>
@@ -62,11 +65,7 @@
     <ProjectReference Include="..\UIUtility\UIUtility.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="ILMergeOrder.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="ILMerge" Version="2.13.0307" />
-    <PackageReference Include="MSBuild.ILMerge.Task" Version="1.0.5" />
+    <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18.2" />
     <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
   </ItemGroup>
   <Import Project="..\Extension\Extension.projitems" Label="Shared" />
