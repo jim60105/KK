@@ -5,8 +5,8 @@ using System.Reflection;
 using Extension;
 using UnityEngine;
 
-namespace KK_CoordinateLoadOption {
-    class ABMX_CCFCSupport : CCFCSupport {
+namespace CoordinateLoadOption {
+    class ABMX : CharaCustomFunctionController_Support {
         public override string GUID => "KKABMX.Core";
         public override string ControllerName => "BoneController";
         public override string CCFCName => "ABMX";
@@ -14,8 +14,8 @@ namespace KK_CoordinateLoadOption {
         internal new Dictionary<string, object> SourceBackup { get => base.SourceBackup.ToDictionary<string, object>(); set => base.SourceBackup = value; }
         //internal new Dictionary<string, object> TargetBackup { get => base.TargetBackup.ToDictionary<string, object>(); set => base.TargetBackup = value; }
 
-        public ABMX_CCFCSupport(ChaControl chaCtrl) : base(chaCtrl) 
-            => isExist = KK_CoordinateLoadOption._isABMXExist;
+        public ABMX(ChaControl chaCtrl) : base(chaCtrl) 
+            => isExist = CoordinateLoadOption._isABMXExist;
 
         private static Type BoneModifierType = null;
 

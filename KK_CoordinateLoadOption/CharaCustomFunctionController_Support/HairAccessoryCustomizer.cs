@@ -10,8 +10,8 @@ using Illusion.Extensions;
 using MessagePack;
 using UnityEngine;
 
-namespace KK_CoordinateLoadOption {
-    internal class HairAccessoryCustomizer_CCFCSupport : CCFCSupport {
+namespace CoordinateLoadOption {
+    internal class HairAccessoryCustomizer : CharaCustomFunctionController_Support {
         public override string GUID => "com.deathweasel.bepinex.hairaccessorycustomizer";
         public override string ControllerName => "HairAccessoryController";
         public override string CCFCName => "HairAccessoryCustomizer";
@@ -19,7 +19,7 @@ namespace KK_CoordinateLoadOption {
         internal new Dictionary<int, object> SourceBackup { get => base.SourceBackup?.ToDictionary<int, object>(); set => base.SourceBackup = value; }
         internal new Dictionary<int, object> TargetBackup { get => base.TargetBackup?.ToDictionary<int, object>(); set => base.TargetBackup = value; }
 
-        public HairAccessoryCustomizer_CCFCSupport(ChaControl chaCtrl) : base(chaCtrl) => isExist = KK_CoordinateLoadOption._isHairAccessoryCustomizerExist;
+        public HairAccessoryCustomizer(ChaControl chaCtrl) : base(chaCtrl) => isExist = CoordinateLoadOption._isHairAccessoryCustomizerExist;
 
         internal static Type HairAccessoryControllerType;
 
@@ -39,9 +39,9 @@ namespace KK_CoordinateLoadOption {
 
         public static void Patch(Harmony harmonyInstance) {
             harmonyInstance.Patch(HairAccessoryControllerType.GetMethod("UpdateAccessory", AccessTools.all),
-                prefix: new HarmonyMethod(typeof(HairAccessoryCustomizer_CCFCSupport), nameof(HairAccessoryCustomizer_CCFCSupport.UpdateAccessoriesPrefix)));
+                prefix: new HarmonyMethod(typeof(HairAccessoryCustomizer), nameof(HairAccessoryCustomizer.UpdateAccessoriesPrefix)));
             harmonyInstance.Patch(HairAccessoryControllerType.GetMethod("UpdateAccessories", AccessTools.all),
-                prefix: new HarmonyMethod(typeof(HairAccessoryCustomizer_CCFCSupport), nameof(HairAccessoryCustomizer_CCFCSupport.UpdateAccessoriesPrefix)));
+                prefix: new HarmonyMethod(typeof(HairAccessoryCustomizer), nameof(HairAccessoryCustomizer.UpdateAccessoriesPrefix)));
         }
         #endregion
 
@@ -249,7 +249,7 @@ namespace KK_CoordinateLoadOption {
         public bool CheckControllerPrepared(ChaFileCoordinate backCoordinate) => CheckControllerPrepared(DefaultChaCtrl, backCoordinate);
         public bool CheckControllerPrepared(ChaControl chaCtrl, ChaFileCoordinate backCoordinate)
             => base.CheckControllerPrepared(chaCtrl, (_) => {
-                if (!KK_CoordinateLoadOption._isHairAccessoryCustomizerExist || null == backCoordinate) {
+                if (!CoordinateLoadOption._isHairAccessoryCustomizerExist || null == backCoordinate) {
                     return true;
                 }
                 bool? flag = true;

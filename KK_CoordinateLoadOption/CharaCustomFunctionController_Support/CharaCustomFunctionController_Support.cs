@@ -4,10 +4,9 @@ using System.Linq;
 using Extension;
 using UnityEngine;
 
-namespace KK_CoordinateLoadOption {
-    //CCFC: CharaCustomFunctionController
-    abstract class CCFCSupport {
-        internal static readonly BepInEx.Logging.ManualLogSource Logger = KK_CoordinateLoadOption.Logger;
+namespace CoordinateLoadOption {
+    abstract class CharaCustomFunctionController_Support {
+        internal static readonly BepInEx.Logging.ManualLogSource Logger = CoordinateLoadOption.Logger;
         public abstract string GUID { get; }
         public abstract string ControllerName { get; }
         public abstract string CCFCName { get; }
@@ -22,7 +21,7 @@ namespace KK_CoordinateLoadOption {
         internal object SourceBackup = null;
         internal object TargetBackup = null;
 
-        public CCFCSupport(ChaControl chaCtrl) {
+        public CharaCustomFunctionController_Support(ChaControl chaCtrl) {
             if (null != chaCtrl) {
                 DefaultChaCtrl = chaCtrl;
                 DefaultController = GetController(DefaultChaCtrl);
@@ -77,7 +76,7 @@ namespace KK_CoordinateLoadOption {
         /// <returns></returns>
         public void SetControllerFromExtData(ChaControl chaCtrl) {
             MonoBehaviour controller = GetController(chaCtrl);
-            controller.Invoke("OnReload", new object[] { KK_CoordinateLoadOption.insideStudio ? 2 : 1, false });
+            controller.Invoke("OnReload", new object[] { CoordinateLoadOption.insideStudio ? 2 : 1, false });
         }
 
         /// <summary>

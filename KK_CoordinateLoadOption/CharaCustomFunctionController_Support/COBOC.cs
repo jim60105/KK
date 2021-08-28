@@ -3,13 +3,13 @@ using System.Collections;
 using Extension;
 using UnityEngine;
 
-namespace KK_CoordinateLoadOption {
-    class COBOC_CCFCSupport : CCFCSupport {
+namespace CoordinateLoadOption {
+    class COBOC : CharaCustomFunctionController_Support {
         public override string GUID => "com.jim60105.kk.charaoverlaysbasedoncoordinate";
         public override string ControllerName => "CharaOverlaysBasedOnCoordinateController";
         public override string CCFCName => "Chara Overlay Based On Coordinate";
-        public COBOC_CCFCSupport(ChaControl chaCtrl) : base(chaCtrl)
-            => isExist = KK_CoordinateLoadOption._isCharaOverlayBasedOnCoordinateExist;
+        public COBOC(ChaControl chaCtrl) : base(chaCtrl)
+            => isExist = CoordinateLoadOption._isCharaOverlayBasedOnCoordinateExist;
 
         public override bool LoadAssembly() => LoadAssembly(out _, new Version(20, 4, 28, 0));
 

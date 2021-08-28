@@ -8,9 +8,9 @@ using System.Resources;
 using System.Threading;
 using UnityEngine;
 
-namespace KK_CoordinateLoadOption.StringResources {
+namespace CoordinateLoadOption.StringResources {
     internal static class StringResourcesManager {
-        public static CultureInfo UICulture { get; private set; }
+        public static CultureInfo UICulture { get; private set; } = CultureInfo.CreateSpecificCulture("en-US");
 
         /// <summary>
         /// 設定CurrentUICulture
@@ -18,12 +18,15 @@ namespace KK_CoordinateLoadOption.StringResources {
         /// <param name="culture">Culture Name (Ex: "en-US")，傳入Null則設定為系統語言</param>
         /// <returns>以Culture Name建立的CultureInfo</returns>
         internal static CultureInfo SetUICulture(string culture = null) {
-            try {
-                return null == culture
-                    ? (UICulture = Thread.CurrentThread.CurrentUICulture = CultureInfo.GetCultures(CultureTypes.AllCultures).FirstOrDefault(x => x.EnglishName.Equals(Application.systemLanguage.ToString())))
-                    : (UICulture = Thread.CurrentThread.CurrentUICulture = CultureInfo.CreateSpecificCulture(culture));
-            } catch (Exception) {
-                KK_CoordinateLoadOption.Logger.LogInfo($"Language not found. Keep {UICulture.Name}");
+            try
+            {
+                return null != culture
+                    ? (UICulture = Thread.CurrentThread.CurrentUICulture = CultureInfo.CreateSpecificCulture(culture))
+                    : (UICulture = CultureInfo.CreateSpecificCulture(Thread.CurrentThread.CurrentUICulture.ToString()));
+            }
+            catch (Exception)
+            {
+                CoordinateLoadOption.Logger.LogInfo($"Language not found. Keep {UICulture.Name}");
                 return Thread.CurrentThread.CurrentUICulture = UICulture;
             }
         }
@@ -43,22 +46,22 @@ namespace KK_CoordinateLoadOption.StringResources {
             }
 
             if (string.IsNullOrEmpty(str))
-                KK_CoordinateLoadOption.Logger.LogInfo("Empty language query string");
+                CoordinateLoadOption.Logger.LogInfo("Empty language query string");
 
             Assembly asm = Assembly.GetExecutingAssembly();
             Stream stream;
-            stream = asm.GetManifestResourceStream($"{asm.GetName().Name}.StringResources.StringResources.{lang}.resources");
+            stream = asm.GetManifestResourceStream($"CoordinateLoadOption.StringResources.StringResources.{lang}.resources");
 
             if (null == stream && lang.IndexOf("-") > 0) {
                 lang = lang.Substring(0, lang.IndexOf("-"));
-                stream = asm.GetManifestResourceStream($"{asm.GetName().Name}.StringResources.StringResources.{lang}.resources");
+                stream = asm.GetManifestResourceStream($"CoordinateLoadOption.StringResources.StringResources.{lang}.resources");
             }
 
             // resource not found, revert to default resource
             if (null == stream) {
-                stream = asm.GetManifestResourceStream($"{asm.GetName().Name}.StringResources.StringResources.resources");
+                stream = asm.GetManifestResourceStream($"CoordinateLoadOption.StringResources.StringResources.resources");
                 if (lang != "en") {
-                    KK_CoordinateLoadOption.Logger.LogDebug($"Language {lang} not found! Load English for default.");
+                    CoordinateLoadOption.Logger.LogDebug($"Language {lang} not found! Load English for default.");
                 }
             }
 

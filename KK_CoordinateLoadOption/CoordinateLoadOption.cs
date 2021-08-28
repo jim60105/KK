@@ -27,7 +27,6 @@ using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using ChaCustom;
-using ExIni;
 using ExtensibleSaveFormat;
 using Extension;
 using HarmonyLib;
@@ -38,13 +37,11 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace KK_CoordinateLoadOption {
-    using SCLO = KK_CoordinateLoadOption;
+namespace CoordinateLoadOption {
+    using CLO = CoordinateLoadOption;
 
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
-    [BepInProcess("Koikatu")]
-    [BepInProcess("Koikatsu Party")]
-    [BepInProcess("CharaStudio")]
+    [BepInProcess("KoikatsuSunshine")]
     [BepInDependency("KCOX", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("KKABMX.Core", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.joan6694.illusionplugins.moreaccessories", BepInDependency.DependencyFlags.SoftDependency)]
@@ -53,11 +50,11 @@ namespace KK_CoordinateLoadOption {
     [BepInDependency("com.jim60105.kk.charaoverlaysbasedoncoordinate", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInIncompatibility("KK_ClothesLoadOption")]
     [BepInIncompatibility("com.jim60105.kk.studiocoordinateloadoption")]
-    public class KK_CoordinateLoadOption : BaseUnityPlugin {
+    public class CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
-        internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "21.01.04.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.6";
+        internal const string GUID = "com.jim60105.kks.coordinateloadoption";
+        internal const string PLUGIN_VERSION = "21.08.29.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -113,16 +110,16 @@ namespace KK_CoordinateLoadOption {
         public static ConfigEntry<Vector3> Studio_Panel_Position { get; private set; }
 
         public void Start() {
-            _isKCOXExist = new KCOX_CCFCSupport(null).LoadAssembly();
-            _isABMXExist = new ABMX_CCFCSupport(null).LoadAssembly();
+            _isKCOXExist = new KCOX(null).LoadAssembly();
+            _isABMXExist = new ABMX(null).LoadAssembly();
             _isMoreAccessoriesExist = MoreAccessories_Support.LoadAssembly();
-            _isMaterialEditorExist = new MaterialEditor_CCCFCSupport(null).LoadAssembly();
-            _isHairAccessoryCustomizerExist = new HairAccessoryCustomizer_CCFCSupport(null).LoadAssembly();
-            _isCharaOverlayBasedOnCoordinateExist = new COBOC_CCFCSupport(null).LoadAssembly();
+            _isMaterialEditorExist = new MaterialEditor(null).LoadAssembly();
+            _isHairAccessoryCustomizerExist = new HairAccessoryCustomizer(null).LoadAssembly();
+            _isCharaOverlayBasedOnCoordinateExist = new COBOC(null).LoadAssembly();
 
             //Patch other plugins at Start()
             if(_isHairAccessoryCustomizerExist)
-                HairAccessoryCustomizer_CCFCSupport.Patch(harmonyInstance);
+                HairAccessoryCustomizer.Patch(harmonyInstance);
 
             StringResources.StringResourcesManager.SetUICulture();
 
@@ -160,7 +157,7 @@ namespace KK_CoordinateLoadOption {
     }
 
     class Patches {
-        private static readonly ManualLogSource Logger = SCLO.Logger;
+        private static readonly ManualLogSource Logger = CLO.Logger;
         private static CustomFileWindow CustomFileWindow;
         internal static string coordinatePath;
 
@@ -178,10 +175,12 @@ namespace KK_CoordinateLoadOption {
 
         public static void InitPostfix(object __instance) {
             //如果啟動機翻就一律顯示英文，否則機翻會毀了我的文字
-            if (null != KoikatuHelper.TryGetPluginInstance("gravydevsupreme.xunity.autotranslator")) {
+            if (null != KoikatuHelper.TryGetPluginInstance("gravydevsupreme.xunity.autotranslator"))
+            {
                 string XUAConfigPath = Path.Combine(Paths.ConfigPath, "AutoTranslatorConfig.ini");
-                if (IniFile.FromFile(XUAConfigPath).GetSection("TextFrameworks").GetKey("EnableUGUI").Value == "True") {
-                    StringResources.StringResourcesManager.SetUICulture("en-US");
+                if (File.ReadLines(XUAConfigPath).Any(l => l.ToLower().Contains("enableugui=true")))
+                {
+                    _ = StringResources.StringResourcesManager.SetUICulture("en-US");
                     Logger.LogInfo("Found XUnityAutoTranslator Enabled, load English UI");
                 }
             }
@@ -199,10 +198,10 @@ namespace KK_CoordinateLoadOption {
                 StringResources.StringResourcesManager.GetString("ClothesKind_accessories")
             };
 
-            Array ClothesKindArray = Enum.GetValues(typeof(SCLO.ClothesKind));
+            Array ClothesKindArray = Enum.GetValues(typeof(CLO.ClothesKind));
 
             Transform PanelParent = null;
-            if (SCLO.insideStudio) {
+            if (CLO.insideStudio) {
                 PanelParent = (__instance.GetField("fileSort") as CharaFileSort).root.parent.parent.parent;
             } else {
                 //Maker
@@ -213,7 +212,7 @@ namespace KK_CoordinateLoadOption {
             //Show Selection Btn
             Image coordianteLoadPanel = UIUtility.CreatePanel("CoordinateLoadPanel", PanelParent);
             coordianteLoadPanel.GetComponent<Image>().color = new Color32(80, 80, 80, 220);
-            Button btnCoordinateLoadOption = UIUtility.CreateButton("CoordinateLoadBtn", coordianteLoadPanel.transform, StringResources.StringResourcesManager.GetString("showSelection") + (KK_CoordinateLoadOption.insideStudio ? "" : ">>"));
+            Button btnCoordinateLoadOption = UIUtility.CreateButton("CoordinateLoadBtn", coordianteLoadPanel.transform, StringResources.StringResourcesManager.GetString("showSelection") + (CoordinateLoadOption.insideStudio ? "" : ">>"));
             btnCoordinateLoadOption.GetComponentInChildren<Text>(true).color = Color.white;
             btnCoordinateLoadOption.GetComponent<Image>().color = Color.gray;
             btnCoordinateLoadOption.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -35f), new Vector2(-5f, -5f));
@@ -269,7 +268,7 @@ namespace KK_CoordinateLoadOption {
             float baseY = -322;
             Toggle tglEyeOverlay, tglFaceOverlay, tglBodyOverlay;
 
-            if (SCLO._isCharaOverlayBasedOnCoordinateExist) {
+            if (CLO._isCharaOverlayBasedOnCoordinateExist) {
                 bool onFromChildFlag = false;
                 //分隔線
                 Image line2 = UIUtility.CreateImage("line", panel.transform);
@@ -336,7 +335,7 @@ namespace KK_CoordinateLoadOption {
                 toggleList.AddRange(new Toggle[] { tglCharaOverlay, tglEyeOverlay, tglFaceOverlay, tglBodyOverlay });
             }
 
-            if (SCLO._isABMXExist) {
+            if (CLO._isABMXExist) {
                 //分隔線
                 Image line3 = UIUtility.CreateImage("line", panel.transform);
                 line3.color = Color.gray;
@@ -408,20 +407,20 @@ namespace KK_CoordinateLoadOption {
             scrollRect.scrollSensitivity = 30;
 
             //選項盤位置
-            if (SCLO.insideStudio) {
+            if (CLO.insideStudio) {
                 coordianteLoadPanel.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(170f, -45f), new Vector2(0, -345f));
                 panel.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(170f, (baseY - 7.5f) - 40), new Vector2(-52, -345 - 40));
-                _SetPanel(SCLO.Studio_Panel_Position);
+                _SetPanel(CLO.Studio_Panel_Position);
                 panel2.transform.SetRect(Vector2.one, Vector2.one, new Vector2(1f, -612.5f), new Vector2(200f, 0f));
             } else {
                 coordianteLoadPanel.transform.SetRect(Vector2.zero, Vector2.zero, new Vector2(596, 1), new Vector2(766, 41));
                 panel.transform.SetRect(Vector2.zero, Vector2.zero, new Vector2(777, -8), new Vector2(947, -7.5f - (baseY - 2.5f)));
-                _SetPanel(SCLO.Maker_Panel_Position);
+                _SetPanel(CLO.Maker_Panel_Position);
                 panel2.transform.SetRect(Vector2.right, Vector2.right, new Vector2(1, 0), new Vector2(200f, 612.5f));
             }
             void _SetPanel(ConfigEntry<Vector3> c) {
-                SCLO.defaultPanelPosition = panel.transform.localPosition;
-                if (c.Value == Vector3.zero) c.Value = SCLO.defaultPanelPosition;
+                CLO.defaultPanelPosition = panel.transform.localPosition;
+                if (c.Value == Vector3.zero) c.Value = CLO.defaultPanelPosition;
                 panel.transform.localPosition = c.Value;
             }
 
@@ -436,10 +435,10 @@ namespace KK_CoordinateLoadOption {
             });
             EventTrigger.Entry entry2 = new EventTrigger.Entry { eventID = EventTriggerType.Drag };
             entry2.callback.AddListener((data) => {
-                if (SCLO.insideStudio) {
-                    SCLO.Studio_Panel_Position.Value = new Vector3(Input.mousePosition.x - mouse.x, Input.mousePosition.y - mouse.y, 0);
+                if (CLO.insideStudio) {
+                    CLO.Studio_Panel_Position.Value = new Vector3(Input.mousePosition.x - mouse.x, Input.mousePosition.y - mouse.y, 0);
                 } else {
-                    SCLO.Maker_Panel_Position.Value = new Vector3(Input.mousePosition.x - mouse.x, Input.mousePosition.y - mouse.y, 0);
+                    CLO.Maker_Panel_Position.Value = new Vector3(Input.mousePosition.x - mouse.x, Input.mousePosition.y - mouse.y, 0);
                 }
             });
             trigger.triggers.Add(entry);
@@ -455,7 +454,7 @@ namespace KK_CoordinateLoadOption {
                     panel.gameObject.SetActive(active);
 
                     //Maker: 修改服裝選擇器下方的勾選列
-                    if (!SCLO.insideStudio) {
+                    if (!CLO.insideStudio) {
                         GameObject stackLoadPanel = GameObject.Find("CustomScene/CustomRoot/FrontUIGroup/CustomUIGroup/CvsMenuTree/06_SystemTop/cosFileControl/charaFileWindow/WinRect/CoordinateLoad/Select");
                         stackLoadPanel.GetComponentsInChildren<Toggle>().ToList().ForEach(tgl => tgl.isOn = true);  //全勾上tmpChara才能完整載入
                         stackLoadPanel.SetActive(!active);
@@ -494,7 +493,7 @@ namespace KK_CoordinateLoadOption {
             });
             btnClearAcc.onClick.RemoveAllListeners();
             btnClearAcc.onClick.AddListener(() => {
-                if (SCLO.insideStudio) {
+                if (CLO.insideStudio) {
                     IEnumerable<OCIChar> array = Singleton<GuideObjectManager>.Instance.selectObjectKey
                         .Select(p => (OCIChar)Studio.Studio.GetCtrlInfo(p))
                         .Where(p => null != p);
@@ -521,7 +520,7 @@ namespace KK_CoordinateLoadOption {
                             }
                         }
                     }
-                    Singleton<Manager.Character>.Instance.DeleteChara(CoordinateLoad.tmpChaCtrl);
+                    Manager.Character.DeleteChara(CoordinateLoad.tmpChaCtrl);
                     CoordinateLoad.tmpChaCtrl = null;
                     Logger.LogDebug($"Delete Temp Chara");
                     Illusion.Game.Utils.Sound.Play(Illusion.Game.SystemSE.ok_s);
@@ -545,7 +544,7 @@ namespace KK_CoordinateLoadOption {
             //Logger.LogDebug("Draw UI Finish");
 
             //Block Maker Load Button
-            if (!SCLO.insideStudio) {
+            if (!CLO.insideStudio) {
                 Button btnLoad = (__instance.GetField("fileWindow") as CustomFileWindow).btnCoordeLoadLoad;
                 btnLoad.onClick.RemoveAllListeners();
                 btnLoad.onClick.AddListener(OnClickLoadPostfix);
@@ -557,7 +556,7 @@ namespace KK_CoordinateLoadOption {
             if (null == panel2) {
                 return;
             }
-            if (SCLO.insideStudio) {
+            if (CLO.insideStudio) {
                 coordinatePath = (__instance.GetField("fileSort") as CharaFileSort)?.selectPath ?? "";
             } else {
                 CustomFileWindow = (CustomFileWindow)__instance.GetField("fileWindow");
@@ -584,7 +583,7 @@ namespace KK_CoordinateLoadOption {
 
             accNames.AddRange(tmpChaFileCoordinate.accessory.parts.Select(x => CoordinateLoad.GetNameFromIDAndType(x.id, (ChaListDefine.CategoryNo)x.type)));
 
-            if (SCLO._isMoreAccessoriesExist) {
+            if (CLO._isMoreAccessoriesExist) {
                 accNames.AddRange(MoreAccessories_Support.LoadMoreAcc(tmpChaFileCoordinate));
             }
 
@@ -593,7 +592,7 @@ namespace KK_CoordinateLoadOption {
             }
             List<Toggle> tmpTgls = new List<Toggle>();
             foreach (string accName in accNames) {
-                Toggle toggle = UIUtility.CreateToggle(Enum.GetValues(typeof(SCLO.ClothesKind)).GetValue(9).ToString(), toggleGroup.transform, accName);
+                Toggle toggle = UIUtility.CreateToggle(Enum.GetValues(typeof(CLO.ClothesKind)).GetValue(9).ToString(), toggleGroup.transform, accName);
                 toggle.GetComponentInChildren<Text>(true).alignment = TextAnchor.UpperLeft;
                 toggle.GetComponentInChildren<Text>(true).color = Color.white;
                 toggle.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -25f * (tmpTgls.Count + 1)), new Vector2(0f, -25f * tmpTgls.Count));
@@ -602,7 +601,7 @@ namespace KK_CoordinateLoadOption {
             }
             tgls2 = tmpTgls.ToArray();
             toggleGroup.transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(0, -(25f * (accNames.Count - 20))), new Vector2(0, 0));
-            if (tgls[(int)SCLO.ClothesKind.accessories].isOn) {
+            if (tgls[(int)CLO.ClothesKind.accessories].isOn) {
                 panel2.gameObject.SetActive(true);
             }
             //Logger.LogDebug("Onselect");
@@ -641,7 +640,7 @@ namespace KK_CoordinateLoadOption {
                 return;
             }
 
-            if (SCLO.insideStudio) {
+            if (CLO.insideStudio) {
                 IEnumerable<OCIChar> array = GuideObjectManager.Instance.selectObjectKey
                     .Select(p => (OCIChar)Studio.Studio.GetCtrlInfo(p))
                     .Where(p => null != p).OfType<OCIChar>();
@@ -680,8 +679,11 @@ namespace KK_CoordinateLoadOption {
                         chaCtrl.nowCoordinate.accessory = MessagePackSerializer.Deserialize<ChaFileAccessory>(bytes2);
                     }
 
-                    //強制重整，修正ABMX在讀取衣裝後，不會正常反應
-                    new ABMX_CCFCSupport(chaCtrl).SetExtDataFromController();
+                    if (CLO._isABMXExist)
+                    {
+                        //強制重整，修正ABMX在讀取衣裝後，不會正常反應
+                        new ABMX(chaCtrl).SetExtDataFromController();
+                    }
 
                     chaCtrl.Reload(false, true, true, true);
                     chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.chaFile.status.coordinateType);
@@ -696,15 +698,15 @@ namespace KK_CoordinateLoadOption {
     }
 
     class CoordinateLoad {
-        private static readonly ManualLogSource Logger = SCLO.Logger;
+        private static readonly ManualLogSource Logger = CLO.Logger;
         internal static int totalAmount = 0;
         internal static Queue<OCIChar> oCICharQueue = new Queue<OCIChar>();
         internal static int finishedCount = 0;
         internal static ChaControl tmpChaCtrl;
         private static ChaFileCoordinate backupTmpCoordinate;
-        private static int forceCleanCount = SCLO.FORCECLEANCOUNT;
-        private static COBOC_CCFCSupport coboc;
-        private static HairAccessoryCustomizer_CCFCSupport hairacc;
+        private static int forceCleanCount = CLO.FORCECLEANCOUNT;
+        private static COBOC coboc;
+        private static HairAccessoryCustomizer hairacc;
 
         internal static void Update() {
             if (null != tmpChaCtrl) {
@@ -716,11 +718,11 @@ namespace KK_CoordinateLoadOption {
         }
 
         internal static void MakeTmpChara(Action<object> callback) {
-            forceCleanCount = SCLO.FORCECLEANCOUNT;
+            forceCleanCount = CLO.FORCECLEANCOUNT;
 
             ChaControl chaCtrl = null;
             OCIChar ocichar = null;
-            if (SCLO.insideStudio) {
+            if (CLO.insideStudio) {
                 if (oCICharQueue.Count != 0) {
                     ocichar = oCICharQueue.Dequeue();
 
@@ -739,23 +741,23 @@ namespace KK_CoordinateLoadOption {
                 chaCtrl = Singleton<CustomBase>.Instance.chaCtrl;
             }
             //KK_COBOC
-            coboc = new COBOC_CCFCSupport(chaCtrl);
-            if (SCLO._isCharaOverlayBasedOnCoordinateExist && null != chaCtrl) {
+            coboc = new COBOC(chaCtrl);
+            if (CLO._isCharaOverlayBasedOnCoordinateExist && null != chaCtrl) {
                 //coboc.SetExtDataFromController();
                 coboc.GetControllerAndBackupData(targetChaCtrl: chaCtrl);
                 coboc.GetIrisDisplaySide();
             }
-            hairacc = new HairAccessoryCustomizer_CCFCSupport(chaCtrl);
-            if (SCLO._isHairAccessoryCustomizerExist && null != chaCtrl) {
+            hairacc = new HairAccessoryCustomizer(chaCtrl);
+            if (CLO._isHairAccessoryCustomizerExist && null != chaCtrl) {
                 hairacc.GetControllerAndBackupData(targetChaCtrl: chaCtrl);
-                HairAccessoryCustomizer_CCFCSupport.UpdateBlock = true;
+                HairAccessoryCustomizer.UpdateBlock = true;
             }
 
             backupTmpCoordinate = new ChaFileCoordinate();
             backupTmpCoordinate.LoadFile(Patches.coordinatePath);
 
             //丟到Camera外面就看不見了
-            tmpChaCtrl = Singleton<Manager.Character>.Instance.CreateFemale(Camera.main.gameObject, -1);
+            tmpChaCtrl = Manager.Character.CreateFemale(Camera.main.gameObject, -1);
             tmpChaCtrl.gameObject.transform.localPosition = new Vector3(-100, -100, -100);
             tmpChaCtrl.Load(true);
             tmpChaCtrl.fileParam.lastname = "黑肉";
@@ -790,7 +792,7 @@ namespace KK_CoordinateLoadOption {
                 tmpChaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)tmpChaCtrl.fileStatus.coordinateType);
                 tmpChaCtrl.Reload(false, true, true, true);
 
-                forceCleanCount = SCLO.FORCECLEANCOUNT;
+                forceCleanCount = CLO.FORCECLEANCOUNT;
 
                 yield return new WaitUntil(delegate { return CheckPluginPrepared(backupTmpCoordinate); });
 
@@ -799,9 +801,9 @@ namespace KK_CoordinateLoadOption {
 
             bool CheckPluginPrepared(ChaFileCoordinate backCoordinate = null) =>
                 null != tmpChaCtrl &&
-                new KCOX_CCFCSupport(tmpChaCtrl).CheckControllerPrepared() &&
-                (null == backCoordinate || new HairAccessoryCustomizer_CCFCSupport(tmpChaCtrl).CheckControllerPrepared(backCoordinate)) &&
-                new MaterialEditor_CCCFCSupport(tmpChaCtrl).CheckControllerPrepared();
+                new KCOX(tmpChaCtrl).CheckControllerPrepared() &&
+                (null == backCoordinate || new HairAccessoryCustomizer(tmpChaCtrl).CheckControllerPrepared(backCoordinate)) &&
+                new MaterialEditor(tmpChaCtrl).CheckControllerPrepared();
         }
 
         internal static void ChangeCoordinate(object OcicharOrChaCtrl) {
@@ -810,7 +812,7 @@ namespace KK_CoordinateLoadOption {
             ChaControl chaCtrl;
             OCIChar ocichar = null;
             try {
-                if (SCLO.insideStudio) {
+                if (CLO.insideStudio) {
                     ocichar = OcicharOrChaCtrl as OCIChar;
                     chaCtrl = ocichar.charInfo;
                 } else {
@@ -819,9 +821,9 @@ namespace KK_CoordinateLoadOption {
             } catch (Exception) { return; };
             chaCtrl.StopAllCoroutines();
 
-            KCOX_CCFCSupport kcox = new KCOX_CCFCSupport(chaCtrl);
-            ABMX_CCFCSupport abmx = new ABMX_CCFCSupport(chaCtrl);
-            MaterialEditor_CCCFCSupport me = new MaterialEditor_CCCFCSupport(chaCtrl);
+            KCOX kcox = new KCOX(chaCtrl);
+            ABMX abmx = new ABMX(chaCtrl);
+            MaterialEditor me = new MaterialEditor(chaCtrl);
 
             //Load Coordinate
             Queue<int> accQueue = new Queue<int>();
@@ -830,14 +832,14 @@ namespace KK_CoordinateLoadOption {
                 object tmpToggleType = null;
                 int kind = -2;
                 try {
-                    tmpToggleType = Enum.Parse(typeof(SCLO.ClothesKind), tgl.name);
+                    tmpToggleType = Enum.Parse(typeof(CLO.ClothesKind), tgl.name);
                     kind = Convert.ToInt32(tmpToggleType);
                 } catch (ArgumentException) {
                     kind = -1;
                 }
                 if (tgl.isOn) {
                     if (kind == 9) {
-                        if (SCLO._isMoreAccessoriesExist) {
+                        if (CLO._isMoreAccessoriesExist) {
                             MoreAccessories_Support.CopyMoreAccessories(tmpChaCtrl, chaCtrl);
                         } else {
                             //Copy accessories
@@ -868,7 +870,7 @@ namespace KK_CoordinateLoadOption {
                             kcox.CopyKCOXData(tmpChaCtrl, kind);
 
                         if (me.isExist)
-                            me.CopyMaterialEditorData(tmpChaCtrl, kind, kind, chaCtrl.objClothes[kind], MaterialEditor_CCCFCSupport.ObjectType.Clothing);
+                            me.CopyMaterialEditorData(tmpChaCtrl, kind, kind, chaCtrl.objClothes[kind], MaterialEditor.ObjectType.Clothing);
 
                         Logger.LogDebug("->Changed: " + tgl.name + " / ID: " + chaCtrl.nowCoordinate.clothes.parts[kind].id);
                     }
@@ -889,7 +891,7 @@ namespace KK_CoordinateLoadOption {
                 //    Logger.LogDebug($"->Hair Count {nowCoor.Count}: {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
                 //}
 
-                HairAccessoryCustomizer_CCFCSupport.UpdateBlock = false;
+                HairAccessoryCustomizer.UpdateBlock = false;
 
                 //Load to controller (Maker只有從Coordinate存才能運作)
                 hairacc.SetControllerFromExtData();
@@ -907,7 +909,7 @@ namespace KK_CoordinateLoadOption {
             }
 
             //MoreAcc
-            if (SCLO._isMoreAccessoriesExist) {
+            if (CLO._isMoreAccessoriesExist) {
                 chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
                 MoreAccessories_Support.SetExtDataFromPlugin(chaCtrl.chaFile);
                 MoreAccessories_Support.Update();
@@ -920,7 +922,7 @@ namespace KK_CoordinateLoadOption {
                 abmx.SetExtDataFromController();
             }
 
-            if (!SCLO.insideStudio)
+            if (!CLO.insideStudio)
                 Singleton<CustomBase>.Instance.updateCustomUI = true;
 
             //Reload
@@ -943,7 +945,7 @@ namespace KK_CoordinateLoadOption {
 
             finishedCount++;
 
-            if (SCLO.insideStudio && null != ocichar) {
+            if (CLO.insideStudio && null != ocichar) {
                 //Bone & FK,IK
                 chaCtrl.UpdateBustSoftnessAndGravity();
                 AddObjectAssist.InitHairBone(ocichar, Singleton<Info>.Instance.dicBoneInfo);
@@ -965,7 +967,7 @@ namespace KK_CoordinateLoadOption {
                 Singleton<CustomBase>.Instance.updateCustomUI = true;
             }
 
-            forceCleanCount = SCLO.FORCECLEANCOUNT;
+            forceCleanCount = CLO.FORCECLEANCOUNT;
             End();
         }
 
@@ -977,11 +979,11 @@ namespace KK_CoordinateLoadOption {
 
             tmpChaCtrl.StopAllCoroutines();
             backupTmpCoordinate = null;
-            Singleton<Manager.Character>.Instance.DeleteChara(tmpChaCtrl);
+            Manager.Character.DeleteChara(tmpChaCtrl);
             tmpChaCtrl = null;
             Logger.LogDebug($"Delete Temp Chara");
 
-            if (oCICharQueue.Count > 0 && !forceClean && SCLO.insideStudio) {
+            if (oCICharQueue.Count > 0 && !forceClean && CLO.insideStudio) {
                 MakeTmpChara(ChangeCoordinate);
             } else {
                 oCICharQueue.Clear();
@@ -1017,7 +1019,7 @@ namespace KK_CoordinateLoadOption {
             }
             Logger.LogDebug($"Acc Count : {Patches.tgls2.Length}");
 
-            MaterialEditor_CCCFCSupport me = new MaterialEditor_CCCFCSupport(targetChaCtrl);
+            MaterialEditor me = new MaterialEditor(targetChaCtrl);
 
             for (int i = 0; i < targetParts.Length && i < Patches.tgls2.Length; i++) {
                 if ((bool)Patches.tgls2[i]?.isOn) {
@@ -1076,7 +1078,7 @@ namespace KK_CoordinateLoadOption {
                 }
 
                 if (me.isExist) {
-                    me.RemoveMaterialEditorData(targetSlot, GetChaAccessoryComponent(targetChaCtrl, targetSlot)?.gameObject, MaterialEditor_CCCFCSupport.ObjectType.Accessory);
+                    me.RemoveMaterialEditorData(targetSlot, GetChaAccessoryComponent(targetChaCtrl, targetSlot)?.gameObject, MaterialEditor.ObjectType.Accessory);
                 }
 
                 byte[] tmp = MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(sourceParts[sourceSlot]);
@@ -1087,7 +1089,7 @@ namespace KK_CoordinateLoadOption {
                 }
 
                 if (me.isExist) {
-                    me.CopyMaterialEditorData(sourceChaCtrl, sourceSlot, targetSlot, GetChaAccessoryComponent(sourceChaCtrl, sourceSlot)?.gameObject, MaterialEditor_CCCFCSupport.ObjectType.Accessory);
+                    me.CopyMaterialEditorData(sourceChaCtrl, sourceSlot, targetSlot, GetChaAccessoryComponent(sourceChaCtrl, sourceSlot)?.gameObject, MaterialEditor.ObjectType.Accessory);
                 }
                 Logger.LogDebug($"->Changed: Acc{targetSlot} / Part: {(ChaListDefine.CategoryNo)targetParts[targetSlot].type} / ID: {targetParts[targetSlot].id}");
             }
@@ -1101,7 +1103,7 @@ namespace KK_CoordinateLoadOption {
                     Logger.LogDebug($"Keep HairAcc{i}: {chaCtrl.nowCoordinate.accessory.parts[i].id}");
                 }
             }
-            if (SCLO._isMoreAccessoriesExist) {
+            if (CLO._isMoreAccessoriesExist) {
                 MoreAccessories_Support.ClearMoreAccessoriesData(chaCtrl);
             }
             chaCtrl.ChangeAccessory(true);
@@ -1116,7 +1118,7 @@ namespace KK_CoordinateLoadOption {
         /// <param name="type">查詢Type</param>
         /// <returns>名稱</returns>
         internal static string GetNameFromIDAndType(int id, ChaListDefine.CategoryNo type) {
-            ChaListControl chaListControl = Singleton<Manager.Character>.Instance.chaListCtrl;
+            ChaListControl chaListControl = Manager.Character.chaListCtrl;
             Logger.LogDebug($"Find Accessory id / type: {id} / {type}");
 
             string name = "";
@@ -1148,7 +1150,7 @@ namespace KK_CoordinateLoadOption {
         /// <param name="index"></param>
         /// <returns>ChaAccessoryComponent</returns>
         public static ChaAccessoryComponent GetChaAccessoryComponent(ChaControl chaCtrl, int index) {
-            if (SCLO._isMoreAccessoriesExist) {
+            if (CLO._isMoreAccessoriesExist) {
                 return MoreAccessories_Support.GetChaAccessoryComponent(chaCtrl, index);
             } else {
                 return chaCtrl.GetAccessoryComponent(index);

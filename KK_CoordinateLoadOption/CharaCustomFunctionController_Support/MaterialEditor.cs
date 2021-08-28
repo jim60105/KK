@@ -6,8 +6,8 @@ using System.Reflection;
 using Extension;
 using UnityEngine;
 
-namespace KK_CoordinateLoadOption {
-    class MaterialEditor_CCCFCSupport : CCFCSupport {
+namespace CoordinateLoadOption {
+    class MaterialEditor : CharaCustomFunctionController_Support {
         public override string GUID => "com.deathweasel.bepinex.materialeditor";
         public override string ControllerName => "MaterialEditorCharaController";
         public override string CCFCName => "MaterialEditor";
@@ -15,8 +15,8 @@ namespace KK_CoordinateLoadOption {
         internal new Dictionary<string, object> SourceBackup { get => base.SourceBackup?.ToDictionary<string, object>(); set => base.SourceBackup = value; }
         internal new Dictionary<string, object> TargetBackup { get => base.TargetBackup?.ToDictionary<string, object>(); set => base.TargetBackup = value; }
 
-        public MaterialEditor_CCCFCSupport(ChaControl chaCtrl) : base(chaCtrl)
-            => isExist = KK_CoordinateLoadOption._isMaterialEditorExist;
+        public MaterialEditor(ChaControl chaCtrl) : base(chaCtrl)
+            => isExist = CoordinateLoadOption._isMaterialEditorExist;
 
         internal Dictionary<int, object> SourceTextureDictionaryBackup = null;
         internal Dictionary<int, object> TargetTextureDictionaryBackup = null;
@@ -44,7 +44,7 @@ namespace KK_CoordinateLoadOption {
         }
 
         private static void MakeCacheDirectory() {
-            CacheDirectory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), KK_CoordinateLoadOption.GUID));
+            CacheDirectory = Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), CoordinateLoadOption.GUID));
             foreach (FileInfo file in CacheDirectory.GetFiles()) file.Delete();
             foreach (DirectoryInfo subDirectory in CacheDirectory.GetDirectories()) subDirectory.Delete(true);
             Logger.LogDebug("Clean cache folder");

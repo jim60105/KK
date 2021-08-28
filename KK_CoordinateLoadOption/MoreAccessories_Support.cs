@@ -10,9 +10,9 @@ using System.Xml;
 using UnityEngine;
 using ResolveInfo = Sideloader.AutoResolver.ResolveInfo;
 
-namespace KK_CoordinateLoadOption {
+namespace CoordinateLoadOption {
     class MoreAccessories_Support {
-        private static readonly BepInEx.Logging.ManualLogSource Logger = KK_CoordinateLoadOption.Logger;
+        private static readonly BepInEx.Logging.ManualLogSource Logger = CoordinateLoadOption.Logger;
         private static Type MoreAccessories = null;
         private static object MoreAccObj;
 

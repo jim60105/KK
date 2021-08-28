@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace KK_CoordinateLoadOption.StringResources {
+namespace CoordinateLoadOption.StringResources {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace KK_CoordinateLoadOption.StringResources {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("KK_CoordinateLoadOption.StringResources.StringResources", typeof(StringResources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("CoordinateLoadOption.StringResources.StringResources", typeof(StringResources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

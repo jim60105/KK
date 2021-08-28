@@ -4,9 +4,13 @@
     <OutputType>Library</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <AssemblyName>KKS_CoordinateLoadOption</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath></OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <AppDesigner Include="Properties\" />
@@ -44,39 +48,60 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="0Harmony">
-      <HintPath>C:\illusion\Koikatu\BepInEx\core\0Harmony.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>C:\illusion\KoikatsuSunshine\BepInEx\core\0Harmony.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>C:\illusion\Koikatu\CharaStudio_Data\Managed\Assembly-CSharp.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>C:\illusion\KoikatsuSunshine\KoikatsuSunshine_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass">
-      <HintPath>C:\illusion\Koikatu\CharaStudio_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>C:\illusion\KoikatsuSunshine\KoikatsuSunshine_Data\Managed\Assembly-CSharp-firstpass.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="BepInEx">
-      <HintPath>C:\illusion\Koikatu\BepInEx\core\BepInEx.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>C:\illusion\KoikatsuSunshine\BepInEx\core\BepInEx.dll</HintPath>
+      <Private>false</Private>
     </Reference>
-    <Reference Include="ExIni">
-      <HintPath>C:\illusion\Koikatu\BepInEx\plugins\XUnity.AutoTranslator\ExIni.dll</HintPath>
+    <Reference Include="KKS_ExtensibleSaveFormat">
+      <HintPath>C:\illusion\KoikatsuSunshine\BepInEx\plugins\KKS_BepisPlugins\KKS_ExtensibleSaveFormat.dll</HintPath>
+      <Private>false</Private>
     </Reference>
-    <Reference Include="ExtensibleSaveFormat">
-      <HintPath>C:\illusion\Koikatu\BepInEx\plugins\KK_BepisPlugins\ExtensibleSaveFormat.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Sideloader">
-      <HintPath>C:\illusion\Koikatu\BepInEx\plugins\KK_BepisPlugins\Sideloader.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="KKS_Sideloader">
+      <HintPath>C:\illusion\KoikatsuSunshine\BepInEx\plugins\KKS_BepisPlugins\KKS_Sideloader.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>C:\illusion\Koikatu\CharaStudio_Data\Managed\UnityEngine.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>C:\illusion\KoikatsuSunshine\KoikatsuSunshine_Data\Managed\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AudioModule">
+      <HintPath>C:\illusion\KoikatsuSunshine\KoikatsuSunshine_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>C:\illusion\KoikatsuSunshine\KoikatsuSunshine_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>C:\illusion\KoikatsuSunshine\KoikatsuSunshine_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>C:\illusion\KoikatsuSunshine\KoikatsuSunshine_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.LocalizationModule">
+      <HintPath>C:\illusion\KoikatsuSunshine\KoikatsuSunshine_Data\Managed\UnityEngine.LocalizationModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>C:\illusion\KoikatsuSunshine\KoikatsuSunshine_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>C:\illusion\Koikatu\CharaStudio_Data\Managed\UnityEngine.UI.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>C:\illusion\KoikatsuSunshine\KoikatsuSunshine_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
