@@ -18,7 +18,7 @@ namespace SaveLoadCompressionWeb {
 
             builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
             builder.Services.AddLocalization();
-            builder.Services.AddScoped(typeof(KK_SaveLoadCompression.SaveLoadCompression));
+            builder.Services.AddScoped(typeof(KKS_SaveLoadCompression.SaveLoadCompression));
             builder.Services.AddSingleton(sp => (IJSInProcessRuntime)sp.GetRequiredService<IJSRuntime>());
             builder.Services.AddBlazorDownloadFile();
 
