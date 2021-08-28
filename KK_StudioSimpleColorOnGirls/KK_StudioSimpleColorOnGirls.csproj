@@ -32,13 +32,6 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
     <Reference Include="0Harmony">
       <HintPath>C:\illusion\Koikatu\BepInEx\core\0Harmony.dll</HintPath>
       <Private>False</Private>
