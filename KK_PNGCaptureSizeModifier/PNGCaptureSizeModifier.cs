@@ -20,6 +20,7 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
+using ChaCustom;
 using Extension;
 using HarmonyLib;
 using System;
@@ -30,6 +31,7 @@ using System.Linq;
 using System.Reflection.Emit;
 using UnityEngine;
 using UnityEngine.UI;
+using Logger = Extension.Logger;
 
 namespace PNGCaptureSizeModifier
 {
@@ -38,8 +40,8 @@ namespace PNGCaptureSizeModifier
     {
         internal const string PLUGIN_NAME = "PNG Capture Size Modifier";
         internal const string GUID = "com.jim60105.kks.pngcapturesizemodifier";
-        internal const string PLUGIN_VERSION = "21.08.28.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.6.0";
+        internal const string PLUGIN_VERSION = "21.08.29.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.6.1";
 
         public static ConfigEntry<float> TimesOfMaker { get; private set; }
         public static ConfigEntry<float> TimesOfStudio { get; private set; }
@@ -58,19 +60,19 @@ namespace PNGCaptureSizeModifier
         {
             Logger = base.Logger;
             Extension.Logger.logger = Logger;
-            TimesOfMaker = Config.Bind<float>("Config", "Times of multiplication (Maker)", 3.0f, "The game needs to be restarted for changes to take effect.");
-            TimesOfStudio = Config.Bind<float>("Config", "Times of multiplication (Studio)", 5.0f, "The game needs to be restarted for changes to take effect.");
-            PNGColumnCount = Config.Bind<int>("Config", "Number of PNG rows in File List View", 3, new ConfigDescription("Must be a natural number", new AcceptableValueRange<int>(1, 30)));
-            StudioSceneWatermark = Config.Bind<bool>("Config", "Use Studio Scene Watermark", true, "It is extremely NOT recommended to disable the watermark function, which is for distinguishing between scene data and normal image.");
-            CharaMakerWatermark = Config.Bind<bool>("Config", "Use Character Watermark", true);
-            ResolutionWaterMark = Config.Bind<bool>("Config", "Use Resolution Watermark", true, "When the StudioScene/Character watermark is enabled, the resolution watermark will be forced to use.");
+            TimesOfMaker = Config.Bind("Config", "Times of multiplication (Maker)", 3.0f, "The game needs to be restarted for changes to take effect.");
+            TimesOfStudio = Config.Bind("Config", "Times of multiplication (Studio)", 5.0f, "The game needs to be restarted for changes to take effect.");
+            PNGColumnCount = Config.Bind("Config", "Number of PNG rows in File List View", 3, new ConfigDescription("Must be a natural number", new AcceptableValueRange<int>(1, 30)));
+            StudioSceneWatermark = Config.Bind("Config", "Use Studio Scene Watermark", true, "It is extremely NOT recommended to disable the watermark function, which is for distinguishing between scene data and normal image.");
+            CharaMakerWatermark = Config.Bind("Config", "Use Character Watermark", true);
+            ResolutionWaterMark = Config.Bind("Config", "Use Resolution Watermark", true, "When the StudioScene/Character watermark is enabled, the resolution watermark will be forced to use.");
 
-            PathToTheFontResource = Config.Bind<String>("WaterMark", "Path of the font picture", "", "Full path to the font resource picture, must be a PNG or JPG.");
+            PathToTheFontResource = Config.Bind("WaterMark", "Path of the font picture", "", "Full path to the font resource picture, must be a PNG or JPG.");
             PathToTheFontResource.SettingChanged += delegate { SetFontPic(); };
             SetFontPic();
-            CharacterSize = Config.Bind<float>("WaterMark", "Font Size", 1.0f);
-            PositionX = Config.Bind<int>("WaterMark", "Position X", 97, new ConfigDescription("0 = left, 100 = right", new AcceptableValueRange<int>(0, 100)));
-            PositionY = Config.Bind<int>("WaterMark", "Position Y", 0, new ConfigDescription("0 = bottom, 100 = top", new AcceptableValueRange<int>(0, 100)));
+            CharacterSize = Config.Bind("WaterMark", "Font Size", 1.0f);
+            PositionX = Config.Bind("WaterMark", "Position X", 97, new ConfigDescription("0 = left, 100 = right", new AcceptableValueRange<int>(0, 100)));
+            PositionY = Config.Bind("WaterMark", "Position Y", 0, new ConfigDescription("0 = bottom, 100 = top", new AcceptableValueRange<int>(0, 100)));
 
             if (TimesOfMaker.Value == 0) TimesOfMaker.Value = (float)TimesOfMaker.DefaultValue;
             if (TimesOfStudio.Value == 0) TimesOfStudio.Value = (float)TimesOfStudio.DefaultValue;
@@ -106,12 +108,12 @@ namespace PNGCaptureSizeModifier
 
     class Patches
     {
-        //PNG存檔放大
-        [HarmonyTranspiler, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CapCharaCard")]
+        #region PNG存檔放大
+        [HarmonyTranspiler, HarmonyPatch(typeof(CustomCapture), "CapCharaCard")]
         public static IEnumerable<CodeInstruction> CapCharaCardTranspiler(IEnumerable<CodeInstruction> instructions)
             => PngTranspiler(instructions, PNGCaptureSizeModifier.TimesOfMaker.Value);
 
-        [HarmonyTranspiler, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CapCoordinateCard")]
+        [HarmonyTranspiler, HarmonyPatch(typeof(CustomCapture), "CapCoordinateCard")]
         public static IEnumerable<CodeInstruction> CapCoordinateCardTranspiler(IEnumerable<CodeInstruction> instructions)
             => PngTranspiler(instructions, PNGCaptureSizeModifier.TimesOfMaker.Value);
 
@@ -138,55 +140,55 @@ namespace PNGCaptureSizeModifier
             }
             return codes.AsEnumerable();
         }
+        #endregion
 
-        //CharaMaker存檔顯示放大
-        [HarmonyPostfix, HarmonyPatch(typeof(ChaCustom.CustomFileListCtrl), "Start")]
-        public static void StartPostFix(ChaCustom.CustomFileListCtrl __instance)
-            => ChangeRowCount((ChaCustom.CustomFileWindow)__instance.GetField("cfWindow"));
+        #region CharaMaker存檔顯示放大
+        [HarmonyPostfix, HarmonyPatch(typeof(CustomBase), "Start")]
+        public static void StartPostFix() => ChangeRowCount();
 
-        [HarmonyPostfix, HarmonyPatch(typeof(ChaCustom.CustomCoordinateFile), "Start")]
-        public static void Start2PostFix(ChaCustom.CustomCoordinateFile __instance)
-            => ChangeRowCount((ChaCustom.CustomFileWindow)__instance.GetField("fileWindow"));
+        [HarmonyPostfix, HarmonyPatch(typeof(CustomFileListCtrl), "UpdateSort")]
+        public static void UpdateSortPostFix() => ChangeRowCount();
 
-        public static void ChangeRowCount(ChaCustom.CustomFileWindow window)
-        {
-            if (null == Singleton<ChaCustom.CustomBase>.Instance) return;   //Block HScene
+        public static void ChangeRowCount() { 
+            //Block HScene
+            if (null == Singleton<CustomBase>.Instance) return;
 
-            int count = PNGCaptureSizeModifier.PNGColumnCount.Value;
-            if (count == 0)
+            if (PNGCaptureSizeModifier.PNGColumnCount.Value == 0)
             {
                 PNGCaptureSizeModifier.PNGColumnCount.Value = (int)PNGCaptureSizeModifier.PNGColumnCount.DefaultValue;
             }
-            GridLayoutGroup component = window.gameObject.GetComponentInChildren<GridLayoutGroup>();
-            if (count != component.constraintCount)
-            {
-                component.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-                component.constraintCount = count;
-                Singleton<ChaCustom.CustomBase>.Instance.StartCoroutine(UpdateWidth());
-            }
 
-            IEnumerator UpdateWidth()
+            _ = Singleton<CustomBase>.Instance.StartCoroutine(
+                UpdateWidth(GameObject.Find("CustomScene/CustomRoot/FrontUIGroup/CustomUIGroup/CvsMenuTree/06_SystemTop/charaFileControl/charaFileWindow/WinRect/ListArea/Scroll View/Viewport/Content").GetComponentInChildren<GridLayoutGroup>()));
+            _ = Singleton<CustomBase>.Instance.StartCoroutine(
+                UpdateWidth(GameObject.Find("CustomScene/CustomRoot/FrontUIGroup/CustomUIGroup/CvsMenuTree/06_SystemTop/cosFileControl/charaFileWindow/WinRect/ListArea/Scroll View/Viewport/Content").GetComponentInChildren<GridLayoutGroup>()));
+
+            IEnumerator UpdateWidth(GridLayoutGroup glg)
             {
                 //切換到System頁的下一幀再計算，否則width會不對
                 Toggle tgl = GameObject.Find("CustomScene/CustomRoot/FrontUIGroup/CustomUIGroup/CvsMainMenu/BaseTop/tglSystem").GetComponentInChildren<Toggle>();
                 yield return new WaitUntil(() => tgl.isOn);
                 yield return new WaitForFixedUpdate();
 
-                count = PNGCaptureSizeModifier.PNGColumnCount.Value; //重抓，以免設定值在此期間有改變
-                RectTransform rect = component.transform as RectTransform;
+                int count = PNGCaptureSizeModifier.PNGColumnCount.Value; //重抓，以免設定值在此期間有改變
+                glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+                glg.constraintCount = count;
+
+                RectTransform rect = glg.transform as RectTransform;
                 float width = (rect.rect.width - (9 * (count - 1)) - 20) / count;
-                component.cellSize = new Vector2(width, width / component.cellSize.x * component.cellSize.y);
+                glg.cellSize = new Vector2(width, width / glg.cellSize.x * glg.cellSize.y);
                 yield return new WaitForEndOfFrame();
-                LayoutRebuilder.ForceRebuildLayoutImmediate(component.transform as RectTransform);
+                LayoutRebuilder.ForceRebuildLayoutImmediate(glg.transform as RectTransform);
             }
         }
+        #endregion
 
         //Studio預覽放大
         [HarmonyPostfix, HarmonyPatch(typeof(Studio.SceneLoadScene), "Awake")]
         public static void AwakePostFix() =>
             GameObject.Find("SceneLoadScene/Canvas Load Work/root").transform.localScale = new Vector3(2, 2, 1);
 
-        //加浮水印
+        #region 加浮水印
         private static bool SDFlag = false;
         private static bool CMFlag = false;
 
@@ -203,10 +205,10 @@ namespace PNGCaptureSizeModifier
             }
         }
 
-        [HarmonyPriority(Priority.Last), HarmonyPrefix, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CapCharaCard")]
+        [HarmonyPriority(Priority.Last), HarmonyPrefix, HarmonyPatch(typeof(CustomCapture), "CapCharaCard")]
         public static void CapCharaCardPrefix() => CMFlag = true;
 
-        [HarmonyPriority(Priority.Last), HarmonyPostfix, HarmonyPatch(typeof(ChaCustom.CustomCapture), "CreatePng")]
+        [HarmonyPriority(Priority.Last), HarmonyPostfix, HarmonyPatch(typeof(CustomCapture), "CreatePng")]
         public static void CreatePngPostfix(ref byte[] pngData)
         {
             if (CMFlag)
@@ -253,5 +255,6 @@ namespace PNGCaptureSizeModifier
 
             basePng = screenshot.EncodeToPNG();
         }
+        #endregion
     }
 }
