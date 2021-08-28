@@ -20,7 +20,7 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 using BepInEx;
 using HarmonyLib;
 
-namespace KK_CoordinateCapturePoseUnlock {
+namespace CoordinateCapturePoseUnlock {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("KoikatsuSunshine")]
     public class CoordinateCapturePoseUnlock : BaseUnityPlugin {

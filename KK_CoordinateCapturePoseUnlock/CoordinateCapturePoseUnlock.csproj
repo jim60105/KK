@@ -3,7 +3,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <OutputType>Library</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <RootNamespace>KKS_CoordinateCapturePoseUnlock</RootNamespace>
+    <RootNamespace>CoordinateCapturePoseUnlock</RootNamespace>
     <AssemblyName>KKS_CoordinateCapturePoseUnlock</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

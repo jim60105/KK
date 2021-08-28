@@ -29,7 +29,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace KK_PluginListTool
+namespace PluginListTool
 {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class PluginListTool : BaseUnityPlugin
