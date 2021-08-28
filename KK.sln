@@ -22,7 +22,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_FBIOpenUp", "KK_FBIOpenU
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioAutoCloseLoadingSceneWindow", "KK_StudioAutoCloseLoadingSceneWindow\KK_StudioAutoCloseLoadingSceneWindow.csproj", "{A5F430A2-AE7A-4BCD-A380-0F73ADD7A4A3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_PluginListTool", "KK_PluginListTool\KK_PluginListTool.csproj", "{EAA640EA-AC91-41C6-A655-4AB5A364986D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PluginListTool", "KK_PluginListTool\PluginListTool.csproj", "{EAA640EA-AC91-41C6-A655-4AB5A364986D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BEA015AE-BB02-4641-8DAE-CEF9BB0A2191}"
 	ProjectSection(SolutionItems) = preProject
