@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
@@ -34,9 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="KK_SaveLoadCompression">
-      <HintPath>..\KK_SaveLoadCompression\bin\Release\KK_SaveLoadCompression.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\KK_SaveLoadCompression\KK_SaveLoadCompression.csproj" />
   </ItemGroup>
 
   <ItemGroup>

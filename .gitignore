@@ -15,12 +15,12 @@
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
-#[Rr]eleases/
+[Rr]eleases/
 [Bb]in/[Rr]elease/
-#x64/
+x64/
 x86/
 bld/
-#[Bb]in/
+[Bb]in/
 [Oo]bj/
 [Ll]og/
 
@@ -337,7 +337,3 @@ ASALocalRun/
 /KK_FBIOpenUp/Resources/FBI.mp4
 /KK_FBIOpenUp/Resources/FBI.ogg
 /KK_FBIOpenUp/Resources/Kumakichi.jpg
-/KK_CoordinateLoadOption/bin/x64/Release/ja
-/KK_CoordinateLoadOption/bin/x64/Release/zh
-/KK_CoordinateLoadOption/bin/x64/Release/ExIni.dll
-/KK_CoordinateLoadOption/bin/x64/Release/UIUtility.dll

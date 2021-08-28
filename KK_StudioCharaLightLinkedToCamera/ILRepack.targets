@@ -4,7 +4,6 @@
 
     <ItemGroup>
         <InputAssemblies Include="$(OutputPath)\*.dll" />
-        <InputAssemblies Include="$(OutputPath)\*\*.dll" />
     </ItemGroup>
 
     <ILRepack
