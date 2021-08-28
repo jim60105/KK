@@ -29,8 +29,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_CharaOverlaysBasedOnCoordinate", "KK_CharaOverlaysBasedOnCoordinate\KK_CharaOverlaysBasedOnCoordinate.csproj", "{94DDA10B-7A91-4F59-9C62-4AA363E1C36F}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_PNGCaptureSizeModifier", "KK_PNGCaptureSizeModifier\KK_PNGCaptureSizeModifier.csproj", "{2D638E6E-8295-40D9-B76E-6F5A06779C6B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioChikaReplacer", "KK_StudioChikaReplacer\KK_StudioChikaReplacer.csproj", "{3438C334-6A7E-47CC-B243-0A3410FDC44F}"
@@ -71,7 +69,6 @@ Global
 		Extension\Extension.projitems*{7aac6224-8071-4198-818b-5f18a6fbc4b4}*SharedItemsImports = 5
 		Extension\Extension.projitems*{82c2994c-24eb-4df4-a367-2f33ec849978}*SharedItemsImports = 5
 		Extension\Extension.projitems*{85268fd6-a1fd-41aa-84d9-71f18815c034}*SharedItemsImports = 5
-		Extension\Extension.projitems*{94dda10b-7a91-4f59-9c62-4aa363e1c36f}*SharedItemsImports = 5
 		Extension\Extension.projitems*{957dec7d-0d10-41e5-9cf6-a72902355ccc}*SharedItemsImports = 4
 		Extension\Extension.projitems*{a5f430a2-ae7a-4bcd-a380-0f73add7a4a3}*SharedItemsImports = 5
 		Extension\Extension.projitems*{ac89e605-c385-4e44-b781-5ee60c7bc70a}*SharedItemsImports = 5
@@ -118,10 +115,6 @@ Global
 		{EAA640EA-AC91-41C6-A655-4AB5A364986D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EAA640EA-AC91-41C6-A655-4AB5A364986D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EAA640EA-AC91-41C6-A655-4AB5A364986D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{94DDA10B-7A91-4F59-9C62-4AA363E1C36F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{94DDA10B-7A91-4F59-9C62-4AA363E1C36F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{94DDA10B-7A91-4F59-9C62-4AA363E1C36F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{94DDA10B-7A91-4F59-9C62-4AA363E1C36F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{2D638E6E-8295-40D9-B76E-6F5A06779C6B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2D638E6E-8295-40D9-B76E-6F5A06779C6B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2D638E6E-8295-40D9-B76E-6F5A06779C6B}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -181,8 +174,8 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {9C634E2C-489D-470F-94E5-72383D9364B5}
-		RESX_NeutralResourcesLanguage = en-US
 		RESX_Rules = {"EnabledRules":["StringFormat","WhiteSpaceLead","WhiteSpaceTail"]}
+		RESX_NeutralResourcesLanguage = en-US
+		SolutionGuid = {9C634E2C-489D-470F-94E5-72383D9364B5}
 	EndGlobalSection
 EndGlobal
