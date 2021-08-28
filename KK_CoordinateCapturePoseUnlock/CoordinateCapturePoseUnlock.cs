@@ -22,14 +22,14 @@ using HarmonyLib;
 
 namespace KK_CoordinateCapturePoseUnlock {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
-    [BepInProcess("Koikatu")]
-    public class KK_CoordinateCapturePoseUnlock : BaseUnityPlugin {
+    [BepInProcess("KoikatsuSunshine")]
+    public class CoordinateCapturePoseUnlock : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Capture Pose Unlock";
-        internal const string GUID = "com.jim60105.kk.coordinatecaptureposeunlock";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.1";
+        internal const string GUID = "com.jim60105.kks.coordinatecaptureposeunlock";
+        internal const string PLUGIN_VERSION = "21.08.28.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
         public void Awake() {
-            Harmony.CreateAndPatchAll(typeof(KK_CoordinateCapturePoseUnlock));
+            Harmony.CreateAndPatchAll(typeof(CoordinateCapturePoseUnlock));
         }
 
         [HarmonyPrefix, HarmonyPatch(typeof(ChaCustom.CustomCoordinateFile), "CreateCoordinateFileCoroutine")]

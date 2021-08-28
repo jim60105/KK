@@ -189,7 +189,7 @@ namespace Extension {
             if (File.Exists(FilePath)) {
                 FileData = File.ReadAllBytes(FilePath);
                 texture = new Texture2D(2, 2, TextureFormat.ARGB32, false);
-                if (texture.LoadImage(FileData)) {
+                if (ImageConversion.LoadImage(texture,FileData)) {
                     if ((width > 0 && texture.width != width) || (height > 0 && texture.height != height)) {
                         texture = texture.Scale(width > 0 ? width : texture.width, height > 0 ? height : texture.height, mipmap: false);
                     }
