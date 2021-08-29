@@ -53,7 +53,7 @@ namespace CoordinateLoadOption {
     public class CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kks.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "21.08.29.1";
+        internal const string PLUGIN_VERSION = "21.08.29.2";
         internal const string PLUGIN_RELEASE_VERSION = "1.2.1";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
@@ -374,6 +374,7 @@ namespace CoordinateLoadOption {
             btnReverseHairAcc.GetComponent<Image>().color = Color.gray;
             btnReverseHairAcc.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -55f), new Vector2(-5f, -30f));
             btnReverseHairAcc.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 1f), new Vector2(-5f, -2f));
+            if (!CLO._isHairAccessoryCustomizerExist) btnReverseHairAcc.interactable = false;
 
             //飾品載入模式btn
             Button btnChangeAccLoadMode = UIUtility.CreateButton("BtnChangeAccLoadMode", panel2.transform, "AccModeBtn");
@@ -509,24 +510,32 @@ namespace CoordinateLoadOption {
                 Logger.LogDebug("Clear accessories Finish");
             });
             btnReverseHairAcc.onClick.RemoveAllListeners();
-            btnReverseHairAcc.onClick.AddListener(() => {
-                CoordinateLoad.MakeTmpChara((_) => {
-                    CoordinateLoad.tmpChaCtrl.StopAllCoroutines();
-                    for (int i = 0; i < MoreAccessories_Support.GetAccessoriesAmount(CoordinateLoad.tmpChaCtrl.chaFile); i++) {
-                        if (i < tgls2.Length) {
-                            if (CoordinateLoad.IsHairAccessory(CoordinateLoad.tmpChaCtrl, i)) {
-                                tgls2[i].isOn = !tgls2[i].isOn;
-                                Logger.LogDebug($"Reverse Hair Acc.: {i}");
+            if (CLO._isHairAccessoryCustomizerExist)
+            {
+                btnReverseHairAcc.onClick.AddListener(() =>
+                {
+                    CoordinateLoad.MakeTmpChara((_) =>
+                    {
+                        CoordinateLoad.tmpChaCtrl.StopAllCoroutines();
+                        for (int i = 0; i < MoreAccessories_Support.GetAccessoriesAmount(CoordinateLoad.tmpChaCtrl.chaFile); i++)
+                        {
+                            if (i < tgls2.Length)
+                            {
+                                if (CoordinateLoad.IsHairAccessory(CoordinateLoad.tmpChaCtrl, i))
+                                {
+                                    tgls2[i].isOn = !tgls2[i].isOn;
+                                    Logger.LogDebug($"Reverse Hair Acc.: {i}");
+                                }
                             }
                         }
-                    }
-                    Manager.Character.DeleteChara(CoordinateLoad.tmpChaCtrl);
-                    CoordinateLoad.tmpChaCtrl = null;
-                    Logger.LogDebug($"Delete Temp Chara");
-                    Illusion.Game.Utils.Sound.Play(Illusion.Game.SystemSE.ok_s);
-                    Logger.LogDebug("Reverse Hair Acc. toggles.");
+                        Manager.Character.DeleteChara(CoordinateLoad.tmpChaCtrl);
+                        CoordinateLoad.tmpChaCtrl = null;
+                        Logger.LogDebug($"Delete Temp Chara");
+                        Illusion.Game.Utils.Sound.Play(Illusion.Game.SystemSE.ok_s);
+                        Logger.LogDebug("Reverse Hair Acc. toggles.");
+                    });
                 });
-            });
+            }
 
             btnChangeAccLoadMode.onClick.RemoveAllListeners();
             btnChangeAccLoadMode.onClick.AddListener(() => {
