@@ -3,57 +3,57 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.28803.352
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioSimpleColorOnGirls", "KK_StudioSimpleColorOnGirls\KK_StudioSimpleColorOnGirls.csproj", "{670A8493-10C7-4071-8FC8-A49ACE4CCFDB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioSimpleColorOnGirls", "StudioSimpleColorOnGirls\KK_StudioSimpleColorOnGirls.csproj", "{670A8493-10C7-4071-8FC8-A49ACE4CCFDB}"
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Extension", "Extension\Extension.shproj", "{0646BE09-F599-4EDB-B115-DE4043C8D3BE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioCharaOnlyLoadBody", "KK_StudioCharaOnlyLoadBody\KK_StudioCharaOnlyLoadBody.csproj", "{DAD31687-4DE7-47C3-AF78-6D366DA10407}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioCharaOnlyLoadBody", "StudioCharaOnlyLoadBody\KK_StudioCharaOnlyLoadBody.csproj", "{DAD31687-4DE7-47C3-AF78-6D366DA10407}"
 	ProjectSection(ProjectDependencies) = postProject
 		{5FF39402-D216-42DE-9AAA-BA34103F1786} = {5FF39402-D216-42DE-9AAA-BA34103F1786}
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UIUtility", "UIUtility\UIUtility.csproj", "{5FF39402-D216-42DE-9AAA-BA34103F1786}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioReflectFKFix", "KK_StudioReflectFKFix\KK_StudioReflectFKFix.csproj", "{0C47EBAA-B09C-44E1-B114-5337B8BEBA79}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioReflectFKFix", "StudioReflectFKFix\KK_StudioReflectFKFix.csproj", "{0C47EBAA-B09C-44E1-B114-5337B8BEBA79}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioTextPlugin", "KK_StudioTextPlugin\KK_StudioTextPlugin.csproj", "{D02E90AF-BE20-4EAE-A462-5EFDA36095A9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioTextPlugin", "StudioTextPlugin\KK_StudioTextPlugin.csproj", "{D02E90AF-BE20-4EAE-A462-5EFDA36095A9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FBIOpenUp", "KK_FBIOpenUp\FBIOpenUp.csproj", "{661B77CE-D337-49D2-A359-AD85E68986B2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FBIOpenUp", "FBIOpenUp\FBIOpenUp.csproj", "{661B77CE-D337-49D2-A359-AD85E68986B2}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioAutoCloseLoadingSceneWindow", "KK_StudioAutoCloseLoadingSceneWindow\KK_StudioAutoCloseLoadingSceneWindow.csproj", "{A5F430A2-AE7A-4BCD-A380-0F73ADD7A4A3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioAutoCloseLoadingSceneWindow", "StudioAutoCloseLoadingSceneWindow\KK_StudioAutoCloseLoadingSceneWindow.csproj", "{A5F430A2-AE7A-4BCD-A380-0F73ADD7A4A3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PluginListTool", "KK_PluginListTool\PluginListTool.csproj", "{EAA640EA-AC91-41C6-A655-4AB5A364986D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PluginListTool", "PluginListTool\PluginListTool.csproj", "{EAA640EA-AC91-41C6-A655-4AB5A364986D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BEA015AE-BB02-4641-8DAE-CEF9BB0A2191}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PNGCaptureSizeModifier", "KK_PNGCaptureSizeModifier\PNGCaptureSizeModifier.csproj", "{2D638E6E-8295-40D9-B76E-6F5A06779C6B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PNGCaptureSizeModifier", "PNGCaptureSizeModifier\PNGCaptureSizeModifier.csproj", "{2D638E6E-8295-40D9-B76E-6F5A06779C6B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioChikaReplacer", "KK_StudioChikaReplacer\KK_StudioChikaReplacer.csproj", "{3438C334-6A7E-47CC-B243-0A3410FDC44F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioChikaReplacer", "StudioChikaReplacer\KK_StudioChikaReplacer.csproj", "{3438C334-6A7E-47CC-B243-0A3410FDC44F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioCharaLightLinkedToCamera", "KK_StudioCharaLightLinkedToCamera\KK_StudioCharaLightLinkedToCamera.csproj", "{82C2994C-24EB-4DF4-A367-2F33EC849978}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioCharaLightLinkedToCamera", "StudioCharaLightLinkedToCamera\KK_StudioCharaLightLinkedToCamera.csproj", "{82C2994C-24EB-4DF4-A367-2F33EC849978}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioDualScreen", "KK_StudioDualScreen\KK_StudioDualScreen.csproj", "{E70886B9-0AEC-444B-90A1-95E47C4FE03F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioDualScreen", "StudioDualScreen\KK_StudioDualScreen.csproj", "{E70886B9-0AEC-444B-90A1-95E47C4FE03F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioSaveWorkspaceOrderFix", "KK_StudioSaveWorkspaceOrderFix\KK_StudioSaveWorkspaceOrderFix.csproj", "{4F3E6D68-D3B2-4A0F-817A-272EAAFB91AA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioSaveWorkspaceOrderFix", "StudioSaveWorkspaceOrderFix\KK_StudioSaveWorkspaceOrderFix.csproj", "{4F3E6D68-D3B2-4A0F-817A-272EAAFB91AA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScriptLoaderScript", "ScriptLoaderScript\ScriptLoaderScript.csproj", "{3ED29578-EACC-48A8-8130-906469544508}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_Sample", "KK_Sample\KK_Sample.csproj", "{957DEC7D-0D10-41E5-9CF6-A72902355CCC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_Sample", "Sample\KK_Sample.csproj", "{957DEC7D-0D10-41E5-9CF6-A72902355CCC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoordinateCapturePoseUnlock", "KK_CoordinateCapturePoseUnlock\CoordinateCapturePoseUnlock.csproj", "{7AAC6224-8071-4198-818B-5F18A6FBC4B4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoordinateCapturePoseUnlock", "CoordinateCapturePoseUnlock\CoordinateCapturePoseUnlock.csproj", "{7AAC6224-8071-4198-818B-5F18A6FBC4B4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioTransgenderLoading", "KK_StudioTransgenderLoading\KK_StudioTransgenderLoading.csproj", "{AC89E605-C385-4E44-B781-5EE60C7BC70A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioTransgenderLoading", "StudioTransgenderLoading\KK_StudioTransgenderLoading.csproj", "{AC89E605-C385-4E44-B781-5EE60C7BC70A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoordinateLoadOption", "KK_CoordinateLoadOption\CoordinateLoadOption.csproj", "{85268FD6-A1FD-41AA-84D9-71F18815C034}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoordinateLoadOption", "CoordinateLoadOption\CoordinateLoadOption.csproj", "{85268FD6-A1FD-41AA-84D9-71F18815C034}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioMenuScrollingText", "KK_StudioMenuScrollingText\KK_StudioMenuScrollingText.csproj", "{B27D7AED-568B-462F-BACA-BA2A19CCF9F6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioMenuScrollingText", "StudioMenuScrollingText\KK_StudioMenuScrollingText.csproj", "{B27D7AED-568B-462F-BACA-BA2A19CCF9F6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SaveLoadCompressionWeb", "SaveLoadCompressionWeb\SaveLoadCompressionWeb.csproj", "{7ACB48D7-A67B-4458-9241-F64ADE3E9028}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SaveLoadCompression", "KK_SaveLoadCompression\SaveLoadCompression.csproj", "{51758989-959A-4A3E-B70C-CE4792C6D848}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SaveLoadCompression", "SaveLoadCompression\SaveLoadCompression.csproj", "{51758989-959A-4A3E-B70C-CE4792C6D848}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
