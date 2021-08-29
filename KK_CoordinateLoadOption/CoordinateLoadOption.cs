@@ -53,8 +53,8 @@ namespace CoordinateLoadOption {
     public class CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kks.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "21.08.29.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
+        internal const string PLUGIN_VERSION = "21.08.29.1";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.1";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -78,7 +78,7 @@ namespace CoordinateLoadOption {
                 postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.OnSelectPostfix)));
 
             //Maker
-            harmonyInstance.Patch(typeof(CustomCoordinateFile).GetMethod("Start", AccessTools.all),
+            harmonyInstance.Patch(typeof(CustomCoordinateFile).GetMethod("FileWindowSetting", AccessTools.all),
                 postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.InitPostfix)));
             harmonyInstance.Patch(typeof(CustomCoordinateFile).GetMethod("OnChangeSelect", AccessTools.all),
                 postfix: new HarmonyMethod(typeof(Patches), nameof(Patches.OnSelectPostfix)));
