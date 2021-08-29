@@ -27,11 +27,11 @@ using UnityEngine.SceneManagement;
 
 namespace KK_TransparentBackground {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
-    public class KK_TransparentBackground : BaseUnityPlugin {
+    public class TransparentBackground : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Transparent Background";
-        internal const string GUID = "com.jim60105.kk.transparentbackground";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.1";
+        internal const string GUID = "com.jim60105.kks.transparentbackground";
+        internal const string PLUGIN_VERSION = "21.08.29.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
 
         internal static new ManualLogSource Logger;
         public static ConfigEntry<KeyboardShortcut> Hotkey { get; set; }
@@ -77,14 +77,14 @@ namespace KK_TransparentBackground {
 
             if (isTransparent) {
                 SceneName = "";
-                if (null != Window) {
+                //if (null != Window) {
                     StartCoroutine(TransparentCoroutine());
-                } else {
-                    if (isOriginalFullScreen) {
-                        SetFullScreen(true);
-                        isOriginalFullScreen = false;
-                    }
-                }
+                //} else {
+                //    if (isOriginalFullScreen) {
+                //        SetFullScreen(true);
+                //        isOriginalFullScreen = false;
+                //    }
+                //}
                 Logger.LogDebug($"Scene unload: {scene.name}");
             }
         }
@@ -143,9 +143,9 @@ namespace KK_TransparentBackground {
             isTransparent = Window.isTransparent;
             Window.isTopmost = isTransparent;
 
-            if (isOriginalFullScreen) {
-                SetFullScreen(!isTransparent);
-            }
+            //if (isOriginalFullScreen) {
+            //    SetFullScreen(!isTransparent);
+            //}
             yield break;
         }
 
@@ -156,11 +156,11 @@ namespace KK_TransparentBackground {
 
         private IEnumerator RestoreCameraConfig() {
             //Wait until init
-            while (null == Manager.Config.EtcData?.BackColor) yield return null;
+            while (null == Manager.Config.EstData?.BackColor) yield return null;
 
-            Manager.Config.EtcData.BackColor = BackColor.Value;
+            Manager.Config.EstData.BackColor = BackColor.Value;
             BackColor.Value = Color.clear;
-            Logger.LogDebug("Restore background color:" + Manager.Config.EtcData.BackColor.ToString());
+            Logger.LogDebug("Restore background color:" + Manager.Config.EstData.BackColor.ToString());
         }
     }
 }

@@ -377,7 +377,7 @@ namespace Kirurobo {
 
                 //H scene會在HSceneProc.Update()->HSceneProc.SetConfig()重寫Camera.main.backgroundColor
                 //此EtcData是重寫的來源
-                Manager.Config.EtcData.BackColor = Color.clear;
+                Manager.Config.EstData.BackColor = Color.clear;
 
                 //Only display chara layer
                 //為了把地圖等東西不顯示，若有其它什麼沒顯示出來要修改這裡
@@ -386,7 +386,7 @@ namespace Kirurobo {
                 currentCamera.clearFlags = originalCameraClearFlags;
                 currentCamera.backgroundColor = originalCameraBackground;
 
-                Manager.Config.EtcData.BackColor = originalCameraBackground;
+                Manager.Config.EstData.BackColor = originalCameraBackground;
                 currentCamera.cullingMask = originalCameraCullingmask;
             }
 

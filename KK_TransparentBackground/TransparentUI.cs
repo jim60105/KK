@@ -50,8 +50,10 @@ namespace KK_TransparentBackground {
                                .ToList();
 
             #region 例外處理
-            //Studio "CvsColor", "Canvas Pattern"已經是用CanvasGroup alpha控制顯示與否，放棄透明它們
+            //這些已經是用CanvasGroup alpha控制顯示與否，放棄透明它們
+            //Studio "CvsColor", "Canvas Pattern", Maker "ConfigScene"
             canvasList.RemoveAll(x => x.name == "Canvas Pattern");
+            canvasList.RemoveAll(x => x.transform.parent.name.Contains("ConfigScene"));
 
             //Maker中的UI上層不是Canvas
             var g = GameObject.Find("CustomRoot");
