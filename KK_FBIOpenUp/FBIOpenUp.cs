@@ -31,14 +31,14 @@ using System.Linq;
 using System.Reflection;
 using UILib;
 
-namespace KK_FBIOpenUp {
+namespace FBIOpenUp {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInDependency("KKABMX.Core", BepInDependency.DependencyFlags.SoftDependency)]
-    public class KK_FBIOpenUp : BaseUnityPlugin {
+    public class FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
         internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.3";
+        internal const string PLUGIN_VERSION = "21.08.29.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
 
         internal static bool _isenabled = false;
         internal static bool _isABMXExist = false;
@@ -94,7 +94,7 @@ namespace KK_FBIOpenUp {
                 Logger.LogDebug("Change Rate: " + Change_rate.Value);
             }
 
-            Video_related_path = Config.Bind<string>("Config", "Video path", "UserData/audio/FBI.mp4", "Path where FBI Open Up video is located");
+            Video_related_path = Config.Bind<string>("Config", "Video path", "UserData/Custom/FBI.mp4", "Path where FBI Open Up video is located");
             try {
                 string tempVideoPath = Uri.UnescapeDataString(new Uri(Path.GetFullPath(Video_related_path.Value)).ToString());
                 if (File.Exists(new Uri(tempVideoPath).LocalPath)) {
@@ -130,7 +130,7 @@ namespace KK_FBIOpenUp {
                 Logger.LogDebug("Use default chara");
                 Logger.LogDebug("FBI! Open Up!");
                 Assembly ass = Assembly.GetExecutingAssembly();
-                using (Stream stream = ass.GetManifestResourceStream("KK_FBIOpenUp.Resources.sample_chara.png")) {
+                using (Stream stream = ass.GetManifestResourceStream("FBIOpenUp.Resources.sample_chara.png")) {
                     Patches.LoadSampleChara(stream);
                 }
             }
@@ -145,7 +145,7 @@ namespace KK_FBIOpenUp {
     }
 
     internal static class Patches {
-        private static readonly ManualLogSource Logger = KK_FBIOpenUp.Logger;
+        private static readonly ManualLogSource Logger = FBIOpenUp.Logger;
         /// <summary>
         /// 替換過的chara之原始數據 Dict(ChaFileCustom, List[]{shapeValueFace.toList, shapeValueBody.toList})
         /// </summary>
@@ -174,7 +174,7 @@ namespace KK_FBIOpenUp {
             SampleChara.shapeValueBody = body.shapeValueBody.ToList();
 
             SampleChara.ABMXData = MessagePackSerializer.Deserialize<PluginData>(MessagePackSerializer.Serialize(ExtendedSave.GetExtendedDataById(SampleChara.chaFile, "KKABMPlugin.ABMData")));
-            if (KK_FBIOpenUp._isABMXExist && null != SampleChara.ABMXData) {
+            if (FBIOpenUp._isABMXExist && null != SampleChara.ABMXData) {
                 Logger.LogDebug("Loaded sample chara ABMX");
             } else {
                 Logger.LogDebug("NO sample chara ABMX");
@@ -192,7 +192,7 @@ namespace KK_FBIOpenUp {
                 return;
             }
 
-            KK_FBIOpenUp.SetCharaPath(null, null);
+            FBIOpenUp.SetCharaPath(null, null);
 
             if (chaCtrl.chaFile.parameter.sex != SampleChara.chaFile.parameter.sex) {
                 Logger.LogWarning($"Skip changes that differ from Sample Chara's gender: {chaCtrl.fileParam.fullname}");
@@ -240,7 +240,7 @@ namespace KK_FBIOpenUp {
                 Logger.LogDebug("Changed body finish");
             }
 
-            if (null != SampleChara.ABMXData && KK_FBIOpenUp._isABMXExist && KK_FBIOpenUp.Effect_on_ABMX.Value) {
+            if (null != SampleChara.ABMXData && FBIOpenUp._isABMXExist && FBIOpenUp.Effect_on_ABMX.Value) {
                 //取得BoneController
                 object BoneController = chaCtrl.GetComponents<UnityEngine.MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
                 if (null == BoneController) {
@@ -289,33 +289,33 @@ namespace KK_FBIOpenUp {
         public static void ChangeAllCharacters(bool rollback = false) {
             List<ChaControl> charList = new List<ChaControl>();
             Dictionary<Studio.OCIChar, float> mouthOpen = new Dictionary<Studio.OCIChar, float>();
-            Logger.LogDebug($"GameMode: {Enum.GetNames(typeof(KK_FBIOpenUp.GameMode))[(int)KK_FBIOpenUp.nowGameMode]}");
-            switch (KK_FBIOpenUp.nowGameMode) {
-                case KK_FBIOpenUp.GameMode.Studio:
+            Logger.LogDebug($"GameMode: {Enum.GetNames(typeof(FBIOpenUp.GameMode))[(int)FBIOpenUp.nowGameMode]}");
+            switch (FBIOpenUp.nowGameMode) {
+                case FBIOpenUp.GameMode.Studio:
                     charList = Studio.Studio.Instance.dicInfo.Values.OfType<Studio.OCIChar>().Select(delegate (Studio.OCIChar x) {
                         //處理嘴巴open歸零問題
                         mouthOpen.Add(x, x.oiCharInfo.mouthOpen);
                         return x.charInfo;
                     }).ToList();
                     break;
-                case KK_FBIOpenUp.GameMode.Maker:
+                case FBIOpenUp.GameMode.Maker:
                     charList.Add(Singleton<ChaCustom.CustomBase>.Instance.chaCtrl);
                     break;
-                case KK_FBIOpenUp.GameMode.MainGame:
-                    charList = Singleton<Manager.Game>.Instance.HeroineList.Select(x => x.chaCtrl).ToList();
+                case FBIOpenUp.GameMode.MainGame:
+                    charList = Manager.Game.HeroineList.Select(x => x.chaCtrl).ToList();
                     break;
-                case KK_FBIOpenUp.GameMode.FreeH:
+                case FBIOpenUp.GameMode.FreeH:
                     charList = Hooks.hSceneProc.GetField("lstFemale").ToList<ChaControl>();
                     break;
             }
             if (null == charList) {
-                if (KK_FBIOpenUp.nowGameMode == KK_FBIOpenUp.GameMode.FreeH) {
+                if (FBIOpenUp.nowGameMode == FBIOpenUp.GameMode.FreeH) {
                     Logger.LogWarning("Get CharaList FAILED! Try to change to MainGame mode.");
-                    KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.MainGame;
+                    FBIOpenUp.nowGameMode = FBIOpenUp.GameMode.MainGame;
                     ChangeAllCharacters(rollback);
-                } else if (KK_FBIOpenUp.nowGameMode == KK_FBIOpenUp.GameMode.MainGame) {
+                } else if (FBIOpenUp.nowGameMode == FBIOpenUp.GameMode.MainGame) {
                     Logger.LogWarning("Get CharaList FAILED! Try to change to FreeH mode.");
-                    KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.FreeH;
+                    FBIOpenUp.nowGameMode = FBIOpenUp.GameMode.FreeH;
                     ChangeAllCharacters(rollback);
                 } else {
                     Logger.LogError("Get CharaList FAILED! This should not happen!");
@@ -333,8 +333,8 @@ namespace KK_FBIOpenUp {
                 } else {
                     ChangeChara(chaCtrl, true, true, false);
                 }
-                switch (KK_FBIOpenUp.nowGameMode) {
-                    case KK_FBIOpenUp.GameMode.Maker:
+                switch (FBIOpenUp.nowGameMode) {
+                    case FBIOpenUp.GameMode.Maker:
                         Singleton<ChaCustom.CustomBase>.Instance.updateCustomUI = true;
                         break;
                     default:
@@ -344,7 +344,7 @@ namespace KK_FBIOpenUp {
             }
 
             //處理嘴巴open歸零問題
-            if (KK_FBIOpenUp.nowGameMode == KK_FBIOpenUp.GameMode.Studio) {
+            if (FBIOpenUp.nowGameMode == FBIOpenUp.GameMode.Studio) {
                 foreach (KeyValuePair<Studio.OCIChar, float> kv in mouthOpen) {
                     kv.Key.ChangeMouthOpen(kv.Value);
                 }
@@ -356,7 +356,7 @@ namespace KK_FBIOpenUp {
         /// </summary>
         public static void RollbackChara(ChaControl chaCtrl) {
             //開啟ABMX功能的話就禁用所有Rollback
-            if (Hooks.BlockChanging || null == chaCtrl || null == chaCtrl.chaFile || KK_FBIOpenUp.Effect_on_ABMX.Value) {
+            if (Hooks.BlockChanging || null == chaCtrl || null == chaCtrl.chaFile || FBIOpenUp.Effect_on_ABMX.Value) {
                 return;
             }
 

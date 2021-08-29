@@ -5,9 +5,9 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace KK_FBIOpenUp {
+namespace FBIOpenUp {
     internal static class UnityStuff {
-        private static readonly BepInEx.Logging.ManualLogSource Logger = KK_FBIOpenUp.Logger;
+        private static readonly BepInEx.Logging.ManualLogSource Logger = FBIOpenUp.Logger;
         /// <summary>
         /// 按下按鈕計時器
         /// </summary>
@@ -72,7 +72,7 @@ namespace KK_FBIOpenUp {
         /// 切換紅色書包圖標顯示
         /// </summary>
         private static void ChangeRedBagBtn(GameObject redBagBtn) {
-            if (KK_FBIOpenUp._isenabled) {
+            if (FBIOpenUp._isenabled) {
                 redBagBtn.GetComponent<Image>().color = new Color(1f, 1f, 1f, 1f);
                 Logger.LogInfo("Enable Plugin");
             } else {
@@ -86,35 +86,35 @@ namespace KK_FBIOpenUp {
         /// </summary>
         /// <param name="gameMode">遊戲模式</param>
         /// <param name="param">我知道這不安全，但這很方便σ`∀´)σ</param>
-        internal static void DrawRedBagBtn(KK_FBIOpenUp.GameMode gameMode, object param = null) {
+        internal static void DrawRedBagBtn(FBIOpenUp.GameMode gameMode, object param = null) {
             GameObject original, parent;
             Vector2 offsetMin, offsetMax;
-            KK_FBIOpenUp.nowGameMode = gameMode;
-            switch (KK_FBIOpenUp.nowGameMode) {
-                case KK_FBIOpenUp.GameMode.Studio:
+            FBIOpenUp.nowGameMode = gameMode;
+            switch (FBIOpenUp.nowGameMode) {
+                case FBIOpenUp.GameMode.Studio:
                     CharaList charaList = param as CharaList;
                     original = GameObject.Find($"StudioScene/Canvas Main Menu/01_Add/{charaList.name}/Button Change");
                     parent = original.transform.parent.gameObject;
                     offsetMin = new Vector2(-120, -270);
                     offsetMax = new Vector2(-40, -190);
                     break;
-                case KK_FBIOpenUp.GameMode.Maker:
+                case FBIOpenUp.GameMode.Maker:
                     original = GameObject.Find("CustomScene/CustomRoot/FrontUIGroup/CustomUIGroup/CvsMenuTree/01_BodyTop/tglShape/ShapeTop/Scroll View/Viewport/Content/grpBtn/btnS");
                     parent = GameObject.Find("CustomScene/CustomRoot/FrontUIGroup/CustomUIGroup/CvsCoordinateType").gameObject;
-                    offsetMin = new Vector2(849.64f, -69f);
-                    offsetMax = new Vector2(914.64f, -4f);
+                    offsetMin = new Vector2(849.64f, -120f);
+                    offsetMax = new Vector2(914.64f, -55f);
                     break;
-                case KK_FBIOpenUp.GameMode.MainGame:
-                    original = GameObject.Find("ActionScene/UI/ActionMenuCanvas/ModeAnimation/Status");
+                case FBIOpenUp.GameMode.MainGame:
+                    original = GameObject.Find("ActionScene/UI/ActionMenuCanvas/ModeAnimation/State");
                     parent = original.transform.parent.gameObject;
                     offsetMin = new Vector2(0, -80);
                     offsetMax = new Vector2(80, 0);
                     break;
-                case KK_FBIOpenUp.GameMode.FreeH:
-                    original = GameObject.Find("Canvas/SubMenu/DressCategory/ClothChange");
+                case FBIOpenUp.GameMode.FreeH:
+                    original = GameObject.Find("Canvas/SubMenu/ClothCategory/ClothFemale/DressCategory/ClothChange");
                     int i = (int)param;
                     if (i == 1) {
-                        parent = GameObject.Find("Canvas/SubMenu/DressCategory");
+                        parent = GameObject.Find("Canvas/SubMenu/ClothCategory");
                     } else {
                         parent = GameObject.Find("Canvas/SubMenu/SecondDressCategory");
                     }
@@ -130,13 +130,16 @@ namespace KK_FBIOpenUp {
             redBagBtn.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), offsetMin, offsetMax);
 
             redBagBtn.GetComponent<Button>().spriteState = new SpriteState();
-            redBagBtn.GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("KK_FBIOpenUp.Resources.redBag.png", 100, 100);
+            redBagBtn.GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("FBIOpenUp.Resources.redBag.png", 100, 100);
             redBagBtn.GetComponent<Button>().onClick.RemoveAllListeners();
             for (int i = 0; i < redBagBtn.GetComponent<Button>().onClick.GetPersistentEventCount(); i++) {
                 redBagBtn.GetComponent<Button>().onClick.SetPersistentListenerState(i, UnityEngine.Events.UnityEventCallState.Off);
             }
-            if (redBagBtn.transform.Find("textBtn")?.gameObject is GameObject go) {
+            if (redBagBtn.transform.Find("Text (TMP)")?.gameObject is GameObject go) {
                 GameObject.Destroy(go);
+            }
+            if (redBagBtn.transform.Find("textBtn")?.gameObject is GameObject go2) {
+                GameObject.Destroy(go2);
             }
             redBagBtn.GetComponent<Button>().interactable = true;
 
@@ -164,14 +167,14 @@ namespace KK_FBIOpenUp {
                 float clickDeltaTime = btnClickTimer;
                 btnClickTimer = 0;
                 if (step != 0) return;
-                switch (KK_FBIOpenUp.nowGameMode) {
-                    case KK_FBIOpenUp.GameMode.FreeH:
+                switch (FBIOpenUp.nowGameMode) {
+                    case FBIOpenUp.GameMode.FreeH:
                         //不分長短按
-                        KK_FBIOpenUp.SetEnabled();
-                        if (KK_FBIOpenUp._isenabled) {
+                        FBIOpenUp.SetEnabled();
+                        if (FBIOpenUp._isenabled) {
                             step = 10;
                         } else {
-                            if (KK_FBIOpenUp.Effect_on_ABMX.Value) {
+                            if (FBIOpenUp.Effect_on_ABMX.Value) {
                                 step = 2;
                             } else {
                                 step = 20;
@@ -180,53 +183,53 @@ namespace KK_FBIOpenUp {
                         ChangeWithoutShiftPicture = true;
                         StepLightAndPlay();
                         //開ABMX時不變更狀態
-                        if (KK_FBIOpenUp.Effect_on_ABMX.Value) {
-                            KK_FBIOpenUp.SetEnabled();
+                        if (FBIOpenUp.Effect_on_ABMX.Value) {
+                            FBIOpenUp.SetEnabled();
                         }
                         ChangeRedBagBtn(redBagBtn);
                         break;
-                    case KK_FBIOpenUp.GameMode.Maker:
-                        KK_FBIOpenUp.SetEnabled();
-                        if (KK_FBIOpenUp._isenabled) {
+                    case FBIOpenUp.GameMode.Maker:
+                        FBIOpenUp.SetEnabled();
+                        if (FBIOpenUp._isenabled) {
                             DrawSlidePic(10);
                         } else {
-                            if (KK_FBIOpenUp.Effect_on_ABMX.Value) {
+                            if (FBIOpenUp.Effect_on_ABMX.Value) {
                                 DrawSlidePic(2);
                             } else {
                                 DrawSlidePic(20);
                             }
                         }
                         //Maker開ABMX時、啟用長按時不變更狀態
-                        if (KK_FBIOpenUp.Effect_on_ABMX.Value || (clickDeltaTime >= 1f && KK_FBIOpenUp._isenabled)) {
-                            KK_FBIOpenUp.SetEnabled();
+                        if (FBIOpenUp.Effect_on_ABMX.Value || (clickDeltaTime >= 1f && FBIOpenUp._isenabled)) {
+                            FBIOpenUp.SetEnabled();
                         }
                         ChangeRedBagBtn(redBagBtn);
                         break;
-                    case KK_FBIOpenUp.GameMode.MainGame:
+                    case FBIOpenUp.GameMode.MainGame:
                         //主遊戲不分長短按
-                        KK_FBIOpenUp.SetEnabled();
-                        if (KK_FBIOpenUp._isenabled) {
+                        FBIOpenUp.SetEnabled();
+                        if (FBIOpenUp._isenabled) {
                             DrawSlidePic(10);
                         } else {
-                            if (KK_FBIOpenUp.Effect_on_ABMX.Value) {
+                            if (FBIOpenUp.Effect_on_ABMX.Value) {
                                 DrawSlidePic(2);
                             } else {
                                 DrawSlidePic(20);
                             }
                         }
-                        if (KK_FBIOpenUp.Effect_on_ABMX.Value) {
-                            KK_FBIOpenUp.SetEnabled();
+                        if (FBIOpenUp.Effect_on_ABMX.Value) {
+                            FBIOpenUp.SetEnabled();
                         }
                         ChangeRedBagBtn(redBagBtn);
                         break;
-                    case KK_FBIOpenUp.GameMode.Studio:
+                    case FBIOpenUp.GameMode.Studio:
                         //Studio長按時調整狀態而不變人
-                        KK_FBIOpenUp.SetEnabled();
+                        FBIOpenUp.SetEnabled();
                         if (clickDeltaTime <= 1f) {
-                            if (KK_FBIOpenUp._isenabled) {
+                            if (FBIOpenUp._isenabled) {
                                 DrawSlidePic(10);
                             } else {
-                                if (KK_FBIOpenUp.Effect_on_ABMX.Value) {
+                                if (FBIOpenUp.Effect_on_ABMX.Value) {
                                     DrawSlidePic(2);
                                 } else {
                                     DrawSlidePic(20);
@@ -234,7 +237,7 @@ namespace KK_FBIOpenUp {
                             }
                             ChangeRedBagBtn(redBagBtn);
                         } else {
-                            if (KK_FBIOpenUp._isenabled) {
+                            if (FBIOpenUp._isenabled) {
                                 DrawSlidePic(1);
                             } else {
                                 DrawSlidePic(2);
@@ -257,14 +260,14 @@ namespace KK_FBIOpenUp {
         /// <param name="sceneName">Scene名稱</param>
         private static void DrawSlidePic(int _step) {
             GameObject parent;
-            switch (KK_FBIOpenUp.nowGameMode) {
-                case KK_FBIOpenUp.GameMode.Studio:
+            switch (FBIOpenUp.nowGameMode) {
+                case FBIOpenUp.GameMode.Studio:
                     parent = GameObject.Find("StudioScene/Canvas Main Menu");
                     break;
-                case KK_FBIOpenUp.GameMode.MainGame:
+                case FBIOpenUp.GameMode.MainGame:
                     parent = GameObject.Find("ActionScene/UI/ActionMenuCanvas/ModeAnimation");
                     break;
-                case KK_FBIOpenUp.GameMode.Maker:
+                case FBIOpenUp.GameMode.Maker:
                     parent = GameObject.Find("CustomScene/CustomRoot/FrontUIGroup/CustomUIGroup/CvsCoordinateType/redBagBtn");
                     break;
                 //FreeH死都不成功，放棄
@@ -287,7 +290,7 @@ namespace KK_FBIOpenUp {
             shiftPicture = new ShiftPicture();
 
             //如果影片不存在，用熊吉代替
-            bool noVideoFallback = _step == 20 && null == KK_FBIOpenUp.videoPath;
+            bool noVideoFallback = _step == 20 && null == FBIOpenUp.videoPath;
             if (noVideoFallback) {
                 _step = 2;
             }
@@ -296,21 +299,21 @@ namespace KK_FBIOpenUp {
                 case 1:
                     //小學生真是太棒了
                     shiftPicture.type = ShiftPicture.Type.picture;
-                    shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, ImageHelper.LoadNewSprite("KK_FBIOpenUp.Resources.saikodaze.jpg", 800, 657));
+                    shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, ImageHelper.LoadNewSprite("FBIOpenUp.Resources.saikodaze.jpg", 800, 657));
                     shiftPicture.image.rectTransform.sizeDelta = new Vector2(Screen.height / 1.5f * 800 / 657, Screen.height / 1.5f);
                     Right2Center();
                     break;
                 case 2:
                     //熊吉逮捕
                     shiftPicture.type = ShiftPicture.Type.picture;
-                    shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, ImageHelper.LoadNewSprite("KK_FBIOpenUp.Resources.Kumakichi.jpg", 640, 480));
+                    shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, ImageHelper.LoadNewSprite("FBIOpenUp.Resources.Kumakichi.jpg", 640, 480));
                     shiftPicture.image.rectTransform.sizeDelta = new Vector2(Screen.height / 1.5f * 640 / 480, Screen.height / 1.5f);
                     Left2Center();
                     break;
                 case 10:
                     //幼女退光線
                     shiftPicture.type = ShiftPicture.Type.picture;
-                    shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, ImageHelper.LoadNewSprite("KK_FBIOpenUp.Resources.beam.png", 700, 700));
+                    shiftPicture.image = UIUtility.CreateImage("", gameObject.transform, ImageHelper.LoadNewSprite("FBIOpenUp.Resources.beam.png", 700, 700));
                     shiftPicture.image.rectTransform.sizeDelta = new Vector2(Screen.height / 1.25f, Screen.height / 1.25f);
                     Right2Center();
                     break;
@@ -328,7 +331,7 @@ namespace KK_FBIOpenUp {
                     videoPlayer.renderMode = UnityEngine.Video.VideoRenderMode.APIOnly;
 
                     //videoPlayer.url= "../UserData/audio/FBI.mp4";
-                    videoPlayer.url = KK_FBIOpenUp.videoPath;
+                    videoPlayer.url = FBIOpenUp.videoPath;
 
                     //Set Audio Output to AudioSource
                     videoPlayer.audioOutputMode = UnityEngine.Video.VideoAudioOutputMode.AudioSource;
@@ -362,7 +365,7 @@ namespace KK_FBIOpenUp {
                         audioSource.Play();
 
                         //影片太大聲QQ
-                        audioSource.volume = KK_FBIOpenUp.videoVolume;
+                        audioSource.volume = FBIOpenUp.videoVolume;
 
                         Left2Center();
                     };
@@ -404,14 +407,14 @@ namespace KK_FBIOpenUp {
         /// <param name="goLighter">True轉亮；False轉暗</param>
         private static void ToggleFlashLight(bool goLighter) {
             intensityState = true;
-            switch (KK_FBIOpenUp.nowGameMode) {
-                case KK_FBIOpenUp.GameMode.FreeH:
+            switch (FBIOpenUp.nowGameMode) {
+                case FBIOpenUp.GameMode.FreeH:
                     Light light = Hooks.hSceneProc.lightCamera;
                     if (null != light) {
                         freeHLight = light;
                     } else {
                         Logger.LogError("Get Camera Light FAILED");
-                        KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.MainGame;
+                        FBIOpenUp.nowGameMode = FBIOpenUp.GameMode.MainGame;
                         goto default;
                     }
                     if (goLighter) {
@@ -422,7 +425,7 @@ namespace KK_FBIOpenUp {
                         intensityFrom = freeHLight.intensity;
                     }
                     break;
-                case KK_FBIOpenUp.GameMode.Maker:
+                case FBIOpenUp.GameMode.Maker:
                     Light light1 = ((UnityEngine.GameObject)Singleton<ChaCustom.CustomControl>.Instance.cmpDrawCtrl.GetField("objLight")).GetComponent<UnityEngine.Light>();
                     if (null != light1) {
                         makerLight = light1;
@@ -438,7 +441,7 @@ namespace KK_FBIOpenUp {
                         intensityFrom = makerLight.intensity;
                     }
                     break;
-                case KK_FBIOpenUp.GameMode.Studio:
+                case FBIOpenUp.GameMode.Studio:
                     if (null == studioLightInfo || null == studioLightCalc) {
                         studioLightCalc = Singleton<Studio.Studio>.Instance.cameraLightCtrl.GetField("lightChara");
                         studioLightInfo = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
@@ -487,15 +490,15 @@ namespace KK_FBIOpenUp {
 
         private static void StepLightAndPlay() {
             if (intensityState && reflectCount < 60) {
-                switch (KK_FBIOpenUp.nowGameMode) {
-                    case KK_FBIOpenUp.GameMode.Studio:
+                switch (FBIOpenUp.nowGameMode) {
+                    case FBIOpenUp.GameMode.Studio:
                         studioLightInfo.intensity += (intensityTo - intensityFrom) / 60;
                         studioLightCalc.Invoke("Reflect");
                         break;
-                    case KK_FBIOpenUp.GameMode.FreeH:
+                    case FBIOpenUp.GameMode.FreeH:
                         freeHLight.intensity += (intensityTo - intensityFrom) / 60;
                         break;
-                    case KK_FBIOpenUp.GameMode.Maker:
+                    case FBIOpenUp.GameMode.Maker:
                         makerLight.intensity += (intensityTo - intensityFrom) / 60;
                         break;
                 }

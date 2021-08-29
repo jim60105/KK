@@ -5,7 +5,7 @@ using Studio;
 using System;
 using System.Linq;
 
-namespace KK_FBIOpenUp {
+namespace FBIOpenUp {
     internal static class Hooks {
         #region 繪製圖標
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "InitCharaList")]
@@ -13,50 +13,50 @@ namespace KK_FBIOpenUp {
             bool flag = string.Equals(__instance.name, "00_Female") == (SampleChara.chaFile.parameter.sex == 1);
             if (KoikatuHelper.TryGetPluginInstance("com.jim60105.kk.studioallgirlsplugin")) { flag = true; }
             if (flag && null == UnityEngine.GameObject.Find($"StudioScene/Canvas Main Menu/01_Add/{__instance.name}/redBagBtn")) {
-                KK_FBIOpenUp.nowGameMode = KK_FBIOpenUp.GameMode.Studio;
-                UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.Studio, __instance);
+                FBIOpenUp.nowGameMode = FBIOpenUp.GameMode.Studio;
+                UnityStuff.DrawRedBagBtn(FBIOpenUp.GameMode.Studio, __instance);
             }
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(CustomControl), "Start")]
         public static void StartPostfix_Maker() {
-            UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.Maker);
+            UnityStuff.DrawRedBagBtn(FBIOpenUp.GameMode.Maker);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(ActionScene), "Start")]
         public static void StartPostfix_MainGame() {
-            UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.MainGame);
+            UnityStuff.DrawRedBagBtn(FBIOpenUp.GameMode.MainGame);
         }
 
         internal static HSceneProc hSceneProc;
         [HarmonyPostfix, HarmonyPatch(typeof(HSceneProc), "Start")]
         public static void StartPostfix_FreeH(HSceneProc __instance) {
             hSceneProc = __instance;
-            UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.FreeH, 1);
-            UnityStuff.DrawRedBagBtn(KK_FBIOpenUp.GameMode.FreeH, 2);
+            UnityStuff.DrawRedBagBtn(FBIOpenUp.GameMode.FreeH, 1);
+            UnityStuff.DrawRedBagBtn(FBIOpenUp.GameMode.FreeH, 2);
         }
         #endregion
 
         #region Patch換人
         [HarmonyPostfix, HarmonyPatch(typeof(AddObjectFemale), "Add", new Type[] { typeof(ChaControl), typeof(OICharInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject), typeof(bool), typeof(int) })]
         public static void AddPostfix(ChaControl _female, OICharInfo _info) {
-            if (KK_FBIOpenUp._isenabled) {
+            if (FBIOpenUp._isenabled) {
                 Patches.ChangeChara(_female);
             }
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(OCIChar), "ChangeChara")]
         public static void ChangeCharaPostfix(OCIChar __instance) {
-            if (KK_FBIOpenUp._isenabled) {
+            if (FBIOpenUp._isenabled) {
                 Patches.ChangeChara(__instance.charInfo);
             }
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(ChaFileControl), "LoadFileLimited", new Type[] { typeof(string), typeof(byte), typeof(bool), typeof(bool), typeof(bool), typeof(bool), typeof(bool) })]
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaFileControl), "LoadFileLimited", new Type[] { typeof(string), typeof(byte), typeof(bool), typeof(bool), typeof(bool), typeof(bool), typeof(bool), typeof(bool) })]
         public static void LoadFileLimitedPostfix(ChaFileControl __instance) {
-            if (KK_FBIOpenUp._isenabled) {
-                if (KK_FBIOpenUp.nowGameMode == KK_FBIOpenUp.GameMode.Studio) {
-                    ChaControl chaCtrl = Singleton<Manager.Character>.Instance.dictEntryChara.Where((x) => x.Value.chaFile == __instance).Single().Value;
+            if (FBIOpenUp._isenabled) {
+                if (FBIOpenUp.nowGameMode == FBIOpenUp.GameMode.Studio) {
+                    ChaControl chaCtrl = Manager.Character.dictEntryChara.Where((x) => x.Value.chaFile == __instance).Single().Value;
                     if (null != chaCtrl) Patches.ChangeChara(chaCtrl);
                 } else {
                     Patches.ChangeChara(Singleton<CustomBase>.Instance.chaCtrl);
@@ -93,7 +93,7 @@ namespace KK_FBIOpenUp {
             if (flag) {
                 Patches.chaFileCustomDict.Clear();
             }
-            KK_FBIOpenUp.Logger.LogDebug($"Set Init: {flag}");
+            FBIOpenUp.Logger.LogDebug($"Set Init: {flag}");
         }
         #endregion
     }
