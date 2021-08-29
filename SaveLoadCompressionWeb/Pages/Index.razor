@@ -258,10 +258,10 @@
         logger.LogDebug("Load background image");
         var watermark = new byte[] { };
         if (zip) {
-            watermark = Extension.ImageHelper.LoadDllResourceToBytes($"KK_SaveLoadCompression.Resources.zip_watermark.png");
+            watermark = Extension.ImageHelper.LoadDllResourceToBytes($"SaveLoadCompression.Resources.zip_watermark.png");
             logger.LogDebug("Load zip watermark image");
         } else {
-            watermark = Extension.ImageHelper.LoadDllResourceToBytes($"KK_SaveLoadCompression.Resources.unzip_watermark.png");
+            watermark = Extension.ImageHelper.LoadDllResourceToBytes($"SaveLoadCompression.Resources.unzip_watermark.png");
             logger.LogDebug("Load unzip watermark image");
         }
         string watermark_base64URI = $"data:image;base64,{System.Convert.ToBase64String(watermark)}";
