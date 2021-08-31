@@ -219,9 +219,14 @@ namespace KK_CoordinateLoadOption {
         }
 
         public void SetToExtData(ChaControl chaCtrl, Dictionary<int, Dictionary<int, object>> allExtData) {
-            if (null != chaCtrl) {
-                PluginData data = new PluginData();
-                data.data.Add("HairAccessories", MessagePackSerializer.Serialize(allExtData));
+            if (null != chaCtrl)
+            {
+                PluginData data = null;
+                if (null != allExtData)
+                {
+                    data = new PluginData();
+                    data.data.Add("HairAccessories", MessagePackSerializer.Serialize(allExtData));
+                }
                 ExtendedSave.SetExtendedDataById(chaCtrl.chaFile, GUID, data);
             }
         }
