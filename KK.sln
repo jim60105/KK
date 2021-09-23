@@ -33,7 +33,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PNGCaptureSizeModifier", "P
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioChikaReplacer", "StudioChikaReplacer\KK_StudioChikaReplacer.csproj", "{3438C334-6A7E-47CC-B243-0A3410FDC44F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioCharaLightLinkedToCamera", "StudioCharaLightLinkedToCamera\KK_StudioCharaLightLinkedToCamera.csproj", "{82C2994C-24EB-4DF4-A367-2F33EC849978}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StudioCharaLightLinkedToCamera", "StudioCharaLightLinkedToCamera\StudioCharaLightLinkedToCamera.csproj", "{82C2994C-24EB-4DF4-A367-2F33EC849978}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioDualScreen", "StudioDualScreen\KK_StudioDualScreen.csproj", "{E70886B9-0AEC-444B-90A1-95E47C4FE03F}"
 EndProject
@@ -62,6 +62,7 @@ Global
 		Extension\Extension.projitems*{51758989-959a-4a3e-b70c-ce4792c6d848}*SharedItemsImports = 5
 		Extension\Extension.projitems*{661b77ce-d337-49d2-a359-ad85e68986b2}*SharedItemsImports = 5
 		Extension\Extension.projitems*{7aac6224-8071-4198-818b-5f18a6fbc4b4}*SharedItemsImports = 5
+		Extension\Extension.projitems*{82c2994c-24eb-4df4-a367-2f33ec849978}*SharedItemsImports = 5
 		Extension\Extension.projitems*{85268fd6-a1fd-41aa-84d9-71f18815c034}*SharedItemsImports = 5
 		Extension\Extension.projitems*{a5f430a2-ae7a-4bcd-a380-0f73add7a4a3}*SharedItemsImports = 5
 		Extension\Extension.projitems*{eaa640ea-ac91-41c6-a655-4ab5a364986d}*SharedItemsImports = 5

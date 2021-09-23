@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace KK_StudioCharaLightLinkedToCamera.Properties {
+namespace StudioCharaLightLinkedToCamera.Properties {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace KK_StudioCharaLightLinkedToCamera.Properties {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("KK_StudioCharaLightLinkedToCamera.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("StudioCharaLightLinkedToCamera.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

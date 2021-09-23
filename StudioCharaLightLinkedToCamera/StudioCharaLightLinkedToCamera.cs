@@ -28,15 +28,15 @@ using UILib;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace KK_StudioCharaLightLinkedToCamera {
+namespace StudioCharaLightLinkedToCamera {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
     [BepInDependency("com.bepis.bepinex.extendedsave")]
-    public class KK_StudioCharaLightLinkedToCamera : BaseUnityPlugin {
+    public class StudioCharaLightLinkedToCamera : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Light Linked To Camera";
-        internal const string GUID = "com.jim60105.kk.studiocharalightlinkedtocamera";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.7";
+        internal const string GUID = "com.jim60105.kks.studiocharalightlinkedtocamera";
+        internal const string PLUGIN_VERSION = "21.09.24.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -52,7 +52,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
     }
 
     class Patches {
-        private static readonly ManualLogSource Logger = KK_StudioCharaLightLinkedToCamera.Logger;
+        private static readonly ManualLogSource Logger = StudioCharaLightLinkedToCamera.Logger;
         public static bool Locked { get; private set; } = false;
         private static readonly object studioLightCalc = Singleton<Studio.Studio>.Instance.cameraLightCtrl.GetField("lightChara");
         private static Studio.CameraLightCtrl.LightInfo chaLight = Singleton<Studio.Studio>.Instance.sceneInfo.charaLight;
@@ -74,7 +74,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
             LockBtn.name = "Chara Light Lock Btn";
             LockBtn.transform.localPosition = new Vector3(157.5f, -59f, 0);
             LockBtn.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(157.5f, -82f), new Vector2(180.5f, -59));
-            LockBtn.GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("KK_StudioCharaLightLinkedToCamera.Resources.lock_open.png", 36, 36);
+            LockBtn.GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("StudioCharaLightLinkedToCamera.Resources.lock_open.png", 36, 36);
             LockBtn.GetComponent<Button>().onClick.RemoveAllListeners();
             LockBtn.GetComponent<Button>().interactable = true;
 
@@ -94,7 +94,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
             }
 
             if (Locked) {
-                LockBtn.GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("KK_StudioCharaLightLinkedToCamera.Resources.lock.png", 36, 36);
+                LockBtn.GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("StudioCharaLightLinkedToCamera.Resources.lock.png", 36, 36);
 
                 //Set value for calc
                 Vector3 ligLocal = (studioLightCalc.GetField("light") as Light).transform.localEulerAngles;
@@ -104,7 +104,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
                     cameraControl.cameraAngle
                 );
             } else {
-                LockBtn.GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("KK_StudioCharaLightLinkedToCamera.Resources.lock_open.png", 36, 36);
+                LockBtn.GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("StudioCharaLightLinkedToCamera.Resources.lock_open.png", 36, 36);
             }
 
             Logger.LogDebug("Locked status: " + Locked);
@@ -121,7 +121,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
         #region SaveAndLoad
         public static void RegisterSaveEvent() {
             ExtendedSave.SceneBeingSaved += path => {
-                ExtendedSave.SetSceneExtendedDataById(KK_StudioCharaLightLinkedToCamera.GUID, new PluginData() {
+                ExtendedSave.SetSceneExtendedDataById(StudioCharaLightLinkedToCamera.GUID, new PluginData() {
                     data = new System.Collections.Generic.Dictionary<string, object> {
                         { "locked", Locked ? "true" : "false" },
                         { "attachedLightAngle", new System.Collections.Generic.Dictionary<string,float>{
@@ -138,7 +138,7 @@ namespace KK_StudioCharaLightLinkedToCamera {
                 Logger.LogDebug("Scene Saved");
             };
             ExtendedSave.SceneBeingLoaded += path => {
-                PluginData pd = ExtendedSave.GetSceneExtendedDataById(KK_StudioCharaLightLinkedToCamera.GUID);
+                PluginData pd = ExtendedSave.GetSceneExtendedDataById(StudioCharaLightLinkedToCamera.GUID);
                 if (null != pd && pd.version == 3 &&
                     pd.data.TryGetValue("locked", out object l) && l is string boolstring &&
                     pd.data.TryGetValue("attachedLightAngle", out object lig) &&
