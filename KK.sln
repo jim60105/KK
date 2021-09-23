@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.28803.352
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioSimpleColorOnGirls", "StudioSimpleColorOnGirls\KK_StudioSimpleColorOnGirls.csproj", "{670A8493-10C7-4071-8FC8-A49ACE4CCFDB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StudioSimpleColorOnGirls", "StudioSimpleColorOnGirls\StudioSimpleColorOnGirls.csproj", "{670A8493-10C7-4071-8FC8-A49ACE4CCFDB}"
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Extension", "Extension\Extension.shproj", "{0646BE09-F599-4EDB-B115-DE4043C8D3BE}"
 EndProject
@@ -61,6 +61,7 @@ Global
 		Extension\Extension.projitems*{2d638e6e-8295-40d9-b76e-6f5a06779c6b}*SharedItemsImports = 5
 		Extension\Extension.projitems*{51758989-959a-4a3e-b70c-ce4792c6d848}*SharedItemsImports = 5
 		Extension\Extension.projitems*{661b77ce-d337-49d2-a359-ad85e68986b2}*SharedItemsImports = 5
+		Extension\Extension.projitems*{670a8493-10c7-4071-8fc8-a49ace4ccfdb}*SharedItemsImports = 5
 		Extension\Extension.projitems*{7aac6224-8071-4198-818b-5f18a6fbc4b4}*SharedItemsImports = 5
 		Extension\Extension.projitems*{82c2994c-24eb-4df4-a367-2f33ec849978}*SharedItemsImports = 5
 		Extension\Extension.projitems*{85268fd6-a1fd-41aa-84d9-71f18815c034}*SharedItemsImports = 5

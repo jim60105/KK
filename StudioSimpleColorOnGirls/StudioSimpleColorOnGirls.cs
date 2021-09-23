@@ -31,14 +31,14 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-namespace KK_StudioSimpleColorOnGirls {
+namespace StudioSimpleColorOnGirls {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
-    public class KK_StudioSimpleColorOnGirls : BaseUnityPlugin {
+    public class StudioSimpleColorOnGirls : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Simple Color On Girls";
-        internal const string GUID = "com.jim60105.kk.studiosimplecolorongirls";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
+        internal const string GUID = "com.jim60105.kks.studiosimplecolorongirls";
+        internal const string PLUGIN_VERSION = "21.09.24.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.0";
 
         public static ConfigEntry<bool> Force_Reset_Color_Girl { get; private set; }
         public static ConfigEntry<bool> Force_Reset_Color_Boy { get; private set; }
@@ -124,14 +124,14 @@ namespace KK_StudioSimpleColorOnGirls {
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(AddObjectFemale), "Add", new Type[] { typeof(ChaControl), typeof(OICharInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject), typeof(bool), typeof(int) })]
-        public static void AddPostFix(ref OCICharFemale __result, OICharInfo _info) 
-            => AddPost(__result, _info, KK_StudioSimpleColorOnGirls.Force_Reset_Color_Girl.Value);
+        public static void AddPostFix(ref OCICharFemale __result, OICharInfo _info)
+            => AddPost(__result, _info, StudioSimpleColorOnGirls.Force_Reset_Color_Girl.Value);
         [HarmonyPostfix, HarmonyPatch(typeof(AddObjectMale), "Add", new Type[] { typeof(ChaControl), typeof(OICharInfo), typeof(ObjectCtrlInfo), typeof(TreeNodeObject), typeof(bool), typeof(int) })]
         public static void AddPostFix2(ref OCICharMale __result, OICharInfo _info)
-            => AddPost(__result, _info, KK_StudioSimpleColorOnGirls.Force_Reset_Color_Boy.Value);
+            => AddPost(__result, _info, StudioSimpleColorOnGirls.Force_Reset_Color_Boy.Value);
         private static void AddPost(OCIChar __result, OICharInfo _info, bool enableReset) {
             if (enableReset) {
-                _info.simpleColor = KK_StudioSimpleColorOnGirls.Default_Color.Value;
+                _info.simpleColor = StudioSimpleColorOnGirls.Default_Color.Value;
             }
             __result.charInfo.fileStatus.visibleSimple = _info.visibleSimple;
             __result.charInfo.ChangeSimpleBodyColor(_info.simpleColor);
@@ -139,15 +139,15 @@ namespace KK_StudioSimpleColorOnGirls {
 
         [HarmonyPostfix, HarmonyPatch(typeof(OICharInfo), "Load", new Type[] { typeof(BinaryReader), typeof(Version), typeof(bool), typeof(bool) })]
         public static void LoadPostFix(OICharInfo __instance) {
-            if ((__instance.sex == 0 && KK_StudioSimpleColorOnGirls.Force_Reset_Color_Boy.Value) ||
-            (__instance.sex == 1 && KK_StudioSimpleColorOnGirls.Force_Reset_Color_Girl.Value)) {
-                __instance.simpleColor = KK_StudioSimpleColorOnGirls.Default_Color.Value;
+            if ((__instance.sex == 0 && StudioSimpleColorOnGirls.Force_Reset_Color_Boy.Value) ||
+            (__instance.sex == 1 && StudioSimpleColorOnGirls.Force_Reset_Color_Girl.Value)) {
+                __instance.simpleColor = StudioSimpleColorOnGirls.Default_Color.Value;
             }
         }
         #endregion
 
         //加載身體時，從male assets中加載SimpleBody的Unity GameObjects
-        [HarmonyPostfix, HarmonyPatch(typeof(ChaReference), "CreateReferenceInfo")]
+        [HarmonyPostfix, HarmonyPatch(typeof(ChaReference), "CreateReferenceInfo", new Type[] { typeof(ulong), typeof(GameObject) })]
         public static void CreateReferenceInfoPostfix(object __instance, ulong flags, GameObject objRef) {
             if (flags >= 1UL && flags <= 15UL && (int)(flags - 1UL) == 2) {
                 Dictionary<ChaReference.RefObjKey, GameObject> dictRefObj;
@@ -180,7 +180,7 @@ namespace KK_StudioSimpleColorOnGirls {
             GameObject simpleBodyGameObject = null;
             try {
                 //不能緩存後拷貝，必須每次都LoadAsset來用
-                simpleBodyGameObject = CommonLib.LoadAsset<GameObject>("chara/oo_base.unity3d", "p_cm_body_00", true, Singleton<Manager.Character>.Instance.mainManifestName);
+                simpleBodyGameObject = CommonLib.LoadAsset<GameObject>("chara/oo_base.unity3d", "p_cm_body_00", true, Manager.Character.mainManifestName);
                 simpleBodyGameObject.SetActive(false);
                 FindAssist findAssist = new FindAssist();
                 findAssist.Initialize(simpleBodyGameObject.transform);
