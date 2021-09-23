@@ -22,21 +22,27 @@ using BepInEx.Configuration;
 using BepInEx.Logging;
 using Extension;
 using HarmonyLib;
+using Manager;
 using Studio;
+using System.Collections;
+using UnityEngine;
 
-namespace KK_StudioAutoCloseLoadingSceneWindow {
+namespace StudioAutoCloseLoadingSceneWindow
+{
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
-    public class KK_StudioAutoCloseLoadingSceneWindow : BaseUnityPlugin {
+    public class StudioAutoCloseLoadingSceneWindow : BaseUnityPlugin
+    {
         internal const string PLUGIN_NAME = "Studio Auto Close Loading Scene Window";
-        internal const string GUID = "com.jim60105.kk.studioautocloseloadingscenewindow";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.4";
+        internal const string GUID = "com.jim60105.kks.studioautocloseloadingscenewindow";
+        internal const string PLUGIN_VERSION = "21.09.23.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
 
         public static ConfigEntry<bool> EnableOnLoad { get; private set; }
         public static ConfigEntry<bool> EnableOnImport { get; private set; }
 
         internal static new ManualLogSource Logger;
-        public void Awake() {
+        public void Awake()
+        {
             Logger = base.Logger;
             Extension.Logger.logger = Logger;
             Harmony.CreateAndPatchAll(typeof(Patches));
@@ -46,32 +52,41 @@ namespace KK_StudioAutoCloseLoadingSceneWindow {
         }
     }
 
-    class Patches {
+    class Patches
+    {
         private static bool isLoading = false;
         private static SceneLoadScene sceneLoadScene;
 
         [HarmonyPrefix, HarmonyPatch(typeof(SceneLoadScene), "OnClickLoad")]
         public static void OnClickLoadPrefix(SceneLoadScene __instance)
-            => StartLoad(KK_StudioAutoCloseLoadingSceneWindow.EnableOnLoad.Value, __instance);
+            => StartLoad(StudioAutoCloseLoadingSceneWindow.EnableOnLoad.Value, __instance);
 
         [HarmonyPrefix, HarmonyPatch(typeof(SceneLoadScene), "OnClickImport")]
         public static void OnClickImportPrefix(SceneLoadScene __instance)
-            => StartLoad(KK_StudioAutoCloseLoadingSceneWindow.EnableOnImport.Value, __instance);
+            => StartLoad(StudioAutoCloseLoadingSceneWindow.EnableOnImport.Value, __instance);
 
-        private static void StartLoad(bool doLoad, SceneLoadScene __instance) {
+        private static void StartLoad(bool doLoad, SceneLoadScene __instance)
+        {
             if (!doLoad) return;
 
             isLoading = true;
             sceneLoadScene = __instance;
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(Manager.Scene), nameof(Manager.Scene.LoadStart))]
-        public static void LoadReservePostfix(Manager.Scene.Data data) {
-            if (isLoading && data.levelName == "StudioNotification") {
-                isLoading = false;
-                sceneLoadScene.Invoke("OnClickClose");
-                //KK_StudioAutoCloseLoadingSceneWindow.Logger.LogDebug("Auto close load scene window");
+        [HarmonyPostfix, HarmonyPatch(typeof(Scene), "LoadStart")]
+        public static void LoadStartPostfix(Scene.Data data)
+        {
+            if (isLoading && data.levelName == "StudioNotification")
+            {
+                _ = sceneLoadScene.StartCoroutine(UnloadLoadScene());
             }
+        }
+
+        private static IEnumerator UnloadLoadScene()
+        {
+            // 原本的彈窗動畫是1秒，多加0.5秒以確保它回到LoadScene
+            yield return new WaitForSeconds(1.5f);
+            _ = sceneLoadScene.Invoke("OnClickClose");
         }
     }
 }
