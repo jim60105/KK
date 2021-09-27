@@ -34,8 +34,8 @@ namespace StudioAutoCloseLoadingSceneWindow
     {
         internal const string PLUGIN_NAME = "Studio Auto Close Loading Scene Window";
         internal const string GUID = "com.jim60105.kks.studioautocloseloadingscenewindow";
-        internal const string PLUGIN_VERSION = "21.09.23.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
+        internal const string PLUGIN_VERSION = "21.09.27.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.1";
 
         public static ConfigEntry<bool> EnableOnLoad { get; private set; }
         public static ConfigEntry<bool> EnableOnImport { get; private set; }
@@ -79,6 +79,7 @@ namespace StudioAutoCloseLoadingSceneWindow
             if (isLoading && data.levelName == "StudioNotification")
             {
                 _ = sceneLoadScene.StartCoroutine(UnloadLoadScene());
+                isLoading = false;
             }
         }
 
