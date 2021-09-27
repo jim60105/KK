@@ -27,15 +27,15 @@ using System.Reflection.Emit;
 using UniRx;
 using UnityEngine.UI;
 
-namespace KK_StudioTransgenderLoading {
+namespace StudioTransgenderLoading {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
     [BepInIncompatibility("com.jim60105.kk.studioallgirlsplugin")]
-    public class KK_StudioTransgenderLoading : BaseUnityPlugin {
+    public class StudioTransgenderLoading : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Transgender Loading";
-        internal const string GUID = "com.jim60105.kk.studiotransgenderloading";
-        internal const string PLUGIN_VERSION = "20.08.30.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.2";
+        internal const string GUID = "com.jim60105.kks.studiotransgenderloading";
+        internal const string PLUGIN_VERSION = "21.09.27.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
 
         public void Awake() {
             Extension.Logger.logger = Logger;
@@ -117,18 +117,16 @@ namespace KK_StudioTransgenderLoading {
         public static IEnumerable<CodeInstruction> OnSelectCharaTranspiler(IEnumerable<CodeInstruction> instructions) {
             List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
             for (int i = 0; i < codes.Count; i++) {
-                if (codes[i].opcode == OpCodes.Brfalse) //Line 25
+                if (codes[i].opcode == OpCodes.Brtrue) //Line 23
                 {
-                    i++; //Line 26
-                    codes.Insert(i, new CodeInstruction(OpCodes.Ldc_I4_1)); //Insert at Line 26
-
-                    for (int j = i; j < codes.Count; j++) {
+                    for (int j = i+1; j < codes.Count; j++) {
                         if (codes[j].opcode == OpCodes.Ceq) {
-                            j++;
-                            codes.RemoveRange(i + 1, j - i - 1);  //Remove from Line 26+1(ldloc.1) to Line 31+1(ceq)
+                            codes.RemoveRange(i - 1, j - i + 2);  //Remove from Line 23(brtrue.s) to Line 31(ceq)
                             break;
                         }
                     }
+
+                    codes.Insert(i - 1, new CodeInstruction(OpCodes.Ldc_I4_1)); //Insert at Line 23
                     break;
                 }
             }
@@ -220,7 +218,7 @@ namespace KK_StudioTransgenderLoading {
         public static IEnumerable<CodeInstruction> OnDeleteTranspiler(IEnumerable<CodeInstruction> instructions) {
             List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
             for (int i = 0; i < codes.Count; i++) {
-                if (codes[i].opcode == OpCodes.Stloc_0 && codes[i - 1].opcode == OpCodes.Isinst) //Line 30
+                if (codes[i].opcode == OpCodes.Stloc_0 && codes[i - 1].opcode == OpCodes.Isinst) //Line 8
                 {
                     codes.RemoveRange(i, 8);
                     codes[i].opcode = OpCodes.Brtrue_S;

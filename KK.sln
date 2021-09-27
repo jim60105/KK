@@ -45,7 +45,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KK_Sample", "Sample\KK_Samp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoordinateCapturePoseUnlock", "CoordinateCapturePoseUnlock\CoordinateCapturePoseUnlock.csproj", "{7AAC6224-8071-4198-818B-5F18A6FBC4B4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioTransgenderLoading", "StudioTransgenderLoading\KK_StudioTransgenderLoading.csproj", "{AC89E605-C385-4E44-B781-5EE60C7BC70A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StudioTransgenderLoading", "StudioTransgenderLoading\StudioTransgenderLoading.csproj", "{AC89E605-C385-4E44-B781-5EE60C7BC70A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CoordinateLoadOption", "CoordinateLoadOption\CoordinateLoadOption.csproj", "{85268FD6-A1FD-41AA-84D9-71F18815C034}"
 EndProject
@@ -66,6 +66,7 @@ Global
 		Extension\Extension.projitems*{82c2994c-24eb-4df4-a367-2f33ec849978}*SharedItemsImports = 5
 		Extension\Extension.projitems*{85268fd6-a1fd-41aa-84d9-71f18815c034}*SharedItemsImports = 5
 		Extension\Extension.projitems*{a5f430a2-ae7a-4bcd-a380-0f73add7a4a3}*SharedItemsImports = 5
+		Extension\Extension.projitems*{ac89e605-c385-4e44-b781-5ee60c7bc70a}*SharedItemsImports = 5
 		Extension\Extension.projitems*{eaa640ea-ac91-41c6-a655-4ab5a364986d}*SharedItemsImports = 5
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
