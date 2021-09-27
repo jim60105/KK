@@ -14,7 +14,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioCharaOnlyLoadBody"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UIUtility", "UIUtility\UIUtility.csproj", "{5FF39402-D216-42DE-9AAA-BA34103F1786}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioReflectFKFix", "StudioReflectFKFix\KK_StudioReflectFKFix.csproj", "{0C47EBAA-B09C-44E1-B114-5337B8BEBA79}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StudioReflectFKFix", "StudioReflectFKFix\StudioReflectFKFix.csproj", "{0C47EBAA-B09C-44E1-B114-5337B8BEBA79}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioTextPlugin", "StudioTextPlugin\KK_StudioTextPlugin.csproj", "{D02E90AF-BE20-4EAE-A462-5EFDA36095A9}"
 EndProject
@@ -58,6 +58,7 @@ EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Extension\Extension.projitems*{0646be09-f599-4edb-b115-de4043c8d3be}*SharedItemsImports = 13
+		Extension\Extension.projitems*{0c47ebaa-b09c-44e1-b114-5337b8beba79}*SharedItemsImports = 5
 		Extension\Extension.projitems*{2d638e6e-8295-40d9-b76e-6f5a06779c6b}*SharedItemsImports = 5
 		Extension\Extension.projitems*{4f3e6d68-d3b2-4a0f-817a-272eaafb91aa}*SharedItemsImports = 5
 		Extension\Extension.projitems*{51758989-959a-4a3e-b70c-ce4792c6d848}*SharedItemsImports = 5

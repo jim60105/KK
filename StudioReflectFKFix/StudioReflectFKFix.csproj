@@ -22,13 +22,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>bin\x64\Release\</OutputPath>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <AssemblyName>KKS_StudioReflectFKFix</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">
@@ -39,24 +33,32 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="0Harmony">
-      <HintPath>C:\illusion\Koikatu\BepInEx\core\0Harmony.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>C:\illusion\KoikatsuSunshine\BepInEx\core\0Harmony.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>C:\illusion\Koikatu\CharaStudio_Data\Managed\Assembly-CSharp.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>C:\illusion\KoikatsuSunshine\CharaStudio_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="BepInEx">
-      <HintPath>C:\illusion\Koikatu\BepInEx\core\BepInEx.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>C:\illusion\KoikatsuSunshine\BepInEx\core\BepInEx.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>C:\illusion\Koikatu\CharaStudio_Data\Managed\UnityEngine.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>C:\illusion\KoikatsuSunshine\CharaStudio_Data\Managed\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>C:\illusion\KoikatsuSunshine\KoikatsuSunshine_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>C:\illusion\KoikatsuSunshine\KoikatsuSunshine_Data\Managed\UnityEngine.ImageConversionModule.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>C:\illusion\Koikatu\CharaStudio_Data\Managed\UnityEngine.UI.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>C:\illusion\KoikatsuSunshine\CharaStudio_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>

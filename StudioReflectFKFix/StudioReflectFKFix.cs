@@ -22,18 +22,19 @@ using BepInEx.Logging;
 using Extension;
 using HarmonyLib;
 using Studio;
+using System;
 using UILib;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace KK_StudioReflectFKFix {
+namespace StudioReflectFKFix {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
-    public class KK_StudioReflectFKFix : BaseUnityPlugin {
+    public class StudioReflectFKFix : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Reflect FK Fix";
-        internal const string GUID = "com.jim60105.kk.studioreflectfkfix";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-		internal const string PLUGIN_RELEASE_VERSION = "1.0.4";
+        internal const string GUID = "com.jim60105.kks.studioreflectfkfix";
+        internal const string PLUGIN_VERSION = "21.09.28.0";
+		internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -60,7 +61,7 @@ namespace KK_StudioReflectFKFix {
         //    Skirt = 1024
         //}
 
-        [HarmonyPostfix, HarmonyPatch(typeof(MPCharCtrl), "Awake")]
+        [HarmonyPostfix, HarmonyPatch(typeof(MPCharCtrl), "Awake", new Type[] { })]
         public static void AwakePostfix(MPCharCtrl __instance) {
             ((Button)__instance.GetField("ikInfo").GetField("buttonReflectFK")).onClick.RemoveAllListeners();
             ((Button)__instance.GetField("ikInfo").GetField("buttonReflectFK")).onClick.AddListener(delegate () {
@@ -71,7 +72,7 @@ namespace KK_StudioReflectFKFix {
             ((Button[])__instance.GetField("fkInfo").GetField("buttonAnimeSingle"))[1].onClick.AddListener(delegate () {
                 __instance.Invoke("CopyBoneFK", new object[] { OIBoneInfo.BoneGroup.Neck });
             });
-            //KK_StudioReflectFKFix.Logger.LogDebug("FK Fix Finish");
+            //Extension.Logger.LogDebug("FK Fix Finish");
             InitBtn(__instance);
         }
 
@@ -85,14 +86,14 @@ namespace KK_StudioReflectFKFix {
             btn.transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -117), new Vector2(191, -95));
             btn.GetComponent<Button>().onClick.RemoveAllListeners();
             btn.GetComponent<Button>().onClick.SetPersistentListenerState(0, UnityEngine.Events.UnityEventCallState.Off);
-            btn.GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("KK_StudioReflectFKFix.Resources.CopyFKNeck.png", 191, 22);
+            btn.GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("StudioReflectFKFix.Resources.CopyFKNeck.png", 191, 22);
             btn.GetComponent<Button>().interactable = true;
 
             btn.GetComponent<Button>().onClick.AddListener(() => {
                 __instance.Invoke("CopyBoneFK", new object[] { OIBoneInfo.BoneGroup.Neck });
             });
 
-            KK_StudioReflectFKFix.Logger.LogDebug("Draw Button Finish");
+            Extension.Logger.LogDebug("Draw Button Finish");
         }
     }
 }

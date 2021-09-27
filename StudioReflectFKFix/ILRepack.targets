@@ -1,15 +1,17 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <Target Name="ILRepacker" AfterTargets="Build;Rebuild" Condition="'$(Configuration)' == 'Release'">
+    <Target Name="ILRepacker" AfterTargets="Build;Rebuild">
 
     <ItemGroup>
         <InputAssemblies Include="$(OutputPath)\*.dll" />
+        <InputAssemblies Include="$(OutputPath)\*\*.dll" />
     </ItemGroup>
 
     <ILRepack
       Parallel="true"
       InputAssemblies="@(InputAssemblies)"
       TargetKind="Dll"
+      AttributeFile="$(OutputPath)\KKS_StudioReflectFKFix.dll"
       OutputFile="$(BaseOutputPath)\$(AssemblyName).dll"
       Wildcards="true"
       LibraryPath="C:\illusion\Koikatu\BepInEx\core;C:\illusion\KoikatsuSunshine\BepInEx\core;C:\illusion\Koikatu\CharaStudio_Data\Managed;C:\illusion\KoikatsuSunshine\KoikatsuSunshine_Data\Managed"

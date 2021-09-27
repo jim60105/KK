@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace KK_StudioReflectFKFix.Properties {
+namespace StudioReflectFKFix.Properties {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace KK_StudioReflectFKFix.Properties {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("KK_StudioReflectFKFix.Properties.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("StudioReflectFKFix.Properties.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -63,29 +63,9 @@ namespace KK_StudioReflectFKFix.Properties {
         /// <summary>
         ///   查詢類型 System.Drawing.Bitmap 的當地語系化資源。
         /// </summary>
-        internal static System.Drawing.Bitmap CopyFKLeftHand {
-            get {
-                object obj = ResourceManager.GetObject("CopyFKLeftHand", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   查詢類型 System.Drawing.Bitmap 的當地語系化資源。
-        /// </summary>
         internal static System.Drawing.Bitmap CopyFKNeck {
             get {
                 object obj = ResourceManager.GetObject("CopyFKNeck", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   查詢類型 System.Drawing.Bitmap 的當地語系化資源。
-        /// </summary>
-        internal static System.Drawing.Bitmap CopyFKRightHand {
-            get {
-                object obj = ResourceManager.GetObject("CopyFKRightHand", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
