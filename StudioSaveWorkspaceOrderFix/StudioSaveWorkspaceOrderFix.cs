@@ -24,14 +24,14 @@ using HarmonyLib;
 using Studio;
 using System.Collections.Generic;
 
-namespace KK_StudioSaveWorkspaceOrderFix {
+namespace StudioSaveWorkspaceOrderFix {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
-    public class KK_StudioSaveWorkspaceOrderFix : BaseUnityPlugin {
+    public class StudioSaveWorkspaceOrderFix : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Save Workspace Order Fix";
-        internal const string GUID = "com.jim60105.kk.studiosaveworkspaceorderfix";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.1";
+        internal const string GUID = "com.jim60105.kks.studiosaveworkspaceorderfix";
+        internal const string PLUGIN_VERSION = "21.09.28.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -41,7 +41,7 @@ namespace KK_StudioSaveWorkspaceOrderFix {
         }
     }
     class Patches {
-        [HarmonyPrefix, HarmonyPatch(typeof(Studio.Studio), "SaveScene")]
+        [HarmonyPrefix, HarmonyPatch(typeof(Studio.Studio), nameof(Studio.Studio.SaveScene))]
         public static void SaveScenePrefix(Studio.Studio __instance) {
             Dictionary<int, ObjectInfo> dicObject = __instance.sceneInfo.dicObject;
             List<TreeNodeObject> treeNodeObj = __instance.treeNodeCtrl.GetField("m_TreeNodeObject") as List<TreeNodeObject>;
@@ -59,7 +59,7 @@ namespace KK_StudioSaveWorkspaceOrderFix {
                 }
             }
 
-            KK_StudioSaveWorkspaceOrderFix.Logger.LogDebug($"{dicObject.Count} -> {resultDicObject.Count}");
+            Extension.Logger.LogDebug($"{dicObject.Count} -> {resultDicObject.Count}");
 
             __instance.sceneInfo.dicObject = resultDicObject;
         }

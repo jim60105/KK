@@ -37,7 +37,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StudioCharaLightLinkedToCam
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioDualScreen", "StudioDualScreen\KK_StudioDualScreen.csproj", "{E70886B9-0AEC-444B-90A1-95E47C4FE03F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioSaveWorkspaceOrderFix", "StudioSaveWorkspaceOrderFix\KK_StudioSaveWorkspaceOrderFix.csproj", "{4F3E6D68-D3B2-4A0F-817A-272EAAFB91AA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StudioSaveWorkspaceOrderFix", "StudioSaveWorkspaceOrderFix\StudioSaveWorkspaceOrderFix.csproj", "{4F3E6D68-D3B2-4A0F-817A-272EAAFB91AA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScriptLoaderScript", "ScriptLoaderScript\ScriptLoaderScript.csproj", "{3ED29578-EACC-48A8-8130-906469544508}"
 EndProject
@@ -59,6 +59,7 @@ Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Extension\Extension.projitems*{0646be09-f599-4edb-b115-de4043c8d3be}*SharedItemsImports = 13
 		Extension\Extension.projitems*{2d638e6e-8295-40d9-b76e-6f5a06779c6b}*SharedItemsImports = 5
+		Extension\Extension.projitems*{4f3e6d68-d3b2-4a0f-817a-272eaafb91aa}*SharedItemsImports = 5
 		Extension\Extension.projitems*{51758989-959a-4a3e-b70c-ce4792c6d848}*SharedItemsImports = 5
 		Extension\Extension.projitems*{661b77ce-d337-49d2-a359-ad85e68986b2}*SharedItemsImports = 5
 		Extension\Extension.projitems*{670a8493-10c7-4071-8fc8-a49ace4ccfdb}*SharedItemsImports = 5
@@ -67,6 +68,7 @@ Global
 		Extension\Extension.projitems*{85268fd6-a1fd-41aa-84d9-71f18815c034}*SharedItemsImports = 5
 		Extension\Extension.projitems*{a5f430a2-ae7a-4bcd-a380-0f73add7a4a3}*SharedItemsImports = 5
 		Extension\Extension.projitems*{ac89e605-c385-4e44-b781-5ee60c7bc70a}*SharedItemsImports = 5
+		Extension\Extension.projitems*{b27d7aed-568b-462f-baca-ba2a19ccf9f6}*SharedItemsImports = 5
 		Extension\Extension.projitems*{eaa640ea-ac91-41c6-a655-4ab5a364986d}*SharedItemsImports = 5
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -161,8 +163,8 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {9C634E2C-489D-470F-94E5-72383D9364B5}
-		RESX_NeutralResourcesLanguage = en-US
 		RESX_Rules = {"EnabledRules":["StringFormat","WhiteSpaceLead","WhiteSpaceTail"]}
+		RESX_NeutralResourcesLanguage = en-US
+		SolutionGuid = {9C634E2C-489D-470F-94E5-72383D9364B5}
 	EndGlobalSection
 EndGlobal
