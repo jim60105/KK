@@ -26,14 +26,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace KK_StudioChikaReplacer {
+namespace StudioChikaReplacer {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
-    public class KK_StudioChikaReplacer : BaseUnityPlugin {
+    public class StudioChikaReplacer : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chika Replacer";
-        internal const string GUID = "com.jim60105.kk.studiochikareplacer";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.1";
+        internal const string GUID = "com.jim60105.kks.studiochikareplacer";
+        internal const string PLUGIN_VERSION = "21.09.27.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
 
         public static ConfigEntry<KeyboardShortcut> HotkeyAll { get; set; }
         public static ConfigEntry<KeyboardShortcut> Hotkey { get; set; }
@@ -55,7 +55,7 @@ namespace KK_StudioChikaReplacer {
     }
 
     class Patches {
-        private static readonly ManualLogSource Logger = KK_StudioChikaReplacer.Logger;
+        private static readonly ManualLogSource Logger = StudioChikaReplacer.Logger;
         private static bool blockLoadFlag = false;
         private static ChaControl tmpChaCtrl;
         private static List<float> originalShapeValueBody;
@@ -63,14 +63,14 @@ namespace KK_StudioChikaReplacer {
         internal static void Update() {
             //監聽滑鼠按下
             //換選取的
-            if (KK_StudioChikaReplacer.Hotkey.Value.IsDown()) {
+            if (StudioChikaReplacer.Hotkey.Value.IsDown()) {
                 Change((from v in Singleton<GuideObjectManager>.Instance.selectObjectKey
                         select Studio.Studio.GetCtrlInfo(v) as OCIChar into v
                         where v != null
                         select v).ToList(),true);
             }
             //全換
-            if (KK_StudioChikaReplacer.HotkeyAll.Value.IsDown()) {
+            if (StudioChikaReplacer.HotkeyAll.Value.IsDown()) {
                 Change(Studio.Studio.Instance.dicInfo.Values.OfType<OCIChar>().ToList());
             }
         }
@@ -81,7 +81,7 @@ namespace KK_StudioChikaReplacer {
         private static void Change(List<OCIChar> ociCharList,bool skipSexCheck = false) {
             Logger.LogDebug($"Get {ociCharList.Count} charaters.");
             //先存檔
-            if (KK_StudioChikaReplacer.Save_before_change.Value) {
+            if (StudioChikaReplacer.Save_before_change.Value) {
                 Singleton<Studio.Studio>.Instance.SaveScene();
             }
 
@@ -104,7 +104,7 @@ namespace KK_StudioChikaReplacer {
                 tmpChaCtrl = ociChaCtrl.charInfo;
 
                 blockLoadFlag = true;
-                ociChaCtrl.ChangeChara(KK_StudioChikaReplacer.Sample_chara.Value);
+                ociChaCtrl.ChangeChara(StudioChikaReplacer.Sample_chara.Value);
                 blockLoadFlag = false;
             }
 
@@ -118,7 +118,7 @@ namespace KK_StudioChikaReplacer {
         [HarmonyPrefix, HarmonyPatch(typeof(ChaFileControl), "LoadCharaFile", new Type[] { typeof(string), typeof(byte), typeof(bool), typeof(bool) })]
         public static bool LoadCharaFilePrefix(ref bool __result) {
             //攔截要載入千佳的狀況
-            if (blockLoadFlag && KK_StudioChikaReplacer.Sample_chara.Value.IsNullOrEmpty()) {
+            if (blockLoadFlag && StudioChikaReplacer.Sample_chara.Value.IsNullOrEmpty()) {
                 tmpChaCtrl.LoadPreset(tmpChaCtrl.sex, tmpChaCtrl.exType);
                 __result = true;
                 return false;

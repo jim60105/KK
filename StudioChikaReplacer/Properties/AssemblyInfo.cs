@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // 組件的一般資訊是由下列的屬性集控制。
 // 變更這些屬性的值即可修改組件的相關
 // 資訊。
-[assembly: AssemblyTitle(KK_StudioChikaReplacer.KK_StudioChikaReplacer.PLUGIN_NAME)]
+[assembly: AssemblyTitle(StudioChikaReplacer.StudioChikaReplacer.PLUGIN_NAME)]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct(KK_StudioChikaReplacer.KK_StudioChikaReplacer.PLUGIN_NAME)]
+[assembly: AssemblyProduct(StudioChikaReplacer.StudioChikaReplacer.PLUGIN_NAME)]
 [assembly: AssemblyCopyright("Copyright ©  2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // 您可以指定所有的值，也可以使用 '*' 將組建和修訂編號
 // 設為預設，如下所示:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion(KK_StudioChikaReplacer.KK_StudioChikaReplacer.PLUGIN_VERSION)]
-[assembly: AssemblyInformationalVersion(KK_StudioChikaReplacer.KK_StudioChikaReplacer.PLUGIN_RELEASE_VERSION)]
+[assembly: AssemblyVersion(StudioChikaReplacer.StudioChikaReplacer.PLUGIN_VERSION)]
+[assembly: AssemblyInformationalVersion(StudioChikaReplacer.StudioChikaReplacer.PLUGIN_RELEASE_VERSION)]
