@@ -22,149 +22,193 @@ using BepInEx.Configuration;
 using BepInEx.Logging;
 using Extension;
 using HarmonyLib;
+using Manager;
+using Studio;
+using System.Collections;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace KK_StudioDualScreen {
+namespace StudioDualScreen
+{
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
-    public class KK_StudioDualScreen : BaseUnityPlugin {
+    public class StudioDualScreen : BaseUnityPlugin
+    {
         internal const string PLUGIN_NAME = "Studio Dual Screen";
-        internal const string GUID = "com.jim60105.kk.studiodualscreen";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.1";
+        internal const string GUID = "com.jim60105.kks.studiodualscreen";
+        internal const string PLUGIN_VERSION = "21.10.04.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
 
         public static ConfigEntry<KeyboardShortcut> Hotkey { get; set; }
         public static ConfigEntry<KeyboardShortcut> LockHotkey { get; set; }
         internal static new ManualLogSource Logger;
 
-        public void Start() {
+        public void Start()
+        {
             Logger = base.Logger;
             Extension.Logger.logger = Logger;
-            Harmony.CreateAndPatchAll(typeof(Patches));
+            _ = Harmony.CreateAndPatchAll(typeof(Patches));
 
-            Hotkey = Config.Bind<KeyboardShortcut>("Hotkey", "Active Key", new KeyboardShortcut(KeyCode.None), "You must have two monitors to make it work.");
-            LockHotkey = Config.Bind<KeyboardShortcut>("Hotkey", "Lock Key", new KeyboardShortcut(KeyCode.None), "Trigger this to lock/unlock the sub camera.");
+            Hotkey = Config.Bind("Hotkey", "Enable Key", new KeyboardShortcut(KeyCode.None), "You must have two monitors to make it work.");
+            LockHotkey = Config.Bind("Hotkey", "Lock Key", new KeyboardShortcut(KeyCode.None), "Trigger this to lock/unlock the sub camera.");
         }
 
         public void Update() => Patches.Update();
     }
 
-    class Patches {
+    class Patches
+    {
         private static Camera mainCamera;
         private static Camera cloneCamera;
         private static GameObject cloneCanvas;
         private static float? backRateAddSpeed;
+        private static bool isLocked { get => null != backRateAddSpeed; }
 
-        public static void Update() {
+        public static void Update()
+        {
             //監聽滑鼠按下
-            if (KK_StudioDualScreen.Hotkey.Value.IsDown()) {
-                if (null == mainCamera) {
+            if (StudioDualScreen.Hotkey.Value.IsDown())
+            {
+                if (null == mainCamera)
+                {
                     mainCamera = GameObject.Find("StudioScene/Camera/Main Camera").GetComponent<Camera>();
                 }
                 Enable();
+                StudioDualScreen.Logger.LogMessage("Enable/Reload second screen.");
             }
 
             //鎖定Camera
-            if (KK_StudioDualScreen.LockHotkey.Value.IsDown()) {
-                SetLock(null == backRateAddSpeed);
-                KK_StudioDualScreen.Logger.LogMessage("Lock second screen camera: " + (null != backRateAddSpeed));
+            if (StudioDualScreen.LockHotkey.Value.IsDown())
+            {
+                SetLock(!isLocked);
+                StudioDualScreen.Logger.LogMessage("Lock second screen camera: " + isLocked);
             }
 
-            if (null != cloneCamera && null != mainCamera && mainCamera.transform.hasChanged && null == backRateAddSpeed) {
+            if (null != cloneCamera && null != mainCamera && mainCamera.transform.hasChanged && !isLocked)
+            {
                 mainCamera.transform.hasChanged = false;
 
                 cloneCamera.GetComponent<Studio.CameraControl>().Import(mainCamera.GetComponent<Studio.CameraControl>().Export());
             }
         }
 
-        private static void SetLock(bool b) {
+        /// <summary>
+        /// 鎖定視角
+        /// </summary>
+        /// <param name="lock">鎖定/解鎖視角</param>
+        private static void SetLock(bool @lock)
+        {
             Studio.CameraControl camCtrl = cloneCamera.GetComponent<Studio.CameraControl>();
-            if (b) {
+            if (@lock)
+            {
                 backRateAddSpeed = (float)camCtrl.GetField("rateAddSpeed");
-                camCtrl.SetField("rateAddSpeed", 0);
-            } else {
-                camCtrl.SetField("rateAddSpeed", backRateAddSpeed);
+                _ = camCtrl.SetField("rateAddSpeed", 0);
+            }
+            else
+            {
+                _ = camCtrl.SetField("rateAddSpeed", backRateAddSpeed);
                 backRateAddSpeed = null;
             }
+            StudioDualScreen.Logger.LogDebug("Lock second screen camera: " + isLocked);
         }
 
-        public static void Enable() {
-            if (Display.displays.Length > 1) {
+        public static void Enable()
+        {
+            if (Display.displays.Length > 1)
+            {
+                if (isLocked)
+                {
+                    SetLock(false);
+                }
+
                 //Clean CloneCamera
-                if (null != cloneCamera) {
-                    UnityEngine.Object.Destroy(cloneCamera.gameObject);
+                if (null != cloneCamera)
+                {
+                    Object.Destroy(cloneCamera.gameObject);
                     cloneCamera = null;
                 }
 
                 //Create CloneCamera
-                cloneCamera = UnityEngine.Object.Instantiate(mainCamera);
+                cloneCamera = Object.Instantiate(mainCamera);
+                Object.Destroy(cloneCamera.GetComponent(typeof(Rigidbody)));
                 Studio.CameraControl camCtrl = cloneCamera.GetComponent<Studio.CameraControl>();
                 camCtrl.ReflectOption();
                 camCtrl.isOutsideTargetTex = false;
                 camCtrl.subCamera.gameObject.SetActive(false);
-                camCtrl.SetField("isInit", false);
+                _ = camCtrl.SetField("isInit", false);
 
                 cloneCamera.name = "Main Camera(Clone)";
                 cloneCamera.CopyFrom(mainCamera);
                 cloneCamera.transform.SetParent(mainCamera.transform.parent.transform);
                 cloneCamera.targetDisplay = 1;
-                camCtrl.GetField("cameraData").SetField("rotate", mainCamera.GetComponent<Studio.CameraControl>().GetField("cameraData").GetField("rotate"));
+                _ = camCtrl.GetField("cameraData")
+                           .SetField("rotate", mainCamera.GetComponent<Studio.CameraControl>()
+                                                         .GetField("cameraData")
+                                                         .GetField("rotate"));
 
                 //Hide Specter guide object, it binds on the camera.
                 Transform SpecterMove = cloneCamera.GetComponentsInChildren<Transform>().Where(x => x.gameObject.layer == 5).FirstOrDefault();
-                if (null != SpecterMove) {
+                if (null != SpecterMove)
+                {
                     SpecterMove.gameObject.SetActive(false);
                 }
 
                 //Create Frame
-                if (null == cloneCanvas) {
+                if (null == cloneCanvas)
+                {
                     Camera cameraUI = GameObject.Find("StudioScene/Camera/Camera UI").GetComponent<Camera>();
-                    Camera cloneCameraUI = UnityEngine.Object.Instantiate(cameraUI);
+                    Camera cloneCameraUI = Object.Instantiate(cameraUI);
                     cloneCameraUI.name = "Camera UI Clone";
                     cloneCameraUI.CopyFrom(cameraUI);
                     cloneCameraUI.targetDisplay = 1;
                     cloneCameraUI.transform.SetParent(cameraUI.transform.parent.transform);
 
                     GameObject canvas = GameObject.Find("StudioScene/Canvas Frame Cap");
-                    cloneCanvas = UnityEngine.Object.Instantiate(canvas);
+                    cloneCanvas = Object.Instantiate(canvas);
                     cloneCanvas.GetComponent<Canvas>().worldCamera = cloneCameraUI;
-                    cloneCanvas.GetComponent<Studio.FrameCtrl>().SetField("cameraUI", cloneCameraUI);
+                    _ = cloneCanvas.GetComponent<FrameCtrl>().SetField("cameraUI", cloneCameraUI);
                     cloneCanvas.GetComponent<CanvasScaler>().referenceResolution = new Vector2(Display.displays[1].systemWidth, Display.displays[1].systemHeight);
                     cloneCanvas.transform.SetParent(canvas.transform.parent.transform);
                 }
 
                 //Set Neck Look & Eye Look
-                Singleton<Manager.Character>.Instance.GetCharaList(0).Concat(Singleton<Manager.Character>.Instance.GetCharaList(1)).ToList().ForEach((ChaControl chaCtrl) => {
+                Character.GetCharaList(0).Concat(Character.GetCharaList(1)).ToList().ForEach((ChaControl chaCtrl) =>
+                {
                     chaCtrl.neckLookCtrl.target = cloneCamera.transform;
-                    if (chaCtrl.fileStatus.eyesLookPtn == 1) {
+                    if (chaCtrl.fileStatus.eyesLookPtn == 1)
+                    {
                         chaCtrl.eyeLookCtrl.target = cloneCamera.transform;
                     }
                 });
 
                 //Reset VMD
-                try {
+                try
+                {
                     string path = KoikatuHelper.TryGetPluginInstance("KKVMDPlayPlugin.KKVMDPlayPlugin")?.Info.Location;
                     Assembly ass = Assembly.LoadFrom(path);
                     System.Type VMDCamMgrType = ass.GetType("KKVMDPlayPlugin.VMDCameraMgr");
-                    if (null != VMDCamMgrType) {
+                    if (null != VMDCamMgrType)
+                    {
                         object VMDCamMgr = VMDCamMgrType.GetFieldStatic("_instance");
-                        VMDCamMgr?.SetField("cameraControl", cloneCamera.GetComponent<Studio.CameraControl>());
-                    } else {
+                        _ = (VMDCamMgr?.SetField("cameraControl", cloneCamera.GetComponent<Studio.CameraControl>()));
+                    }
+                    else
+                    {
                         throw new System.Exception("Load assembly FAILED: VMDPlayPlugin");
                     }
                     //KK_StudioDualScreen.Logger.LogDebug("Reset VMD");
-                } catch (System.Exception ex) {
-                    KK_StudioDualScreen.Logger.LogDebug(ex.Message);
+                }
+                catch (System.Exception)
+                {
+                    StudioDualScreen.Logger.LogDebug("No KKVMDPlayPlugin found.");
                 }
 
-                SetLock(null != backRateAddSpeed);
-
                 //Active Display
-                if (!Display.displays[1].active) {
-                    Display.displays[0].SetRenderingResolution(Display.displays[0].renderingWidth, Display.displays[0].renderingHeight);
+                if (!Display.displays[1].active)
+                {
+                    Screen.SetResolution(Display.displays[0].renderingWidth, Display.displays[0].renderingHeight, Screen.fullScreen);
                     //Display.displays[0].Activate();
                     Display.displays[1].SetRenderingResolution(Display.displays[1].renderingWidth, Display.displays[1].renderingHeight);
                     Display.displays[1].Activate();
@@ -174,25 +218,41 @@ namespace KK_StudioDualScreen {
 
         //Renable Display on Scene Load
         private static bool isLoading = false;
-        [HarmonyPrefix, HarmonyPatch(typeof(Studio.SceneLoadScene), "OnClickLoad")]
-        public static void OnClickLoadPrefix() {
+        private static SceneLoadScene sceneLoadScene;
+
+        [HarmonyPrefix, HarmonyPatch(typeof(SceneLoadScene), "OnClickLoad")]
+        public static void OnClickLoadPrefix(SceneLoadScene __instance)
+        {
             isLoading = true;
+            sceneLoadScene = __instance;
         }
-        [HarmonyPostfix, HarmonyPatch(typeof(Manager.Scene), nameof(Manager.Scene.LoadStart))]
-        public static void LoadReservePostfix(Manager.Scene __instance, Manager.Scene.Data data) {
-            if (isLoading && data.levelName == "StudioNotification") {
+        [HarmonyPostfix, HarmonyPatch(typeof(Scene), "LoadStart")]
+        public static void LoadStartPostfix(Scene.Data data)
+        {
+            if (isLoading && data.levelName == "StudioNotification")
+            {
+                _ = sceneLoadScene.StartCoroutine(EnableCamera());
                 isLoading = false;
-                if (null != cloneCamera) {
-                    Enable();
-                }
+            }
+        }
+        private static IEnumerator EnableCamera()
+        {
+            // 原本的彈窗動畫是1秒，多加0.5秒以確保它回到LoadScene
+            yield return new WaitForSeconds(1.5f);
+            if (null != cloneCamera)
+            {
+                SetLock(false);
+                Enable();
             }
         }
 
         //Frame change hook
-        [HarmonyPostfix, HarmonyPatch(typeof(Studio.FrameList), "OnClickSelect")]
-        public static void OnClickSelectPostfix(Studio.FrameList __instance, int _idx) {
-            if (null != cloneCanvas) {
-                cloneCanvas.GetComponent<Studio.FrameCtrl>().Load(((int)__instance.GetField("select") == -1) ? string.Empty : __instance.GetField("listPath").ToList<string>()[_idx]);
+        [HarmonyPostfix, HarmonyPatch(typeof(FrameList), "OnClickSelect")]
+        public static void OnClickSelectPostfix(FrameList __instance, int _idx)
+        {
+            if (null != cloneCanvas)
+            {
+                _ = cloneCanvas.GetComponent<FrameCtrl>().Load(((int)__instance.GetField("select") == -1) ? string.Empty : __instance.GetField("listPath").ToList<string>()[_idx]);
             }
         }
     }
