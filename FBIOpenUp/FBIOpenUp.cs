@@ -36,9 +36,9 @@ namespace FBIOpenUp {
     [BepInDependency("KKABMX.Core", BepInDependency.DependencyFlags.SoftDependency)]
     public class FBIOpenUp : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "FBI Open Up";
-        internal const string GUID = "com.jim60105.kk.fbiopenup";
-        internal const string PLUGIN_VERSION = "21.08.29.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
+        internal const string GUID = "com.jim60105.kks.fbiopenup";
+        internal const string PLUGIN_VERSION = "21.10.11.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.1";
 
         internal static bool _isenabled = false;
         internal static bool _isABMXExist = false;
@@ -133,6 +133,9 @@ namespace FBIOpenUp {
                 using (Stream stream = ass.GetManifestResourceStream("FBIOpenUp.Resources.sample_chara.png")) {
                     Patches.LoadSampleChara(stream);
                 }
+                Logger.LogWarning(@"If you see Sideloader related errors above, don't worry.
+Sample Chara is made in a vanilla environment and does NOT contain any ExtendedSaveData.");
+                Logger.LogDebug("An error occurred while Sideloader reads the vanilla file. I have nothing to say.");
             }
         }
     }
