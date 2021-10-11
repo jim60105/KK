@@ -4,11 +4,11 @@ using System.Runtime.InteropServices;
 // 組件的一般資訊是由下列的屬性集控制。
 // 變更這些屬性的值即可修改組件的相關
 // 資訊。
-[assembly: AssemblyTitle(KK_StudioCharaOnlyLoadBody.KK_StudioCharaOnlyLoadBody.PLUGIN_NAME)]
+[assembly: AssemblyTitle(KK_StudioCharaOnlyLoadBody.StudioCharaOnlyLoadBody.PLUGIN_NAME)]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct(KK_StudioCharaOnlyLoadBody.KK_StudioCharaOnlyLoadBody.PLUGIN_NAME)]
+[assembly: AssemblyProduct(KK_StudioCharaOnlyLoadBody.StudioCharaOnlyLoadBody.PLUGIN_NAME)]
 [assembly: AssemblyCopyright("Copyright © 2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -28,6 +28,6 @@ using System.Runtime.InteropServices;
 //      組建編號
 //      修訂編號
 //
-[assembly: AssemblyVersion(KK_StudioCharaOnlyLoadBody.KK_StudioCharaOnlyLoadBody.PLUGIN_VERSION)]
+[assembly: AssemblyVersion(KK_StudioCharaOnlyLoadBody.StudioCharaOnlyLoadBody.PLUGIN_VERSION)]
 //[assembly: AssemblyFileVersion(KK_StudioCharaOnlyLoadBody.KK_StudioCharaOnlyLoadBody.PLUGIN_VERSION)]
-[assembly: AssemblyInformationalVersion(KK_StudioCharaOnlyLoadBody.KK_StudioCharaOnlyLoadBody.PLUGIN_RELEASE_VERSION)]
+[assembly: AssemblyInformationalVersion(KK_StudioCharaOnlyLoadBody.StudioCharaOnlyLoadBody.PLUGIN_RELEASE_VERSION)]

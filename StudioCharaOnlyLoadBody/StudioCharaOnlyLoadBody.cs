@@ -38,11 +38,11 @@ namespace KK_StudioCharaOnlyLoadBody {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
     [BepInDependency("com.joan6694.illusionplugins.moreaccessories", BepInDependency.DependencyFlags.SoftDependency)]
-    public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
+    public class StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
-        internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.9";
+        internal const string GUID = "com.jim60105.kks.studiocharaonlyloadbody";
+        internal const string PLUGIN_VERSION = "21.10.12.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.4.0";
 
         public static ConfigEntry<string> ExtendedDataToCopySetting { get; private set; }
         public static string[] ExtendedDataToCopy;
@@ -56,7 +56,6 @@ namespace KK_StudioCharaOnlyLoadBody {
 
             string[] SampleArray = {
                 "KSOX",
-                "com.jim60105.kk.charaoverlaysbasedoncoordinate",
                 "com.deathweasel.bepinex.uncensorselector",
                 "KKABMPlugin.ABMData",
                 "com.bepis.sideloader.universalautoresolver",
@@ -64,7 +63,7 @@ namespace KK_StudioCharaOnlyLoadBody {
             };
 
             //config.ini設定
-            ExtendedDataToCopySetting = Config.Bind<string>("Config", "ExtendedData To Copy", string.Join(";", SampleArray), "If you want to load the ExtendedData when you load the body, add the ExtendedData ID.");
+            ExtendedDataToCopySetting = Config.Bind<string>("Config", "ExtendedData To Copy", string.Join(";", SampleArray), "Don't modify this unless you know what you are doing.");
             ExtendedDataToCopySetting.SettingChanged += delegate {
                 ExtendedDataToCopy = ExtendedDataToCopySetting.Value.Split(';');
             };
@@ -91,13 +90,15 @@ namespace KK_StudioCharaOnlyLoadBody {
             //依照語言選擇圖片
             switch (Application.systemLanguage) {
                 case SystemLanguage.Chinese:
-                    btn[i].GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("KK_StudioCharaOnlyLoadBody.Resources.buttonChange.png", 183, 20);
+                case SystemLanguage.ChineseTraditional:
+                case SystemLanguage.ChineseSimplified:
+                    btn[i].GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("StudioCharaOnlyLoadBody.Resources.buttonChange.png", 183, 20);
                     break;
                 case SystemLanguage.Japanese:
-                    btn[i].GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("KK_StudioCharaOnlyLoadBody.Resources.buttonChange_JP.png", 183, 20);
+                    btn[i].GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("StudioCharaOnlyLoadBody.Resources.buttonChange_JP.png", 183, 20);
                     break;
                 default:
-                    btn[i].GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("KK_StudioCharaOnlyLoadBody.Resources.buttonChange_EN.png", 183, 20);
+                    btn[i].GetComponent<Image>().sprite = ImageHelper.LoadNewSprite("StudioCharaOnlyLoadBody.Resources.buttonChange_EN.png", 183, 20);
                     break;
             }
 
@@ -149,16 +150,15 @@ namespace KK_StudioCharaOnlyLoadBody {
     }
 
     class Model {
-        private static readonly ManualLogSource Logger = KK_StudioCharaOnlyLoadBody.Logger;
+        private static readonly ManualLogSource Logger = StudioCharaOnlyLoadBody.Logger;
         internal static Type ChaFile_CopyAll_Patches = null;
         internal static Type MoreAccessories = null;
 
         internal static void Awake() {
             //MoreAcc相關
-            string path = KoikatuHelper.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories")?.Info.Location;
+            string path = KoikatuHelper.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories",new Version(2,0,10,0))?.Info.Location;
             if (null != path && path.Length != 0) {
                 Assembly ass = Assembly.LoadFrom(path);
-                ChaFile_CopyAll_Patches = ass.GetType("MoreAccessoriesKOI.ChaFile_CopyAll_Patches");
                 MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
             }
         }
@@ -250,7 +250,7 @@ namespace KK_StudioCharaOnlyLoadBody {
             ChaFileControl tmpChaFile = new ChaFileControl();
             tmpChaFile.LoadCharaFile(file, sex);
 
-            foreach (string ext in KK_StudioCharaOnlyLoadBody.ExtendedDataToCopy) {
+            foreach (string ext in StudioCharaOnlyLoadBody.ExtendedDataToCopy) {
                 switch (ext) {
                     case "KKABMPlugin.ABMData":
                     #region ABMX
@@ -428,8 +428,7 @@ namespace KK_StudioCharaOnlyLoadBody {
         public static void CopyAllMoreAccessoriesData(ChaControl oriChaCtrl, ChaControl targetChaCtrl) {
             //這條如果call ChaFile.CopyAll會觸發其他鉤子，導致ExtendedData無法正常作用
             //所以用reflection處理
-            ChaFile_CopyAll_Patches.InvokeStatic("Postfix", new object[] { targetChaCtrl.chaFile, oriChaCtrl.chaFile });
-
+            MoreAccessories.InvokeStatic("ArraySync", new object[] { targetChaCtrl.chaFile });
             MoreAccessories.GetFieldStatic("_self").Invoke("Update");
 
             Logger.LogDebug("Copy MoreAccessories Finish");
