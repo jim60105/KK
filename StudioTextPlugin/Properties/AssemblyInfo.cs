@@ -4,11 +4,11 @@ using System.Runtime.InteropServices;
 // 組件的一般資訊是由下列的屬性集控制。
 // 變更這些屬性的值即可修改組件的相關
 // 資訊。
-[assembly: AssemblyTitle(KK_StudioTextPlugin.KK_StudioTextPlugin.PLUGIN_NAME)]
+[assembly: AssemblyTitle(StudioTextPlugin.StudioTextPlugin.PLUGIN_NAME)]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct(KK_StudioTextPlugin.KK_StudioTextPlugin.PLUGIN_NAME)]
+[assembly: AssemblyProduct(StudioTextPlugin.StudioTextPlugin.PLUGIN_NAME)]
 [assembly: AssemblyCopyright("Copyright © 2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -28,6 +28,6 @@ using System.Runtime.InteropServices;
 //      組建編號
 //      修訂編號
 //
-[assembly: AssemblyVersion(KK_StudioTextPlugin.KK_StudioTextPlugin.PLUGIN_VERSION)]
+[assembly: AssemblyVersion(StudioTextPlugin.StudioTextPlugin.PLUGIN_VERSION)]
 //[assembly: AssemblyFileVersion(KK_StudioTextPlugin.KK_StudioTextPlugin.PLUGIN_VERSION)]
-[assembly: AssemblyInformationalVersion(KK_StudioTextPlugin.KK_StudioTextPlugin.PLUGIN_RELEASE_VERSION)]
+[assembly: AssemblyInformationalVersion(StudioTextPlugin.StudioTextPlugin.PLUGIN_RELEASE_VERSION)]

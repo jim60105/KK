@@ -16,7 +16,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UIUtility", "UIUtility\UIUt
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StudioReflectFKFix", "StudioReflectFKFix\StudioReflectFKFix.csproj", "{0C47EBAA-B09C-44E1-B114-5337B8BEBA79}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KK_StudioTextPlugin", "StudioTextPlugin\KK_StudioTextPlugin.csproj", "{D02E90AF-BE20-4EAE-A462-5EFDA36095A9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StudioTextPlugin", "StudioTextPlugin\StudioTextPlugin.csproj", "{D02E90AF-BE20-4EAE-A462-5EFDA36095A9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FBIOpenUp", "FBIOpenUp\FBIOpenUp.csproj", "{661B77CE-D337-49D2-A359-AD85E68986B2}"
 EndProject
@@ -70,6 +70,7 @@ Global
 		Extension\Extension.projitems*{a5f430a2-ae7a-4bcd-a380-0f73add7a4a3}*SharedItemsImports = 5
 		Extension\Extension.projitems*{ac89e605-c385-4e44-b781-5ee60c7bc70a}*SharedItemsImports = 5
 		Extension\Extension.projitems*{b27d7aed-568b-462f-baca-ba2a19ccf9f6}*SharedItemsImports = 5
+		Extension\Extension.projitems*{d02e90af-be20-4eae-a462-5efda36095a9}*SharedItemsImports = 5
 		Extension\Extension.projitems*{dad31687-4de7-47c3-af78-6d366da10407}*SharedItemsImports = 5
 		Extension\Extension.projitems*{e70886b9-0aec-444b-90a1-95e47c4fe03f}*SharedItemsImports = 5
 		Extension\Extension.projitems*{eaa640ea-ac91-41c6-a655-4ab5a364986d}*SharedItemsImports = 5
@@ -166,8 +167,8 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		RESX_Rules = {"EnabledRules":["StringFormat","WhiteSpaceLead","WhiteSpaceTail"]}
-		RESX_NeutralResourcesLanguage = en-US
 		SolutionGuid = {9C634E2C-489D-470F-94E5-72383D9364B5}
+		RESX_NeutralResourcesLanguage = en-US
+		RESX_Rules = {"EnabledRules":["StringFormat","WhiteSpaceLead","WhiteSpaceTail"]}
 	EndGlobalSection
 EndGlobal

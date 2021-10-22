@@ -5,9 +5,9 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace KK_StudioTextPlugin {
+namespace StudioTextPlugin {
     static class TextPlugin {
-        internal static BepInEx.Logging.ManualLogSource Logger = KK_StudioTextPlugin.Logger;
+        internal static BepInEx.Logging.ManualLogSource Logger = StudioTextPlugin.Logger;
         private static Material Font3DMaterial;
         internal static bool DisablePreview = true;
         private static readonly Dictionary<string, Font> DynamicFonts = new Dictionary<string, Font>();
@@ -247,12 +247,12 @@ namespace KK_StudioTextPlugin {
             t.name = "TextObj";
             t.gameObject.SetActive(true);
             go.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
-            SetColor(folder, KK_StudioTextPlugin.Default_Color.Value);
-            SetFont(folder, KK_StudioTextPlugin.Default_FontName.Value);
-            SetCharacterSize(folder, KK_StudioTextPlugin.Default_FontSize.Value);
-            SetFontStyle(folder, KK_StudioTextPlugin.Default_FontStyle.Value);
-            SetAlignment(folder, KK_StudioTextPlugin.Default_Alignment.Value);
-            SetAnchor(folder, KK_StudioTextPlugin.Default_Anchor.Value);
+            SetColor(folder, StudioTextPlugin.Default_Color.Value);
+            SetFont(folder, StudioTextPlugin.Default_FontName.Value);
+            SetCharacterSize(folder, StudioTextPlugin.Default_FontSize.Value);
+            SetFontStyle(folder, StudioTextPlugin.Default_FontStyle.Value);
+            SetAlignment(folder, StudioTextPlugin.Default_Alignment.Value);
+            SetAnchor(folder, StudioTextPlugin.Default_Anchor.Value);
 
             Logger.LogDebug("Create Text");
             return t;
@@ -287,8 +287,8 @@ namespace KK_StudioTextPlugin {
             folder.objectItem.GetComponentInChildren<MeshRenderer>(true).material.SetTexture("_MainTex", textMesh.font.material.mainTexture);
             folder.objectItem.GetComponentInChildren<MeshRenderer>(true).material.EnableKeyword("_NORMALMAP");
             SetColor(folder, colorBackup);
-            if (KK_StudioTextPlugin. Auto_change_default.Value) {
-                KK_StudioTextPlugin.Default_FontName.Value = fontName;
+            if (StudioTextPlugin. Auto_change_default.Value) {
+                StudioTextPlugin.Default_FontName.Value = fontName;
             }
         }
 
@@ -339,8 +339,8 @@ namespace KK_StudioTextPlugin {
         /// <param name="size">字體大小</param>
         public static void SetCharacterSize(OCIFolder folder, float size = 1f) {
             folder.objectItem.GetComponentInChildren<TextMesh>(true).characterSize = 0.002f * size;
-            if (KK_StudioTextPlugin. Auto_change_default.Value) {
-                KK_StudioTextPlugin.Default_FontSize.Value = size;
+            if (StudioTextPlugin. Auto_change_default.Value) {
+                StudioTextPlugin.Default_FontSize.Value = size;
             }
         }
 
@@ -378,8 +378,8 @@ namespace KK_StudioTextPlugin {
         /// <param name="color">字型顏色</param>
         public static void SetColor(OCIFolder folder, Color color = default) {
             folder.objectItem.GetComponentInChildren<MeshRenderer>(true).material.color = color;
-            if (KK_StudioTextPlugin. Auto_change_default.Value) {
-                KK_StudioTextPlugin.Default_Color.Value = color;
+            if (StudioTextPlugin. Auto_change_default.Value) {
+                StudioTextPlugin.Default_Color.Value = color;
             }
         }
 
@@ -423,8 +423,8 @@ namespace KK_StudioTextPlugin {
         /// <param name="style">字體樣式</param>
         public static void SetFontStyle(OCIFolder folder, FontStyle style = FontStyle.Normal) {
             folder.objectItem.GetComponentInChildren<TextMesh>(true).fontStyle = style;
-            if (KK_StudioTextPlugin. Auto_change_default.Value) {
-                KK_StudioTextPlugin.Default_FontStyle.Value = style;
+            if (StudioTextPlugin. Auto_change_default.Value) {
+                StudioTextPlugin.Default_FontStyle.Value = style;
             }
         }
 
@@ -468,8 +468,8 @@ namespace KK_StudioTextPlugin {
         /// <param name="anchor">字體錨點</param>
         public static void SetAnchor(OCIFolder folder, TextAnchor anchor = TextAnchor.MiddleCenter) {
             folder.objectItem.GetComponentInChildren<TextMesh>(true).anchor = anchor;
-            if (KK_StudioTextPlugin. Auto_change_default.Value) {
-                KK_StudioTextPlugin.Default_Anchor.Value = anchor;
+            if (StudioTextPlugin. Auto_change_default.Value) {
+                StudioTextPlugin.Default_Anchor.Value = anchor;
             }
         }
 
@@ -513,8 +513,8 @@ namespace KK_StudioTextPlugin {
         /// <param name="alignment">字體對齊(Left, Right, Center)</param>
         public static void SetAlignment(OCIFolder folder, TextAlignment alignment = TextAlignment.Center) {
             folder.objectItem.GetComponentInChildren<TextMesh>(true).alignment = alignment;
-            if (KK_StudioTextPlugin. Auto_change_default.Value) {
-                KK_StudioTextPlugin.Default_Alignment.Value = alignment;
+            if (StudioTextPlugin. Auto_change_default.Value) {
+                StudioTextPlugin.Default_Alignment.Value = alignment;
             }
         }
     }

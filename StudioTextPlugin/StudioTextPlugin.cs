@@ -31,14 +31,14 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace KK_StudioTextPlugin {
+namespace StudioTextPlugin {
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
-    public class KK_StudioTextPlugin : BaseUnityPlugin {
+    public class StudioTextPlugin : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Text Plugin";
-        internal const string GUID = "com.jim60105.kk.studiotextplugin";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.6";
+        internal const string GUID = "com.jim60105.kks.studiotextplugin";
+        internal const string PLUGIN_VERSION = "21.10.23.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.2.0";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -75,7 +75,7 @@ namespace KK_StudioTextPlugin {
     }
 
     static class Patches {
-        internal static ManualLogSource Logger = KK_StudioTextPlugin.Logger;
+        internal static ManualLogSource Logger = StudioTextPlugin.Logger;
         //Flag
         private static bool isCreatingTextFolder = false;
         internal static bool isCreatingTextStructure = false;
@@ -110,7 +110,7 @@ namespace KK_StudioTextPlugin {
             inputField.transform.SetRect(Vector2.zero, Vector2.one, new Vector2(5f, 5f), new Vector2(-5f, -5f));
             inputField.textComponent.resizeTextMinSize = 15;
             inputField.textComponent.resizeTextMaxSize = 20;
-            inputField.text = KK_StudioTextPlugin.Default_New_Text.Value;
+            inputField.text = StudioTextPlugin.Default_New_Text.Value;
             inputField.lineType = InputField.LineType.MultiLineNewline;
             inputField.textComponent.alignment = TextAnchor.UpperLeft;
             nameInputPanel.gameObject.SetActive(false);
@@ -162,9 +162,9 @@ namespace KK_StudioTextPlugin {
                     Text demoText = UnityEngine.Object.Instantiate(text, text.transform.parent);
                     demoText.name = "demoText";
                     demoText.alignment = TextAnchor.LowerLeft;
-                    demoText.text = KK_StudioTextPlugin.Default_New_Text.Value;
+                    demoText.text = StudioTextPlugin.Default_New_Text.Value;
                     demoText.font = TextPlugin.GetFont(fontName);
-                    demoText.font.RequestCharactersInTexture(KK_StudioTextPlugin.Default_New_Text.Value);
+                    demoText.font.RequestCharactersInTexture(StudioTextPlugin.Default_New_Text.Value);
                     demoText.transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(5f, 7.5f), new Vector2(-5f, -30f));
                     fontDisplayBtn.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -75f * (tmpBtns.Count + 1)), new Vector2(-5f, -75f * tmpBtns.Count));
                 } else {
@@ -273,7 +273,7 @@ namespace KK_StudioTextPlugin {
             btn.onClick.AddListener(delegate {
                 if (!onUpdating) {
                     if (!ColorUtility.TryParseHtmlString(TextPlugin.GetConfig(null, TextPlugin.Config.Color), out Color color)) {
-                        color = KK_StudioTextPlugin.Default_Color.Value;
+                        color = StudioTextPlugin.Default_Color.Value;
                     }
                     Singleton<Studio.Studio>.Instance.colorPalette.Setup("字體顏色", color, new Action<Color>(TextPlugin.ChangeColor), true);
                     Singleton<Studio.Studio>.Instance.colorPalette.visible = true;
@@ -287,7 +287,7 @@ namespace KK_StudioTextPlugin {
                 text.color = Color.white;
             }
             input.GetComponent<InputField>().placeholder.GetComponent<Text>().color = new Color(1, 1, 1, 0.3f);
-            btn.image.color = KK_StudioTextPlugin.Default_Color.Value;
+            btn.image.color = StudioTextPlugin.Default_Color.Value;
 
             //拖曳event
             Vector2 mouse = Vector2.zero;
@@ -434,8 +434,8 @@ namespace KK_StudioTextPlugin {
         public static void LoadPostfix(ref OCIFolder __result, OIFolderInfo _info, ObjectCtrlInfo _parent, TreeNodeObject _parentNode, bool _addInfo, int _initialPosition) {
             //Scene讀取的進入點
             if (isCreatingTextFolder || __result.name.Contains(TextObjPrefix)) {
-                __result.name = isCreatingTextFolder ? TextObjPrefix + KK_StudioTextPlugin.Default_New_Text.Value : _info.name;
-                TextMesh t = TextPlugin.MakeTextObj(__result, isCreatingTextFolder ? KK_StudioTextPlugin.Default_New_Text.Value : _info.name.Replace(TextObjPrefix, "").Replace("\\n", "\n"));
+                __result.name = isCreatingTextFolder ? TextObjPrefix + StudioTextPlugin.Default_New_Text.Value : _info.name;
+                TextMesh t = TextPlugin.MakeTextObj(__result, isCreatingTextFolder ? StudioTextPlugin.Default_New_Text.Value : _info.name.Replace(TextObjPrefix, "").Replace("\\n", "\n"));
                 isCreatingTextFolder = false;
                 if (_addInfo) {
                     //Scene Load就不創建Config資料夾結構
