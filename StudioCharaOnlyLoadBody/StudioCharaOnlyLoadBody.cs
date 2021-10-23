@@ -41,8 +41,8 @@ namespace KK_StudioCharaOnlyLoadBody {
     public class StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kks.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "21.10.12.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.4.0";
+        internal const string PLUGIN_VERSION = "21.10.23.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.4.1";
 
         public static ConfigEntry<string> ExtendedDataToCopySetting { get; private set; }
         public static string[] ExtendedDataToCopy;
@@ -156,7 +156,7 @@ namespace KK_StudioCharaOnlyLoadBody {
 
         internal static void Awake() {
             //MoreAcc相關
-            string path = KoikatuHelper.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories",new Version(2,0,10,0))?.Info.Location;
+            string path = KoikatuHelper.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories",new Version(2,0,10))?.Info.Location;
             if (null != path && path.Length != 0) {
                 Assembly ass = Assembly.LoadFrom(path);
                 MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
