@@ -56,8 +56,8 @@ namespace CoordinateLoadOption
     {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kks.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "21.08.31.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.2.2";
+        internal const string PLUGIN_VERSION = "21.10.24.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.0";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -575,7 +575,7 @@ namespace CoordinateLoadOption
                     CoordinateLoad.MakeTmpChara((_) =>
                     {
                         CoordinateLoad.tmpChaCtrl.StopAllCoroutines();
-                        for (int i = 0; i < MoreAccessories_Support.GetAccessoriesAmount(CoordinateLoad.tmpChaCtrl.chaFile); i++)
+                        for (int i = 0; i < CoordinateLoad.tmpChaCtrl.nowCoordinate.accessory.parts.Length; i++)
                         {
                             if (i < tgls2.Length)
                             {
@@ -660,9 +660,11 @@ namespace CoordinateLoadOption
 
             accNames.AddRange(tmpChaFileCoordinate.accessory.parts.Select(x => CoordinateLoad.GetNameFromIDAndType(x.id, (ChaListDefine.CategoryNo)x.type)));
 
-            if (CLO._isMoreAccessoriesExist)
+            // MoreAcc v2.0弄了個同時存新舊資料的兼容
+            // 如果已載入飾品數量<20，那就當做是舊存檔，讀舊數據
+            if (CLO._isMoreAccessoriesExist && tmpChaFileCoordinate.accessory.parts.Length <= 20)
             {
-                accNames.AddRange(MoreAccessories_Support.LoadMoreAcc(tmpChaFileCoordinate));
+                accNames.AddRange(MoreAccessories_Support.LoadOldMoreAccData(tmpChaFileCoordinate));
             }
 
             foreach (Toggle tgl in toggleGroup.gameObject.GetComponentsInChildren<Toggle>())
@@ -943,9 +945,7 @@ namespace CoordinateLoadOption
             ABMX abmx = new ABMX(chaCtrl);
             MaterialEditor me = new MaterialEditor(chaCtrl);
 
-            //Load Coordinate
-            Queue<int> accQueue = new Queue<int>();
-
+            #region Main Load Coordinate
             foreach (Toggle tgl in Patches.tgls)
             {
                 object tmpToggleType = null;
@@ -963,34 +963,23 @@ namespace CoordinateLoadOption
                 {
                     if (kind == 9)
                     {
+                        //Copy accessories
+                        ChaFileAccessory.PartsInfo[] chaCtrlAccParts = chaCtrl.nowCoordinate.accessory.parts;
+                        ChaFileAccessory.PartsInfo[] tmpCtrlAccParts = tmpChaCtrl.nowCoordinate.accessory.parts;
+
+                        ChangeAccessories(tmpChaCtrl, tmpCtrlAccParts, chaCtrl, ref chaCtrlAccParts);
+                        chaCtrl.nowCoordinate.accessory.parts = chaCtrlAccParts;
                         if (CLO._isMoreAccessoriesExist)
                         {
-                            MoreAccessories_Support.CopyMoreAccessories(tmpChaCtrl, chaCtrl);
-                        }
-                        else
-                        {
-                            //Copy accessories
-                            ChaFileAccessory.PartsInfo[] chaCtrlAccParts = chaCtrl.nowCoordinate.accessory.parts;
-                            ChaFileAccessory.PartsInfo[] tmpCtrlAccParts = tmpChaCtrl.nowCoordinate.accessory.parts;
-
-                            ChangeAccessories(tmpChaCtrl, tmpCtrlAccParts, chaCtrl, chaCtrlAccParts, accQueue);
-
-                            //accQueue內容物太多，報告後捨棄
-                            while (accQueue.Count > 0)
-                            {
-                                int slot = accQueue.Dequeue();
-                                ChaFileAccessory.PartsInfo part = tmpCtrlAccParts[slot];
-                                Logger.LogMessage("Accessories slot is not enough! Discard " + GetNameFromIDAndType(part.id, (ChaListDefine.CategoryNo)part.type));
-                            }
+                            MoreAccessories_Support.ArraySync(chaCtrl);
+                            MoreAccessories_Support.Update();
                         }
                         chaCtrl.ChangeAccessory(true);
                         Logger.LogDebug("->Changed: " + tgl.name);
+                        Logger.LogDebug($"Acc Count : {chaCtrl.nowCoordinate.accessory.parts.Length}");
                     }
                     else if (kind >= 0)
                     {
-                        //if (SCLO._isMaterialEditorExist)
-                        //    MaterialEditor_Support.RemoveMaterialEditorData(chaCtrl, kind, chaCtrl.objClothes[kind], MaterialEditor_Support.ObjectType.Clothing);
-
                         //Change clothes
                         byte[] tmp = MessagePackSerializer.Serialize<ChaFileClothes.PartsInfo>(tmpChaCtrl.nowCoordinate.clothes.parts[kind]);
                         chaCtrl.nowCoordinate.clothes.parts[kind] = MessagePackSerializer.Deserialize<ChaFileClothes.PartsInfo>(tmp);
@@ -1006,9 +995,9 @@ namespace CoordinateLoadOption
                     }
                 }
             }
+            #endregion
 
-            //存入至ExtendedData，然後Reload---
-
+            #region 存入至ExtendedData，然後Reload
             //HairAcc
             if (hairacc.isExist)
             {
@@ -1040,15 +1029,6 @@ namespace CoordinateLoadOption
                 chaCtrl.StartCoroutine(kcox.Update());
             }
 
-            //MoreAcc
-            if (CLO._isMoreAccessoriesExist)
-            {
-                chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
-                MoreAccessories_Support.SetExtDataFromPlugin(chaCtrl.chaFile);
-                MoreAccessories_Support.Update();
-                Logger.LogDebug($"Acc Count : {MoreAccessories_Support.GetAccessoriesAmount(chaCtrl.chaFile)}");
-            }
-
             //ABMX
             if (abmx.isExist)
             {
@@ -1064,7 +1044,7 @@ namespace CoordinateLoadOption
             chaCtrl.ChangeCoordinateType((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, false);
             chaCtrl.Reload();   //全false的Reload會觸發KKAPI的hook
 
-            //---存入至ExtendedData，然後Reload
+            #endregion
 
             //KK_COBOC
             if (kcox.isExist && coboc.isExist)
@@ -1149,22 +1129,20 @@ namespace CoordinateLoadOption
             }
         }
 
-        public static void ChangeAccessories(ChaControl sourceChaCtrl, ChaFileAccessory.PartsInfo[] sourceParts, ChaControl targetChaCtrl, ChaFileAccessory.PartsInfo[] targetParts, Queue<int> accQueue)
+        public static void ChangeAccessories(ChaControl sourceChaCtrl, ChaFileAccessory.PartsInfo[] sourceParts, ChaControl targetChaCtrl, ref ChaFileAccessory.PartsInfo[] targetParts)
         {
-            accQueue.Clear();
-            //防呆檢查targetParts欄位不能小於sourceParts
-            if (sourceParts.Length > targetParts.Length)
-            {
-                Logger.LogError($"ChangeAccessories targetParts < sourceParts");
-                return;
-            }
+            Queue<int> accQueue = new Queue<int>();
+            ChaFileAccessory.PartsInfo[] tmpArr = CLO._isMoreAccessoriesExist
+                                                    ? new ChaFileAccessory.PartsInfo[Math.Max(Math.Max(sourceParts.Length, targetParts.Length), Patches.tgls2.Length)]
+                                                    : new ChaFileAccessory.PartsInfo[20];
+            targetParts.CopyTo(tmpArr, 0);
 
             bool isAllFalseFlag = true;
             foreach (bool b in Patches.tgls2.Select(x => x.isOn).ToArray())
             {
                 isAllFalseFlag &= !b;
             }
-            if (isAllFalseFlag && accQueue.Count == 0)
+            if (isAllFalseFlag)
             {
                 Logger.LogDebug("Load Accessories All False");
                 Logger.LogDebug("Load Accessories Finish");
@@ -1174,20 +1152,20 @@ namespace CoordinateLoadOption
 
             MaterialEditor me = new MaterialEditor(targetChaCtrl);
 
-            for (int i = 0; i < targetParts.Length && i < Patches.tgls2.Length; i++)
+            for (int i = 0; i < tmpArr.Length && i < Patches.tgls2.Length; i++)
             {
                 if ((bool)Patches.tgls2[i]?.isOn)
                 {
                     if (Patches.addAccModeFlag)
                     {
                         //增加模式
-                        if (targetParts[i].type == 120)
+                        if (tmpArr[i].type == 120)
                         {
                             DoChangeAccessory(i, i);
                         }
                         else
                         {
-                            EnQueue();
+                            EnQueue(i, sourceParts[i], tmpArr[i], accQueue);
                         }
                     }
                     else
@@ -1195,7 +1173,7 @@ namespace CoordinateLoadOption
                         //取代模式
                         if (IsHairAccessory(targetChaCtrl, i) && Patches.lockHairAcc)
                         {
-                            EnQueue();
+                            EnQueue(i, sourceParts[i], tmpArr[i], accQueue);
                         }
                         else
                         {
@@ -1209,32 +1187,41 @@ namespace CoordinateLoadOption
                     //如果沒勾選就不改變
                     continue;
                 }
-
-                void EnQueue()
-                {
-                    if (sourceParts[i]?.type == 120)
-                    {
-                        Logger.LogDebug($"->Lock: Acc{i} / Part: {(ChaListDefine.CategoryNo)targetParts[i].type} / ID: {targetParts[i].id}");
-                        Logger.LogDebug($"->Pass: Acc{i} / Part: {(ChaListDefine.CategoryNo)sourceParts[i].type} / ID: {sourceParts[i].id}");
-                    }
-                    else
-                    {
-                        Logger.LogDebug($"->Lock: Acc{i} / Part: {(ChaListDefine.CategoryNo)targetParts[i].type} / ID: {targetParts[i].id}");
-                        Logger.LogDebug($"->EnQueue: Acc{i} / Part: {(ChaListDefine.CategoryNo)sourceParts[i].type} / ID: {sourceParts[i].id}");
-                        accQueue.Enqueue(i);
-                    }
-                }
             }
 
             //遍歷空欄dequeue accQueue
-            for (int j = 0; j < targetParts.Length && accQueue.Count > 0; j++)
+            for (int j = 0; j < tmpArr.Length && accQueue.Count > 0; j++)
             {
-                if (targetParts[j].type == 120)
+                if (tmpArr[j].type == 120)
                 {
                     int slot = accQueue.Dequeue();
                     DoChangeAccessory(slot, j);
-                    Logger.LogDebug($"->DeQueue: Acc{j} / Part: {(ChaListDefine.CategoryNo)targetParts[j].type} / ID: {targetParts[j].id}");
+                    Logger.LogDebug($"->DeQueue: Acc{j} / Part: {(ChaListDefine.CategoryNo)tmpArr[j].type} / ID: {tmpArr[j].id}");
                 } //else continue;
+            }
+
+            targetParts = tmpArr;
+
+            //accQueue內容物太多，報告後捨棄
+            while (accQueue.Count > 0)
+            {
+                int slot = accQueue.Dequeue();
+                Logger.LogMessage("Accessories slot is not enough! Discard " + GetNameFromIDAndType(sourceParts[slot].id, (ChaListDefine.CategoryNo)sourceParts[slot].type));
+            }
+
+            void EnQueue(int i, ChaFileAccessory.PartsInfo sourcePartsInfo, ChaFileAccessory.PartsInfo targetPartsInfo, Queue<int> queue)
+            {
+                if (sourcePartsInfo?.type == 120)
+                {
+                    Logger.LogDebug($"->Lock: Acc{i} / Part: {(ChaListDefine.CategoryNo)targetPartsInfo.type} / ID: {targetPartsInfo.id}");
+                    Logger.LogDebug($"->Pass: Acc{i} / Part: {(ChaListDefine.CategoryNo)sourcePartsInfo.type} / ID: {sourcePartsInfo.id}");
+                }
+                else
+                {
+                    Logger.LogDebug($"->Lock: Acc{i} / Part: {(ChaListDefine.CategoryNo)targetPartsInfo.type} / ID: {targetPartsInfo.id}");
+                    Logger.LogDebug($"->EnQueue: Acc{i} / Part: {(ChaListDefine.CategoryNo)sourcePartsInfo.type} / ID: {sourcePartsInfo.id}");
+                    queue.Enqueue(i);
+                }
             }
 
             /// <summary>
@@ -1245,7 +1232,7 @@ namespace CoordinateLoadOption
             void DoChangeAccessory(int sourceSlot, int targetSlot)
             {
                 //來源目標都空著就跳過
-                if (sourceParts[sourceSlot].type == 120 && targetParts[targetSlot].type == 120)
+                if (sourceParts[sourceSlot].type == 120 && tmpArr[targetSlot].type == 120)
                 {
                     Logger.LogDebug($"->BothEmpty: SourceAcc{sourceSlot}, TargetAcc{targetSlot}");
                     return;
@@ -1253,11 +1240,11 @@ namespace CoordinateLoadOption
 
                 if (me.isExist)
                 {
-                    me.RemoveMaterialEditorData(targetSlot, GetChaAccessoryComponent(targetChaCtrl, targetSlot)?.gameObject, MaterialEditor.ObjectType.Accessory);
+                    me.RemoveMaterialEditorData(targetSlot, targetChaCtrl.GetAccessoryComponent(targetSlot)?.gameObject, MaterialEditor.ObjectType.Accessory);
                 }
 
                 byte[] tmp = MessagePackSerializer.Serialize<ChaFileAccessory.PartsInfo>(sourceParts[sourceSlot]);
-                targetParts[targetSlot] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tmp);
+                tmpArr[targetSlot] = MessagePackSerializer.Deserialize<ChaFileAccessory.PartsInfo>(tmp);
 
                 if (hairacc.isExist)
                 {
@@ -1266,15 +1253,15 @@ namespace CoordinateLoadOption
 
                 if (me.isExist)
                 {
-                    me.CopyMaterialEditorData(sourceChaCtrl, sourceSlot, targetSlot, GetChaAccessoryComponent(sourceChaCtrl, sourceSlot)?.gameObject, MaterialEditor.ObjectType.Accessory);
+                    me.CopyMaterialEditorData(sourceChaCtrl, sourceSlot, targetSlot, sourceChaCtrl.GetAccessoryComponent(sourceSlot)?.gameObject, MaterialEditor.ObjectType.Accessory);
                 }
-                Logger.LogDebug($"->Changed: Acc{targetSlot} / Part: {(ChaListDefine.CategoryNo)targetParts[targetSlot].type} / ID: {targetParts[targetSlot].id}");
+                Logger.LogDebug($"->Changed: Acc{targetSlot} / Part: {(ChaListDefine.CategoryNo)tmpArr[targetSlot].type} / ID: {tmpArr[targetSlot].id}");
             }
         }
 
         public static void ClearAccessories(ChaControl chaCtrl)
         {
-            for (int i = 0; i < 20; i++)
+            for (int i = 0; i < chaCtrl.nowCoordinate.accessory.parts.Length; i++)
             {
                 if (!(IsHairAccessory(chaCtrl, i) && Patches.lockHairAcc))
                 {
@@ -1285,10 +1272,13 @@ namespace CoordinateLoadOption
                     Logger.LogDebug($"Keep HairAcc{i}: {chaCtrl.nowCoordinate.accessory.parts[i].id}");
                 }
             }
+
             if (CLO._isMoreAccessoriesExist)
             {
-                MoreAccessories_Support.ClearMoreAccessoriesData(chaCtrl);
+                chaCtrl.nowCoordinate.accessory.parts = MoreAccessories_Support.RemoveEmptyFromBackToFront(chaCtrl.nowCoordinate.accessory.parts);
+                MoreAccessories_Support.Update();
             }
+
             chaCtrl.ChangeAccessory(true);
             chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
             chaCtrl.ChangeCoordinateTypeAndReload(false);
@@ -1328,24 +1318,7 @@ namespace CoordinateLoadOption
         /// <param name="chaCtrl">對象角色</param>
         /// <param name="index">飾品欄位index</param>
         /// <returns></returns>
-        public static bool IsHairAccessory(ChaControl chaCtrl, int index) => GetChaAccessoryComponent(chaCtrl, index)?.gameObject.GetComponent<ChaCustomHairComponent>() != null;
-
-        /// <summary>
-        /// 取得ChaAccessoryComponent
-        /// </summary>
-        /// <param name="chaCtrl"></param>
-        /// <param name="index"></param>
-        /// <returns>ChaAccessoryComponent</returns>
-        public static ChaAccessoryComponent GetChaAccessoryComponent(ChaControl chaCtrl, int index)
-        {
-            if (CLO._isMoreAccessoriesExist)
-            {
-                return MoreAccessories_Support.GetChaAccessoryComponent(chaCtrl, index);
-            }
-            else
-            {
-                return chaCtrl.GetAccessoryComponent(index);
-            }
-        }
+        public static bool IsHairAccessory(ChaControl chaCtrl, int index)
+            => null != chaCtrl.GetAccessoryComponent(index)?.gameObject.GetComponent<ChaCustomHairComponent>();
     }
 }

@@ -265,13 +265,13 @@ namespace CoordinateLoadOption {
 
                 //過濾假的HairAccInfo
                 if (null != dataFromBackCoor) {
-                    foreach (KeyValuePair<int, object> rk in dataFromBackCoor.Where(x => null == CoordinateLoad.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
+                    foreach (KeyValuePair<int, object> rk in dataFromBackCoor.Where(x => null == chaCtrl.GetAccessoryComponent(x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
                         dataFromBackCoor.Remove(rk.Key);
                     }
                     Logger.LogDebug($"Test with {dataFromBackCoor.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromBackCoor.Select(x => x.Key.ToString()).ToArray())}");
                 }
                 if (null != dataFromCon) {
-                    foreach (KeyValuePair<int, object> rk in dataFromCon.Where(x => null == CoordinateLoad.GetChaAccessoryComponent(chaCtrl, x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
+                    foreach (KeyValuePair<int, object> rk in dataFromCon.Where(x => null == chaCtrl.GetAccessoryComponent(x.Key)?.gameObject.GetComponent<ChaCustomHairComponent>()).ToList()) {
                         dataFromCon.Remove(rk.Key);
                     }
                     Logger.LogDebug($"Test with {dataFromCon.Count} HairAcc after remove fake HairAccData {string.Join(",", dataFromCon.Select(x => x.Key.ToString()).ToArray())}");
