@@ -202,6 +202,9 @@ namespace KK_StudioCharaOnlyLoadBody
                 {
                     Singleton<GuideObjectManager>.Instance.Delete(boneInfo.guideObject, true);
                 }
+
+                _ = ocichar.charInfo.chaFile.Invoke("SaveFile", new object[] { Path.GetTempFileName() });
+
                 ocichar.listBones = (from v in ocichar.listBones
                                      where v.boneGroup != OIBoneInfo.BoneGroup.Hair
                                      select v).ToList<OCIChar.BoneInfo>();
@@ -221,20 +224,18 @@ namespace KK_StudioCharaOnlyLoadBody
                 ChaControl tmpCtrl = new ChaControl();
                 tmpCtrl.SetProperty<ChaInfo>("chaFile", new ChaFileControl());
 
-                if (null != MoreAccessories) {
-                    CopyAllMoreAccessoriesData(ocichar.charInfo, tmpCtrl);
+                //Main Load Control
+                bool success = true;
+                // This function always return false: chaCtrl.chaFile.LoadFileLimited
+                _ = chaCtrl.chaFile.LoadFileLimited(fullPath, (byte)sex, true, true, true, true, false);
+                success &= LoadExtendedData(ocichar, charaFileSort.selectPath, (byte)sex);
+                success &= UpdateTreeNodeObjectName(ocichar);
+                if (null != MoreAccessories)
+                {
+                    UpdateMoreAccessoriesData(ocichar.charInfo);
                 }
 
-                //Main Load Control
-                if (chaCtrl.chaFile.LoadFileLimited(fullPath, (byte)sex, true, true, true, true, false) ||
-                    !LoadExtendedData(ocichar, charaFileSort.selectPath, (byte)sex) ||
-                    !UpdateTreeNodeObjectName(ocichar)) {
-                    Logger.LogError("Load Body FAILED");
-                } else {
-                    if (null != MoreAccessories) {
-                        CopyAllMoreAccessoriesData(tmpCtrl, ocichar.charInfo);
-                    }
-                }
+                if (!success) Logger.LogError("Load Body FAILED");
 
                 GameObject.Destroy(tmpCtrl);
 
@@ -478,13 +479,14 @@ namespace KK_StudioCharaOnlyLoadBody
         /// </summary>
         /// <param name="oriChaCtrl">來源對象</param>
         /// <param name="targetChaCtrl">目標對象</param>
-        public static void CopyAllMoreAccessoriesData(ChaControl oriChaCtrl, ChaControl targetChaCtrl) {
+        public static void UpdateMoreAccessoriesData(ChaControl targetChaCtrl)
+        {
             //這條如果call ChaFile.CopyAll會觸發其他鉤子，導致ExtendedData無法正常作用
             //所以用reflection處理
             MoreAccessories.InvokeStatic("ArraySync", new object[] { targetChaCtrl.chaFile });
             MoreAccessories.GetFieldStatic("_self").Invoke("Update");
 
-            Logger.LogDebug("Copy MoreAccessories Finish");
+            Logger.LogDebug("Update MoreAccessories Finish");
         }
 
         /// <summary>
