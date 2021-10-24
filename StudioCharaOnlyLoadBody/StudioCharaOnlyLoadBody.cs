@@ -28,27 +28,31 @@ using Sideloader.AutoResolver;
 using Studio;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using UILib;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace KK_StudioCharaOnlyLoadBody {
+namespace KK_StudioCharaOnlyLoadBody
+{
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
     [BepInDependency("com.joan6694.illusionplugins.moreaccessories", BepInDependency.DependencyFlags.SoftDependency)]
-    public class StudioCharaOnlyLoadBody : BaseUnityPlugin {
+    public class StudioCharaOnlyLoadBody : BaseUnityPlugin
+    {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kks.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "21.10.23.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.4.1";
+        internal const string PLUGIN_VERSION = "21.10.24.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.4.2";
 
         public static ConfigEntry<string> ExtendedDataToCopySetting { get; private set; }
         public static string[] ExtendedDataToCopy;
 
         internal static new ManualLogSource Logger;
-        public void Awake() {
+        public void Awake()
+        {
             Logger = base.Logger;
             UIUtility.Init();
             Extension.Logger.logger = Logger;
@@ -64,7 +68,8 @@ namespace KK_StudioCharaOnlyLoadBody {
 
             //config.ini設定
             ExtendedDataToCopySetting = Config.Bind<string>("Config", "ExtendedData To Copy", string.Join(";", SampleArray), "Don't modify this unless you know what you are doing.");
-            ExtendedDataToCopySetting.SettingChanged += delegate {
+            ExtendedDataToCopySetting.SettingChanged += delegate
+            {
                 ExtendedDataToCopy = ExtendedDataToCopySetting.Value.Split(';');
             };
             ExtendedDataToCopy = ExtendedDataToCopySetting.Value.Split(';');
@@ -72,11 +77,13 @@ namespace KK_StudioCharaOnlyLoadBody {
         }
     }
 
-    class Patches {
+    class Patches
+    {
         private static readonly GameObject[] btn = new GameObject[2];
 
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "InitCharaList")]
-        public static void InitCharaListPostfix(CharaList __instance) {
+        public static void InitCharaListPostfix(CharaList __instance)
+        {
             //繪製UI
             GameObject original = GameObject.Find("StudioScene/Canvas Main Menu/01_Add/" + __instance.name + "/Button Change");
             int i = (string.Equals(__instance.name, "00_Female") ? 1 : 0);
@@ -88,7 +95,8 @@ namespace KK_StudioCharaOnlyLoadBody {
             btn[i].transform.SetRect(new Vector2(0, 1), new Vector2(0, 1), new Vector2(180, -401), new Vector2(390, -380));
 
             //依照語言選擇圖片
-            switch (Application.systemLanguage) {
+            switch (Application.systemLanguage)
+            {
                 case SystemLanguage.Chinese:
                 case SystemLanguage.ChineseTraditional:
                 case SystemLanguage.ChineseSimplified:
@@ -114,34 +122,42 @@ namespace KK_StudioCharaOnlyLoadBody {
         //將我的按鈕和官方的變更按鈕同步狀態
         #region Button Interactive
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnDelete")]
-        public static void OnDelete(CharaList __instance) {
+        public static void OnDelete(CharaList __instance)
+        {
             SetKeepCoorButtonInteractable(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnDeselect")]
-        public static void OnDeselect(CharaList __instance) {
+        public static void OnDeselect(CharaList __instance)
+        {
             SetKeepCoorButtonInteractable(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnSelect")]
-        public static void OnSelect(CharaList __instance) {
+        public static void OnSelect(CharaList __instance)
+        {
             SetKeepCoorButtonInteractable(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnSelectChara")]
-        public static void OnSelectChara(CharaList __instance) {
+        public static void OnSelectChara(CharaList __instance)
+        {
             SetKeepCoorButtonInteractable(__instance);
         }
 
         [HarmonyPostfix, HarmonyPatch(typeof(CharaList), "OnSort")]
-        public static void OnSort(CharaList __instance) {
+        public static void OnSort(CharaList __instance)
+        {
             SetKeepCoorButtonInteractable(__instance);
         }
 
-        private static void SetKeepCoorButtonInteractable(CharaList __instance) {
-            if (null != __instance) {
+        private static void SetKeepCoorButtonInteractable(CharaList __instance)
+        {
+            if (null != __instance)
+            {
                 int i = (string.Equals(__instance.name, "00_Female") ? 1 : 0);
-                if (null != btn[i] && null != btn[i].GetComponent<Button>() && null != __instance.GetField("buttonChange")) {
+                if (null != btn[i] && null != btn[i].GetComponent<Button>() && null != __instance.GetField("buttonChange"))
+                {
                     btn[i].GetComponent<Button>().interactable = ((Button)__instance.GetField("buttonChange")).interactable;
                 }
             }
@@ -149,22 +165,26 @@ namespace KK_StudioCharaOnlyLoadBody {
         #endregion
     }
 
-    class Model {
+    class Model
+    {
         private static readonly ManualLogSource Logger = StudioCharaOnlyLoadBody.Logger;
         internal static Type ChaFile_CopyAll_Patches = null;
         internal static Type MoreAccessories = null;
 
-        internal static void Awake() {
+        internal static void Awake()
+        {
             //MoreAcc相關
-            string path = KoikatuHelper.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories",new Version(2,0,10))?.Info.Location;
-            if (null != path && path.Length != 0) {
+            string path = KoikatuHelper.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories", new Version(2, 0, 10))?.Info.Location;
+            if (null != path && path.Length != 0)
+            {
                 Assembly ass = Assembly.LoadFrom(path);
                 MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
             }
         }
 
         //按鈕邏輯
-        internal static void OnButtonClick(CharaList __instance, int sex) {
+        internal static void OnButtonClick(CharaList __instance, int sex)
+        {
             CharaFileSort charaFileSort = __instance.GetField("charaFileSort") as CharaFileSort;
             ChaFileControl chaFileControl = new ChaFileControl();
             string fullPath = chaFileControl.ConvertCharaFilePath(charaFileSort.selectPath, (byte)sex, false);
@@ -173,11 +193,13 @@ namespace KK_StudioCharaOnlyLoadBody {
                                select Studio.Studio.GetCtrlInfo(v) as OCIChar into v
                                where v != null
                                select v).ToArray();
-            foreach (OCIChar ocichar in array) {
+            foreach (OCIChar ocichar in array)
+            {
                 ChaControl chaCtrl = ocichar.charInfo;
                 foreach (OCIChar.BoneInfo boneInfo in (from v in ocichar.listBones
                                                        where v.boneGroup == OIBoneInfo.BoneGroup.Hair
-                                                       select v).ToList<OCIChar.BoneInfo>()) {
+                                                       select v).ToList<OCIChar.BoneInfo>())
+                {
                     Singleton<GuideObjectManager>.Instance.Delete(boneInfo.guideObject, true);
                 }
                 ocichar.listBones = (from v in ocichar.listBones
@@ -186,7 +208,8 @@ namespace KK_StudioCharaOnlyLoadBody {
                 int[] array2 = (from b in ocichar.oiCharInfo.bones
                                 where b.Value.@group == OIBoneInfo.BoneGroup.Hair
                                 select b.Key).ToArray<int>();
-                for (int j = 0; j < array2.Length; j++) {
+                for (int j = 0; j < array2.Length; j++)
+                {
                     ocichar.oiCharInfo.bones.Remove(array2[j]);
                 }
                 ocichar.hairDynamic = null;
@@ -222,7 +245,8 @@ namespace KK_StudioCharaOnlyLoadBody {
                 ocichar.hairDynamic = AddObjectFemale.GetHairDynamic(ocichar.charInfo.objHair);
                 ocichar.skirtDynamic = AddObjectFemale.GetSkirtDynamic(ocichar.charInfo.objClothes);
                 ocichar.InitFK(null);
-                foreach (var tmp in FKCtrl.parts.Select((OIBoneInfo.BoneGroup p, int i2) => new { p, i2 })) {
+                foreach (var tmp in FKCtrl.parts.Select((OIBoneInfo.BoneGroup p, int i2) => new { p, i2 }))
+                {
                     ocichar.ActiveFK(tmp.p, ocichar.oiCharInfo.activeFK[tmp.i2], ocichar.oiCharInfo.activeFK[tmp.i2]);
                 }
                 ocichar.ActiveKinematicMode(OICharInfo.KinematicMode.FK, ocichar.oiCharInfo.enableFK, true);
@@ -246,26 +270,33 @@ namespace KK_StudioCharaOnlyLoadBody {
         /// <param name="file">新角色存檔路徑</param>
         /// <param name="sex">性別</param>
         /// <returns></returns>
-        private static bool LoadExtendedData(OCIChar ocichar, string file, byte sex) {
+        private static bool LoadExtendedData(OCIChar ocichar, string file, byte sex)
+        {
             ChaFileControl tmpChaFile = new ChaFileControl();
             tmpChaFile.LoadCharaFile(file, sex);
 
-            foreach (string ext in StudioCharaOnlyLoadBody.ExtendedDataToCopy) {
-                switch (ext) {
+            foreach (string ext in StudioCharaOnlyLoadBody.ExtendedDataToCopy)
+            {
+                switch (ext)
+                {
                     case "KKABMPlugin.ABMData":
-                    #region ABMX
+                        #region ABMX
                         //取得BoneController
                         MonoBehaviour BoneController = ocichar.charInfo.GetComponents<MonoBehaviour>().FirstOrDefault(x => Equals(x.GetType().Namespace, "KKABMX.Core"));
-                        if (null == BoneController) {
+                        if (null == BoneController)
+                        {
                             Logger.LogDebug("No ABMX BoneController found");
                             break;
                         }
 
                         //建立重用function
-                        void GetModifiers(Action<object> action) {
-                            foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames")) {
+                        void GetModifiers(Action<object> action)
+                        {
+                            foreach (string boneName in (IEnumerable<string>)BoneController.Invoke("GetAllPossibleBoneNames"))
+                            {
                                 object modifier = BoneController.Invoke("GetModifier", new object[] { boneName });
-                                if (null != modifier) {
+                                if (null != modifier)
+                                {
                                     action(modifier);
                                 }
                             }
@@ -273,8 +304,10 @@ namespace KK_StudioCharaOnlyLoadBody {
 
                         //取得舊角色衣服ABMX數據
                         List<object> previousModifier = new List<object>();
-                        GetModifiers(x => {
-                            if ((bool)x.Invoke("IsCoordinateSpecific")) {
+                        GetModifiers(x =>
+                        {
+                            if ((bool)x.Invoke("IsCoordinateSpecific"))
+                            {
                                 previousModifier.Add(x);
                             }
                         });
@@ -288,27 +321,35 @@ namespace KK_StudioCharaOnlyLoadBody {
                         //清理新角色數據，將衣服數據刪除
                         List<object> newModifiers = new List<object>();
                         int i = 0;
-                        GetModifiers(x => {
-                            if ((bool)x.Invoke("IsCoordinateSpecific")) {
+                        GetModifiers(x =>
+                        {
+                            if ((bool)x.Invoke("IsCoordinateSpecific"))
+                            {
                                 Logger.LogDebug("Clean new coordinate ABMX BoneData: " + (string)x.GetProperty("BoneName"));
                                 x.Invoke("MakeNonCoordinateSpecific");
                                 object y = x.Invoke("GetModifier", new object[] { (ChaFileDefine.CoordinateType)0 });
                                 y.Invoke("Clear");
                                 x.Invoke("MakeCoordinateSpecific");    //保險起見以免後面沒有成功清除
                                 i++;
-                            } else {
+                            }
+                            else
+                            {
                                 newModifiers.Add(x);
                             }
                         });
 
                         //將舊的衣服數據合併回到角色身上
                         i = 0;
-                        foreach (object modifier in previousModifier) {
+                        foreach (object modifier in previousModifier)
+                        {
                             string bonename = (string)modifier.GetProperty("BoneName");
-                            if (!newModifiers.Any(x => string.Equals(bonename, (string)x.GetProperty("BoneName")))) {
+                            if (!newModifiers.Any(x => string.Equals(bonename, (string)x.GetProperty("BoneName"))))
+                            {
                                 BoneController.Invoke("AddModifier", new object[] { modifier });
                                 Logger.LogDebug("Rollback cooridnate ABMX BoneData: " + bonename);
-                            } else {
+                            }
+                            else
+                            {
                                 Logger.LogError("Duplicate coordinate ABMX BoneData: " + bonename);
                             }
                             i++;
@@ -336,9 +377,10 @@ namespace KK_StudioCharaOnlyLoadBody {
                         break;
                     #endregion
                     case "com.bepis.sideloader.universalautoresolver":
-                    #region SideloaderUAS
+                        #region SideloaderUAS
                         //判斷CategoryNo分類function
-                        bool isBelongsToCharaBody(ChaListDefine.CategoryNo categoryNo) {
+                        bool isBelongsToCharaBody(ChaListDefine.CategoryNo categoryNo)
+                        {
                             Type StructReference = typeof(UniversalAutoResolver).Assembly.GetType("Sideloader.AutoResolver.StructReference");
                             return StructReference.GetPropertyStatic("ChaFileFaceProperties").ToDictionary<object, object>().Keys.Any(x => (ChaListDefine.CategoryNo)x.GetField("Category") == categoryNo) ||
                                 StructReference.GetPropertyStatic("ChaFileBodyProperties").ToDictionary<object, object>().Keys.Any(x => (ChaListDefine.CategoryNo)x.GetField("Category") == categoryNo) ||
@@ -347,21 +389,29 @@ namespace KK_StudioCharaOnlyLoadBody {
                         }
 
                         //extInfo整理
-                        int cleanExtData(ref PluginData tmpExtData, bool keepBodyData) {
+                        int cleanExtData(ref PluginData tmpExtData, bool keepBodyData)
+                        {
                             tmpExtData = ExtendedSave.GetExtendedDataById(ocichar.charInfo.chaFile, ext);
-                            if (tmpExtData != null && tmpExtData.data.ContainsKey("info")) {
-                                if (tmpExtData.data.TryGetValue("info", out object tmpExtInfo)) {
-                                    if (null != tmpExtInfo as object[]) {
+                            if (tmpExtData != null && tmpExtData.data.ContainsKey("info"))
+                            {
+                                if (tmpExtData.data.TryGetValue("info", out object tmpExtInfo))
+                                {
+                                    if (null != tmpExtInfo as object[])
+                                    {
                                         List<object> tmpExtList = new List<object>(tmpExtInfo as object[]);
                                         Logger.LogDebug($"Sideloader count: {tmpExtList.Count}");
                                         ResolveInfo tmpResolveInfo;
-                                        for (int j = 0; j < tmpExtList.Count;) {
+                                        for (int j = 0; j < tmpExtList.Count;)
+                                        {
                                             tmpResolveInfo = typeof(ResolveInfo).InvokeStatic("Deserialize", new object[] { (byte[])tmpExtList[j] }) as ResolveInfo;
 
-                                            if (keepBodyData == isBelongsToCharaBody(tmpResolveInfo.CategoryNo)) {
+                                            if (keepBodyData == isBelongsToCharaBody(tmpResolveInfo.CategoryNo))
+                                            {
                                                 Logger.LogDebug($"Add Sideloader info: {tmpResolveInfo.GUID} : {tmpResolveInfo.Property} : {tmpResolveInfo.Slot}");
                                                 j++;
-                                            } else {
+                                            }
+                                            else
+                                            {
                                                 Logger.LogDebug($"Remove Sideloader info: {tmpResolveInfo.GUID} : {tmpResolveInfo.Property} : {tmpResolveInfo.Slot}");
                                                 tmpExtList.RemoveAt(j);
                                             }
@@ -394,9 +444,12 @@ namespace KK_StudioCharaOnlyLoadBody {
                         (oldExtData?.data?["info"] as object[])?.CopyTo(tmpObj, 0);
                         (newExtData?.data?["info"] as object[])?.CopyTo(tmpObj, L1);
                         PluginData extData = null;
-                        if (tmpObj.Length != 0) {
-                            extData = new PluginData {
-                                data = new Dictionary<string, object> {
+                        if (tmpObj.Length != 0)
+                        {
+                            extData = new PluginData
+                            {
+                                data = new Dictionary<string, object>
+                                {
                                     ["info"] = tmpObj
                                 }
                             };
@@ -438,7 +491,8 @@ namespace KK_StudioCharaOnlyLoadBody {
         /// 右側選單的名字更新
         /// </summary>
         /// <param name="oCIChar">更新對象</param>
-        public static bool UpdateTreeNodeObjectName(OCIChar oCIChar) {
+        public static bool UpdateTreeNodeObjectName(OCIChar oCIChar)
+        {
             oCIChar.charInfo.name = oCIChar.charInfo.chaFile.parameter.fullname;
             oCIChar.charInfo.chaFile.SetProperty<ChaFile>("charaFileName", oCIChar.charInfo.chaFile.parameter.fullname);
             oCIChar.treeNodeObject.textName = oCIChar.charInfo.chaFile.parameter.fullname;
