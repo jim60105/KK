@@ -1042,7 +1042,7 @@ namespace CoordinateLoadOption
             //Reload
             chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
             chaCtrl.ChangeCoordinateType((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, false);
-            chaCtrl.Reload();   //全false的Reload會觸發KKAPI的hook
+            //chaCtrl.Reload();   //全false的Reload會觸發KKAPI的hook
 
             #endregion
 
