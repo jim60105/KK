@@ -56,8 +56,8 @@ namespace CoordinateLoadOption
     {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kks.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "21.10.24.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.0";
+        internal const string PLUGIN_VERSION = "21.10.29.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.1";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -69,7 +69,6 @@ namespace CoordinateLoadOption
             Extension.Logger.logger = Logger;
             UIUtility.Init();
             harmonyInstance = Harmony.CreateAndPatchAll(typeof(Patches));
-            //harmonyInstance.PatchAll(typeof(MoreAccessories_Support));
 
             //Studio
             Type CostumeInfoType = typeof(MPCharCtrl).GetNestedType("CostumeInfo", BindingFlags.NonPublic);
@@ -93,7 +92,6 @@ namespace CoordinateLoadOption
         public static bool _isMoreAccessoriesExist = false;
         public static bool _isMaterialEditorExist = false;
         public static bool _isHairAccessoryCustomizerExist = false;
-        public static bool _isCharaOverlayBasedOnCoordinateExist = false;
 
         internal const int FORCECLEANCOUNT = 100;    //tmpChara清理倒數
         public enum ClothesKind
@@ -121,7 +119,6 @@ namespace CoordinateLoadOption
             _isMoreAccessoriesExist = MoreAccessories_Support.LoadAssembly();
             _isMaterialEditorExist = new MaterialEditor(null).LoadAssembly();
             _isHairAccessoryCustomizerExist = new HairAccessoryCustomizer(null).LoadAssembly();
-            _isCharaOverlayBasedOnCoordinateExist = new COBOC(null).LoadAssembly();
 
             //Patch other plugins at Start()
             if (_isHairAccessoryCustomizerExist)
@@ -289,7 +286,8 @@ namespace CoordinateLoadOption
             float baseY = -322;
             Toggle tglEyeOverlay, tglFaceOverlay, tglBodyOverlay;
 
-            if (CLO._isCharaOverlayBasedOnCoordinateExist)
+            #region COBOC OLD UI Code
+            if (false)
             {
                 bool onFromChildFlag = false;
                 //分隔線
@@ -361,6 +359,7 @@ namespace CoordinateLoadOption
                 //tglCharaOverlay.isOn = false;
                 toggleList.AddRange(new Toggle[] { tglCharaOverlay, tglEyeOverlay, tglFaceOverlay, tglBodyOverlay });
             }
+            #endregion
 
             if (CLO._isABMXExist)
             {
@@ -806,7 +805,6 @@ namespace CoordinateLoadOption
         internal static ChaControl tmpChaCtrl;
         private static ChaFileCoordinate backupTmpCoordinate;
         private static int forceCleanCount = CLO.FORCECLEANCOUNT;
-        private static COBOC coboc;
         private static HairAccessoryCustomizer hairacc;
 
         internal static void Update()
@@ -849,14 +847,6 @@ namespace CoordinateLoadOption
             else
             {
                 chaCtrl = Singleton<CustomBase>.Instance.chaCtrl;
-            }
-            //KK_COBOC
-            coboc = new COBOC(chaCtrl);
-            if (CLO._isCharaOverlayBasedOnCoordinateExist && null != chaCtrl)
-            {
-                //coboc.SetExtDataFromController();
-                coboc.GetControllerAndBackupData(targetChaCtrl: chaCtrl);
-                coboc.GetIrisDisplaySide();
             }
             hairacc = new HairAccessoryCustomizer(chaCtrl);
             if (CLO._isHairAccessoryCustomizerExist && null != chaCtrl)
@@ -1046,21 +1036,6 @@ namespace CoordinateLoadOption
 
             #endregion
 
-            //KK_COBOC
-            if (kcox.isExist && coboc.isExist)
-            {
-                if (Patches.charaOverlay.ToList().Where((x) => x).Count() > 0 && null != ExtendedSave.GetExtendedDataById(backupTmpCoordinate, coboc.GUID))
-                {
-                    coboc.CopyCurrentCharaOverlayByController(tmpChaCtrl, Patches.charaOverlay);
-                    coboc.SetExtDataFromController();
-                }
-                else
-                {
-                    coboc.SetIrisDisplaySide();
-                    Logger.LogDebug("Skip load CharaOverlay");
-                }
-            }
-
             finishedCount++;
 
             if (CLO.insideStudio && null != ocichar)
@@ -1097,8 +1072,6 @@ namespace CoordinateLoadOption
         {
             hairacc.ClearBackup();
             hairacc = null;
-            coboc.ClearBackup();
-            coboc = null;
 
             tmpChaCtrl.StopAllCoroutines();
             backupTmpCoordinate = null;
