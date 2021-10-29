@@ -40,8 +40,8 @@ namespace PNGCaptureSizeModifier
     {
         internal const string PLUGIN_NAME = "PNG Capture Size Modifier";
         internal const string GUID = "com.jim60105.kks.pngcapturesizemodifier";
-        internal const string PLUGIN_VERSION = "21.08.29.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.6.1";
+        internal const string PLUGIN_VERSION = "21.10.30.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.6.2";
 
         public static ConfigEntry<float> TimesOfMaker { get; private set; }
         public static ConfigEntry<float> TimesOfStudio { get; private set; }
@@ -66,6 +66,24 @@ namespace PNGCaptureSizeModifier
             StudioSceneWatermark = Config.Bind("Config", "Use Studio Scene Watermark", true, "It is extremely NOT recommended to disable the watermark function, which is for distinguishing between scene data and normal image.");
             CharaMakerWatermark = Config.Bind("Config", "Use Character Watermark", true);
             ResolutionWaterMark = Config.Bind("Config", "Use Resolution Watermark", true, "When the StudioScene/Character watermark is enabled, the resolution watermark will be forced to use.");
+
+            EventHandler settingChange = (sender, o) =>
+            {
+                if (ResolutionWaterMark.Value) { return; }
+
+                if (StudioSceneWatermark.Value || CharaMakerWatermark.Value)
+                {
+                    ResolutionWaterMark.Value = true;
+                    Logger.Log(LogLevel.Message | LogLevel.Error, @"When enabling CHARA DATA or SCENE DATA marks, it is mandatory to enable resolution mark");
+                    Logger.LogWarning(@"
+I designed this intentionally, because I saw a lot of feedback about downloading thumbnails in the Koikatu Community, and this is the solution I thought of.
+Because there is no way to know the file size before the picture is generated, instead I added the resolution.
+This is mandatory, in order to solve the above problem.
+If you think this is stupid, go and complain to monkeys who don't know how to download original pictures.");
+                }
+            };
+            settingChange(null, null);
+            ResolutionWaterMark.SettingChanged += settingChange;
 
             PathToTheFontResource = Config.Bind("WaterMark", "Path of the font picture", "", "Full path to the font resource picture, must be a PNG or JPG.");
             PathToTheFontResource.SettingChanged += delegate { SetFontPic(); };
@@ -149,7 +167,8 @@ namespace PNGCaptureSizeModifier
         [HarmonyPostfix, HarmonyPatch(typeof(CustomFileListCtrl), "UpdateSort")]
         public static void UpdateSortPostFix() => ChangeRowCount();
 
-        public static void ChangeRowCount() { 
+        public static void ChangeRowCount()
+        {
             //Block HScene
             if (null == Singleton<CustomBase>.Instance) return;
 

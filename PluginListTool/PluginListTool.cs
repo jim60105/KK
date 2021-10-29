@@ -70,6 +70,7 @@ namespace PluginListTool
             {
                 _isInited = true;
                 Logger.LogDebug($"--Start listing loaded plugin infos--");
+                Logger.LogDebug($"--These are listed in order of loading--");
 
                 #region GetPlugins
                 //IPA

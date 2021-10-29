@@ -76,6 +76,7 @@ namespace StudioDualScreen
                     mainCamera = GameObject.Find("StudioScene/Camera/Main Camera").GetComponent<Camera>();
                 }
                 Enable();
+                StudioDualScreen.Logger.LogWarning("After enabling dual screens, F9 screenshots will cause no response, please use F11 instead");
                 StudioDualScreen.Logger.LogMessage("Enable/Reload second screen.");
             }
 
