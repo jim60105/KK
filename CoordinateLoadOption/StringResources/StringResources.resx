@@ -186,4 +186,11 @@
   <data name="showSelection" xml:space="preserve">
     <value>Show Selection</value>
   </data>
+  <data name="makerWarning" xml:space="preserve">
+    <value>When performing coordinate changes in Maker, you may encounter an error here. 
+The implementation of changing coordinates optionally is to read and apply the coordinate to the dummy first, and then pick up the wanted parts. 
+The design consideration of KKSAPI is that ""only one character will loaded in Maker"", which causes plugins that rely on KKSAPI to fail to initialize the dummy. 
+If you encounter errors, please try to install IllusionFixes.NullChecks, it can easily bypass the situation. 
+Since the dummy does not use other unsupported plugin data, their initialization failed does not affect the result of the coordinate change.</value>
+  </data>
 </root>

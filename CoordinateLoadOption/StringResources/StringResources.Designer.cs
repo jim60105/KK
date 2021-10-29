@@ -223,6 +223,19 @@ namespace CoordinateLoadOption.StringResources {
         }
         
         /// <summary>
+        ///   查詢類似 When performing coordinate changes in Maker, you may encounter an error here. 
+        ///The implementation of changing coordinates optionally is to read and apply the coordinate to the dummy first, and then pick up the wanted parts. 
+        ///The design consideration of KKSAPI is that &quot;&quot;only one character will loaded in Maker&quot;&quot;, which causes plugins that rely on KKSAPI to fail to initialize the dummy. 
+        ///If you encounter errors, please try to install IllusionFixes.NullChecks, it can easily bypass the situation. 
+        ///Since the  [字串的其餘部分已遭截斷]&quot;; 的當地語系化字串。
+        /// </summary>
+        internal static string makerWarning {
+            get {
+                return ResourceManager.GetString("makerWarning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   查詢類似 ABMX 的當地語系化字串。
         /// </summary>
         internal static string readABMX {

@@ -186,4 +186,10 @@
   <data name="showSelection" xml:space="preserve">
     <value>顯示選擇項</value>
   </data>
+  <data name="makerWarning" xml:space="preserve">
+    <value>在Maker中換衣服時，你可能會在此遇到錯誤。
+換衣服的實作是先讀衣裝存檔到假人身上，再把需要的部份扒過來。
+而KKSAPI設計考量為「在Maker中只會載入一個角色」，這導致依賴於KKSAPI的插件無法成功初始化假人。
+如果你碰到問題請試著安裝IllusionFixes.NullChecks，它可以簡單的繞過問題。因為假人不使用到其它未支援的插件資料，它們的初始化失敗並不影響到換衣成果。</value>
+  </data>
 </root>

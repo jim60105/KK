@@ -1118,8 +1118,16 @@ namespace CoordinateLoadOption
 
                 if (forceClean)
                 {
-                    Logger.Log(LogLevel.Message | LogLevel.Error | LogLevel.Warning, "Coordinate Load ended unexpectedly.");
-                    Logger.Log(LogLevel.Message | LogLevel.Error, "Please call the original game function manually instead.");
+                    Logger.Log(LogLevel.Message | LogLevel.Error, "Coordinate Load ended unexpectedly.");
+                    Logger.Log(LogLevel.Message | LogLevel.Error, "Please call the original game function manually instead. Close the \"Show Selection\" panel to do so.");
+                    Logger.LogMessage("Also, please check output_log for more information.");
+
+                    if (!CLO.insideStudio)
+                    {
+                        string msg = StringResources.StringResourcesManager.GetString("makerWarning");
+                        Logger.LogWarning(msg);
+                    }
+
                     Illusion.Game.Utils.Sound.Play(Illusion.Game.SystemSE.cancel);
                 }
                 else
@@ -1136,6 +1144,7 @@ namespace CoordinateLoadOption
                                                     ? new ChaFileAccessory.PartsInfo[Math.Max(Math.Max(sourceParts.Length, targetParts.Length), Patches.tgls2.Length)]
                                                     : new ChaFileAccessory.PartsInfo[20];
             targetParts.CopyTo(tmpArr, 0);
+            tmpArr = tmpArr.Select(p => p ?? new ChaFileAccessory.PartsInfo()).ToArray();
 
             bool isAllFalseFlag = true;
             foreach (bool b in Patches.tgls2.Select(x => x.isOn).ToArray())

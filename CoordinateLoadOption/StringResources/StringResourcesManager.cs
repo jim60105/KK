@@ -91,13 +91,12 @@ namespace CoordinateLoadOption.StringResources
                 {
                     if (en.Key.Equals(str))
                     {
-                        return en.Value.ToString();
+                        return en.Value as string;
                     }
                 }
+                Extension.Logger.LogError($"Can't found string in resource: {str}");
             }
 
-            // string not translated, revert to default resource
-            //return Properties.Resources.ResourceManager.GetString(str);
             return null;
         }
     }
