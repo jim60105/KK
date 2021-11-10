@@ -2,10 +2,9 @@
 
 FROM mcr.microsoft.com/dotnet/sdk:5.0-buster-slim AS build
 WORKDIR /src
-COPY ["SaveLoadCompressionWeb/SaveLoadCompressionWeb.csproj", "SaveLoadCompressionWeb/"]
-RUN dotnet restore "SaveLoadCompressionWeb/SaveLoadCompressionWeb.csproj"
+COPY SaveLoadCompression SaveLoadCompression
 COPY SaveLoadCompressionWeb SaveLoadCompressionWeb
-COPY KK_SaveLoadCompression KK_SaveLoadCompression
+RUN dotnet restore "SaveLoadCompressionWeb/SaveLoadCompressionWeb.csproj"
 WORKDIR "/src/SaveLoadCompressionWeb"
 RUN dotnet build "SaveLoadCompressionWeb.csproj" -c Release -o /app/build
 

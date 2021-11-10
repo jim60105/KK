@@ -330,10 +330,13 @@ ASALocalRun/
 .mfractor/
 
 *.psd
-/KK_FBIOpenUp/Resources/sample_chara.png
-/KK_FBIOpenUp/Resources/redBag.png
-/KK_FBIOpenUp/Resources/beam.png
-/KK_FBIOpenUp/Resources/saikodaze.jpg
-/KK_FBIOpenUp/Resources/FBI.mp4
-/KK_FBIOpenUp/Resources/FBI.ogg
-/KK_FBIOpenUp/Resources/Kumakichi.jpg
+FBIOpenUp/Resources/sample_chara.png
+FBIOpenUp/Resources/redBag.png
+FBIOpenUp/Resources/beam.png
+FBIOpenUp/Resources/saikodaze.jpg
+FBIOpenUp/Resources/FBI.mp4
+FBIOpenUp/Resources/FBI.ogg
+FBIOpenUp/Resources/Kumakichi.jpg
+
+!SaveLoadCompression/bin
+!KKS_SaveLoadCompression.dll
