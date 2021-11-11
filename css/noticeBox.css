@@ -1,0 +1,31 @@
+﻿/*
+ * Notice Box
+ */
+#noticeTitle {
+    position: fixed;
+    left: 35vw;
+    bottom: 0px;
+    background: rgba(34, 34, 34, 0.867) none repeat scroll 0% 0%;
+    padding: 8px;
+    transition: all 1s ease 0s;
+    writing-mode: vertical-lr;
+    display: unset;
+    margin: 0px;
+    font-size: x-large;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#noticeBox {
+    position: fixed;
+    left: -35vw;
+    z-index: 100;
+    background: rgba(34, 34, 34, 0.867) none repeat scroll 0% 0%;
+    transition: all 1s ease 0s;
+    width: 35vw;
+    bottom: 1vh;
+    display: unset;
+    max-height: 90vh;
+    padding: 30px;
+    overflow-y: auto;
+}
