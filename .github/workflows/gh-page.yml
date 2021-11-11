@@ -1,17 +1,7 @@
 name: Deploy to GitHub Pages
 
-# Run workflow on every push to the master branch
-on:
-  # Triggers the workflow on push or pull request events but only for the master branch
-  push:
-    branches:
-      - 'KKSunshine'
-      # - 'PluginDataReader'
-    tags:
-      - 'v*'
-  pull_request:
-    branches:
-      - 'master'
+# Run workflow on every push
+on: push
 
 jobs:
   deploy-to-github-pages:
@@ -25,7 +15,7 @@ jobs:
       - name: Setup .NET Core SDK
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 5.0
+          dotnet-version: 5.0.x
 
       # publishes Blazor project to the release-folder
       - name: Publish .NET Core Project
@@ -53,7 +43,7 @@ jobs:
       #       #remove leading and trailing quotes
       #       path="${path:1:-1}"
       #       newHash="sha256-$(openssl dgst -sha256 -binary $path | openssl base64 -A)"
-            
+
       #       if [ $oldHash != $newHash ]; then
       #         # escape slashes for json
       #         oldHash=$(echo "$oldHash" | sed 's;/;\\/;g')
