@@ -19,7 +19,7 @@ jobs:
 
       # publishes Blazor project to the release-folder
       - name: Publish .NET Core Project
-        run: dotnet publish "SaveLoadCompressionWeb/SaveLoadCompressionWeb.csproj" -c Release -o release --nologo
+        run: dotnet publish "SaveLoadCompressionWeb/SaveLoadCompressionWeb.csproj" -c Release -o release -p:PublishTrimmed=false --nologo
 
       # # changes the base-tag in index.html from '/' to 'BlazorGitHubPagesDemo' to match GitHub Pages repository subdirectory
       # - name: Change base-tag in index.html from / to BlazorGitHubPagesDemo
@@ -73,5 +73,5 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
           GITHUB_TOKEN: ${{ secrets.CR_PAT }}
-          BRANCH: gh-pages_slcweb
+          BRANCH: gh-pages
           FOLDER: release/wwwroot
