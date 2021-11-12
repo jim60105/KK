@@ -349,7 +349,6 @@ namespace FBIOpenUp {
 
                     videoPlayer.Prepare();
                     videoPlayer.prepareCompleted += (source) => {
-                        ///TODO 這實際上沒有辦法真的catch到錯誤，待修
                         if (videoPlayer.texture == null) {
                             Logger.LogError("Video not found");
                             GameObject.Destroy(shiftPicture.Transform.parent.gameObject);
@@ -459,7 +458,7 @@ namespace FBIOpenUp {
                     }
                     break;
                 default:
-                    ///TODO MainGame角色光未完成
+                    /// MainGame角色光未完成
                     intensityState = false;
                     return;
             }

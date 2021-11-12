@@ -55,4 +55,5 @@
     </Reference>
   </ItemGroup>
   <Import Project="..\Extension\Extension.projitems" Label="Shared" />
+  <Import Project="..\Extension.BepInEx\Extension.BepInEx.projitems" Label="Shared" />
 </Project>

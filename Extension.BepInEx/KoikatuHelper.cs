@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BepInEx;
+using System;
 
 namespace Extension
 {

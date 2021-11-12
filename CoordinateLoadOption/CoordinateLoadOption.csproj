@@ -111,5 +111,6 @@
     <PackageReference Include="ILRepack.Lib.MSBuild.Task" Version="2.0.18.2" />
   </ItemGroup>
   <Import Project="..\Extension\Extension.projitems" Label="Shared" />
+  <Import Project="..\Extension.BepInEx\Extension.BepInEx.projitems" Label="Shared" />
   <Import Project="..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.targets" Condition="Exists('..\packages\MSBuild.ILMerge.Task.1.0.5\build\MSBuild.ILMerge.Task.targets')" />
 </Project>

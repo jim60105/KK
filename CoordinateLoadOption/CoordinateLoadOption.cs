@@ -286,11 +286,12 @@ namespace CoordinateLoadOption
             float baseY = -322;
             Toggle tglEyeOverlay, tglFaceOverlay, tglBodyOverlay;
 
+#pragma warning disable CS0162 // 偵測到執行不到的程式碼
             #region COBOC OLD UI Code
             if (false)
             {
                 bool onFromChildFlag = false;
-                //分隔線
+                              //分隔線
                 Image line2 = UIUtility.CreateImage("line", panel.transform);
                 line2.color = Color.gray;
                 line2.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, baseY - 2f), new Vector2(-5f, baseY - 0.5f));
@@ -360,6 +361,7 @@ namespace CoordinateLoadOption
                 toggleList.AddRange(new Toggle[] { tglCharaOverlay, tglEyeOverlay, tglFaceOverlay, tglBodyOverlay });
             }
             #endregion
+#pragma warning restore CS0162 // 偵測到執行不到的程式碼
 
             if (CLO._isABMXExist)
             {

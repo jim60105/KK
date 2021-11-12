@@ -65,7 +65,9 @@ Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Extension\Extension.projitems*{0646be09-f599-4edb-b115-de4043c8d3be}*SharedItemsImports = 13
 		Extension.Unity\Extension.Unity.projitems*{0890918a-e149-42fd-959f-5e5464d62e6a}*SharedItemsImports = 13
+		Extension.Unity\Extension.Unity.projitems*{0c47ebaa-b09c-44e1-b114-5337b8beba79}*SharedItemsImports = 5
 		Extension\Extension.projitems*{0c47ebaa-b09c-44e1-b114-5337b8beba79}*SharedItemsImports = 5
+		Extension.Unity\Extension.Unity.projitems*{2d638e6e-8295-40d9-b76e-6f5a06779c6b}*SharedItemsImports = 5
 		Extension\Extension.projitems*{2d638e6e-8295-40d9-b76e-6f5a06779c6b}*SharedItemsImports = 5
 		PngCompression\PngCompression.projitems*{44628b37-8ef9-413b-b9b7-61838c08b71b}*SharedItemsImports = 13
 		Extension\Extension.projitems*{4f3e6d68-d3b2-4a0f-817a-272eaafb91aa}*SharedItemsImports = 5
@@ -73,20 +75,28 @@ Global
 		Extension\Extension.projitems*{51758989-959a-4a3e-b70c-ce4792c6d848}*SharedItemsImports = 5
 		PngCompression\PngCompression.projitems*{51758989-959a-4a3e-b70c-ce4792c6d848}*SharedItemsImports = 5
 		Extension.BepInEx\Extension.BepInEx.projitems*{552f86f7-88e5-4784-b80d-854b9a3c1237}*SharedItemsImports = 13
+		Extension.BepInEx\Extension.BepInEx.projitems*{661b77ce-d337-49d2-a359-ad85e68986b2}*SharedItemsImports = 5
+		Extension.Unity\Extension.Unity.projitems*{661b77ce-d337-49d2-a359-ad85e68986b2}*SharedItemsImports = 5
 		Extension\Extension.projitems*{661b77ce-d337-49d2-a359-ad85e68986b2}*SharedItemsImports = 5
 		Extension\Extension.projitems*{670a8493-10c7-4071-8fc8-a49ace4ccfdb}*SharedItemsImports = 5
 		Extension\Extension.projitems*{7aac6224-8071-4198-818b-5f18a6fbc4b4}*SharedItemsImports = 5
 		Extension\Extension.projitems*{7acb48d7-a67b-4458-9241-f64ade3e9028}*SharedItemsImports = 5
 		PngCompression\PngCompression.projitems*{7acb48d7-a67b-4458-9241-f64ade3e9028}*SharedItemsImports = 5
+		Extension.Unity\Extension.Unity.projitems*{82c2994c-24eb-4df4-a367-2f33ec849978}*SharedItemsImports = 5
 		Extension\Extension.projitems*{82c2994c-24eb-4df4-a367-2f33ec849978}*SharedItemsImports = 5
+		Extension.BepInEx\Extension.BepInEx.projitems*{85268fd6-a1fd-41aa-84d9-71f18815c034}*SharedItemsImports = 5
 		Extension\Extension.projitems*{85268fd6-a1fd-41aa-84d9-71f18815c034}*SharedItemsImports = 5
 		Extension\Extension.projitems*{957dec7d-0d10-41e5-9cf6-a72902355ccc}*SharedItemsImports = 5
 		Extension\Extension.projitems*{a5f430a2-ae7a-4bcd-a380-0f73add7a4a3}*SharedItemsImports = 5
 		Extension\Extension.projitems*{ac89e605-c385-4e44-b781-5ee60c7bc70a}*SharedItemsImports = 5
 		Extension\Extension.projitems*{b27d7aed-568b-462f-baca-ba2a19ccf9f6}*SharedItemsImports = 5
 		Extension\Extension.projitems*{d02e90af-be20-4eae-a462-5efda36095a9}*SharedItemsImports = 5
+		Extension.BepInEx\Extension.BepInEx.projitems*{dad31687-4de7-47c3-af78-6d366da10407}*SharedItemsImports = 5
+		Extension.Unity\Extension.Unity.projitems*{dad31687-4de7-47c3-af78-6d366da10407}*SharedItemsImports = 5
 		Extension\Extension.projitems*{dad31687-4de7-47c3-af78-6d366da10407}*SharedItemsImports = 5
+		Extension.BepInEx\Extension.BepInEx.projitems*{e70886b9-0aec-444b-90a1-95e47c4fe03f}*SharedItemsImports = 5
 		Extension\Extension.projitems*{e70886b9-0aec-444b-90a1-95e47c4fe03f}*SharedItemsImports = 5
+		Extension.BepInEx\Extension.BepInEx.projitems*{eaa640ea-ac91-41c6-a655-4ab5a364986d}*SharedItemsImports = 5
 		Extension\Extension.projitems*{eaa640ea-ac91-41c6-a655-4ab5a364986d}*SharedItemsImports = 5
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -181,8 +191,8 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		RESX_Rules = {"EnabledRules":["StringFormat","WhiteSpaceLead","WhiteSpaceTail"]}
-		RESX_NeutralResourcesLanguage = en-US
 		SolutionGuid = {9C634E2C-489D-470F-94E5-72383D9364B5}
+		RESX_NeutralResourcesLanguage = en-US
+		RESX_Rules = {"EnabledRules":["StringFormat","WhiteSpaceLead","WhiteSpaceTail"]}
 	EndGlobalSection
 EndGlobal
