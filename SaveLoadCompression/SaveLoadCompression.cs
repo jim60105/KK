@@ -19,7 +19,6 @@ MMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
 
 using System;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using BepInEx;
 using BepInEx.Configuration;
@@ -29,8 +28,11 @@ using HarmonyLib;
 using SevenZip;
 using Studio;
 using UnityEngine;
+using PngCompression;
 
-namespace SaveLoadCompression {
+namespace SaveLoadCompression
+{
+    [BepInProcess("CharaStudio")]
     [BepInProcess("KoikatsuSunshine")]
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     public class SaveLoadCompression : BaseUnityPlugin
@@ -109,17 +111,17 @@ namespace SaveLoadCompression {
         //Studio Save
         [HarmonyPostfix, HarmonyPatch(typeof(SceneInfo), "Save", new Type[] { typeof(string) })]
         public static void SavePostfix(string _path)
-            => Save(_path, Compression.Token.StudioToken);
+            => Save(_path, Token.StudioToken);
 
         //Chara Save
         [HarmonyPostfix, HarmonyPatch(typeof(ChaFileControl), "SaveCharaFile", new Type[] { typeof(string), typeof(byte), typeof(bool) })]
         public static void SaveCharaFilePostfix(ChaFileControl __instance, string filename, byte sex)
-            => Save(__instance.ConvertCharaFilePath(filename, sex), Compression.Token.CharaToken + "】" + Compression.Token.SexToken + sex);  //】:為了通過CharacterReplacer
+            => Save(__instance.ConvertCharaFilePath(filename, sex), Token.CharaToken + "】" + Token.SexToken + sex);  //】:為了通過CharacterReplacer
 
         //Coordinate Save
         [HarmonyPostfix, HarmonyPatch(typeof(ChaFileCoordinate), "SaveFile", new Type[] { typeof(string) })]
         public static void SaveFilePostfix(string path)
-            => Save(path, Compression.Token.CoordinateToken);
+            => Save(path, Token.CoordinateToken);
 
         public static void Save(string path, string token)
         {
@@ -173,7 +175,7 @@ namespace SaveLoadCompression {
                 {
                     originalSize = new FileInfo(path).Length;
 
-                    newSize = new Compression().Save(
+                    newSize = new PngCompression.PngCompression().Save(
                         path,
                         TempPath,
                         token: token,
@@ -258,39 +260,39 @@ namespace SaveLoadCompression {
         //CheckData
         [HarmonyPrefix, HarmonyPriority(Priority.First), HarmonyPatch(typeof(ChaFile), "CheckData", new Type[] { typeof(string) })]
         public static void CheckDataPrefix(ref string path)
-            => Load(ref path, Compression.Token.CharaToken);
+            => Load(ref path, Token.CharaToken);
 
         //Studio Load
         [HarmonyPriority(Priority.First)]
         public static void LoadPrefix(ref string _path)
-            => Load(ref _path, Compression.Token.StudioToken);
+            => Load(ref _path, Token.StudioToken);
 
         //Studio Import
         [HarmonyPrefix, HarmonyPriority(Priority.First), HarmonyPatch(typeof(SceneInfo), "Import", new Type[] { typeof(string) })]
         public static void ImportPrefix(ref string _path)
-            => Load(ref _path, Compression.Token.StudioToken);
+            => Load(ref _path, Token.StudioToken);
 
         //Chara Load
         [HarmonyPrefix, HarmonyPriority(Priority.First), HarmonyPatch(typeof(ChaFile), "LoadFile", new Type[] { typeof(string), typeof(bool), typeof(bool) })]
         public static void LoadFilePrefix(ref string path)
-            => Load(ref path, Compression.Token.CharaToken);
+            => Load(ref path, Token.CharaToken);
 
         [HarmonyPrefix, HarmonyPriority(Priority.First), HarmonyPatch(typeof(ChaFileControl), "LoadCharaFile", new Type[] { typeof(string), typeof(byte), typeof(bool), typeof(bool) })]
         public static void LoadCharaFilePrefix(ChaFileControl __instance, ref string filename, byte sex)
         {
             filename = __instance.ConvertCharaFilePath(filename, sex);
-            Load(ref filename, Compression.Token.CharaToken);
+            Load(ref filename, Token.CharaToken);
         }
 
         //KoikatsuConvertToSunshine
         [HarmonyPrefix, HarmonyPriority(Priority.First), HarmonyPatch(typeof(ChaFileControl), "LoadCharaFileKoikatsu", new Type[] { typeof(string), typeof(byte), typeof(bool), typeof(bool) })]
         public static void LoadCharaFileKoikatsuPrefix(ref string filename)
-            => Load(ref filename, Compression.Token.CharaToken);
+            => Load(ref filename, Token.CharaToken);
 
         //Coordinate Load
         [HarmonyPrefix, HarmonyPriority(Priority.First), HarmonyPatch(typeof(ChaFileCoordinate), "LoadFile", new Type[] { typeof(string) })]
         public static void LoadFilePrefix(ChaFileCoordinate __instance, ref string path)
-            => Load(ref path, Compression.Token.CoordinateToken);
+            => Load(ref path, Token.CoordinateToken);
 
         public static void Load(ref string path, string token)
         {
@@ -309,7 +311,7 @@ namespace SaveLoadCompression {
             //這裡必須寫為實體檔案供它使用
             try
             {
-                if (0 != new Compression().Load(path,
+                if (0 != new PngCompression.PngCompression().Load(path,
                                                         tmpPath,
                                                         token,
                                                         (decimal progress) => SaveLoadCompression.Progress = $"Decompressing: {progress:p2}"))
@@ -365,7 +367,7 @@ namespace SaveLoadCompression {
             {
                 watermark = ImageHelper.LoadDllResourceToTexture2D($"SaveLoadCompression.Resources.unzip_watermark.png");
             }
-            float scaleTimes = new Compression().GetScaleTimes(token);
+            float scaleTimes = new PngCompression.PngCompression().GetScaleTimes(token);
             watermark = watermark.Scale(Convert.ToInt32(png.width * scaleTimes), Convert.ToInt32(png.width * scaleTimes));
             png = png.OverwriteTexture(
                 watermark,
@@ -392,323 +394,6 @@ namespace SaveLoadCompression {
                 binaryWriter.Write(data);
             }
             File.Copy(tmpPath, path, true);
-        }
-    }
-
-    public class Compression
-    {
-        public struct Token
-        {
-            //https://github.com/IllusionMods/DragAndDrop/blob/v1.2/src/DragAndDrop.Koikatu/DragAndDrop.cs#L12
-            public const string StudioToken = "【KStudio】";
-            public const string CharaToken = "【KoiKatuChara";
-            public const string SexToken = "sex";
-            public const string CoordinateToken = "【KoiKatuClothes】";
-            //private const string PoseToken = "【pose】";
-        }
-
-        /// <summary>
-        /// 取得浮水印的縮放倍率
-        /// </summary>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        public float GetScaleTimes(string token) => (token == Token.StudioToken) ? .14375f : .30423f;
-
-        public long Save(string inputPath, string outputPath, string token = null, byte[] pngData = null, Action<decimal> compressProgress = null, bool doComapre = true, Action<decimal> compareProgress = null)
-        {
-            using (FileStream fileStreamReader = new FileStream(inputPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            using (FileStream fileStreamWriter = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
-            {
-                return Save(fileStreamReader,
-                            fileStreamWriter,
-                            token: token,
-                            pngData: pngData,
-                            compressProgress: compressProgress,
-                            doComapre: doComapre,
-                            compareProgress: compareProgress);
-            }
-        }
-
-        public long Save(Stream inputStream,
-                         Stream outputStream,
-                         string token = null,
-                         byte[] pngData = null,
-                         Action<decimal> compressProgress = null,
-                         bool doComapre = true,
-                         Action<decimal> compareProgress = null)
-        {
-            long dataSize = 0;
-
-            Action<long, long> _compressProgress = null;
-            if (null != compressProgress)
-            {
-                _compressProgress = (long inSize, long _) => compressProgress(Convert.ToDecimal(inSize) / dataSize);
-            }
-
-            //Make png watermarked
-            using (BinaryReader binaryReader = new BinaryReader(inputStream))
-            using (BinaryWriter binaryWriter = new BinaryWriter(outputStream))
-            {
-                if (null == pngData)
-                {
-                    pngData = ImageHelper.LoadPngBytes(binaryReader);
-                }
-                else
-                {
-                    ImageHelper.SkipPng(binaryReader);
-                    Extension.Logger.LogDebug("Skip Png:" + inputStream.Position);
-                }
-
-                dataSize = inputStream.Length - inputStream.Position;
-
-                binaryWriter.Write(pngData);
-
-                if (null == token)
-                {
-                    token = GuessToken(binaryReader);
-                }
-
-                switch (token)
-                {
-                    case Token.StudioToken:
-                        //Studio
-                        binaryWriter.Write(new Version(101, 0, 0, 0).ToString());
-                        break;
-                    case Token.CoordinateToken:
-                        //Coordinate
-                        binaryWriter.Write(101);
-                        break;
-                    default:
-                        //Chara
-                        if (token.IndexOf(Token.CharaToken) >= 0)
-                        {
-                            binaryWriter.Write(101);
-                            break;
-                        }
-
-                        throw new Exception("Token not match.");
-                }
-
-                //為了通過 InvalidSceneFileProtection 和 DragAndDrop
-                binaryWriter.Write(token);
-
-                using (MemoryStream msCompressed = new MemoryStream())
-                {
-                    //PngFile.SkipPng(inputStream);
-                    long fileStreamPos = inputStream.Position;
-
-                    LZMA.Compress(
-                        inputStream,
-                        msCompressed,
-                        LzmaSpeed.Fastest,
-                        DictionarySize.VeryLarge,
-                        _compressProgress
-                    );
-
-                    Extension.Logger.LogDebug("Start compression test...");
-                    if (doComapre)
-                    {
-                        using (MemoryStream msDecompressed = new MemoryStream())
-                        {
-                            msCompressed.Seek(0, SeekOrigin.Begin);
-
-                            LZMA.Decompress(msCompressed, msDecompressed);
-                            inputStream.Seek(fileStreamPos, SeekOrigin.Begin);
-                            msDecompressed.Seek(0, SeekOrigin.Begin);
-                            int bufferSize = 1 << 10;
-                            byte[] aByteA = new byte[(int)bufferSize];
-                            byte[] bByteA = new byte[(int)bufferSize];
-
-                            if ((inputStream.Length - inputStream.Position) != msDecompressed.Length)
-                            {
-                                return 0;
-                            }
-
-                            for (long i = 0; i < msDecompressed.Length;)
-                            {
-                                if (null != compressProgress)
-                                {
-                                    compareProgress(Convert.ToDecimal(i) / msDecompressed.Length);
-                                }
-
-                                inputStream.Read(aByteA, 0, (int)bufferSize);
-                                i += msDecompressed.Read(bByteA, 0, (int)bufferSize);
-                                if (!aByteA.SequenceEqual(bByteA))
-                                {
-                                    return 0;
-                                }
-                            }
-                        }
-                    }
-                    binaryWriter.Write(msCompressed.ToArray());
-                    return binaryWriter.BaseStream.Length;
-                }
-            }
-        }
-
-        public long Load(string inputPath, string outputPath, string token = null, Action<decimal> decompressProgress = null)
-        {
-            using (FileStream fileStreamReader = new FileStream(inputPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            using (FileStream fileStreamWriter = new FileStream(outputPath, FileMode.Create, FileAccess.Write))
-            {
-                return Load(
-                    fileStreamReader,
-                    fileStreamWriter,
-                    token: token,
-                    decompressProgress: (decimal progress) => SaveLoadCompression.Progress = $"Decompressing: {progress:p2}");
-            }
-        }
-
-        public long Load(Stream inputStream,
-                         Stream outputStream,
-                         string token = null,
-                         byte[] pngData = null,
-                         Action<decimal> decompressProgress = null)
-        {
-            long dataSize = 0;
-            Action<long, long> _decompressProgress = null;
-            if (null != decompressProgress)
-            {
-                _decompressProgress = (long inSize, long _) => decompressProgress(Convert.ToDecimal(inSize) / dataSize);
-            }
-
-            using (BinaryReader binaryReader = new BinaryReader(inputStream))
-            using (BinaryWriter binaryWriter = new BinaryWriter(outputStream))
-            {
-                if (null == pngData)
-                {
-                    pngData = ImageHelper.LoadPngBytes(binaryReader);
-                }
-                else
-                {
-                    ImageHelper.SkipPng(binaryReader);
-                    Extension.Logger.LogDebug("Skip Png:" + inputStream.Position);
-                }
-
-                if (!GuessCompressed(binaryReader))
-                {
-                    //Extension.Logger.LogDebug("Not a compressed file.");
-                    return 0;
-                }
-
-                try
-                {
-                    if (null == token)
-                    {
-                        token = GuessToken(binaryReader);
-                        if (null == token)
-                        {
-                            throw new FileLoadException();
-                        }
-                    }
-                    bool checkfail = false;
-
-                    switch (token)
-                    {
-                        case Token.StudioToken:
-                            checkfail = !new Version(binaryReader.ReadString()).Equals(new Version(101, 0, 0, 0));
-                            break;
-                        case Token.CoordinateToken:
-                        default:
-                            //Token.CharaToken
-                            checkfail = 101 != binaryReader.ReadInt32();
-                            break;
-                    }
-
-                    if (checkfail)
-                    {
-                        throw new FileLoadException();
-                    }
-                }
-                catch (FileLoadException e)
-                {
-                    Extension.Logger.LogError("Corrupted file");
-                    throw e;
-                }
-                try
-                {
-                    //Discard token string
-                    binaryReader.ReadString();
-
-                    Extension.Logger.LogDebug("Start Decompress...");
-                    binaryWriter.Write(pngData);
-
-                    dataSize = inputStream.Length - inputStream.Position;
-                    LZMA.Decompress(inputStream, outputStream, _decompressProgress);
-                }
-                catch (Exception e)
-                {
-                    Extension.Logger.LogError($"Decompression FAILDED. The file was corrupted during compression or storage.");
-                    Extension.Logger.LogError($"Do not disable the byte comparison setting next time to avoid this.");
-                    throw e;
-                }
-                return binaryWriter.BaseStream.Length;
-            }
-        }
-
-        /// <summary>
-        /// 偵測token。BinaryReader之Position必須處在pngData之後。
-        /// </summary>
-        /// <param name="binaryReader"></param>
-        /// <returns></returns>
-        public string GuessToken(BinaryReader binaryReader)
-        {
-            long position = binaryReader.BaseStream.Position;
-            try
-            {
-                int r = binaryReader.ReadInt32();
-                if (r != 101 && r != 100)
-                {
-                    return Token.StudioToken;
-                }
-                string token = binaryReader.ReadString();
-                if (token.IndexOf(Token.CharaToken) >= 0)
-                {
-                    // 這裡不知道角色性別，直接給1(女性)
-                    // 跨性別讀取基本上夠完善，我想可以略過判別
-                    return Token.CharaToken + "】" + Token.SexToken + 1;
-                }
-                else if (token == Token.CoordinateToken)
-                {
-                    return Token.CoordinateToken;
-                }
-            }
-            finally
-            {
-                binaryReader.BaseStream.Seek(position, SeekOrigin.Begin);
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// 偵測是否為已壓縮存檔。BinaryReader之Position必須處在pngData之後。
-        /// </summary>
-        /// <param name="binaryReader"></param>
-        /// <returns></returns>
-        public bool GuessCompressed(BinaryReader binaryReader)
-        {
-            long position = binaryReader.BaseStream.Position;
-            try
-            {
-                int r = binaryReader.ReadInt32();
-                switch (r)
-                {
-                    case 101:
-                        return true;
-                    case 100:
-                        return false;
-                    default:
-                        // Studio
-                        binaryReader.BaseStream.Seek(position, SeekOrigin.Begin);
-                        string st = binaryReader.ReadString();
-                        Version version = new Version(st);
-                        return version.Major == 101;
-                }
-            }
-            finally
-            {
-                binaryReader.BaseStream.Seek(position, SeekOrigin.Begin);
-            }
         }
     }
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.Net.Http;
 using System.Threading.Tasks;
 using BlazorDownloadFile;
@@ -11,18 +10,19 @@ using Microsoft.JSInterop;
 
 namespace SaveLoadCompressionWeb {
     public class Program {
-        public static async Task Main(string[] args) {
+        public static Task Main(string[] args) {
             WebAssemblyHostBuilder builder = WebAssemblyHostBuilder.CreateDefault(args);
             builder.RootComponents.Add<App>("#app");
+            builder.Services.AddLogging()
+                            .AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) })
+                            .AddLocalization()
+                            .AddScoped(typeof(PngCompression.PngCompression))
+                            .AddScoped(typeof(Models.PngProcessor))
+                            .AddSingleton(sp => (IJSInProcessRuntime)sp.GetRequiredService<IJSRuntime>())
+                            .AddBlazorDownloadFile();
             builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
 
-            builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
-            builder.Services.AddLocalization();
-            builder.Services.AddScoped(typeof(SaveLoadCompression.SaveLoadCompression));
-            builder.Services.AddSingleton(sp => (IJSInProcessRuntime)sp.GetRequiredService<IJSRuntime>());
-            builder.Services.AddBlazorDownloadFile();
-
-            await builder.Build().RunAsync();
+            return builder.Build().RunAsync();
         }
     }
 }

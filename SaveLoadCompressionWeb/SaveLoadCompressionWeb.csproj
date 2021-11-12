@@ -1,26 +1,26 @@
-<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <UserSecretsId>352a6582-5e5b-4dfe-a157-cc82a4fdde7f</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <Configurations>Debug;Release;Docker</Configurations>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Docker|AnyCPU'">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ProduceReferenceAssembly>True</ProduceReferenceAssembly>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\unzip_watermark.png" />
+    <None Remove="Resources\zip_watermark.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\unzip_watermark.png" />
+    <EmbeddedResource Include="Resources\zip_watermark.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BlazorDownloadFile" Version="2.1.2" />
+    <PackageReference Include="LZMA-SDK" Version="19.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="5.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="5.0.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Extensions.Localization" Version="5.0.1" />
@@ -34,13 +34,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="KKS_SaveLoadCompression">
-      <HintPath>..\SaveLoadCompression\bin\Release\netstandard2.0\KKS_SaveLoadCompression.dll</HintPath>
-      <CopyLocal>True</CopyLocal>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
     <EmbeddedResource Update="Pages\Index.resx">
       <Generator></Generator>
     </EmbeddedResource>
@@ -48,5 +41,9 @@
       <Generator></Generator>
     </EmbeddedResource>
   </ItemGroup>
+
+  <Import Project="..\Extension\Extension.projitems" Label="Shared" />
+
+  <Import Project="..\PngCompression\PngCompression.projitems" Label="Shared" />
 
 </Project>

@@ -4,6 +4,8 @@ FROM mcr.microsoft.com/dotnet/sdk:5.0-buster-slim AS build
 WORKDIR /src
 COPY SaveLoadCompression SaveLoadCompression
 COPY SaveLoadCompressionWeb SaveLoadCompressionWeb
+COPY Extension Extension
+COPY PngCompression PngCompression
 RUN dotnet restore "SaveLoadCompressionWeb/SaveLoadCompressionWeb.csproj"
 WORKDIR "/src/SaveLoadCompressionWeb"
 RUN dotnet build "SaveLoadCompressionWeb.csproj" -c Release -o /app/build

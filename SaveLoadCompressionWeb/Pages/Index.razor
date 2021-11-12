@@ -1,11 +1,12 @@
 ﻿@page "/"
 @using System.IO;
 @using Microsoft.Extensions.Logging
-@inject SaveLoadCompression.Compression slc
+@using SaveLoadCompressionWeb.Models
 @inject IJSRuntime JS
 @inject ILogger<Index> logger
 @inject BlazorDownloadFile.IBlazorDownloadFileService BlazorDownloadFileService
 @inject IStringLocalizer<Index> Loc
+@inject PngProcessor pngProcessor
 
 <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
     <header class="masthead mb-auto">
@@ -187,7 +188,6 @@
     private async void OnSelectedFile(InputFileChangeEventArgs e) {
         if (!await JS.InvokeAsync<bool>("confirm", Loc["FrozenConfirm"].ToString())) return;
 
-        long newSize;
         var startTime = DateTime.Now;
         using (MemoryStream inputStream = new MemoryStream())
         using (MemoryStream writeStream = new MemoryStream()) {
@@ -203,78 +203,25 @@
 
             pngData = new byte[0];
             inputStream.Seek(0, SeekOrigin.Begin);
-            using (BinaryReader binaryReader = new BinaryReader(inputStream)) {
-                pngData = Extension.ImageHelper.LoadPngBytes(binaryReader);
-                var pngEndPosition = binaryReader.BaseStream.Position;
-                string token = slc.GuessToken(binaryReader);
-                logger.LogDebug("Detact token as {token}", token);
 
-                inputStream.Seek(pngEndPosition, SeekOrigin.Begin);
-                if (slc.GuessCompressed(binaryReader)) {
-                    // Compressed, do decompressed
-                    logger.LogInformation("Get compressed file. Start making png data...");
-                    pngData = await MakeWatermarkPic(pngData, token, false);
-                    inputStream.Seek(0, SeekOrigin.Begin);
-                    logger.LogInformation("Start decompress...");
-                    newSize = slc.Load(inputStream, writeStream,
-                        token: token,
-                        pngData: pngData,
-                        decompressProgress: (progress) => {
-                            logger.LogInformation("Decompress Progress: {progress:p3}", progress);
-                        });
-                    filename += "_decompressed.png";
-                    compress = false;
-                } else {
-                    // Not compressed, do compress
-                    logger.LogInformation("Get not compressed file. Start making png data...");
-                    pngData = await MakeWatermarkPic(pngData, token, true);
-                    inputStream.Seek(0, SeekOrigin.Begin);
-                    logger.LogInformation("Start compress...");
-                    newSize = slc.Save(inputStream, writeStream,
-                        token: token,
-                        pngData: pngData,
-                        compressProgress: (progress) => {
-                            logger.LogInformation("Compress Progress: {progress:p3}", progress);
-                        },
-                        doComapre: doCompare,
-                        compareProgress: (progress) => {
-                            logger.LogInformation("Compare Progress: {progress:p3}", progress);
-                        });
-                    filename += "_compressed.png";
-                    compress = true;
-                }
+            (pngData, compress) = await pngProcessor.DoMainPngProcessAsync(inputStream, writeStream, doCompare);
+
+            if (compress)
+            {
+                filename += "_compressed.png";
             }
+            else
+            {
+				filename += "_decompressed.png";
+            }
+
             logger.LogInformation("Process finish");
             buffer = writeStream.ToArray();
-            logger.LogDebug("Output file length: {size}", newSize);
+            logger.LogDebug("Output file length: {size}", buffer.Length);
             timeSpend = DateTime.Now - startTime;
             loading = false;
             base.StateHasChanged();
         }
-    }
-
-    private async Task<byte[]> MakeWatermarkPic(byte[] pngData, string token, bool zip) {
-        string background_base64URI = $"data:image;base64,{System.Convert.ToBase64String(pngData)}";
-        logger.LogDebug("Load background image");
-        var watermark = new byte[] { };
-        if (zip) {
-            watermark = Extension.ImageHelper.LoadDllResourceToBytes($"SaveLoadCompression.Resources.zip_watermark.png");
-            logger.LogDebug("Load zip watermark image");
-        } else {
-            watermark = Extension.ImageHelper.LoadDllResourceToBytes($"SaveLoadCompression.Resources.unzip_watermark.png");
-            logger.LogDebug("Load unzip watermark image");
-        }
-        string watermark_base64URI = $"data:image;base64,{System.Convert.ToBase64String(watermark)}";
-
-        double scale = (double)(slc.GetScaleTimes(token) * Extension.ImageHelper.GetDimensions(pngData)[0]) / Extension.ImageHelper.GetDimensions(watermark)[0];
-        logger.LogDebug("Png width: {widthBack} : {widthWater}", Extension.ImageHelper.GetDimensions(pngData)[0], Extension.ImageHelper.GetDimensions(watermark)[0]);
-        logger.LogDebug("Watermark Scale : {scale}", scale);
-
-        var base64 = await JS.InvokeAsync<string>("indexJs.addWatermark", background_base64URI, watermark_base64URI, scale);
-        logger.LogDebug("Add watermark finish");
-        var resultData = System.Convert.FromBase64String(base64);
-        logger.LogDebug("New pngData size: {size}", resultData.Length);
-        return resultData;
     }
 
     private async void DownloadFile() {
