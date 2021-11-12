@@ -10,7 +10,7 @@
   "linkerEnabled": false,
   "resources": {
     "assembly": {
-      "SaveLoadCompressionWeb.dll": "sha256-tb8t4IJjIHY6SgLzUMmUTTo2vgOt6vUyJFi6BuMPAqI=",
+      "SaveLoadCompressionWeb.dll": "sha256-wTuEQasjjQvL4tKm0m6GPa1mjOhs\/33lqYBG3kv3kq8=",
       "Microsoft.CSharp.dll": "sha256-7lPdvYmKNuvJJ5P\/jsxQikc2dmeGUVI9WaasePSuNFQ=",
       "Microsoft.VisualBasic.Core.dll": "sha256-J7gHIxZfOy7emzL13bxVrkyZR8OWck+j2g0pzTZ9aec=",
       "Microsoft.VisualBasic.dll": "sha256-q4xhyzut7y4LjPL5inXgxslAK1zMYmQKSv0S49IbTSU=",
@@ -177,6 +177,7 @@
       "netstandard.dll": "sha256-dOHF0zANIyA4WS496iWrAkTuEFWSWrXJjZj2pQQHrMA=",
       "System.Private.CoreLib.dll": "sha256-C96+zv+mWW0XzMG520oRgAG1lHVY8xzWGc6oc6rFjws=",
       "BlazorDownloadFile.dll": "sha256-5sSlTSQ+K7TarGESQHfRX9fvxfzghpaJTV2B3nctiJk=",
+      "SevenZip.dll": "sha256-+AySzgZKGdUUzarxg4JE8gPBiEYtJhGd97QIKR1o+Lg=",
       "Microsoft.AspNetCore.Authorization.dll": "sha256-7P3zpzQg+C+ukPy7fBNY8UW+Ro+yLdvnT6d4iP13FuE=",
       "Microsoft.AspNetCore.Components.dll": "sha256-DcQM9qPOeEovJp5noXBIvP95Jd0SlaW6509d3Ml6xQ4=",
       "Microsoft.AspNetCore.Components.Forms.dll": "sha256-YJaEVhT6VPA0DCgXqRb3thnYFDCDL9x7DMELgmpszb8=",
@@ -203,8 +204,7 @@
       "Microsoft.Extensions.Primitives.dll": "sha256-f2PgoftqEkKRuuiAk6S1MHygOuqZBHzB0HOB3vR93TU=",
       "Microsoft.JSInterop.dll": "sha256-0o\/vt4NH\/VfmWZxWcdLsy7WlafnyiNlCMmFoL1QmfMg=",
       "Microsoft.JSInterop.WebAssembly.dll": "sha256-5AkXTXHIeXryrSr97JWjBrndsRjoslMVJ8e7FqupHUw=",
-      "System.IO.Pipelines.dll": "sha256-qj+ITVhmJUAkSBctDayU4uUjNTKdXqAbF2zAxo7\/mkM=",
-      "KKS_SaveLoadCompression.dll": "sha256-ySN+cMKzvnWHc5HpAelBMVR5YZW+y3qRtl4Uyhed9+g="
+      "System.IO.Pipelines.dll": "sha256-qj+ITVhmJUAkSBctDayU4uUjNTKdXqAbF2zAxo7\/mkM="
     },
     "lazyAssembly": null,
     "pdb": null,
