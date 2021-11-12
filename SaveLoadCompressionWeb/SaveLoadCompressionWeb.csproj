@@ -34,7 +34,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SaveLoadCompression\SaveLoadCompression.csproj" />
+    <Reference Include="KKS_SaveLoadCompression">
+      <HintPath>..\SaveLoadCompression\bin\Release\netstandard2.0\KKS_SaveLoadCompression.dll</HintPath>
+      <CopyLocal>True</CopyLocal>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
