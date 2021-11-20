@@ -57,6 +57,10 @@ jobs:
 
       #     echo -n "$jsFile" > service-worker-assets.js
 
+      # copy LICENSE.html
+      - name: copy LICENSE.html
+        run: cp LICENSE.html release/wwwroot/LICENSE.html
+
       # copy index.html to 404.html to serve the same file when a file is not found
       - name: copy index.html to 404.html
         run: cp release/wwwroot/index.html release/wwwroot/404.html
