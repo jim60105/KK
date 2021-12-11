@@ -56,8 +56,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "21.01.04.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.6";
+        internal const string PLUGIN_VERSION = "21.12.11.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.7";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -108,9 +108,21 @@ namespace KK_CoordinateLoadOption {
             accessories = 9 /*注意這個*/
         }
 
+        public static string[] pluginBoundAccessories =
+        {
+            // Pre-filled
+            "madevil.kk.ass",
+            "madevil.kk.mr",
+            "madevil.kk.ca",
+            "madevil.kk.BonerStateSync",
+            "madevil.kk.BendUrAcc",
+            "madevil.kk.AAAPK"
+        };
+
         internal static Vector3 defaultPanelPosition = Vector3.zero;
         public static ConfigEntry<Vector3> Maker_Panel_Position { get; private set; }
         public static ConfigEntry<Vector3> Studio_Panel_Position { get; private set; }
+        public static ConfigEntry<string> Plugin_Bound_Accessories { get; private set; }
 
         public void Start() {
             _isKCOXExist = new KCOX_CCFCSupport(null).LoadAssembly();
@@ -125,6 +137,11 @@ namespace KK_CoordinateLoadOption {
                 HairAccessoryCustomizer_CCFCSupport.Patch(harmonyInstance);
 
             StringResources.StringResourcesManager.SetUICulture();
+
+            Plugin_Bound_Accessories = Config.Bind<string>("Settings", "Plugin that bound accessories options", "", new ConfigDescription("Edit this only when any plugin maker tells you to do so. Fill in the GUIDs, and seperate them with comma(,), example: 'this.guid.A,some.guid.B,another.guid.C'"));
+            pluginBoundAccessories = pluginBoundAccessories.Concat(Plugin_Bound_Accessories.Value.Split(','))
+                                                           .Distinct()
+                                                           .ToArray();
 
             if (insideStudio) {
                 Studio_Panel_Position = Config.Bind<Vector3>("Settings", "Studio Panel Position", defaultPanelPosition);
@@ -175,6 +192,7 @@ namespace KK_CoordinateLoadOption {
         internal static bool addAccModeFlag = true;
         internal static bool[] charaOverlay = new bool[] { true, true, true };  //順序: Iris、Face、Body
         internal static bool readABMX = true;
+        internal static bool boundAcc = false;
 
         public static void InitPostfix(object __instance) {
             //如果啟動機翻就一律顯示英文，否則機翻會毀了我的文字
@@ -588,6 +606,18 @@ namespace KK_CoordinateLoadOption {
                 accNames.AddRange(MoreAccessories_Support.LoadMoreAcc(tmpChaFileCoordinate));
             }
 
+            // 檢查選中的服裝是否有要綁定飾品的插件資料
+            boundAcc = false;
+            foreach (string guid in SCLO.pluginBoundAccessories)
+            {
+                if (null != ExtendedSave.GetExtendedDataById(tmpChaFileCoordinate, guid))
+                {
+                    boundAcc = true;
+                    Logger.LogWarning($"The accessories option is disabled due to the plugin data ({guid}) found on selected coordinate ({tmpChaFileCoordinate.coordinateName})");
+                    break;
+                }
+            }
+
             foreach (Toggle tgl in toggleGroup.gameObject.GetComponentsInChildren<Toggle>()) {
                 GameObject.Destroy(tgl.gameObject);
             }
@@ -598,13 +628,14 @@ namespace KK_CoordinateLoadOption {
                 toggle.GetComponentInChildren<Text>(true).color = Color.white;
                 toggle.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, -25f * (tmpTgls.Count + 1)), new Vector2(0f, -25f * tmpTgls.Count));
                 toggle.GetComponentInChildren<Text>(true).transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(20.09f, 2.5f), new Vector2(-5.13f, -0.5f));
+                toggle.isOn = true;
+                toggle.interactable = !boundAcc;
                 tmpTgls.Add(toggle);
             }
             tgls2 = tmpTgls.ToArray();
             toggleGroup.transform.SetRect(Vector2.zero, new Vector2(1f, 1f), new Vector2(0, -(25f * (accNames.Count - 20))), new Vector2(0, 0));
-            if (tgls[(int)SCLO.ClothesKind.accessories].isOn) {
-                panel2.gameObject.SetActive(true);
-            }
+
+            panel2.gameObject.SetActive(tgls[(int)SCLO.ClothesKind.accessories].isOn);
             //Logger.LogDebug("Onselect");
         }
 
@@ -738,6 +769,12 @@ namespace KK_CoordinateLoadOption {
             } else {
                 chaCtrl = Singleton<CustomBase>.Instance.chaCtrl;
             }
+
+            // Save ExtendedData to ChaControl.nowCoordinate
+            // KKAPI prevents plugins from storing coordinates outside of Maker, I pray here that users will not edit the coordinate in any way in Studio, and the character status and extended data must be consistent.
+            if (!SCLO.insideStudio)
+                Extension.Reflection.InvokeStatic(typeof(ExtendedSave), "CoordinateWriteEvent", new object[] { chaCtrl.nowCoordinate });
+
             //KK_COBOC
             coboc = new COBOC_CCFCSupport(chaCtrl);
             if (SCLO._isCharaOverlayBasedOnCoordinateExist && null != chaCtrl) {
@@ -819,6 +856,21 @@ namespace KK_CoordinateLoadOption {
             } catch (Exception) { return; };
             chaCtrl.StopAllCoroutines();
 
+            // 檢查自己身上是否有要綁定飾品的插件資料
+            foreach (var guid in SCLO.pluginBoundAccessories)
+            {
+                if (null != ExtendedSave.GetExtendedDataById(chaCtrl.nowCoordinate, guid))
+                {
+                    Patches.boundAcc = true;
+                    Patches.tgls2.ToList().ForEach(tg => {
+                        tg.isOn = true;
+                        tg.interactable = false;
+                    });
+                    Logger.Log(LogLevel.Message | LogLevel.Warning, $"The accessories option is disabled due to the plugin data ({guid}) found on your character {chaCtrl.fileParam.fullname}");
+                    break;
+                }
+            }
+
             KCOX_CCFCSupport kcox = new KCOX_CCFCSupport(chaCtrl);
             ABMX_CCFCSupport abmx = new ABMX_CCFCSupport(chaCtrl);
             MaterialEditor_CCCFCSupport me = new MaterialEditor_CCCFCSupport(chaCtrl);
@@ -837,6 +889,10 @@ namespace KK_CoordinateLoadOption {
                 }
                 if (tgl.isOn) {
                     if (kind == 9) {
+                        if(Patches.boundAcc)
+                        {
+                            ClearAccessories(chaCtrl);
+                        }
                         if (SCLO._isMoreAccessoriesExist) {
                             MoreAccessories_Support.CopyMoreAccessories(tmpChaCtrl, chaCtrl);
                         } else {
@@ -909,7 +965,7 @@ namespace KK_CoordinateLoadOption {
             //MoreAcc
             if (SCLO._isMoreAccessoriesExist) {
                 chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
-                MoreAccessories_Support.SetExtDataFromPlugin(chaCtrl.chaFile);
+                MoreAccessories_Support.SetExtDataFromPlugin(chaCtrl);
                 MoreAccessories_Support.Update();
                 Logger.LogDebug($"Acc Count : {MoreAccessories_Support.GetAccessoriesAmount(chaCtrl.chaFile)}");
             }
@@ -920,13 +976,28 @@ namespace KK_CoordinateLoadOption {
                 abmx.SetExtDataFromController();
             }
 
+            // 處理要綁定飾品的插件資料
+            if (Patches.boundAcc && Patches.tgls[9].isOn)
+            {
+                foreach (var guid in SCLO.pluginBoundAccessories)
+                {
+                    ExtendedSave.SetExtendedDataById(chaCtrl.nowCoordinate, guid, ExtendedSave.GetExtendedDataById(backupTmpCoordinate, guid));
+                }
+            }
+
             if (!SCLO.insideStudio)
                 Singleton<CustomBase>.Instance.updateCustomUI = true;
 
             //Reload
             chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
             chaCtrl.ChangeCoordinateType((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, false);
-            chaCtrl.Reload();   //全false的Reload會觸發KKAPI的hook
+            //chaCtrl.Reload();   //全false的Reload會觸發KKAPI的hook
+            chaCtrl.StartCoroutine(_read());
+            IEnumerator _read()
+            {
+                yield return null;
+                Extension.Reflection.InvokeStatic(typeof(ExtendedSave), "CoordinateReadEvent", new object[] { chaCtrl.nowCoordinate });
+            }
 
             //---存入至ExtendedData，然後Reload
 

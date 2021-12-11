@@ -61,8 +61,9 @@ namespace KK_CoordinateLoadOption {
             MoreAccObj.Invoke("OnActualCharaLoad", new object[] { chafile });
         }
 
-        public static void SetExtDataFromPlugin(ChaFile chafile) {
-            MoreAccObj.Invoke("OnActualCharaSave", new object[] { chafile });
+        public static void SetExtDataFromPlugin(ChaControl chaCtrl) {
+            MoreAccObj.Invoke("OnActualCharaSave", new object[] { chaCtrl.chaFile });
+            MoreAccObj.Invoke("OnActualCoordSave", new object[] { chaCtrl.nowCoordinate });
         }
 
         /// <summary>
