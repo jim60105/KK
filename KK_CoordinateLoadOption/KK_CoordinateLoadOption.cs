@@ -114,8 +114,8 @@ namespace KK_CoordinateLoadOption {
             "madevil.kk.ass",
             "madevil.kk.mr",
             "madevil.kk.ca",
-            "madevil.kk.BonerStateSync",
-            "madevil.kk.BendUrAcc",
+            "BonerStateSync",
+            "BendUrAcc",
             "madevil.kk.AAAPK"
         };
 
@@ -140,6 +140,8 @@ namespace KK_CoordinateLoadOption {
 
             Plugin_Bound_Accessories = Config.Bind<string>("Settings", "Plugin that bound accessories options", "", new ConfigDescription("Edit this only when any plugin maker tells you to do so. Fill in the GUIDs, and seperate them with comma(,), example: 'this.guid.A,some.guid.B,another.guid.C'"));
             pluginBoundAccessories = pluginBoundAccessories.Concat(Plugin_Bound_Accessories.Value.Split(','))
+                                                           .Where(p => null != p
+                                                                       && !string.IsNullOrEmpty(p))
                                                            .Distinct()
                                                            .ToArray();
 
