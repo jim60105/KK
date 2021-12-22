@@ -108,11 +108,11 @@ namespace CoordinateLoadOption {
         /// <param name="coordinateType">要取得的CoordinateType</param>
         /// <param name="coordinateData">out 單一服裝的HairAccessories</param>
         /// <returns>取得成功與否</returns>
-        public bool GetCoordinateData(object HairAccessories, ChaFileDefine.CoordinateType coordinateType, out Dictionary<int, object> coordinateData) {
+        public bool GetCoordinateData(object HairAccessories, int coordinateType, out Dictionary<int, object> coordinateData) {
             coordinateData = null;
             if (HairAccessories is IDictionary _h
                 && _h.Count != 0
-                && _h.TryGetValue((int)coordinateType, out object _c)
+                && _h.TryGetValue(coordinateType, out object _c)
                 && _c is IDictionary) {
                 coordinateData = _c.ToDictionary<int, object>();
                 Logger.LogDebug($"->{string.Join(",", coordinateData.Select(x => x.Key.ToString()).ToArray())}");
@@ -130,7 +130,7 @@ namespace CoordinateLoadOption {
         public void DisableColorMatches(ChaControl chaCtrl) {
             if (GetCoordinateData(
                     GetDataFromController(chaCtrl),
-                    (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType,
+                    chaCtrl.fileStatus.coordinateType,
                     out Dictionary<int, object> hairAcc)
                 && null != hairAcc) {
                 foreach (KeyValuePair<int, object> kvp in hairAcc) {
@@ -241,7 +241,7 @@ namespace CoordinateLoadOption {
             Dictionary<int, object> HairAccessories = GetDataFromController(chaCtrl).ToDictionary<int, object>();
             if (null != HairAccessories && HairAccessories.Remove(coordinateIndex.Value)) {
                 GetController(chaCtrl).SetField("HairAccessories", HairAccessories);
-                Logger.LogDebug($"Remove {chaCtrl.fileParam.fullname} {Enum.GetName(typeof(ChaFileDefine.CoordinateType), coordinateIndex)} Hair Accessories From Controller");
+                Logger.LogDebug($"Remove {chaCtrl.fileParam.fullname}: {coordinateIndex} : Hair Accessories From Controller");
             } else {
                 Logger.LogDebug($"{chaCtrl.fileParam.fullname}'s Hair Accessories already empty in Controller");
             }
@@ -261,7 +261,7 @@ namespace CoordinateLoadOption {
 
                 //Dictionary<int, object> dataFromChaCtrlExt = GetDataFromCoordinate(chaCtrl.nowCoordinate);
                 Dictionary<int, object> dataFromBackCoor = GetDataFromCoordinate(backCoordinate);
-                GetCoordinateData(GetDataFromController(chaCtrl), (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, out Dictionary<int, object> dataFromCon);
+                GetCoordinateData(GetDataFromController(chaCtrl), chaCtrl.fileStatus.coordinateType, out Dictionary<int, object> dataFromCon);
 
                 //過濾假的HairAccInfo
                 if (null != dataFromBackCoor) {
@@ -356,7 +356,7 @@ namespace CoordinateLoadOption {
             if (null != targetChaCtrl) {
                 SetExtDataFromController(targetChaCtrl);
                 Dictionary<int, Dictionary<int, object>> HairAccessories = GetDataFromExtData(targetChaCtrl);
-                GetCoordinateData(HairAccessories, (ChaFileDefine.CoordinateType)targetChaCtrl.fileStatus.coordinateType, out Dictionary<int, object> _coordinateData);
+                GetCoordinateData(HairAccessories, targetChaCtrl.fileStatus.coordinateType, out Dictionary<int, object> _coordinateData);
                 TargetBackup = _coordinateData;
             }
         }

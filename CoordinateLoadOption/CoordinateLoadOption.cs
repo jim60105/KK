@@ -56,8 +56,8 @@ namespace CoordinateLoadOption
     {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kks.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "21.12.22.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.4.0";
+        internal const string PLUGIN_VERSION = "21.12.22.1";
+        internal const string PLUGIN_RELEASE_VERSION = "1.4.1";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -817,7 +817,8 @@ namespace CoordinateLoadOption
                     }
 
                     chaCtrl.Reload(false, true, true, true);
-                    chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.chaFile.status.coordinateType);
+                    byte[] data = chaCtrl.nowCoordinate.SaveBytes();
+                    chaCtrl.chaFile.coordinate[chaCtrl.chaFile.status.coordinateType].LoadBytes(data, chaCtrl.nowCoordinate.loadVersion);
                     Singleton<CustomBase>.Instance.updateCustomUI = true;
                     Illusion.Game.Utils.Sound.Play(Illusion.Game.SystemSE.ok_s);
                 }
@@ -904,7 +905,7 @@ namespace CoordinateLoadOption
             tmpChaCtrl.Load(true);
             tmpChaCtrl.fileParam.lastname = "黑肉";
             tmpChaCtrl.fileParam.firstname = "舔舔";
-            tmpChaCtrl.fileStatus.coordinateType = chaCtrl?.fileStatus.coordinateType ?? 0;
+            tmpChaCtrl.fileStatus.coordinateType = 0;
             if (hairacc.isExist && null != chaCtrl)
             {
                 //取得BackupData
@@ -933,7 +934,7 @@ namespace CoordinateLoadOption
                 yield return new WaitUntil(delegate { return CheckPluginPrepared(); });
 
                 tmpChaCtrl.nowCoordinate.LoadFile(Patches.coordinatePath);
-                tmpChaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)tmpChaCtrl.fileStatus.coordinateType);
+                tmpChaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)tmpChaCtrl.fileStatus.coordinateType); //0
                 tmpChaCtrl.Reload(false, true, true, true);
 
                 forceCleanCount = CLO.FORCECLEANCOUNT;
@@ -977,7 +978,8 @@ namespace CoordinateLoadOption
                 if (null != ExtendedSave.GetExtendedDataById(chaCtrl.nowCoordinate, guid))
                 {
                     Patches.boundAcc = true;
-                    Patches.tgls2.ToList().ForEach(tg => {
+                    Patches.tgls2.ToList().ForEach(tg =>
+                    {
                         tg.isOn = true;
                         tg.interactable = false;
                     });
@@ -1008,7 +1010,7 @@ namespace CoordinateLoadOption
                 {
                     if (kind == 9)
                     {
-                        if(Patches.boundAcc)
+                        if (Patches.boundAcc)
                         {
                             ClearAccessories(chaCtrl);
                         }
@@ -1055,7 +1057,7 @@ namespace CoordinateLoadOption
                 hairacc.SetDataToCoordinate();
 
                 //讀出驗證
-                hairacc.GetCoordinateData(hairacc.GetDataFromExtData(chaCtrl), (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, out Dictionary<int, object> nowCoor);
+                hairacc.GetCoordinateData(hairacc.GetDataFromExtData(chaCtrl), chaCtrl.fileStatus.coordinateType, out Dictionary<int, object> nowCoor);
                 //if (null != nowCoor) {
                 //    Logger.LogDebug($"->Hair Count {nowCoor.Count}: {string.Join(",", nowCoor.Select(x => x.Key.ToString()).ToArray())}");
                 //}
@@ -1098,8 +1100,18 @@ namespace CoordinateLoadOption
                 Singleton<CustomBase>.Instance.updateCustomUI = true;
 
             //Reload
-            chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
-            chaCtrl.ChangeCoordinateType((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, false);
+
+            //chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
+            byte[] data = chaCtrl.nowCoordinate.SaveBytes();
+            chaCtrl.chaFile.coordinate[chaCtrl.chaFile.status.coordinateType].LoadBytes(data, chaCtrl.nowCoordinate.loadVersion);
+
+            //chaCtrl.ChangeCoordinateType((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, false);
+            byte[] data2 = chaCtrl.chaFile.coordinate[chaCtrl.fileStatus.coordinateType].SaveBytes();
+            if (chaCtrl.nowCoordinate.LoadBytes(data, ChaFileDefine.ChaFileCoordinateVersion))
+            {
+                chaCtrl.fileStatus.coordinateType = chaCtrl.fileStatus.coordinateType;
+            }
+
             //chaCtrl.Reload();   //全false的Reload會觸發KKAPI的hook
             chaCtrl.StartCoroutine(_read());
             IEnumerator _read()
@@ -1336,7 +1348,11 @@ namespace CoordinateLoadOption
             }
 
             chaCtrl.ChangeAccessory(true);
-            chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
+
+            //chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
+            byte[] data = chaCtrl.nowCoordinate.SaveBytes();
+            chaCtrl.chaFile.coordinate[chaCtrl.chaFile.status.coordinateType].LoadBytes(data, chaCtrl.nowCoordinate.loadVersion);
+
             chaCtrl.ChangeCoordinateTypeAndReload(false);
         }
 

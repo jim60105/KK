@@ -122,8 +122,8 @@ namespace CoordinateLoadOption {
 
             bool exist = SourceBackup.TryGetValue(name, out object tex);
 
-            ChaFileDefine.CoordinateType coordinateType = (ChaFileDefine.CoordinateType)TargetChaCtrl.fileStatus.coordinateType;
-            Dictionary<ChaFileDefine.CoordinateType, object> _allOverlayTextures = TargetController.GetField("_allOverlayTextures").ToDictionary<ChaFileDefine.CoordinateType, object>();
+            int coordinateType = TargetChaCtrl.fileStatus.coordinateType;
+            Dictionary<int, object> _allOverlayTextures = TargetController.GetField("_allOverlayTextures").ToDictionary<int, object>();
             if (TargetController.GetProperty("CurrentOverlayTextures").ToDictionary<string, object>().TryGetValue(name, out object clothesTexData)) {
                 if (!exist || tex == null || (bool)tex.Invoke("IsEmpty")) {
                     clothesTexData.Invoke("Clear");

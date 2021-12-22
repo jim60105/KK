@@ -49,7 +49,7 @@ namespace CoordinateLoadOption {
                     x => (string)x.GetProperty("BoneName"), //x.BoneName,
                     x => {
                         Logger.LogDebug("Get original ABMX BoneData: " + (string)x.GetProperty("BoneName"));
-                        object y = x.Invoke("GetModifier", new object[] { (ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType });
+                        object y = x.Invoke("GetModifier", new object[] { chaCtrl.fileStatus.coordinateType });
                         return y.Invoke("Clone");
                     }
                 );
@@ -82,7 +82,7 @@ namespace CoordinateLoadOption {
             }
             //Logger.LogDebug("Get Modifiers by AllBoneName");
             foreach (object modifier in Modifiers.Where(x => (bool)x.Invoke("IsCoordinateSpecific"))) {
-                object y = modifier.Invoke("GetModifier", new object[] { (ChaFileDefine.CoordinateType)DefaultChaCtrl.fileStatus.coordinateType });
+                object y = modifier.Invoke("GetModifier", new object[] { DefaultChaCtrl.fileStatus.coordinateType });
                 y.Invoke("Clear");
             }
             //Logger.LogDebug("Clear all Modifiers");
