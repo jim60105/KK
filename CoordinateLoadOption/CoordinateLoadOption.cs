@@ -56,8 +56,8 @@ namespace CoordinateLoadOption
     {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kks.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "21.12.11.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.7";
+        internal const string PLUGIN_VERSION = "21.12.22.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.4.0";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
