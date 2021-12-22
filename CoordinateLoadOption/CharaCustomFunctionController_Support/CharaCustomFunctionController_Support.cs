@@ -92,6 +92,7 @@ namespace CoordinateLoadOption {
         public virtual void SetExtDataFromController(ChaControl chaCtrl) {
             MonoBehaviour controller = GetController(chaCtrl);
             controller.Invoke("OnCardBeingSaved", new object[] { 1 });
+            controller.Invoke("OnCoordinateBeingSaved", new object[] { chaCtrl.nowCoordinate });
         }
 
         /// <summary>
