@@ -44,8 +44,8 @@ namespace KK_StudioCharaOnlyLoadBody
     {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kks.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "21.10.24.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.4.2";
+        internal const string PLUGIN_VERSION = "21.12.23.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.4.3";
 
         public static ConfigEntry<string> ExtendedDataToCopySetting { get; private set; }
         public static string[] ExtendedDataToCopy;
@@ -239,7 +239,10 @@ namespace KK_StudioCharaOnlyLoadBody
 
                 GameObject.Destroy(tmpCtrl);
 
-                ocichar.charInfo.AssignCoordinate((ChaFileDefine.CoordinateType)ocichar.charInfo.fileStatus.coordinateType);
+                //ocichar.charInfo.AssignCoordinate((ChaFileDefine.CoordinateType)ocichar.charInfo.fileStatus.coordinateType);
+                byte[] data = ocichar.charInfo.nowCoordinate.SaveBytes();
+                ocichar.charInfo.chaFile.coordinate[ocichar.charInfo.chaFile.status.coordinateType].LoadBytes(data, ocichar.charInfo.nowCoordinate.loadVersion);
+
                 chaCtrl.Reload(false, false, false, false);
 
                 AddObjectAssist.InitHairBone(ocichar, Singleton<Info>.Instance.dicBoneInfo);
@@ -328,7 +331,7 @@ namespace KK_StudioCharaOnlyLoadBody
                             {
                                 Logger.LogDebug("Clean new coordinate ABMX BoneData: " + (string)x.GetProperty("BoneName"));
                                 x.Invoke("MakeNonCoordinateSpecific");
-                                object y = x.Invoke("GetModifier", new object[] { (ChaFileDefine.CoordinateType)0 });
+                                object y = x.Invoke("GetModifier", new object[] { 0 });
                                 y.Invoke("Clear");
                                 x.Invoke("MakeCoordinateSpecific");    //保險起見以免後面沒有成功清除
                                 i++;
