@@ -10,7 +10,7 @@
   "linkerEnabled": false,
   "resources": {
     "assembly": {
-      "SaveLoadCompressionWeb.dll": "sha256-Jsa6lQffbBb4LnMZ64kqxBvKJzyeZCVcIVwskjPEr8s=",
+      "SaveLoadCompressionWeb.dll": "sha256-iNhGwZdCY2PKyJxCBuwXAdba1eiOjEUkynvUJqoNjPY=",
       "Microsoft.CSharp.dll": "sha256-470oOFeTcRuThu3PEDt5u3Q4LZR0TiwPY8yHWlK+L0M=",
       "Microsoft.VisualBasic.Core.dll": "sha256-KqB1i7FCaZd3eTSAlNF7cOaUu+BkIp+gAjvFezBQmBI=",
       "Microsoft.VisualBasic.dll": "sha256-ShMV8CpJY572Zm9OGVytBzIx\/TxgY7qMWk6lddPUwXI=",
