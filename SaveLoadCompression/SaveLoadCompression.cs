@@ -39,8 +39,8 @@ namespace SaveLoadCompression
     {
         internal const string PLUGIN_NAME = "Save Load Compression";
         internal const string GUID = "com.jim60105.kks.saveloadcompression";
-        internal const string PLUGIN_VERSION = "21.08.28.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.5.0";
+        internal const string PLUGIN_VERSION = "21.12.23.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.6.0";
         public static ConfigEntry<DictionarySize> DictionarySize { get; private set; }
         public static ConfigEntry<bool> Enable { get; private set; }
         public static ConfigEntry<bool> Notice { get; private set; }
@@ -62,11 +62,13 @@ namespace SaveLoadCompression
 
             Enable = Config.Bind<bool>("Config", "Enable", false, "!!!NOTICE!!!");
             Notice = Config.Bind<bool>("Config", "I do realize that without this plugin, the save files will not be readable!!", false, "!!!NOTICE!!!");
-            DeleteTheOri = Config.Bind<bool>("Settings", "Delete the original file", false, "The original saved file will be automatically overwritten.");
-            DisplayMessage = Config.Bind<bool>("Settings", "Display compression message on screen", true);
+
+            DeleteTheOri = Config.Bind<bool>("Settings", "Delete the original file", true, "The original saved file will be automatically overwritten.");
+            DisplayMessage = Config.Bind<bool>("Settings", "Display compression message on screen", false);
             SkipSaveCheck = Config.Bind<bool>("Settings", "Skip bytes compare when saving", false, "!!!Use this at your own risk!!!!");
-            EnableOnCharaSaveing = Config.Bind<bool>("Enable at Where", "Character", true, "Enable compress when saving characters.");
-            EnableOnCoordinateSaveing = Config.Bind<bool>("Enable at Where", "Coordinate", true, "Enable compress when saving coordinates.");
+
+            EnableOnCharaSaveing = Config.Bind<bool>("Enable at Where", "Character", false, "Enable compress when saving characters.");
+            EnableOnCoordinateSaveing = Config.Bind<bool>("Enable at Where", "Coordinate", false, "Enable compress when saving coordinates.");
             EnableOnStudioSceneSaveing = Config.Bind<bool>("Enable at Where", "Studio Scene", true, "Enable compress when saving scenes.");
 
             Harmony harmonyInstance = Harmony.CreateAndPatchAll(typeof(Patches));
