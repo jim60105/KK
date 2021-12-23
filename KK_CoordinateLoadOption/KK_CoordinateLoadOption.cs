@@ -56,8 +56,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "21.12.11.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.7";
+        internal const string PLUGIN_VERSION = "21.12.23.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.8";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -861,14 +861,23 @@ namespace KK_CoordinateLoadOption {
             // 檢查自己身上是否有要綁定飾品的插件資料
             foreach (var guid in SCLO.pluginBoundAccessories)
             {
-                if (null != ExtendedSave.GetExtendedDataById(chaCtrl.nowCoordinate, guid))
+                if (!Patches.boundAcc && null != ExtendedSave.GetExtendedDataById(chaCtrl.nowCoordinate, guid))
                 {
                     Patches.boundAcc = true;
-                    Patches.tgls2.ToList().ForEach(tg => {
-                        tg.isOn = true;
-                        tg.interactable = false;
-                    });
-                    Logger.Log(LogLevel.Message | LogLevel.Warning, $"The accessories option is disabled due to the plugin data ({guid}) found on your character {chaCtrl.fileParam.fullname}");
+
+                    if (Patches.tgls[9].isOn && Patches.tgls2.ToList().Any(tg => !tg.isOn))
+                    {
+                        foreach (var tg in Patches.tgls2)
+                        {
+                            tg.isOn = true;
+                            tg.interactable = false;
+                        }
+
+                        Logger.Log(LogLevel.Message | LogLevel.Warning, $"The accessories option is disabled due to the plugin data ({guid}) found on your character {chaCtrl.fileParam.fullname}");
+                        Logger.Log(LogLevel.Message | LogLevel.Warning, $"If you surely want to apply accessories, please check the option panel and press the Load button again.");
+                        End();
+                        return;
+                    }
                     break;
                 }
             }
@@ -1092,39 +1101,42 @@ namespace KK_CoordinateLoadOption {
 
             MaterialEditor_CCCFCSupport me = new MaterialEditor_CCCFCSupport(targetChaCtrl);
 
-            for (int i = 0; i < targetParts.Length && i < Patches.tgls2.Length; i++) {
-                if ((bool)Patches.tgls2[i]?.isOn) {
-                    if (Patches.addAccModeFlag) {
-                        //增加模式
-                        if (targetParts[i].type == 120) {
-                            DoChangeAccessory(i, i);
-                        } else {
-                            EnQueue();
-                        }
-                    } else {
-                        //取代模式
-                        if (IsHairAccessory(targetChaCtrl, i) && Patches.lockHairAcc) {
-                            EnQueue();
-                        } else {
-                            //如果是取代模式且非髮飾品則取代
-                            DoChangeAccessory(i, i);
-                        }
-                    }
-                } else {
-                    //如果沒勾選就不改變
+            for (int i = 0; i < targetParts.Length && i < Patches.tgls2.Length; i++)
+            {
+                // 飾品綁定模式，一律Change
+                if (Patches.boundAcc)
+                {
+                    DoChangeAccessory(i, i);
                     continue;
                 }
 
-                void EnQueue() {
-                    if (sourceParts[i]?.type == 120) {
-                        Logger.LogDebug($"->Lock: Acc{i} / Part: {(ChaListDefine.CategoryNo)targetParts[i].type} / ID: {targetParts[i].id}");
-                        Logger.LogDebug($"->Pass: Acc{i} / Part: {(ChaListDefine.CategoryNo)sourceParts[i].type} / ID: {sourceParts[i].id}");
-                    } else {
-                        Logger.LogDebug($"->Lock: Acc{i} / Part: {(ChaListDefine.CategoryNo)targetParts[i].type} / ID: {targetParts[i].id}");
-                        Logger.LogDebug($"->EnQueue: Acc{i} / Part: {(ChaListDefine.CategoryNo)sourceParts[i].type} / ID: {sourceParts[i].id}");
-                        accQueue.Enqueue(i);
+                // 如果沒勾選就不Change
+                if (!(bool)Patches.tgls2[i]?.isOn)
+                    continue;
+
+                // 增加模式
+                if (Patches.addAccModeFlag)
+                {
+                    // 空欄
+                    if (targetParts[i].type == 120)
+                    {
+                        DoChangeAccessory(i, i);
                     }
+                    else
+                    {
+                        EnQueue(i, sourceParts[i], targetParts[i], accQueue);
+                    }
+                    continue;
                 }
+
+                // 如果是髮飾品，且啟用鎖定髮飾品則queue
+                if (Patches.lockHairAcc && IsHairAccessory(targetChaCtrl, i))
+                {
+                    EnQueue(i, sourceParts[i], targetParts[i], accQueue);
+                    continue;
+                }
+
+                DoChangeAccessory(i, i);
             }
 
             //遍歷空欄dequeue accQueue
@@ -1134,6 +1146,18 @@ namespace KK_CoordinateLoadOption {
                     DoChangeAccessory(slot, j);
                     Logger.LogDebug($"->DeQueue: Acc{j} / Part: {(ChaListDefine.CategoryNo)targetParts[j].type} / ID: {targetParts[j].id}");
                 } //else continue;
+            }
+
+            void EnQueue(int i, ChaFileAccessory.PartsInfo sourcePartsInfo, ChaFileAccessory.PartsInfo targetPartsInfo, Queue<int> queue)
+            {
+                if (sourceParts[i]?.type == 120) {
+                    Logger.LogDebug($"->Lock: Acc{i} / Part: {(ChaListDefine.CategoryNo)targetParts[i].type} / ID: {targetParts[i].id}");
+                    Logger.LogDebug($"->Pass: Acc{i} / Part: {(ChaListDefine.CategoryNo)sourceParts[i].type} / ID: {sourceParts[i].id}");
+                } else {
+                    Logger.LogDebug($"->Lock: Acc{i} / Part: {(ChaListDefine.CategoryNo)targetParts[i].type} / ID: {targetParts[i].id}");
+                    Logger.LogDebug($"->EnQueue: Acc{i} / Part: {(ChaListDefine.CategoryNo)sourceParts[i].type} / ID: {sourceParts[i].id}");
+                    accQueue.Enqueue(i);
+                }
             }
 
             /// <summary>
