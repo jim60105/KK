@@ -47,6 +47,9 @@ namespace SaveLoadCompression
         public static ConfigEntry<bool> DeleteTheOri { get; private set; }
         public static ConfigEntry<bool> DisplayMessage { get; private set; }
         public static ConfigEntry<bool> SkipSaveCheck { get; private set; }
+        public static ConfigEntry<bool> EnableOnCharaSaveing { get; private set; }
+        public static ConfigEntry<bool> EnableOnCoordinateSaveing { get; private set; }
+        public static ConfigEntry<bool> EnableOnStudioSceneSaveing { get; private set; }
 
         internal static new ManualLogSource Logger;
         internal static DirectoryInfo CacheDirectory;
@@ -62,6 +65,10 @@ namespace SaveLoadCompression
             DeleteTheOri = Config.Bind<bool>("Settings", "Delete the original file", false, "The original saved file will be automatically overwritten.");
             DisplayMessage = Config.Bind<bool>("Settings", "Display compression message on screen", true);
             SkipSaveCheck = Config.Bind<bool>("Settings", "Skip bytes compare when saving", false, "!!!Use this at your own risk!!!!");
+            EnableOnCharaSaveing = Config.Bind<bool>("Enable at Where", "Character", true, "Enable compress when saving characters.");
+            EnableOnCoordinateSaveing = Config.Bind<bool>("Enable at Where", "Coordinate", true, "Enable compress when saving coordinates.");
+            EnableOnStudioSceneSaveing = Config.Bind<bool>("Enable at Where", "Studio Scene", true, "Enable compress when saving scenes.");
+
             Harmony harmonyInstance = Harmony.CreateAndPatchAll(typeof(Patches));
             harmonyInstance.Patch(
                 typeof(SceneInfo).GetMethod(nameof(SceneInfo.Load), new[] { typeof(string), typeof(Version).MakeByRefType() }),
@@ -111,17 +118,27 @@ namespace SaveLoadCompression
         //Studio Save
         [HarmonyPostfix, HarmonyPatch(typeof(SceneInfo), "Save", new Type[] { typeof(string) })]
         public static void SavePostfix(string _path)
-            => Save(_path, Token.StudioToken);
+        {
+            if (SaveLoadCompression.EnableOnStudioSceneSaveing.Value)
+                Save(_path, Token.StudioToken);
+        }
 
         //Chara Save
         [HarmonyPostfix, HarmonyPatch(typeof(ChaFileControl), "SaveCharaFile", new Type[] { typeof(string), typeof(byte), typeof(bool) })]
         public static void SaveCharaFilePostfix(ChaFileControl __instance, string filename, byte sex)
-            => Save(__instance.ConvertCharaFilePath(filename, sex), Token.CharaToken + "】" + Token.SexToken + sex);  //】:為了通過CharacterReplacer
+        {
+            if(SaveLoadCompression.EnableOnCharaSaveing.Value)
+                //】:為了通過CharacterReplacer
+                Save(__instance.ConvertCharaFilePath(filename, sex), Token.CharaToken + "】" + Token.SexToken + sex); 
+        }
 
         //Coordinate Save
         [HarmonyPostfix, HarmonyPatch(typeof(ChaFileCoordinate), "SaveFile", new Type[] { typeof(string) })]
         public static void SaveFilePostfix(string path)
-            => Save(path, Token.CoordinateToken);
+        {
+            if(SaveLoadCompression.EnableOnCoordinateSaveing.Value)
+                Save(path, Token.CoordinateToken);
+        }
 
         public static void Save(string path, string token)
         {
