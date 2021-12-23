@@ -1352,10 +1352,7 @@ namespace CoordinateLoadOption
             }
 
             if (CLO._isMoreAccessoriesExist)
-            {
-                chaCtrl.nowCoordinate.accessory.parts = MoreAccessories_Support.RemoveEmptyFromBackToFront(chaCtrl.nowCoordinate.accessory.parts);
                 MoreAccessories_Support.Update();
-            }
 
             chaCtrl.ChangeAccessory(true);
 

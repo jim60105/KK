@@ -112,22 +112,6 @@ namespace CoordinateLoadOption {
             return tempLoadedAccessories.Select(x => CoordinateLoad.GetNameFromIDAndType(x.id, (ChaListDefine.CategoryNo)x.type)).ToArray();
         }
 
-        /// <summary>
-        /// 由後往前刪除空欄
-        /// </summary>
-        /// <param name="partsInfos"></param>
-        public static ChaFileAccessory.PartsInfo[] RemoveEmptyFromBackToFront(ChaFileAccessory.PartsInfo[] partsInfos, int lowerLimit = 20) {
-            var list = partsInfos.ToList();
-            for (int i = list.Count - 1; i >= lowerLimit; i--) {
-                if (list[i].type == 120) {
-                    list.RemoveAt(i);
-                } else {
-                    break;
-                }
-            }
-            return list.ToArray();
-        }
-
         public static void ArraySync(ChaControl chaCtrl) => MoreAccObj.Invoke("ArraySync", new object[] { chaCtrl });
         public static void Update() => MoreAccObj.Invoke("UpdateUI");
     }
