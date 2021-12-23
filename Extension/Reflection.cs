@@ -27,7 +27,7 @@ namespace Extension {
         private static readonly Dictionary<Key, PropertyInfo> _propertyCache = new Dictionary<Key, PropertyInfo>();
         private static readonly Dictionary<Key, MethodInfo> _methodCache = new Dictionary<Key, MethodInfo>();
 
-        public static object GetField<T>(this object self, string name) where T : class => _GetField<T>(self, name);
+        public static object GetField<T>(this object self, string name) => _GetField<T>(self, name);
         public static object GetField(this object self, string name) {
             Type type = self.GetType();
             MethodInfo method = typeof(Reflection).GetMethods(BindingFlags.NonPublic | BindingFlags.Static).Where(m => m.Name == nameof(Reflection._GetField) && m.IsGenericMethod).First();
@@ -41,13 +41,13 @@ namespace Extension {
 
             return method.Invoke(null, new object[] { null, name });
         }
-        private static object _GetField<T>(this object self, string name) where T : class {
+        private static object _GetField<T>(this object self, string name) {
             Key fieldKey = new Key(name, typeof(T));
             if (!SearchForFields(fieldKey)) {
                 return null;
             }
             _fieldCache.TryGetValue(fieldKey, out FieldInfo field);
-            return field.GetValue(self as T) ?? null;
+            return field.GetValue((T)self) ?? null;
         }
 
         public static bool SetField(this object self, string name, object value) {
@@ -64,7 +64,7 @@ namespace Extension {
 
             return (bool)method.Invoke(null, new object[] { null, name, value });
         }
-        public static bool SetField<T>(this object self, string name, object value) where T : class {
+        public static bool SetField<T>(this object self, string name, object value) {
             Key fieldKey = new Key(name, typeof(T));
             if (!SearchForFields(fieldKey)) {
                 return false;
@@ -80,7 +80,7 @@ namespace Extension {
             }
         }
 
-        public static object GetProperty<T>(this object self, string name) where T : class => _GetProperty<T>(self, name);
+        public static object GetProperty<T>(this object self, string name) => _GetProperty<T>(self, name);
         public static object GetProperty(this object self, string name) {
             Type type = self.GetType();
             MethodInfo method = typeof(Reflection).GetMethods(BindingFlags.NonPublic | BindingFlags.Static).Where(m => m.Name == nameof(Reflection._GetProperty) && m.IsGenericMethod).First();
@@ -94,14 +94,14 @@ namespace Extension {
 
             return method.Invoke(null, new object[] { null, name });
         }
-        private static object _GetProperty<T>(this object self, string name) where T : class {
+        private static object _GetProperty<T>(this object self, string name) {
             Key key = new Key(name, typeof(T));
             if (!SearchForProperties(key)) {
                 return null;
             }
 
             _propertyCache.TryGetValue(key, out PropertyInfo info);
-            return info.GetValue(self as T, null) ?? null;
+            return info.GetValue((T)self, null) ?? null;
         }
 
         public static bool SetProperty(this object self, string name, object value) {
@@ -111,7 +111,7 @@ namespace Extension {
 
             return (bool)method.Invoke(self, new object[] { self, name, value });
         }
-        public static bool SetProperty<T>(this object self, string name, object value) where T : class {
+        public static bool SetProperty<T>(this object self, string name, object value) {
             Key key = new Key(name, typeof(T));
             if (!SearchForProperties(key)) {
                 return false;
@@ -119,7 +119,7 @@ namespace Extension {
 
             _propertyCache.TryGetValue(key, out PropertyInfo property);
             try {
-                property.SetValue(self as T, value, null);
+                property.SetValue((T)self, value, null);
                 return true;
             } catch (ArgumentException ae) {
                 Logger.LogError($"Set Property is not the same type as input: {name}");
@@ -128,7 +128,7 @@ namespace Extension {
             }
         }
 
-        public static object Invoke<T>(this object self, string name, object[] p = null) where T : class => _Invoke<T>(self, name, p);
+        public static object Invoke<T>(this object self, string name, object[] p = null) => _Invoke<T>(self, name, p);
         public static object Invoke(this object self, string name, object[] p = null) {
             Type type = self.GetType();
             MethodInfo method = typeof(Reflection).GetMethods(BindingFlags.NonPublic | BindingFlags.Static).Where(m => m.Name == nameof(Reflection._Invoke) && m.IsGenericMethod).First();
@@ -142,7 +142,7 @@ namespace Extension {
 
             return method.Invoke(null, new object[] { null, name, p });
         }
-        private static object _Invoke<T>(object self, string name, object[] p = null) where T : class {
+        private static object _Invoke<T>(object self, string name, object[] p = null) {
             List<Type> list = new List<Type> { typeof(T) };
             if (p != null) {
                 list = list.Concat(p.Select<object, Type>(o => o?.GetType() ?? typeof(object))).ToList();
@@ -155,7 +155,7 @@ namespace Extension {
             _methodCache.TryGetValue(key, out MethodInfo methodInfo);
             try {
                 if (null != self) {
-                    return methodInfo.Invoke(self as T, p);
+                    return methodInfo.Invoke((T)self, p);
                 } else if (methodInfo.IsStatic) {
                     return methodInfo.Invoke(null, p);
                 } else { throw new Exception($"Invoke as static on a not static method"); }
