@@ -19,9 +19,11 @@ namespace KK_CoordinateLoadOption {
 
         private static Type BoneModifierType = null;
 
-        public override bool LoadAssembly() {
-            bool loadSuccess = LoadAssembly(out string path, new Version(3, 3));
-            if (loadSuccess && !path.IsNullOrEmpty()) {
+        public override bool LoadAssembly()
+        {
+            bool loadSuccess = LoadAssembly(out string path, new Version(4, 4, 4));
+            if (loadSuccess && !path.IsNullOrEmpty())
+            {
                 BoneModifierType = Assembly.LoadFrom(path).GetType("KKABMX.Core.BoneModifier");
             }
             return loadSuccess;
@@ -96,7 +98,7 @@ namespace KK_CoordinateLoadOption {
                         Logger.LogDebug("->Create target");
                         TargetController.Invoke("AddModifier", new object[] { target });
                     }
-                    target.Invoke("MakeCoordinateSpecific");
+                    target.Invoke("MakeCoordinateSpecific", new object[] { TargetChaCtrl.chaFile.coordinate.Length });
                     object[] tmp = (object[])target.GetProperty("CoordinateModifiers");
                     tmp[DefaultChaCtrl.fileStatus.coordinateType] = modifierDict.Value;
                     target.SetProperty("CoordinateModifiers", tmp);
