@@ -75,10 +75,15 @@ namespace KK_CoordinateLoadOption {
             charAdditionalData.GetField("rawAccessoriesInfos").ToDictionary<ChaFileDefine.CoordinateType, List<ChaFileAccessory.PartsInfo>>()
                 .TryGetValue((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, out List<ChaFileAccessory.PartsInfo> parts);
             for (int i = 0; i < parts.Count; i++) {
-                if (force || !(CoordinateLoad.IsHairAccessory(chaCtrl, i + 20) && Patches.lockHairAcc)) {
-                    parts[i] = new ChaFileAccessory.PartsInfo();
-                } else {
+                if (!force
+                    && !Patches.boundAcc
+                    && Patches.lockHairAcc
+                    && CoordinateLoad.IsHairAccessory(chaCtrl, i + 20))
+                {
                     Logger.LogDebug($"Keep HairAcc{i}: {parts[i].id}");
+                    continue;
+                } else {
+                    parts[i] = new ChaFileAccessory.PartsInfo();
                 }
             }
             RemoveEmptyFromBackToFront(parts, 0);

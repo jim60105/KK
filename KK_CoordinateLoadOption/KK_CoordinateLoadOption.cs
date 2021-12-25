@@ -56,8 +56,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "21.12.23.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.8";
+        internal const string PLUGIN_VERSION = "21.12.25.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.8.1";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -1192,11 +1192,14 @@ namespace KK_CoordinateLoadOption {
 
         public static void ClearAccessories(ChaControl chaCtrl) {
             for (int i = 0; i < 20; i++) {
-                if (!(IsHairAccessory(chaCtrl, i) && Patches.lockHairAcc)) {
-                    chaCtrl.nowCoordinate.accessory.parts[i] = new ChaFileAccessory.PartsInfo();
-                } else {
+                if (!Patches.boundAcc
+                    && Patches.lockHairAcc
+                    && IsHairAccessory(chaCtrl, i))
+                {
                     Logger.LogDebug($"Keep HairAcc{i}: {chaCtrl.nowCoordinate.accessory.parts[i].id}");
+                    continue;
                 }
+                chaCtrl.nowCoordinate.accessory.parts[i] = new ChaFileAccessory.PartsInfo();
             }
             if (SCLO._isMoreAccessoriesExist) {
                 MoreAccessories_Support.ClearMoreAccessoriesData(chaCtrl);
