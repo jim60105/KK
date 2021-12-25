@@ -337,3 +337,9 @@ FBIOpenUp/Resources/saikodaze.jpg
 FBIOpenUp/Resources/FBI.mp4
 FBIOpenUp/Resources/FBI.ogg
 FBIOpenUp/Resources/Kumakichi.jpg
+
+!SaveLoadCompression.DecompressTool/bin
+SaveLoadCompression.DecompressTool/bin/*
+!SaveLoadCompression.DecompressTool/bin/publish
+!SaveLoadCompression.DecompressTool/bin/publish/SaveLoadCompression.DecompressTool.exe
+!SaveLoadCompression.DecompressTool/bin/publish/SaveLoadCompression.DecompressTool.pdb
