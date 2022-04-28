@@ -16,9 +16,17 @@ namespace KK_CoordinateLoadOption {
         private static Type MoreAccessories = null;
         private static object MoreAccObj;
 
-        public static bool LoadAssembly() {
+        public static int LoadAssembly() {
             try {
-                string path = KoikatuHelper.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories", new Version(1, 1))?.Info.Location;
+                const string pluginName = "com.joan6694.illusionplugins.moreaccessories";
+                var moreaccInstance = KoikatuHelper.TryGetPluginInstance(pluginName, new Version(1, 1));
+                if (moreaccInstance == null) 
+                    return 0;
+
+                if (BepInEx.Bootstrap.Chainloader.PluginInfos[pluginName].Metadata.Version >= new Version(2, 0))
+                    return 2;
+
+                string path = moreaccInstance.Info.Location;
                 Assembly ass = Assembly.LoadFrom(path);
                 MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
                 MoreAccObj = MoreAccessories?.GetFieldStatic("_self");
@@ -26,10 +34,10 @@ namespace KK_CoordinateLoadOption {
                     throw new Exception("Load assembly FAILED: MoreAccessories");
                 }
                 Logger.LogDebug("MoreAccessories found");
-                return true;
+                return 1;
             } catch (Exception ex) {
                 Logger.LogDebug(ex.Message);
-                return false;
+                return 0;
             }
         }
 
@@ -124,7 +132,7 @@ namespace KK_CoordinateLoadOption {
             Logger.LogDebug($"MoreAcc Source Count : {sourcePartsArray.Length}");
             Logger.LogDebug($"MoreAcc Target Count : {targetPartsArray.Length}");
 
-            CoordinateLoad.ChangeAccessories(sourceChaCtrl, sourcePartsArray, targetChaCtrl, targetPartsArray, accQueue);
+            CoordinateLoad.ChangeAccessories(sourceChaCtrl, sourcePartsArray, targetChaCtrl, ref targetPartsArray, accQueue); //todo noref
 
             targetParts.Clear();
             targetParts.AddRange(targetPartsArray);
