@@ -141,7 +141,7 @@ namespace KK_CoordinateLoadOption {
             Logger.LogDebug($"MoreAcc Source Count : {sourcePartsArray.Length}");
             Logger.LogDebug($"MoreAcc Target Count : {targetPartsArray.Length}");
 
-            CoordinateLoad.ChangeAccessories(sourceChaCtrl, sourcePartsArray, targetChaCtrl, ref targetPartsArray, accQueue); //todo noref
+            CoordinateLoad.ChangeAccessories(sourceChaCtrl, sourcePartsArray, targetChaCtrl, ref targetPartsArray, accQueue);
 
             targetParts.Clear();
             targetParts.AddRange(targetPartsArray);

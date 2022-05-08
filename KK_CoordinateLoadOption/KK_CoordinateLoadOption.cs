@@ -914,8 +914,7 @@ namespace KK_CoordinateLoadOption {
                             
                             ChangeAccessories(tmpChaCtrl, tmpCtrlAccParts, chaCtrl, ref chaCtrlAccParts, accQueue);
 
-                            if(chaCtrl.nowCoordinate.accessory.parts != chaCtrlAccParts)
-                                chaCtrl.nowCoordinate.accessory.parts = chaCtrlAccParts;
+                            chaCtrl.nowCoordinate.accessory.parts = chaCtrlAccParts;
 
                             //accQueue內容物太多，報告後捨棄
                             while (accQueue.Count > 0) {
@@ -1171,6 +1170,8 @@ namespace KK_CoordinateLoadOption {
                 } //else continue;
             }
 
+            targetPartsRef = targetParts;
+
             void EnQueue(int i, ChaFileAccessory.PartsInfo sourcePartsInfo, ChaFileAccessory.PartsInfo targetPartsInfo, Queue<int> queue)
             {
                 if (sourceParts[i]?.type == 120) {
@@ -1211,8 +1212,6 @@ namespace KK_CoordinateLoadOption {
                 }
                 Logger.LogDebug($"->Changed: Acc{targetSlot} / Part: {(ChaListDefine.CategoryNo)targetParts[targetSlot].type} / ID: {targetParts[targetSlot].id}");
             }
-
-            targetPartsRef = targetParts;
         }
 
         public static void ClearAccessories(ChaControl chaCtrl) {
