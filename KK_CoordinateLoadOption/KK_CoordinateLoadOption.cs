@@ -56,8 +56,8 @@ namespace KK_CoordinateLoadOption {
     public class KK_CoordinateLoadOption : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kk.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "21.12.25.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.8.1";
+        internal const string PLUGIN_VERSION = "22.05.08.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.9";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -89,7 +89,7 @@ namespace KK_CoordinateLoadOption {
 
         public static bool _isKCOXExist = false;
         public static bool _isABMXExist = false;
-        public static bool _isMoreAccessoriesExist = false;
+        public static int _isMoreAccessoriesExist = 0;
         public static bool _isMaterialEditorExist = false;
         public static bool _isHairAccessoryCustomizerExist = false;
         public static bool _isCharaOverlayBasedOnCoordinateExist = false;
@@ -533,7 +533,8 @@ namespace KK_CoordinateLoadOption {
             btnReverseHairAcc.onClick.AddListener(() => {
                 CoordinateLoad.MakeTmpChara((_) => {
                     CoordinateLoad.tmpChaCtrl.StopAllCoroutines();
-                    for (int i = 0; i < MoreAccessories_Support.GetAccessoriesAmount(CoordinateLoad.tmpChaCtrl.chaFile); i++) {
+                    var accessoriesAmount = SCLO._isMoreAccessoriesExist == 1 ? MoreAccessories_Support.GetAccessoriesAmount(CoordinateLoad.tmpChaCtrl.chaFile) : CoordinateLoad.tmpChaCtrl.nowCoordinate.accessory.parts.Length;
+                    for (int i = 0; i < accessoriesAmount; i++) {
                         if (i < tgls2.Length) {
                             if (CoordinateLoad.IsHairAccessory(CoordinateLoad.tmpChaCtrl, i)) {
                                 tgls2[i].isOn = !tgls2[i].isOn;
@@ -604,7 +605,7 @@ namespace KK_CoordinateLoadOption {
 
             accNames.AddRange(tmpChaFileCoordinate.accessory.parts.Select(x => CoordinateLoad.GetNameFromIDAndType(x.id, (ChaListDefine.CategoryNo)x.type)));
 
-            if (SCLO._isMoreAccessoriesExist) {
+            if (SCLO._isMoreAccessoriesExist == 1) {
                 accNames.AddRange(MoreAccessories_Support.LoadMoreAcc(tmpChaFileCoordinate));
             }
 
@@ -904,14 +905,16 @@ namespace KK_CoordinateLoadOption {
                         {
                             ClearAccessories(chaCtrl);
                         }
-                        if (SCLO._isMoreAccessoriesExist) {
+                        if (SCLO._isMoreAccessoriesExist == 1) {
                             MoreAccessories_Support.CopyMoreAccessories(tmpChaCtrl, chaCtrl);
                         } else {
                             //Copy accessories
                             ChaFileAccessory.PartsInfo[] chaCtrlAccParts = chaCtrl.nowCoordinate.accessory.parts;
                             ChaFileAccessory.PartsInfo[] tmpCtrlAccParts = tmpChaCtrl.nowCoordinate.accessory.parts;
+                            
+                            ChangeAccessories(tmpChaCtrl, tmpCtrlAccParts, chaCtrl, ref chaCtrlAccParts, accQueue);
 
-                            ChangeAccessories(tmpChaCtrl, tmpCtrlAccParts, chaCtrl, chaCtrlAccParts, accQueue);
+                            chaCtrl.nowCoordinate.accessory.parts = chaCtrlAccParts;
 
                             //accQueue內容物太多，報告後捨棄
                             while (accQueue.Count > 0) {
@@ -974,7 +977,7 @@ namespace KK_CoordinateLoadOption {
             }
 
             //MoreAcc
-            if (SCLO._isMoreAccessoriesExist) {
+            if (SCLO._isMoreAccessoriesExist == 1) {
                 chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
                 MoreAccessories_Support.SetExtDataFromPlugin(chaCtrl);
                 MoreAccessories_Support.Update();
@@ -1080,13 +1083,8 @@ namespace KK_CoordinateLoadOption {
             }
         }
 
-        public static void ChangeAccessories(ChaControl sourceChaCtrl, ChaFileAccessory.PartsInfo[] sourceParts, ChaControl targetChaCtrl, ChaFileAccessory.PartsInfo[] targetParts, Queue<int> accQueue) {
+        public static void ChangeAccessories(ChaControl sourceChaCtrl, ChaFileAccessory.PartsInfo[] sourceParts, ChaControl targetChaCtrl, ref ChaFileAccessory.PartsInfo[] targetPartsRef, Queue<int> accQueue) {
             accQueue.Clear();
-            //防呆檢查targetParts欄位不能小於sourceParts
-            if (sourceParts.Length > targetParts.Length) {
-                Logger.LogError($"ChangeAccessories targetParts < sourceParts");
-                return;
-            }
 
             bool isAllFalseFlag = true;
             foreach (bool b in Patches.tgls2.Select(x => x.isOn).ToArray()) {
@@ -1098,6 +1096,20 @@ namespace KK_CoordinateLoadOption {
                 return;
             }
             Logger.LogDebug($"Acc Count : {Patches.tgls2.Length}");
+            
+            var targetParts = targetPartsRef;
+            if (sourceParts.Length > targetParts.Length) {
+                if(SCLO._isMoreAccessoriesExist == 2) {
+                    Logger.LogDebug($"ChangeAccessories targetParts < sourceParts, add {sourceParts.Length - targetParts.Length} slots");
+                    targetParts = targetParts
+                        .Concat(Enumerable.Range(0, sourceParts.Length - targetParts.Length).Select(_ => new ChaFileAccessory.PartsInfo()))
+                        .ToArray();
+                }
+                else {
+                    Logger.LogError($"ChangeAccessories targetParts < sourceParts");
+                    return;
+                }
+            }
 
             MaterialEditor_CCCFCSupport me = new MaterialEditor_CCCFCSupport(targetChaCtrl);
 
@@ -1140,13 +1152,25 @@ namespace KK_CoordinateLoadOption {
             }
 
             //遍歷空欄dequeue accQueue
-            for (int j = 0; j < targetParts.Length && accQueue.Count > 0; j++) {
+            for (int j = 0; accQueue.Count > 0; j++) {
+                if (j >= targetParts.Length) {
+                    if(SCLO._isMoreAccessoriesExist == 2) {
+                        Logger.LogDebug($"->Add slot: Acc{j}");
+                        targetParts = targetParts.AddToArray(new ChaFileAccessory.PartsInfo());
+                    }
+                    else {
+                        break;
+                    }
+                }
+
                 if (targetParts[j].type == 120) {
                     int slot = accQueue.Dequeue();
                     DoChangeAccessory(slot, j);
                     Logger.LogDebug($"->DeQueue: Acc{j} / Part: {(ChaListDefine.CategoryNo)targetParts[j].type} / ID: {targetParts[j].id}");
                 } //else continue;
             }
+
+            targetPartsRef = targetParts;
 
             void EnQueue(int i, ChaFileAccessory.PartsInfo sourcePartsInfo, ChaFileAccessory.PartsInfo targetPartsInfo, Queue<int> queue)
             {
@@ -1191,7 +1215,8 @@ namespace KK_CoordinateLoadOption {
         }
 
         public static void ClearAccessories(ChaControl chaCtrl) {
-            for (int i = 0; i < 20; i++) {
+            var partsCount = SCLO._isMoreAccessoriesExist == 2 ? chaCtrl.nowCoordinate.accessory.parts.Length : 20;            
+            for (int i = 0; i < partsCount; i++) {
                 if (!Patches.boundAcc
                     && Patches.lockHairAcc
                     && IsHairAccessory(chaCtrl, i))
@@ -1201,7 +1226,7 @@ namespace KK_CoordinateLoadOption {
                 }
                 chaCtrl.nowCoordinate.accessory.parts[i] = new ChaFileAccessory.PartsInfo();
             }
-            if (SCLO._isMoreAccessoriesExist) {
+            if (SCLO._isMoreAccessoriesExist == 1) {
                 MoreAccessories_Support.ClearMoreAccessoriesData(chaCtrl);
             }
             chaCtrl.ChangeAccessory(true);
@@ -1248,7 +1273,7 @@ namespace KK_CoordinateLoadOption {
         /// <param name="index"></param>
         /// <returns>ChaAccessoryComponent</returns>
         public static ChaAccessoryComponent GetChaAccessoryComponent(ChaControl chaCtrl, int index) {
-            if (SCLO._isMoreAccessoriesExist) {
+            if (SCLO._isMoreAccessoriesExist == 1) {
                 return MoreAccessories_Support.GetChaAccessoryComponent(chaCtrl, index);
             } else {
                 return chaCtrl.GetAccessoryComponent(index);
