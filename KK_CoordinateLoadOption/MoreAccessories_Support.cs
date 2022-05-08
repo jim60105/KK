@@ -16,27 +16,36 @@ namespace KK_CoordinateLoadOption {
         private static Type MoreAccessories = null;
         private static object MoreAccObj;
 
-        public static int LoadAssembly() {
-            try {
+        public static int LoadAssembly()
+        {
+            try
+            {
                 const string pluginName = "com.joan6694.illusionplugins.moreaccessories";
                 var moreaccInstance = KoikatuHelper.TryGetPluginInstance(pluginName, new Version(1, 1));
-                if (moreaccInstance == null) 
+                if (null == moreaccInstance)
                     return 0;
 
-                if (BepInEx.Bootstrap.Chainloader.PluginInfos[pluginName].Metadata.Version >= new Version(2, 0))
+                if (moreaccInstance.Info.Metadata.Version >= new Version(2, 0))
+                {
+                    Logger.LogDebug("MoreAccessories v2.X found");
                     return 2;
+                }
 
                 string path = moreaccInstance.Info.Location;
                 Assembly ass = Assembly.LoadFrom(path);
                 MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
                 MoreAccObj = MoreAccessories?.GetFieldStatic("_self");
-                if (null == MoreAccessories || null == MoreAccObj) {
+                if (null == MoreAccessories
+                    || null == MoreAccObj)
+                {
                     throw new Exception("Load assembly FAILED: MoreAccessories");
                 }
-                Logger.LogDebug("MoreAccessories found");
+                Logger.LogDebug("MoreAccessories v1.X found");
                 return 1;
-            } catch (Exception ex) {
-                Logger.LogDebug(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex.Message);
                 return 0;
             }
         }
