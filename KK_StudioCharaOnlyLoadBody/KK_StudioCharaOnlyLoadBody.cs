@@ -155,11 +155,14 @@ namespace KK_StudioCharaOnlyLoadBody {
 
         internal static void Awake() {
             //MoreAcc相關
-            string path = KoikatuHelper.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories")?.Info.Location;
-            if (null != path && path.Length != 0) {
-                Assembly ass = Assembly.LoadFrom(path);
-                ChaFile_CopyAll_Patches = ass.GetType("MoreAccessoriesKOI.ChaFile_CopyAll_Patches");
-                MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
+            PluginInfo info = KoikatuHelper.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories")?.Info;
+            if (info != null && info.Metadata.Version < new Version(2, 0)) {
+                string path = info.Location;
+                if (!string.IsNullOrEmpty(path)) {
+                    Assembly ass = Assembly.LoadFrom(path);
+                    ChaFile_CopyAll_Patches = ass.GetType("MoreAccessoriesKOI.ChaFile_CopyAll_Patches");
+                    MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
+                }
             }
         }
 
