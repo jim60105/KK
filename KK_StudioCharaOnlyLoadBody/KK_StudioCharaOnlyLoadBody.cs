@@ -41,8 +41,8 @@ namespace KK_StudioCharaOnlyLoadBody {
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.9";
+        internal const string PLUGIN_VERSION = "22.06.27.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.10";
 
         public static ConfigEntry<string> ExtendedDataToCopySetting { get; private set; }
         public static string[] ExtendedDataToCopy;
@@ -155,11 +155,14 @@ namespace KK_StudioCharaOnlyLoadBody {
 
         internal static void Awake() {
             //MoreAcc相關
-            string path = KoikatuHelper.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories")?.Info.Location;
-            if (null != path && path.Length != 0) {
-                Assembly ass = Assembly.LoadFrom(path);
-                ChaFile_CopyAll_Patches = ass.GetType("MoreAccessoriesKOI.ChaFile_CopyAll_Patches");
-                MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
+            PluginInfo info = KoikatuHelper.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories")?.Info;
+            if (info != null && info.Metadata.Version < new Version(2, 0)) {
+                string path = info.Location;
+                if (!string.IsNullOrEmpty(path)) {
+                    Assembly ass = Assembly.LoadFrom(path);
+                    ChaFile_CopyAll_Patches = ass.GetType("MoreAccessoriesKOI.ChaFile_CopyAll_Patches");
+                    MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
+                }
             }
         }
 
