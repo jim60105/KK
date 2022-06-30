@@ -41,8 +41,8 @@ namespace KK_StudioCharaOnlyLoadBody {
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.9";
+        internal const string PLUGIN_VERSION = "22.06.27.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.10";
 
         public static ConfigEntry<string> ExtendedDataToCopySetting { get; private set; }
         public static string[] ExtendedDataToCopy;
