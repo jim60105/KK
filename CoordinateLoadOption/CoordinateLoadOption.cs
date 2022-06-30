@@ -56,8 +56,8 @@ namespace CoordinateLoadOption
     {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kks.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "21.12.23.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.4.2";
+        internal const string PLUGIN_VERSION = "22.06.30.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.4.3";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -621,9 +621,9 @@ namespace CoordinateLoadOption
             {
                 addAccModeFlag = !addAccModeFlag;
                 btnChangeAccLoadMode.GetComponentInChildren<Text>().text =
-                    addAccModeFlag ?
-                    StringResources.StringResourcesManager.GetString("addMode") :
-                    StringResources.StringResourcesManager.GetString("replaceMode");
+                    addAccModeFlag
+                        ? StringResources.StringResourcesManager.GetString("addMode")
+                        : StringResources.StringResourcesManager.GetString("replaceMode");
                 Logger.LogDebug("Set add accessories mode to " + (addAccModeFlag ? "add" : "replace") + " mode");
             });
             addAccModeFlag = true;
@@ -699,6 +699,20 @@ namespace CoordinateLoadOption
                     break;
                 }
             }
+
+            // 更新ChangeMode button禁用/啟用狀態
+            if (boundAcc) addAccModeFlag = false;
+            Button btnChangeAccLoadMode = panel2.transform.Find("BtnChangeAccLoadMode").GetComponent<Button>();
+            btnChangeAccLoadMode.interactable = !boundAcc;
+            btnChangeAccLoadMode.GetComponentInChildren<Text>().text =
+                addAccModeFlag
+                    ? StringResources.StringResourcesManager.GetString("addMode")
+                    : StringResources.StringResourcesManager.GetString("replaceMode");
+
+            if (boundAcc) lockHairAcc = false;
+            Toggle tglHair = panel2.transform.Find("lockHairAcc").GetComponent<Toggle>();
+            tglHair.interactable = !boundAcc;
+            tglHair.isOn = lockHairAcc;
 
             foreach (Toggle tgl in toggleGroup.gameObject.GetComponentsInChildren<Toggle>())
             {
