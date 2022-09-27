@@ -1032,13 +1032,14 @@ namespace CoordinateLoadOption
                 {
                     if (kind == 9)
                     {
+                        //Copy accessories
+                        ChaFileAccessory.PartsInfo[] chaCtrlAccParts = chaCtrl.nowCoordinate.accessory.parts;
+                        ChaFileAccessory.PartsInfo[] tmpCtrlAccParts = tmpChaCtrl.nowCoordinate.accessory.parts;
+
                         if (Patches.boundAcc)
                         {
                             ClearAccessories(chaCtrl);
                         }
-                        //Copy accessories
-                        ChaFileAccessory.PartsInfo[] chaCtrlAccParts = chaCtrl.nowCoordinate.accessory.parts;
-                        ChaFileAccessory.PartsInfo[] tmpCtrlAccParts = tmpChaCtrl.nowCoordinate.accessory.parts;
 
                         ChangeAccessories(tmpChaCtrl, tmpCtrlAccParts, chaCtrl, ref chaCtrlAccParts);
                         chaCtrl.nowCoordinate.accessory.parts = chaCtrlAccParts;
@@ -1047,7 +1048,6 @@ namespace CoordinateLoadOption
                             MoreAccessories_Support.ArraySync(chaCtrl);
                             MoreAccessories_Support.Update();
                         }
-                        chaCtrl.ChangeAccessory(true);
                         Logger.LogDebug("->Changed: " + tgl.name);
                         Logger.LogDebug($"Acc Count : {chaCtrl.nowCoordinate.accessory.parts.Length}");
                     }
@@ -1118,30 +1118,17 @@ namespace CoordinateLoadOption
                 }
             }
 
-            if (!CLO.insideStudio)
-                Singleton<CustomBase>.Instance.updateCustomUI = true;
+            string tempPath = Path.GetTempFileName();
+            chaCtrl.nowCoordinate.SaveFile(tempPath);
+            chaCtrl.SetNowCoordinate(tempPath);
 
             //Reload
+            chaCtrl.Reload(false, false, false, false);   //全false的Reload會觸發KKAPI的hook
 
-            //chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType);
-            byte[] data = chaCtrl.nowCoordinate.SaveBytes();
-            chaCtrl.chaFile.coordinate[chaCtrl.chaFile.status.coordinateType].LoadBytes(data, chaCtrl.nowCoordinate.loadVersion);
-
-            //chaCtrl.ChangeCoordinateType((ChaFileDefine.CoordinateType)chaCtrl.fileStatus.coordinateType, false);
-            byte[] data2 = chaCtrl.chaFile.coordinate[chaCtrl.fileStatus.coordinateType].SaveBytes();
-            if (chaCtrl.nowCoordinate.LoadBytes(data, ChaFileDefine.ChaFileCoordinateVersion))
-            {
-                chaCtrl.fileStatus.coordinateType = chaCtrl.fileStatus.coordinateType;
-            }
-
-            //chaCtrl.Reload();   //全false的Reload會觸發KKAPI的hook
-            chaCtrl.StartCoroutine(_read());
-            IEnumerator _read()
-            {
-                yield return null;
-                Extension.Reflection.InvokeStatic(typeof(ExtendedSave), "CoordinateReadEvent", new object[] { chaCtrl.nowCoordinate });
-            }
-
+            if (!CLO.insideStudio)
+                Singleton<CustomBase>.Instance.updateCustomUI = true;
+            File.Delete(tempPath);
+            PrintAccStatus(chaCtrl.nowCoordinate.accessory.parts, "Final");
             #endregion
 
             finishedCount++;
@@ -1174,6 +1161,16 @@ namespace CoordinateLoadOption
 
             forceCleanCount = CLO.FORCECLEANCOUNT;
             End();
+        }
+
+        private static void PrintAccStatus(ChaFileAccessory.PartsInfo[] chaCtrlAccParts, string flag = "")
+        {
+#if DEBUG
+            for (int i = 0; i < chaCtrlAccParts.Length; i++)
+            {
+                Logger.LogDebug($"*{flag}* Acc{i} / Part: {(ChaListDefine.CategoryNo)chaCtrlAccParts[i].type} / ID: {chaCtrlAccParts[i].id}");
+            }
+#endif
         }
 
         private static void End(bool forceClean = false)
