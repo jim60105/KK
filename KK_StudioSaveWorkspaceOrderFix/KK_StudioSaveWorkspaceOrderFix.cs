@@ -41,7 +41,7 @@ namespace KK_StudioSaveWorkspaceOrderFix {
         }
     }
     class Patches {
-        [HarmonyPrefix, HarmonyPatch(typeof(Studio.Studio), "SaveScene")]
+        [HarmonyPrefix, HarmonyPatch(typeof(Studio.Studio), "SaveScene"), HarmonyWrapSafe]
         public static void SaveScenePrefix(Studio.Studio __instance) {
             Dictionary<int, ObjectInfo> dicObject = __instance.sceneInfo.dicObject;
             List<TreeNodeObject> treeNodeObj = __instance.treeNodeCtrl.GetField("m_TreeNodeObject") as List<TreeNodeObject>;
