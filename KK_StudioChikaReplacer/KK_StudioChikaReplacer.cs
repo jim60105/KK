@@ -32,8 +32,8 @@ namespace KK_StudioChikaReplacer {
     public class KK_StudioChikaReplacer : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Chika Replacer";
         internal const string GUID = "com.jim60105.kk.studiochikareplacer";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.1";
+        internal const string PLUGIN_VERSION = "22.11.02.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.2";
 
         public static ConfigEntry<KeyboardShortcut> HotkeyAll { get; set; }
         public static ConfigEntry<KeyboardShortcut> Hotkey { get; set; }
