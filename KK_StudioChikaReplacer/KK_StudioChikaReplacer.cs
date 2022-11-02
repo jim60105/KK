@@ -119,7 +119,15 @@ namespace KK_StudioChikaReplacer {
         public static bool LoadCharaFilePrefix(ref bool __result) {
             //攔截要載入千佳的狀況
             if (blockLoadFlag && KK_StudioChikaReplacer.Sample_chara.Value.IsNullOrEmpty()) {
-                tmpChaCtrl.LoadPreset(tmpChaCtrl.sex, tmpChaCtrl.exType);
+                var loadPresetM = AccessTools.Method(typeof(ChaControl), nameof(ChaControl.LoadPreset));
+                if (loadPresetM.GetParameters().Length == 2) {
+                    // Game without darkness
+                    loadPresetM.Invoke(tmpChaCtrl, new object[] { tmpChaCtrl.sex, "" });
+                }
+                else {
+                    var exType = Traverse.Create(tmpChaCtrl).Property("exType").GetValue();
+                    loadPresetM.Invoke(tmpChaCtrl, new object[] { tmpChaCtrl.sex, exType, "" });
+                }
                 __result = true;
                 return false;
             }
