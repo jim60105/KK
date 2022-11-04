@@ -30,8 +30,8 @@ namespace KK_StudioSaveWorkspaceOrderFix {
     public class KK_StudioSaveWorkspaceOrderFix : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Save Workspace Order Fix";
         internal const string GUID = "com.jim60105.kk.studiosaveworkspaceorderfix";
-        internal const string PLUGIN_VERSION = "20.08.05.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.0.1";
+        internal const string PLUGIN_VERSION = "22.11.04.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.0.2";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
