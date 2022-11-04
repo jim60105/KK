@@ -30,8 +30,8 @@ namespace StudioSaveWorkspaceOrderFix {
     public class StudioSaveWorkspaceOrderFix : BaseUnityPlugin {
         internal const string PLUGIN_NAME = "Studio Save Workspace Order Fix";
         internal const string GUID = "com.jim60105.kks.studiosaveworkspaceorderfix";
-        internal const string PLUGIN_VERSION = "21.09.28.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.1.0";
+        internal const string PLUGIN_VERSION = "22.11.04.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.1.1";
 
         internal static new ManualLogSource Logger;
         public void Awake() {
@@ -41,7 +41,7 @@ namespace StudioSaveWorkspaceOrderFix {
         }
     }
     class Patches {
-        [HarmonyPrefix, HarmonyPatch(typeof(Studio.Studio), nameof(Studio.Studio.SaveScene))]
+        [HarmonyPrefix, HarmonyPatch(typeof(Studio.Studio), nameof(Studio.Studio.SaveScene)), HarmonyWrapSafe]
         public static void SaveScenePrefix(Studio.Studio __instance) {
             Dictionary<int, ObjectInfo> dicObject = __instance.sceneInfo.dicObject;
             List<TreeNodeObject> treeNodeObj = __instance.treeNodeCtrl.GetField("m_TreeNodeObject") as List<TreeNodeObject>;
