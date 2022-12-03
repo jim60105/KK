@@ -10,5 +10,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)ImageHelper.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Unity.cs" />
   </ItemGroup>
 </Project>

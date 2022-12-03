@@ -1056,7 +1056,13 @@ namespace CoordinateLoadOption
                         //Change clothes
                         byte[] tmp = MessagePackSerializer.Serialize<ChaFileClothes.PartsInfo>(tmpChaCtrl.nowCoordinate.clothes.parts[kind]);
                         chaCtrl.nowCoordinate.clothes.parts[kind] = MessagePackSerializer.Deserialize<ChaFileClothes.PartsInfo>(tmp);
-                        chaCtrl.ChangeClothes(kind, tmpChaCtrl.nowCoordinate.clothes.parts[kind].id, tmpChaCtrl.nowCoordinate.clothes.subPartsId[0], tmpChaCtrl.nowCoordinate.clothes.subPartsId[1], tmpChaCtrl.nowCoordinate.clothes.subPartsId[2], true);
+                        chaCtrl.ChangeClothesNoAsync(kind: kind,
+                                                     id: tmpChaCtrl.nowCoordinate.clothes.parts[kind].id,
+                                                     subId01: tmpChaCtrl.nowCoordinate.clothes.subPartsId[0],
+                                                     subId02: tmpChaCtrl.nowCoordinate.clothes.subPartsId[1],
+                                                     subId03: tmpChaCtrl.nowCoordinate.clothes.subPartsId[2],
+                                                     forceChange: true,
+                                                     update: true);
 
                         if (kcox.isExist)
                             kcox.CopyKCOXData(tmpChaCtrl, kind);
@@ -1091,22 +1097,22 @@ namespace CoordinateLoadOption
                 hairacc.SetControllerFromCoordinate();
             }
 
-            //Material Editor
-            if (me.isExist)
-                me.SetExtDataFromController();
+            ////Material Editor
+            //if (me.isExist)
+            //    me.SetExtDataFromController();
 
-            //KCOX
-            if (kcox.isExist)
-            {
-                kcox.SetExtDataFromController();
-                chaCtrl.StartCoroutine(kcox.Update());
-            }
+            ////KCOX
+            //if (kcox.isExist)
+            //{
+            //    kcox.SetExtDataFromController();
+            //    chaCtrl.StartCoroutine(kcox.Update());
+            //}
 
             //ABMX
             if (abmx.isExist)
             {
                 if (Patches.readABMX) abmx.CopyABMXData(tmpChaCtrl);
-                abmx.SetExtDataFromController();
+                //abmx.SetExtDataFromController();
             }
 
             // 處理要綁定飾品的插件資料
@@ -1119,15 +1125,19 @@ namespace CoordinateLoadOption
             }
 
             string tempPath = Path.GetTempFileName();
+            tempPath = Path.ChangeExtension(tempPath, ".png");
             chaCtrl.nowCoordinate.SaveFile(tempPath);
-            chaCtrl.SetNowCoordinate(tempPath);
 
-            //Reload
-            chaCtrl.Reload(false, false, false, false);   //全false的Reload會觸發KKAPI的hook
+            chaCtrl.nowCoordinate.LoadFile(tempPath);
+
+            chaCtrl.Reload(false, true, true, true);
+            chaCtrl.AssignCoordinate((ChaFileDefine.CoordinateType)chaCtrl.chaFile.status.coordinateType);
 
             if (!CLO.insideStudio)
                 Singleton<CustomBase>.Instance.updateCustomUI = true;
+#if !DEBUG
             File.Delete(tempPath);
+#endif
             PrintAccStatus(chaCtrl.nowCoordinate.accessory.parts, "Final");
             #endregion
 
