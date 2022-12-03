@@ -28,7 +28,7 @@ namespace CoordinateLoadOption
         private static Type ObjectTypeME = null;
         public override bool LoadAssembly()
         {
-            bool loadSuccess = LoadAssembly(out string path, new Version(2, 5, 0));
+            bool loadSuccess = LoadAssembly(out string path, new Version(3, 1, 2));
             if (loadSuccess && !path.IsNullOrEmpty())
             {
                 Assembly ass = Assembly.LoadFrom(path);
@@ -80,6 +80,7 @@ namespace CoordinateLoadOption
         /// MaterialEditor.MaterialEditorCharaController
         /// </summary>
         private static readonly StoredValueInfo[] storedValueInfos = {
+            new StoredValueInfo("MaterialCopy","MaterialCopyList","","MaterialCopyRemove"),
             new StoredValueInfo("MaterialShader","MaterialShaderList","RemoveMaterialShader","SetMaterialShader"),
             new StoredValueInfo("RendererProperty","RendererPropertyList","RemoveRendererProperty","SetRendererProperty"),
             new StoredValueInfo("MaterialFloatProperty","MaterialFloatPropertyList","RemoveMaterialFloatProperty","SetMaterialFloatProperty"),
@@ -245,20 +246,28 @@ namespace CoordinateLoadOption
                     Renderer r = null;
                     Material m = null;
 
-                    if (i == 1)
+                    if (i == 2)
                     {
                         r = MaterialAPI.InvokeStatic("GetRendererList", new object[] { gameObject })?.ToList<Renderer>().Where(y => y.name == (string)x.GetField("RendererName"))?.FirstOrDefault();
                         if (r == null)
                         {
+                            Logger.LogWarning($"Missing Renderer while removing: {(string)x.GetField("RendererName")}!");
                             doFlag2 = false;
                             return;
                         }
                     }
                     else
                     {
-                        m = MaterialAPI.InvokeStatic("GetObjectMaterials", new object[] { gameObject, (string)x.GetField("MaterialName") })?.ToList<Material>()?.FirstOrDefault();
+                        var name = (string)x.GetField("MaterialName");
+                        if (i == 0)
+                        {
+                            name = name.Replace("(Instance)", "").Replace(" Instance", "").Trim();
+                            name = name.Split(new string[] { ".MECopy" }, StringSplitOptions.None)[0];
+                        }
+                        m = MaterialAPI.InvokeStatic("GetObjectMaterials", new object[] { gameObject, name })?.ToList<Material>()?.FirstOrDefault();
                         if (m == null)
                         {
+                            Logger.LogWarning($"Missing Material while removing: {name}({(string)x.GetField("MaterialName")})!");
                             doFlag2 = false;
                             return;
                         }
@@ -266,7 +275,10 @@ namespace CoordinateLoadOption
 
                     switch (i)
                     {
-                        case 0: //MaterialShader
+                        case 0: //MaterialCopy
+                            MaterialAPI.InvokeStatic("RemoveMaterialCopies", new object[] { gameObject });
+                            break;
+                        case 1: //MaterialShader
                             TargetController.Invoke(storedValue.removeFunctionName, new object[] {
                                 targetSlot,
                                 _objectType,
@@ -285,7 +297,7 @@ namespace CoordinateLoadOption
                                 });
                             }
                             break;
-                        case 1: //RendererProperty
+                        case 2: //RendererProperty
                             TargetController.Invoke(storedValue.removeFunctionName, new object[] {
                                 targetSlot,
                                 _objectType,
@@ -295,8 +307,8 @@ namespace CoordinateLoadOption
                                 true
                             });
                             break;
-                        case 2: //MaterialFloatProperty
-                        case 3: //MaterialColorProperty
+                        case 3: //MaterialFloatProperty
+                        case 4: //MaterialColorProperty
                             TargetController.Invoke(storedValue.removeFunctionName, new object[] {
                                 targetSlot,
                                 _objectType,
@@ -306,7 +318,7 @@ namespace CoordinateLoadOption
                                 true
                             });
                             break;
-                        case 4: //MaterialTexture
+                        case 5: //MaterialTexture
                             //Offset
                             if (null != x.GetField("OffsetOriginal"))
                             {
@@ -423,22 +435,28 @@ namespace CoordinateLoadOption
                     Renderer r = null;
                     Material m = null;
 
-                    if (i == 1)
+                    if (i == 2)
                     {
                         r = MaterialAPI.InvokeStatic("GetRendererList", new object[] { gameObject })?.ToList<Renderer>().Where(y => y.name == (string)x.GetField("RendererName"))?.FirstOrDefault();
                         if (r == null)
                         {
-                            Logger.LogWarning($"Missing Renderer: {(string)x.GetField("RendererName")}!");
+                            Logger.LogWarning($"Missing Renderer while setting: {(string)x.GetField("RendererName")}!");
                             doFlag2 = false;
                             return;
                         }
                     }
                     else
                     {
-                        m = MaterialAPI.InvokeStatic("GetObjectMaterials", new object[] { gameObject, (string)x.GetField("MaterialName") })?.ToList<Material>()?.FirstOrDefault();
+                        var name = (string)x.GetField("MaterialName");
+                        if (i == 0)
+                        {
+                            name = name.Replace("(Instance)", "").Replace(" Instance", "").Trim();
+                            name = name.Split(new string[] { ".MECopy" }, StringSplitOptions.None)[0];
+                        }
+                        m = MaterialAPI.InvokeStatic("GetObjectMaterials", new object[] { gameObject, name })?.ToList<Material>()?.FirstOrDefault();
                         if (m == null)
                         {
-                            Logger.LogWarning($"Missing Material: {(string)x.GetField("MaterialName")}!");
+                            Logger.LogWarning($"Missing Material while setting: {name}({(string)x.GetField("MaterialName")})!");
                             doFlag2 = false;
                             return;
                         }
@@ -446,7 +464,15 @@ namespace CoordinateLoadOption
 
                     switch (i)
                     {
-                        case 0: //MaterialShader
+                        case 0: //MaterialCopy
+                            TargetController.Invoke(storedValue.setFunctionName, new object[] {
+                                targetSlot,
+                                _objectType,
+                                m,
+                                gameObject
+                            });
+                            break;
+                        case 1: //MaterialShader
                             TargetController.Invoke(storedValue.setFunctionName, new object[] {
                                 targetSlot,
                                 _objectType,
@@ -467,7 +493,7 @@ namespace CoordinateLoadOption
                                 });
                             }
                             break;
-                        case 1: //RendererProperty
+                        case 2: //RendererProperty
                             TargetController.Invoke(storedValue.setFunctionName, new object[] {
                                 targetSlot,
                                 _objectType,
@@ -478,7 +504,7 @@ namespace CoordinateLoadOption
                                 true
                             });
                             break;
-                        case 2: //MaterialFloatProperty
+                        case 3: //MaterialFloatProperty
                             TargetController.Invoke(storedValue.setFunctionName, new object[] {
                                 targetSlot,
                                 _objectType,
@@ -489,7 +515,7 @@ namespace CoordinateLoadOption
                                 true
                             });
                             break;
-                        case 3: //MaterialColorProperty
+                        case 4: //MaterialColorProperty
                             TargetController.Invoke(storedValue.setFunctionName, new object[] {
                                 targetSlot,
                                 _objectType,
@@ -500,7 +526,7 @@ namespace CoordinateLoadOption
                                 true
                             });
                             break;
-                        case 4: //MaterialTextureProperty
+                        case 5: //MaterialTextureProperty
                             //Texture
                             int? texID = (int?)x.GetField("TexID");
                             if (texID.HasValue && SourceTextureDictionaryBackup.TryGetValue(texID.Value, out object textureHolder) && textureHolder.GetProperty("Data") is byte[] BA)
