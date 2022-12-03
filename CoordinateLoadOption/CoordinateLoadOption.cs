@@ -1242,9 +1242,12 @@ namespace CoordinateLoadOption
         public static void ChangeAccessories(ChaControl sourceChaCtrl, ChaFileAccessory.PartsInfo[] sourceParts, ChaControl targetChaCtrl, ref ChaFileAccessory.PartsInfo[] targetParts)
         {
             Queue<int> accQueue = new Queue<int>();
-            ChaFileAccessory.PartsInfo[] tmpArr = CLO._isMoreAccessoriesExist
-                                                    ? new ChaFileAccessory.PartsInfo[Math.Max(Math.Max(sourceParts.Length, targetParts.Length), Patches.tgls2.Length)]
-                                                    : new ChaFileAccessory.PartsInfo[20];
+            int accCount = !CLO._isMoreAccessoriesExist
+                            ? 20
+                            : Patches.addAccModeFlag
+                                ? Math.Max(targetParts.Length, targetParts.Count(p => p.type != 120) + Patches.tgls2.Count(p => p.isOn))
+                                : Math.Max(sourceParts.Length, targetParts.Length);
+            ChaFileAccessory.PartsInfo[] tmpArr = new ChaFileAccessory.PartsInfo[accCount];
             targetParts.CopyTo(tmpArr, 0);
             tmpArr = tmpArr.Select(p => p ?? new ChaFileAccessory.PartsInfo()).ToArray();
 
