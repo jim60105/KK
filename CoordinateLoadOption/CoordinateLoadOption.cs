@@ -898,11 +898,6 @@ namespace CoordinateLoadOption
                 chaCtrl = Singleton<CustomBase>.Instance.chaCtrl;
             }
 
-            // Save ExtendedData to ChaControl.nowCoordinate
-            // KKAPI prevents plugins from storing coordinates outside of Maker, I pray here that users will not edit the coordinate in any way in Studio, and the character status and extended data must be consistent.
-            if (!CLO.insideStudio)
-                Extension.Reflection.InvokeStatic(typeof(ExtendedSave), "CoordinateWriteEvent", new object[] { chaCtrl.nowCoordinate });
-
             hairacc = new HairAccessoryCustomizer(chaCtrl);
             if (CLO._isHairAccessoryCustomizerExist && null != chaCtrl)
             {
