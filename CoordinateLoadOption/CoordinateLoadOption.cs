@@ -311,7 +311,7 @@ namespace CoordinateLoadOption
             if (false)
             {
                 bool onFromChildFlag = false;
-                              //分隔線
+                //分隔線
                 Image line2 = UIUtility.CreateImage("line", panel.transform);
                 line2.color = Color.gray;
                 line2.transform.SetRect(Vector2.up, Vector2.one, new Vector2(5f, baseY - 2f), new Vector2(-5f, baseY - 0.5f));
@@ -992,7 +992,7 @@ namespace CoordinateLoadOption
                 if (!Patches.boundAcc && null != ExtendedSave.GetExtendedDataById(chaCtrl.nowCoordinate, guid))
                 {
                     Patches.boundAcc = true;
-                    
+
                     if (Patches.tgls[9].isOn && Patches.tgls2.ToList().Any(tg => !tg.isOn))
                     {
                         foreach (var tg in Patches.tgls2)
@@ -1015,6 +1015,8 @@ namespace CoordinateLoadOption
             MaterialEditor me = new MaterialEditor(chaCtrl);
 
             #region Main Load Coordinate
+            PrintClothStatus(chaCtrl.nowCoordinate.clothes, "Before");
+            PrintAccStatus(chaCtrl.nowCoordinate.accessory.parts, "Before");
             foreach (Toggle tgl in Patches.tgls)
             {
                 object tmpToggleType = null;
@@ -1138,7 +1140,8 @@ namespace CoordinateLoadOption
 #if !DEBUG
             File.Delete(tempPath);
 #endif
-            PrintAccStatus(chaCtrl.nowCoordinate.accessory.parts, "Final");
+            PrintClothStatus(chaCtrl.nowCoordinate.clothes, "After");
+            PrintAccStatus(chaCtrl.nowCoordinate.accessory.parts, "After");
             #endregion
 
             finishedCount++;
@@ -1179,6 +1182,22 @@ namespace CoordinateLoadOption
             for (int i = 0; i < chaCtrlAccParts.Length; i++)
             {
                 Logger.LogDebug($"*{flag}* Acc{i} / Part: {(ChaListDefine.CategoryNo)chaCtrlAccParts[i].type} / ID: {chaCtrlAccParts[i].id}");
+            }
+#endif
+        }
+
+        private static void PrintClothStatus(ChaFileClothes chaFileClothes, string flag = "")
+        {
+#if DEBUG
+            for (int i = 0; i < chaFileClothes.parts.Length; i++)
+            {
+                Logger.LogDebug($"*{flag}* Cloth{i} / ID: {chaFileClothes.parts[i].id}");
+                if (i == 0)
+                {
+                    Logger.LogDebug($"*{flag}* ClothSub0 / ID: {chaFileClothes.subPartsId[0]}");
+                    Logger.LogDebug($"*{flag}* ClothSub1 / ID: {chaFileClothes.subPartsId[1]}");
+                    Logger.LogDebug($"*{flag}* ClothSub2 / ID: {chaFileClothes.subPartsId[2]}");
+                }
             }
 #endif
         }
