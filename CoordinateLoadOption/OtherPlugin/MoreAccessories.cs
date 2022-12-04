@@ -1,5 +1,6 @@
 ﻿using ExtensibleSaveFormat;
 using Extension;
+using HarmonyLib;
 using MessagePack;
 using System;
 using System.Collections.Generic;
@@ -15,6 +16,7 @@ namespace CoordinateLoadOption.OtherPlugin
     {
         public const string GUID = "com.joan6694.illusionplugins.moreaccessories";
         private static object MoreAccObj;
+        private static Type MoreAcc;
 
         public static bool LoadAssembly()
         {
@@ -22,7 +24,8 @@ namespace CoordinateLoadOption.OtherPlugin
             {
                 string path = KoikatuHelper.TryGetPluginInstance(GUID, new Version(2, 0, 10))?.Info.Location;
                 Assembly ass = Assembly.LoadFrom(path);
-                MoreAccObj = ass.GetType("MoreAccessoriesKOI.MoreAccessories")?.GetFieldStatic("_self");
+                MoreAcc = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
+                MoreAccObj = MoreAcc?.GetFieldStatic("_self");
                 if (null == MoreAccObj)
                 {
                     throw new Exception("Load assembly FAILED: MoreAccessories");
@@ -36,6 +39,16 @@ namespace CoordinateLoadOption.OtherPlugin
                 return false;
             }
         }
+
+        internal static void PatchMoreAcc(Harmony harmony)
+        {
+            // MoreAccessoriesKOI.MoreAccessories.OnActualCoordSave(ChaFileCoordinate file)
+            // is not working outside maker
+            harmony.Patch(MoreAcc.GetMethod("OnActualCoordSave", AccessTools.all),
+                prefix: new HarmonyMethod(typeof(MoreAccessories), nameof(NotInsideStudio)));
+        }
+
+        private static bool NotInsideStudio() => !CoordinateLoadOption.insideStudio;
 
         /// <summary>
         /// 讀取MoreAccessories

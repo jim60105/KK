@@ -267,6 +267,28 @@ namespace CoordinateLoadOption
                 if (Patches.readABMX) abmx.CopyABMXData(tmpChaCtrl);
             }
 
+            // KKAPI OnCoordinateBeingSaved is not working outside maker.
+            // So I had to trigger them manually as a workaround.
+            if (CLO.insideStudio)
+            {
+                //Material Editor
+                if (me.isExist)
+                    me.SetExtDataFromController();
+
+                //KCOX
+                if (kcox.isExist)
+                    kcox.SetExtDataFromController();
+
+                //ABMX
+                if (abmx.isExist)
+                    abmx.SetExtDataFromController();
+
+                Logger.LogDebug("↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓");
+                Logger.LogDebug("It will be good if KKAPI OnCoordinateBeingSaved() can be handled in Studio.");
+                Logger.LogDebug("At least, it should not show up as red here.");
+                Logger.LogDebug("Since I' m intentionally calling ChaFileCoordinate.SaveFile() in Studio, and it works fine.");
+            }
+
             // 處理要綁定飾品的插件資料
             if (Patches.boundAcc && Patches.tgls[9].isOn)
             {

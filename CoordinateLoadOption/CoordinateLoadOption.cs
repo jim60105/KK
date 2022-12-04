@@ -50,8 +50,8 @@ namespace CoordinateLoadOption
     {
         internal const string PLUGIN_NAME = "Coordinate Load Option";
         internal const string GUID = "com.jim60105.kks.coordinateloadoption";
-        internal const string PLUGIN_VERSION = "22.12.04.2";
-        internal const string PLUGIN_RELEASE_VERSION = "1.4.6";
+        internal const string PLUGIN_VERSION = "22.12.04.3";
+        internal const string PLUGIN_RELEASE_VERSION = "1.4.7";
 
         public static bool insideStudio = Application.productName == "CharaStudio";
 
@@ -130,6 +130,9 @@ namespace CoordinateLoadOption
             //Patch other plugins at Start()
             if (_isHairAccessoryCustomizerExist)
                 HairAccessoryCustomizer.Patch(harmonyInstance);
+
+            if(_isMoreAccessoriesExist)
+                MoreAccessories.PatchMoreAcc(harmonyInstance);
 
             FolderBrowser.PatchFolderBrowser(harmonyInstance);
 
