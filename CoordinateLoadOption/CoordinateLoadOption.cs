@@ -50,6 +50,7 @@ namespace CoordinateLoadOption
     [BepInDependency("com.deathweasel.bepinex.materialeditor", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.deathweasel.bepinex.hairaccessorycustomizer", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInDependency("com.jim60105.kk.charaoverlaysbasedoncoordinate", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("marco.FolderBrowser", BepInDependency.DependencyFlags.SoftDependency)]
     [BepInIncompatibility("KK_ClothesLoadOption")]
     [BepInIncompatibility("com.jim60105.kk.studiocoordinateloadoption")]
     public class CoordinateLoadOption : BaseUnityPlugin
@@ -136,6 +137,8 @@ namespace CoordinateLoadOption
             if (_isHairAccessoryCustomizerExist)
                 HairAccessoryCustomizer.Patch(harmonyInstance);
 
+            PatchFolderBrowser(harmonyInstance);
+
             StringResources.StringResourcesManager.SetUICulture();
 
             Plugin_Bound_Accessories = Config.Bind<string>("Settings", "Plugin that bound accessories options", "", new ConfigDescription("Edit this only when any plugin maker tells you to do so. Fill in the GUIDs, and seperate them with comma(,), example: 'this.guid.A,some.guid.B,another.guid.C'"));
@@ -167,6 +170,33 @@ namespace CoordinateLoadOption
         }
 
         public void Update() => CoordinateLoad.Update();
+
+        #region PatchBrowserFolders
+        private static void PatchFolderBrowser(Harmony harmony)
+        {
+            var GUID = "marco.FolderBrowser";
+            string path = KoikatuHelper.TryGetPluginInstance(GUID, new Version(2, 6))?.Info.Location;
+
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            path = Path.Combine(Path.GetDirectoryName(path), Path.GetFileNameWithoutExtension(path) + "_Hooks" + Path.GetExtension(path));
+
+            if (string.IsNullOrEmpty(path) || !File.Exists(path))
+                return;
+
+            var type = Assembly.LoadFrom(path).GetType("BrowserFolders.Hooks.KKS.MakerOutfitFolders");
+
+            if (null == type)
+                return;
+
+            harmony.Patch(type.GetMethod("SaveFilePatch", AccessTools.all),
+                prefix: new HarmonyMethod(typeof(CLO), nameof(CLO._PatchFolderBrowser)));
+        }
+
+        private static bool _PatchFolderBrowser(ref string path) 
+            => Path.GetExtension(path) != ".tmp";
+        #endregion
     }
 
     //用於MakerUI之OnEnable回呼
@@ -1122,7 +1152,7 @@ namespace CoordinateLoadOption
             }
 
             string tempPath = Path.GetTempFileName();
-            tempPath = Path.ChangeExtension(tempPath, ".png");
+            tempPath = Path.ChangeExtension(tempPath, ".tmp");  // For safety
             chaCtrl.nowCoordinate.SaveFile(tempPath);
 
             chaCtrl.nowCoordinate.LoadFile(tempPath);
