@@ -6,9 +6,9 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-namespace CoordinateLoadOption
+namespace CoordinateLoadOption.OtherPlugin.CharaCustomFunctionController
 {
-    class MaterialEditor : CharaCustomFunctionController_Support
+    class MaterialEditor : CharaCustomFunctionController_Base
     {
         public override string GUID => "com.deathweasel.bepinex.materialeditor";
         public override string ControllerName => "MaterialEditorCharaController";
@@ -143,7 +143,7 @@ namespace CoordinateLoadOption
                 (int)x.GetField("ObjectType") == (int)objectType &&
                 (int)x.GetField("CoordinateIndex") == chaCtrl.fileStatus.coordinateType &&
                 //若Slot有給入，則加上檢查Slot的判斷
-                ((Slot < 0) || (int)x.GetField("Slot") == Slot)
+                (Slot < 0 || (int)x.GetField("Slot") == Slot)
             );
 
             //是否有執行到
@@ -187,11 +187,11 @@ namespace CoordinateLoadOption
                 {
                     if (objectType == ObjectType.Clothing)
                     {
-                        Logger.LogDebug($"-->Material Set: Clothes " + ((Slot >= 0) ? $", {Patches.ClothesKindName[Slot]}" : ", All Clothes"));
+                        Logger.LogDebug($"-->Material Set: Clothes " + (Slot >= 0 ? $", {Patches.ClothesKindName[Slot]}" : ", All Clothes"));
                     }
                     else if (objectType == ObjectType.Accessory)
                     {
-                        Logger.LogDebug($"-->Material Set: Accessory" + ((Slot >= 0) ? ", Slot " + Slot : ", All Slots"));
+                        Logger.LogDebug($"-->Material Set: Accessory" + (Slot >= 0 ? ", Slot " + Slot : ", All Slots"));
                     }
                 }
             }

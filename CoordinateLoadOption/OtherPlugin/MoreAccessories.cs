@@ -9,21 +9,29 @@ using System.Xml;
 using UnityEngine;
 using ResolveInfo = Sideloader.AutoResolver.ResolveInfo;
 
-namespace CoordinateLoadOption {
-    class MoreAccessories_Support {
+namespace CoordinateLoadOption.OtherPlugin
+{
+    class MoreAccessories
+    {
+        public const string GUID = "com.joan6694.illusionplugins.moreaccessories";
         private static object MoreAccObj;
 
-        public static bool LoadAssembly() {
-            try {
-                string path = KoikatuHelper.TryGetPluginInstance("com.joan6694.illusionplugins.moreaccessories", new Version(2, 0, 10))?.Info.Location;
+        public static bool LoadAssembly()
+        {
+            try
+            {
+                string path = KoikatuHelper.TryGetPluginInstance(GUID, new Version(2, 0, 10))?.Info.Location;
                 Assembly ass = Assembly.LoadFrom(path);
                 MoreAccObj = ass.GetType("MoreAccessoriesKOI.MoreAccessories")?.GetFieldStatic("_self");
-                if (null == MoreAccObj) {
+                if (null == MoreAccObj)
+                {
                     throw new Exception("Load assembly FAILED: MoreAccessories");
                 }
                 Extension.Logger.LogDebug("MoreAccessories found");
                 return true;
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 Extension.Logger.LogDebug(ex.Message);
                 return false;
             }
@@ -34,7 +42,8 @@ namespace CoordinateLoadOption {
         /// </summary>
         /// <param name="chaFileCoordinate">讀取的衣裝對象</param>
         /// <returns></returns>
-        public static string[] LoadOldMoreAccData(ChaFileCoordinate chaFileCoordinate) {
+        public static string[] LoadOldMoreAccData(ChaFileCoordinate chaFileCoordinate)
+        {
             List<ChaFileAccessory.PartsInfo> tempLoadedAccessories = new List<ChaFileAccessory.PartsInfo>();
 
             typeof(Sideloader.AutoResolver.UniversalAutoResolver).GetNestedType("Hooks", BindingFlags.NonPublic).InvokeStatic("ExtendedCoordinateLoad", new object[] { chaFileCoordinate });
@@ -44,42 +53,55 @@ namespace CoordinateLoadOption {
             //讀取Sideloader extData
             List<ResolveInfo> extInfoList;
             PluginData sideLoaderExtData = ExtendedSave.GetExtendedDataById(chaFileCoordinate, "com.bepis.sideloader.universalautoresolver");
-            if (sideLoaderExtData == null || !sideLoaderExtData.data.ContainsKey("info")) {
+            if (sideLoaderExtData == null || !sideLoaderExtData.data.ContainsKey("info"))
+            {
                 Extension.Logger.LogDebug("No sideloader extInfo found");
                 extInfoList = null;
-            } else {
+            }
+            else
+            {
                 object[] tmpExtInfo = (object[])sideLoaderExtData.data["info"];
                 extInfoList = tmpExtInfo.Select(x => MessagePackSerializer.Deserialize<ResolveInfo>((byte[])x)).ToList();
             }
 
             XmlNode node = null;
             PluginData pluginData = ExtendedSave.GetExtendedDataById(chaFileCoordinate, "moreAccessories");
-            if (pluginData != null && pluginData.data.TryGetValue("additionalAccessories", out object xmlData)) {
+            if (pluginData != null && pluginData.data.TryGetValue("additionalAccessories", out object xmlData))
+            {
                 XmlDocument doc = new XmlDocument();
                 doc.LoadXml((string)xmlData);
                 node = doc.FirstChild;
             }
 
-            if (node != null) {
-                foreach (XmlNode accessoryNode in node.ChildNodes) {
-                    ChaFileAccessory.PartsInfo part = new ChaFileAccessory.PartsInfo {
+            if (node != null)
+            {
+                foreach (XmlNode accessoryNode in node.ChildNodes)
+                {
+                    ChaFileAccessory.PartsInfo part = new ChaFileAccessory.PartsInfo
+                    {
                         type = XmlConvert.ToInt32(accessoryNode.Attributes["type"].Value)
                     };
-                    if (part.type != 120) {
+                    if (part.type != 120)
+                    {
                         part.id = XmlConvert.ToInt32(accessoryNode.Attributes["id"].Value);
                         part.parentKey = accessoryNode.Attributes["parentKey"].Value;
 
-                        for (int i = 0; i < 2; i++) {
-                            for (int j = 0; j < 3; j++) {
-                                part.addMove[i, j] = new Vector3 {
+                        for (int i = 0; i < 2; i++)
+                        {
+                            for (int j = 0; j < 3; j++)
+                            {
+                                part.addMove[i, j] = new Vector3
+                                {
                                     x = XmlConvert.ToSingle(accessoryNode.Attributes[$"addMove{i}{j}x"].Value),
                                     y = XmlConvert.ToSingle(accessoryNode.Attributes[$"addMove{i}{j}y"].Value),
                                     z = XmlConvert.ToSingle(accessoryNode.Attributes[$"addMove{i}{j}z"].Value)
                                 };
                             }
                         }
-                        for (int i = 0; i < 4; i++) {
-                            part.color[i] = new Color {
+                        for (int i = 0; i < 4; i++)
+                        {
+                            part.color[i] = new Color
+                            {
                                 r = XmlConvert.ToSingle(accessoryNode.Attributes[$"color{i}r"].Value),
                                 g = XmlConvert.ToSingle(accessoryNode.Attributes[$"color{i}g"].Value),
                                 b = XmlConvert.ToSingle(accessoryNode.Attributes[$"color{i}b"].Value),
@@ -89,16 +111,20 @@ namespace CoordinateLoadOption {
                         part.hideCategory = XmlConvert.ToInt32(accessoryNode.Attributes["hideCategory"].Value);
 
                         //Only Darkness and KKS has this
-                        if (null != part.GetType().GetProperty("noShake")) {
+                        if (null != part.GetType().GetProperty("noShake"))
+                        {
                             part.SetProperty("noShake", accessoryNode.Attributes["noShake"] != null && XmlConvert.ToBoolean(accessoryNode.Attributes["noShake"].Value));
                         }
 
                         //處理Sideloader mod
-                        if (null != extInfoList && null != LoadedResolutionInfoList) {
+                        if (null != extInfoList && null != LoadedResolutionInfoList)
+                        {
                             ResolveInfo tmpExtInfo = extInfoList.FirstOrDefault(x => x.CategoryNo == (ChaListDefine.CategoryNo)part.type && x.Slot == part.id);
-                            if (default(ResolveInfo) != tmpExtInfo) {
+                            if (default(ResolveInfo) != tmpExtInfo)
+                            {
                                 ResolveInfo localExtInfo = LoadedResolutionInfoList.FirstOrDefault(x => x.GUID == tmpExtInfo.GUID && x.CategoryNo == tmpExtInfo.CategoryNo && x.Slot == tmpExtInfo.Slot);
-                                if (default(ResolveInfo) != localExtInfo) {
+                                if (default(ResolveInfo) != localExtInfo)
+                                {
                                     Extension.Logger.LogDebug($"Resolve {localExtInfo.GUID}: {localExtInfo.Slot} -> {localExtInfo.LocalSlot}");
                                     part.id = localExtInfo.LocalSlot;
                                 }
@@ -109,7 +135,7 @@ namespace CoordinateLoadOption {
                 }
             }
 
-            return tempLoadedAccessories.Select(x => CoordinateLoad.GetNameFromIDAndType(x.id, (ChaListDefine.CategoryNo)x.type)).ToArray();
+            return tempLoadedAccessories.Select(x => Helper.GetNameFromIDAndType(x.id, (ChaListDefine.CategoryNo)x.type)).ToArray();
         }
 
         public static void ArraySync(ChaControl chaCtrl) => MoreAccObj.Invoke("ArraySync", new object[] { chaCtrl });

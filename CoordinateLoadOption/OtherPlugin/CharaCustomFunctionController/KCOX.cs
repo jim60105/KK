@@ -1,12 +1,14 @@
-﻿using System;
+﻿using Extension;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Extension;
 using UnityEngine;
 
-namespace CoordinateLoadOption {
-    class KCOX : CharaCustomFunctionController_Support {
+namespace CoordinateLoadOption.OtherPlugin.CharaCustomFunctionController
+{
+    class KCOX : CharaCustomFunctionController_Base
+    {
         public override string GUID => "KCOX";
         public override string ControllerName => "KoiClothesOverlayController";
         public override string CCFCName => "KCOX";
@@ -43,34 +45,45 @@ namespace CoordinateLoadOption {
         /// <param name="chaCtrl">對象ChaControl</param>
         /// <param name="dict">Output KCOX Data Backup</param>
         /// <returns>KCOX Controller</returns>
-        public override object GetDataFromController(ChaControl chaCtrl) {
+        public override object GetDataFromController(ChaControl chaCtrl)
+        {
             MonoBehaviour controller = GetController(chaCtrl);
 
             Dictionary<string, object> dict = new Dictionary<string, object>();
-            if (null == controller) {
+            if (null == controller)
+            {
                 Logger.LogDebug($"No KCOX Controller found on {chaCtrl.fileParam.fullname}");
-            } else {
+            }
+            else
+            {
                 int cnt = 0;
-                foreach (string mainName in MainClothesKind) {
+                foreach (string mainName in MainClothesKind)
+                {
                     cnt += GetOverlay(ref dict, mainName) ? 1 : 0;
                 }
-                foreach (string subName in SubClothesKind) {
+                foreach (string subName in SubClothesKind)
+                {
                     cnt += GetOverlay(ref dict, subName) ? 1 : 0;
                 }
-                foreach (string maskKind in MaskKind) {
+                foreach (string maskKind in MaskKind)
+                {
                     cnt += GetOverlay(ref dict, maskKind) ? 1 : 0;
                 }
                 Logger.LogDebug("Get Overlay/Mask Total: " + cnt);
             }
             return dict;
 
-            bool GetOverlay(ref Dictionary<string, object> dictionary, string name) {
+            bool GetOverlay(ref Dictionary<string, object> dictionary, string name)
+            {
                 dictionary[name] = controller.Invoke("GetOverlayTex", new object[] { name, false });
 
-                if (null == dictionary[name]) {
+                if (null == dictionary[name])
+                {
                     //Logger.LogDebug(name + " not found");
                     return false;
-                } else {
+                }
+                else
+                {
                     Logger.LogDebug("->Get Overlay/Mask: " + name);
                     return true;
                 }
@@ -83,9 +96,12 @@ namespace CoordinateLoadOption {
         /// <param name="sourceChaCtrl">拷貝來源</param>
         /// <param name="kind">Kind Name的Array位置</param>
         /// <param name="main">True:MainKind, False:SubKind, Null:MaskKind</param>
-        public void CopyKCOXData(ChaControl sourceChaCtrl, int kind, bool? main = true) {
-            if (sourceChaCtrl != SourceChaCtrl || DefaultChaCtrl != TargetChaCtrl) {
-                if (!GetControllerAndBackupData(sourceChaCtrl, DefaultChaCtrl)) {
+        public void CopyKCOXData(ChaControl sourceChaCtrl, int kind, bool? main = true)
+        {
+            if (sourceChaCtrl != SourceChaCtrl || DefaultChaCtrl != TargetChaCtrl)
+            {
+                if (!GetControllerAndBackupData(sourceChaCtrl, DefaultChaCtrl))
+                {
                     Logger.LogError("Skip on KCOX Controller not found.");
                     ClearBackup();
                     return;
@@ -93,16 +109,20 @@ namespace CoordinateLoadOption {
             }
 
             string name = "";
-            switch (main) {
+            switch (main)
+            {
                 case true:
                     name = MainClothesKind[kind];
-                    switch (kind) {
+                    switch (kind)
+                    {
                         case 0:
                             //換上衣時處理sub和BodyMask、InnerMask
-                            for (int i = 0; i < 3; i++) {
+                            for (int i = 0; i < 3; i++)
+                            {
                                 CopyKCOXData(sourceChaCtrl, i, false);
                             }
-                            for (int i = 0; i < 2; i++) {
+                            for (int i = 0; i < 2; i++)
+                            {
                                 CopyKCOXData(sourceChaCtrl, i, null);
                             }
                             break;
@@ -124,21 +144,29 @@ namespace CoordinateLoadOption {
 
             int coordinateType = TargetChaCtrl.fileStatus.coordinateType;
             Dictionary<int, object> _allOverlayTextures = TargetController.GetField("_allOverlayTextures").ToDictionary<int, object>();
-            if (TargetController.GetProperty("CurrentOverlayTextures").ToDictionary<string, object>().TryGetValue(name, out object clothesTexData)) {
-                if (!exist || tex == null || (bool)tex.Invoke("IsEmpty")) {
+            if (TargetController.GetProperty("CurrentOverlayTextures").ToDictionary<string, object>().TryGetValue(name, out object clothesTexData))
+            {
+                if (!exist || tex == null || (bool)tex.Invoke("IsEmpty"))
+                {
                     clothesTexData.Invoke("Clear");
                     clothesTexData.SetField("Override", false);
                     _allOverlayTextures[coordinateType].Invoke("Remove", new object[] { name });
                     Logger.LogDebug($"->Clear Overlay/Mask: {name}");
-                } else {
+                }
+                else
+                {
                     clothesTexData.SetProperty("Texture", tex.GetProperty("Texture"));
-                    if (null != tex.GetField("Override")) {
+                    if (null != tex.GetField("Override"))
+                    {
                         clothesTexData.SetField("Override", tex.GetField("Override"));
                     }
                     Logger.LogDebug($"->Replace Overlay/Mask: {name}");
                 }
-            } else {
-                if (exist && tex != null && !(bool)tex.Invoke("IsEmpty")) {
+            }
+            else
+            {
+                if (exist && tex != null && !(bool)tex.Invoke("IsEmpty"))
+                {
                     _allOverlayTextures[coordinateType].Invoke("Add", new object[] { name, tex });
                     Logger.LogDebug($"->Add Overlay/Mask: {name}");
                 }
@@ -149,7 +177,8 @@ namespace CoordinateLoadOption {
         /// 重新整理Overlay，Mask
         /// </summary>
         public IEnumerator Update() => Update(DefaultChaCtrl);
-        public IEnumerator Update(ChaControl chaCtrl) {
+        public IEnumerator Update(ChaControl chaCtrl)
+        {
             yield return null;
             MonoBehaviour controller = GetController(chaCtrl);
             controller.Invoke("RefreshAllTextures", new object[] { false });

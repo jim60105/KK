@@ -1,11 +1,13 @@
-﻿using System;
+﻿using Extension;
+using System;
 using System.IO;
 using System.Linq;
-using Extension;
 using UnityEngine;
 
-namespace CoordinateLoadOption {
-    abstract class CharaCustomFunctionController_Support {
+namespace CoordinateLoadOption.OtherPlugin.CharaCustomFunctionController
+{
+    abstract class CharaCustomFunctionController_Base
+    {
         internal static readonly BepInEx.Logging.ManualLogSource Logger = CoordinateLoadOption.Logger;
         public abstract string GUID { get; }
         public abstract string ControllerName { get; }
@@ -21,8 +23,10 @@ namespace CoordinateLoadOption {
         internal object SourceBackup = null;
         internal object TargetBackup = null;
 
-        public CharaCustomFunctionController_Support(ChaControl chaCtrl) {
-            if (null != chaCtrl) {
+        public CharaCustomFunctionController_Base(ChaControl chaCtrl)
+        {
+            if (null != chaCtrl)
+            {
                 DefaultChaCtrl = chaCtrl;
                 DefaultController = GetController(DefaultChaCtrl);
             }
@@ -30,15 +34,20 @@ namespace CoordinateLoadOption {
 
         public virtual bool LoadAssembly() => LoadAssembly(out _);
 
-        internal bool LoadAssembly(out string path, Version version = null) {
-            try {
+        internal bool LoadAssembly(out string path, Version version = null)
+        {
+            try
+            {
                 path = KoikatuHelper.TryGetPluginInstance(GUID, version)?.Info.Location;
-                if (!File.Exists(path)) {
+                if (!File.Exists(path))
+                {
                     throw new Exception($"Load assembly FAILED: {CCFCName}");
                 }
                 Logger.LogDebug($"{CCFCName} found");
                 isExist = true;
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 Logger.LogDebug(ex.Message);
                 path = "";
                 isExist = false;
@@ -51,8 +60,10 @@ namespace CoordinateLoadOption {
         /// </summary>
         /// <param name="chaCtrl">對象ChaControl</param>
         /// <returns>CharaCustomFunctionController</returns>
-        public MonoBehaviour GetController(ChaControl chaCtrl) {
-            if (!(chaCtrl is ChaControl)) {
+        public MonoBehaviour GetController(ChaControl chaCtrl)
+        {
+            if (!(chaCtrl is ChaControl))
+            {
                 Logger.LogDebug("No ChaControl found");
                 return null;
             }
@@ -74,7 +85,8 @@ namespace CoordinateLoadOption {
         /// </summary>
         /// <param name="chaCtrl">要被設定的ChaControl</param>
         /// <returns></returns>
-        public void SetControllerFromExtData(ChaControl chaCtrl) {
+        public void SetControllerFromExtData(ChaControl chaCtrl)
+        {
             MonoBehaviour controller = GetController(chaCtrl);
             controller.Invoke("OnReload", new object[] { CoordinateLoadOption.insideStudio ? 2 : 1, false });
         }
@@ -89,7 +101,8 @@ namespace CoordinateLoadOption {
         /// </summary>
         /// <param name="chaCtrl">要被設定的ChaControl</param>
         /// <returns></returns>
-        public virtual void SetExtDataFromController(ChaControl chaCtrl) {
+        public virtual void SetExtDataFromController(ChaControl chaCtrl)
+        {
             MonoBehaviour controller = GetController(chaCtrl);
             controller.Invoke("OnCardBeingSaved", new object[] { 1 });
             controller.Invoke("OnCoordinateBeingSaved", new object[] { chaCtrl.nowCoordinate });
@@ -105,8 +118,10 @@ namespace CoordinateLoadOption {
         /// </summary>
         /// <param name="chaCtrl">要被設定的ChaControl</param>
         /// <param name="coordinate">要載入的coordibate</param>
-        public void SetControllerFromCoordinate(ChaControl chaCtrl, ChaFileCoordinate coordinate = null) {
-            if (null == coordinate) {
+        public void SetControllerFromCoordinate(ChaControl chaCtrl, ChaFileCoordinate coordinate = null)
+        {
+            if (null == coordinate)
+            {
                 coordinate = chaCtrl.nowCoordinate;
             }
             MonoBehaviour controller = GetController(chaCtrl);
@@ -124,8 +139,10 @@ namespace CoordinateLoadOption {
         /// </summary>
         /// <param name="chaCtrl">來源ChaControl</param>
         /// <param name="coordinate">目標Coordinate</param>
-        public void SetCoordinateDataFromController(ChaControl chaCtrl, ChaFileCoordinate coordinate = null) {
-            if (null == coordinate) {
+        public void SetCoordinateDataFromController(ChaControl chaCtrl, ChaFileCoordinate coordinate = null)
+        {
+            if (null == coordinate)
+            {
                 coordinate = chaCtrl.nowCoordinate;
             }
             MonoBehaviour controller = GetController(chaCtrl);
@@ -137,23 +154,28 @@ namespace CoordinateLoadOption {
         /// </summary>
         /// <param name="sourceChaCtrl">來源ChaControl</param>
         /// <param name="targetChaCtrl">目標ChaControl</param>
-        public virtual bool GetControllerAndBackupData(ChaControl sourceChaCtrl = null, ChaControl targetChaCtrl = null) {
-            if (null != sourceChaCtrl) {
+        public virtual bool GetControllerAndBackupData(ChaControl sourceChaCtrl = null, ChaControl targetChaCtrl = null)
+        {
+            if (null != sourceChaCtrl)
+            {
                 Logger.LogDebug($"----- Get Source {CCFCName} -----");
                 SourceChaCtrl = sourceChaCtrl;
                 SourceController = GetController(sourceChaCtrl);
-                if (null == SourceController) {
+                if (null == SourceController)
+                {
                     Logger.LogDebug($"No Source {CCFCName} Controller found on {sourceChaCtrl.fileParam.fullname}");
                     return false;
                 }
                 SourceBackup = GetDataFromController(sourceChaCtrl);
             }
 
-            if (null != targetChaCtrl) {
+            if (null != targetChaCtrl)
+            {
                 Logger.LogDebug($"----- Get Target {CCFCName} -----");
                 TargetChaCtrl = targetChaCtrl;
                 TargetController = GetController(targetChaCtrl);
-                if (null == TargetController) {
+                if (null == TargetController)
+                {
                     Logger.LogDebug($"No Target {CCFCName} Controller found on {targetChaCtrl.fileParam.fullname}");
                     return false;
                 }
@@ -178,14 +200,16 @@ namespace CoordinateLoadOption {
         public virtual bool CheckControllerPrepared() => CheckControllerPrepared(DefaultChaCtrl);
         public virtual bool CheckControllerPrepared(ChaControl chaCtrl) => CheckControllerPrepared(chaCtrl, (_) => true);
         public virtual bool CheckControllerPrepared(Func<MonoBehaviour, bool> func) => CheckControllerPrepared(DefaultChaCtrl, func);
-        public virtual bool CheckControllerPrepared(ChaControl chaCtrl, Func<MonoBehaviour, bool> func) {
+        public virtual bool CheckControllerPrepared(ChaControl chaCtrl, Func<MonoBehaviour, bool> func)
+        {
             if (!isExist) return true;
 
             MonoBehaviour controller = GetController(chaCtrl);
             return null != controller && func(controller);
         }
 
-        public virtual void ClearBackup() {
+        public virtual void ClearBackup()
+        {
             SourceChaCtrl = null;
             TargetChaCtrl = null;
             SourceBackup = null;
