@@ -39,12 +39,13 @@ namespace KK_StudioCharaOnlyLoadBody
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
     [BepInDependency("com.joan6694.illusionplugins.moreaccessories", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("com.animal42069.additionalfknodes", BepInDependency.DependencyFlags.SoftDependency)]
     public class KK_StudioCharaOnlyLoadBody : BaseUnityPlugin
     {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kk.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "22.06.27.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.3.10";
+        internal const string PLUGIN_VERSION = "23.10.01.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.3.11";
 
         public static ConfigEntry<string> ExtendedDataToCopySetting { get; private set; }
         public static string[] ExtendedDataToCopy;
@@ -168,6 +169,7 @@ namespace KK_StudioCharaOnlyLoadBody
         private static readonly ManualLogSource Logger = KK_StudioCharaOnlyLoadBody.Logger;
         internal static Type ChaFile_CopyAll_Patches = null;
         internal static Type MoreAccessories = null;
+        internal static Type AdditionalFKNodes = null;
 
         internal static void Awake()
         {
@@ -181,6 +183,18 @@ namespace KK_StudioCharaOnlyLoadBody
                     Assembly ass = Assembly.LoadFrom(path);
                     ChaFile_CopyAll_Patches = ass.GetType("MoreAccessoriesKOI.ChaFile_CopyAll_Patches");
                     MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
+                }
+            }
+
+            //AdditionalFKNodes
+            PluginInfo info2 = KoikatuHelper.TryGetPluginInstance("com.animal42069.additionalfknodes")?.Info;
+            if (info2 != null && info2.Metadata.Version >= new Version(1, 0, 0, 0))
+            {
+                string path = info2.Location;
+                if (!string.IsNullOrEmpty(path))
+                {
+                    Assembly ass = Assembly.LoadFrom(path);
+                    AdditionalFKNodes = ass.GetType("AdditionalFKNodes.AdditionalFKNodes");
                 }
             }
         }
@@ -266,6 +280,7 @@ namespace KK_StudioCharaOnlyLoadBody
                 ocichar.ChangeBlink(ocichar.charFileStatus.eyesBlink);
                 ocichar.ChangeMouthOpen(ocichar.oiCharInfo.mouthOpen);
 
+                AddAdditionalFKNodes(ocichar);
                 Logger.LogInfo($"Load Body: {oldName} -> {ocichar.charInfo.chaFile.parameter.fullname}");
             }
 
@@ -404,7 +419,7 @@ namespace KK_StudioCharaOnlyLoadBody
                             {
                                 if (tmpExtData.data.TryGetValue("info", out object tmpExtInfo))
                                 {
-                                    if (null != (tmpExtInfo as object[]))
+                                    if (null != tmpExtInfo as object[])
                                     {
                                         List<object> tmpExtList = new List<object>(tmpExtInfo as object[]);
                                         Logger.LogDebug($"Sideloader count: {tmpExtList.Count}");
@@ -496,6 +511,13 @@ namespace KK_StudioCharaOnlyLoadBody
 
             Logger.LogDebug("Copy MoreAccessories Finish");
         }
+
+        /// <summary>
+        /// Refresh AdditionalFKNodes
+        /// </summary>
+        /// <param name="oCIChar">更新對象</param>
+        public static void AddAdditionalFKNodes(OCIChar oCIChar)
+            => AdditionalFKNodes?.InvokeStatic("AddFKCtrlInfo", new object[] { oCIChar });
 
         /// <summary>
         /// 右側選單的名字更新
