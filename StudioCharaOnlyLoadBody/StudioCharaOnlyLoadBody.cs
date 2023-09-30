@@ -40,12 +40,13 @@ namespace KK_StudioCharaOnlyLoadBody
     [BepInPlugin(GUID, PLUGIN_NAME, PLUGIN_VERSION)]
     [BepInProcess("CharaStudio")]
     [BepInDependency("com.joan6694.illusionplugins.moreaccessories", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInDependency("com.animal42069.additionalfknodes", BepInDependency.DependencyFlags.SoftDependency)]
     public class StudioCharaOnlyLoadBody : BaseUnityPlugin
     {
         internal const string PLUGIN_NAME = "Studio Chara Only Load Body";
         internal const string GUID = "com.jim60105.kks.studiocharaonlyloadbody";
-        internal const string PLUGIN_VERSION = "21.12.23.0";
-        internal const string PLUGIN_RELEASE_VERSION = "1.4.3";
+        internal const string PLUGIN_VERSION = "23.10.01.0";
+        internal const string PLUGIN_RELEASE_VERSION = "1.4.4";
 
         public static ConfigEntry<string> ExtendedDataToCopySetting { get; private set; }
         public static string[] ExtendedDataToCopy;
@@ -170,6 +171,7 @@ namespace KK_StudioCharaOnlyLoadBody
         private static readonly ManualLogSource Logger = StudioCharaOnlyLoadBody.Logger;
         internal static Type ChaFile_CopyAll_Patches = null;
         internal static Type MoreAccessories = null;
+        internal static Type AdditionalFKNodes = null;
 
         internal static void Awake()
         {
@@ -179,6 +181,19 @@ namespace KK_StudioCharaOnlyLoadBody
             {
                 Assembly ass = Assembly.LoadFrom(path);
                 MoreAccessories = ass.GetType("MoreAccessoriesKOI.MoreAccessories");
+            }
+
+            //AdditionalFKNodes
+            //Currently there is no AdditionalFKNodes for KKS, so this should be null.
+            PluginInfo info2 = KoikatuHelper.TryGetPluginInstance("com.animal42069.additionalfknodes")?.Info;
+            if (info2 != null && info2.Metadata.Version >= new Version(1, 0, 0, 0))
+            {
+                string path2 = info2.Location;
+                if (!string.IsNullOrEmpty(path2))
+                {
+                    Assembly ass = Assembly.LoadFrom(path2);
+                    AdditionalFKNodes = ass.GetType("AdditionalFKNodes.AdditionalFKNodes");
+                }
             }
         }
 
@@ -262,6 +277,7 @@ namespace KK_StudioCharaOnlyLoadBody
                 ocichar.ChangeBlink(ocichar.charFileStatus.eyesBlink);
                 ocichar.ChangeMouthOpen(ocichar.oiCharInfo.mouthOpen);
 
+                AddAdditionalFKNodes(ocichar);
                 Logger.LogInfo($"Load Body: {oldName} -> {ocichar.charInfo.chaFile.parameter.fullname}");
             }
 
@@ -491,6 +507,13 @@ namespace KK_StudioCharaOnlyLoadBody
 
             Logger.LogDebug("Update MoreAccessories Finish");
         }
+
+        /// <summary>
+        /// Refresh AdditionalFKNodes
+        /// </summary>
+        /// <param name="oCIChar">更新對象</param>
+        public static void AddAdditionalFKNodes(OCIChar oCIChar)
+            => AdditionalFKNodes?.InvokeStatic("AddFKCtrlInfo", new object[] { oCIChar });
 
         /// <summary>
         /// 右側選單的名字更新
